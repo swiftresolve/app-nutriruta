@@ -1,0 +1,114 @@
+// Misión 12 semanas (función premium).
+import { MISSION } from '../data/mission.js';
+import { getState, setState, isPremium, today } from '../store.js';
+import { header, navigate, toast, openModal } from '../app.js';
+
+export function renderMission(container) {
+  header(container);
+  const { mision } = getState();
+  const premium = isPremium();
+
+  const hero = document.createElement('div');
+  hero.className = 'sos-hero';
+  hero.innerHTML = `
+    <h2>🎯 ${MISSION.nombre}</h2>
+    <p>${MISSION.descripcion}</p>`;
+  container.appendChild(hero);
+
+  // Sin misión iniciada
+  if (!mision || !mision.inicio) {
+    const start = document.createElement('div');
+    start.className = 'card center';
+    start.innerHTML = `
+      <p>Doce semanas, un cambio por semana. Cada semana tiene un objetivo claro, acciones concretas y una reflexión.</p>
+      ${premium
+        ? '<button class="btn accent full mt">🚀 Empezar mi misión</button>'
+        : `<div class="legal-note" style="text-align:left">✨ La Misión 12 semanas es parte del <strong>plan Premium</strong>. Puedes ver la Semana 1 gratis como prueba.</div>
+           <button class="btn accent full mt" id="m-plans">Ver planes Premium</button>
+           <button class="btn ghost full mt" id="m-preview">Ver Semana 1 gratis</button>`}
+    `;
+    if (premium) {
+      start.querySelector('.btn').addEventListener('click', () => {
+        setState({ mision: { inicio: today(), completadas: [] } });
+        toast('¡Misión iniciada! Semana 1: ' + MISSION.semanas[0].titulo);
+        renderMission(clear(container));
+      });
+    } else {
+      start.querySelector('#m-plans').addEventListener('click', () => navigate('plans'));
+      start.querySelector('#m-preview').addEventListener('click', () => openWeek(MISSION.semanas[0], false));
+    }
+    container.appendChild(start);
+    return;
+  }
+
+  // Misión en curso
+  const inicio = new Date(mision.inicio + 'T00:00:00');
+  const semanaActual = Math.min(12, Math.floor((Date.now() - inicio.getTime()) / (7 * 86400000)) + 1);
+  const completadas = mision.completadas || [];
+
+  const prog = document.createElement('div');
+  prog.className = 'card';
+  prog.innerHTML = `
+    <div class="spread"><h2>Semana ${semanaActual} de 12</h2><span class="tag info">${completadas.length}/12 completadas</span></div>
+    <div class="quiz-progress mt"><div style="width:${Math.round((completadas.length / 12) * 100)}%"></div></div>`;
+  container.appendChild(prog);
+
+  const list = document.createElement('div');
+  list.className = 'card';
+  for (const w of MISSION.semanas) {
+    const done = completadas.includes(w.n);
+    const isCurrent = w.n === semanaActual;
+    const locked = w.n > semanaActual;
+    const item = document.createElement('button');
+    item.className = 'recipe-item';
+    if (locked) item.style.opacity = '0.45';
+    item.innerHTML = `
+      <span class="recipe-emoji">${done ? '✅' : locked ? '🔒' : w.emoji}</span>
+      <span class="info">
+        <strong>Semana ${w.n}: ${w.titulo}</strong>${isCurrent ? ' <span class="tag verde">actual</span>' : ''}<br>
+        <span class="muted small">${w.objetivo}</span>
+      </span><span>›</span>`;
+    item.addEventListener('click', () => {
+      if (locked) { toast('Esta semana se desbloquea más adelante. Un cambio a la vez 🌱'); return; }
+      openWeek(w, true, done, () => renderMission(clear(container)));
+    });
+    list.appendChild(item);
+  }
+  container.appendChild(list);
+
+  if (completadas.length === 12) {
+    const fin = document.createElement('div');
+    fin.className = 'card center';
+    fin.innerHTML = '<div style="font-size:3rem">🏆</div><h2>¡Misión cumplida!</h2><p>Doce semanas de cambios reales. Agenda tus exámenes de control y celebra tu progreso.</p>';
+    container.appendChild(fin);
+  }
+}
+
+function openWeek(week, canComplete, done = false, onChange) {
+  openModal((modal, close) => {
+    modal.insertAdjacentHTML('beforeend', `
+      <div style="font-size:2.4rem">${week.emoji}</div>
+      <h2>Semana ${week.n}: ${week.titulo}</h2>
+      <p class="mt"><strong>Objetivo:</strong> ${week.objetivo}</p>
+      <h3 class="mt">Acciones de la semana</h3>
+      <ul class="steps">${week.acciones.map((a) => `<li>${a}</li>`).join('')}</ul>
+      <h3 class="mt">Para reflexionar</h3>
+      <p>${week.reflexion}</p>`);
+    if (canComplete) {
+      const btn = document.createElement('button');
+      btn.className = done ? 'btn ghost full mt' : 'btn full mt';
+      btn.textContent = done ? '↩️ Desmarcar semana' : '✅ Marcar semana como completada';
+      btn.addEventListener('click', () => {
+        const { mision } = getState();
+        const completadas = new Set(mision.completadas || []);
+        done ? completadas.delete(week.n) : completadas.add(week.n);
+        setState({ mision: { ...mision, completadas: [...completadas] } });
+        close();
+        if (onChange) onChange();
+      });
+      modal.appendChild(btn);
+    }
+  });
+}
+
+function clear(container) { container.innerHTML = ''; return container; }

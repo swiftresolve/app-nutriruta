@@ -1,11 +1,41 @@
-// Ajustes: perfiles, exclusiones, quiz, datos y sección legal.
-import { getState, setState, resetState } from '../store.js';
+// Ajustes: cuenta, perfiles, exclusiones, quiz, datos y sección legal.
+import { getState, setState, resetState, getPlan, esc } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
+import { getSession, signOut, pushProfileState } from '../supabase-client.js';
 import { navigate, header, openModal, toast } from '../app.js';
 
 export function renderSettings(container) {
   header(container);
   const { user } = getState();
+
+  // Cuenta y plan
+  const account = document.createElement('div');
+  account.className = 'card';
+  const plan = getPlan();
+  account.innerHTML = `
+    <h2>👤 Mi cuenta</h2>
+    <p class="small" id="acc-email">Cargando…</p>
+    <p class="mt">${plan.tipo === 'premium'
+      ? `<span class="tag verde">✨ Premium ${plan.periodo}</span>`
+      : '<span class="tag info">Plan gratuito</span>'}</p>`;
+  getSession().then((s) => {
+    const el = account.querySelector('#acc-email');
+    if (el) el.innerHTML = s ? `Sesión iniciada como <strong>${esc(s.user.email)}</strong> 🔐` : 'Sin sesión activa.';
+  });
+  const plansBtn = document.createElement('button');
+  plansBtn.className = 'btn ghost full mt mb';
+  plansBtn.textContent = '✨ Ver planes (mensual / anual)';
+  plansBtn.addEventListener('click', () => navigate('plans'));
+  account.appendChild(plansBtn);
+  const outBtn = document.createElement('button');
+  outBtn.className = 'btn ghost full';
+  outBtn.textContent = '🚪 Cerrar sesión';
+  outBtn.addEventListener('click', async () => {
+    await signOut();
+    toast('Sesión cerrada. ¡Vuelve pronto! 🌿');
+  });
+  account.appendChild(outBtn);
+  container.appendChild(account);
 
   // Perfiles activos
   const perf = document.createElement('div');
@@ -70,6 +100,7 @@ export function renderSettings(container) {
     yes.textContent = 'Sí, borrar todo';
     yes.addEventListener('click', () => {
       resetState();
+      pushProfileState({}, '').catch(() => {}); // también vacía la copia en la nube
       close();
       navigate('quiz');
       toast('Datos eliminados. Empecemos de nuevo 🌿');
@@ -101,13 +132,13 @@ export function renderSettings(container) {
 
   const ver = document.createElement('p');
   ver.className = 'muted small center mt';
-  ver.textContent = 'NutrAlma v1.0 · Hecha con 💚 para tu bienestar';
+  ver.textContent = 'Savibra v2.0 · Hecha con 💚 para tu bienestar';
   container.appendChild(ver);
 }
 
 const TERMS = `
   <h2>Términos de uso</h2>
-  <p class="mt">NutrAlma ofrece contenido educativo, herramientas de autoayuda y recomendaciones generales de hábitos saludables en nutrición, hidratación y estilo de vida.</p>
+  <p class="mt">Savibra ofrece contenido educativo, herramientas de autoayuda y recomendaciones generales de hábitos saludables en nutrición, hidratación y estilo de vida.</p>
   <p class="mt"><strong>Qué hace la app:</strong> personaliza menús, recetas, recordatorios y contenido educativo según los perfiles y preferencias que tú configuras.</p>
   <p class="mt"><strong>Qué NO hace la app:</strong> no diagnostica, no prescribe tratamientos ni medicación, y no sustituye el criterio de un profesional de la salud. No garantiza resultados médicos específicos, pues dependen de factores individuales.</p>
   <p class="mt">Las recomendaciones son generales y deben adaptarse con apoyo profesional si tienes enfermedades, tomas medicación o estás en embarazo o lactancia. Eres responsable de verificar con tu profesional de salud cualquier cambio importante en dieta o ejercicio.</p>
@@ -116,12 +147,13 @@ const TERMS = `
 const PRIVACY = `
   <h2>Privacidad y tratamiento de datos</h2>
   <p class="mt"><strong>Qué datos se usan:</strong> nombre o alias opcional, objetivos, respuestas del quiz, preferencias y exclusiones alimentarias, y registros de uso (agua, hábitos, antojos).</p>
-  <p class="mt"><strong>Dónde se guardan:</strong> únicamente en tu dispositivo (almacenamiento local del navegador). Esta versión de NutrAlma no envía tus datos a ningún servidor ni los comparte con terceros.</p>
+  <p class="mt"><strong>Dónde se guardan:</strong> en tu dispositivo (para que la app funcione sin conexión) y en tu cuenta personal en la nube (Supabase), siempre cifrados en tránsito. Cada cuenta está aislada mediante reglas de acceso por usuario (Row Level Security): nadie más puede leer tus datos. No se comparten con terceros ni se venden.</p>
+  <p class="mt"><strong>Autenticación:</strong> tu sesión usa tokens JWT de corta duración con renovación automática; tu contraseña nunca se guarda en texto plano (se almacena con hash bcrypt).</p>
   <p class="mt"><strong>Datos de salud:</strong> son sensibles; se usan solo para personalizar tu experiencia dentro de la app.</p>
-  <p class="mt"><strong>Tu control:</strong> puedes borrar todos tus datos en cualquier momento desde Ajustes → “Borrar todos mis datos”.</p>`;
+  <p class="mt"><strong>Tu control:</strong> puedes borrar todos tus datos en cualquier momento desde Ajustes → “Borrar todos mis datos”, lo que también vacía tu copia en la nube.</p>`;
 
 const DISCLAIMER = `
   <h2>Descargo de responsabilidad médica</h2>
   <p class="mt">Esta aplicación es una herramienta de autoayuda basada en buenas prácticas de hábitos saludables. <strong>No reemplaza el consejo ni el seguimiento de un médico, nutricionista, psicólogo u otro profesional de salud.</strong></p>
   <p class="mt">Si tienes diagnósticos, medicación o síntomas importantes, consulta siempre con tu profesional de confianza. Ante síntomas graves, busca atención médica de inmediato.</p>
-  <p class="mt">Usa NutrAlma como complemento, nunca como sustituto, de la atención profesional.</p>`;
+  <p class="mt">Usa Savibra como complemento, nunca como sustituto, de la atención profesional.</p>`;

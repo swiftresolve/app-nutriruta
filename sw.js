@@ -1,15 +1,19 @@
-const CACHE = 'nutralma-v1';
+const CACHE = 'savibra-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './css/styles.css',
   './js/app.js',
+  './js/config.js',
+  './js/supabase-client.js',
   './js/store.js',
   './js/menu.js',
   './js/data/profiles.js',
   './js/data/recipes.js',
   './js/data/lessons.js',
+  './js/data/mission.js',
+  './js/views/auth.js',
   './js/views/quiz.js',
   './js/views/dashboard.js',
   './js/views/planner.js',
@@ -17,6 +21,8 @@ const ASSETS = [
   './js/views/progress.js',
   './js/views/learn.js',
   './js/views/settings.js',
+  './js/views/mission.js',
+  './js/views/plans.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -36,11 +42,20 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+
+  // La API de Supabase nunca se cachea: datos y auth siempre en vivo.
+  if (url.hostname.endsWith('.supabase.co')) return;
+
+  // El SDK (esm.sh) sí se cachea para que la app arranque offline.
+  const cacheable = url.origin === location.origin || url.hostname === 'esm.sh';
+  if (!cacheable) return;
+
   e.respondWith(
     caches.match(e.request).then((cached) => {
       if (cached) return cached;
       return fetch(e.request).then((res) => {
-        if (res.ok && new URL(e.request.url).origin === location.origin) {
+        if (res.ok) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(e.request, copy));
         }

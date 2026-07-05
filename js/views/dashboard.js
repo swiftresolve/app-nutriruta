@@ -1,5 +1,6 @@
 // Dashboard diario: menú del día, agua, hábitos y acceso rápido al SOS.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium } from '../store.js';
+import { MISSION } from '../data/mission.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
@@ -22,7 +23,7 @@ export function renderDashboard(container) {
   const hero = document.createElement('div');
   hero.className = 'card';
   hero.innerHTML = `
-    <h2>${saludo}${user.nombre ? ', ' + user.nombre : ''} 🌿</h2>
+    <h2>${saludo}${user.nombre ? ', ' + esc(user.nombre) : ''} 🌿</h2>
     <p class="small">Hoy es un buen día para cuidarte. Progreso, no perfección.</p>
     <div class="chips mt">${user.perfiles.map((p) => `<span class="tag perfil">${PROFILES[p].emoji} ${PROFILES[p].nombre}</span>`).join(' ')}</div>`;
   container.appendChild(hero);
@@ -36,6 +37,26 @@ export function renderDashboard(container) {
     tip.innerHTML = `<p class="small">💡 <strong>Hemos notado</strong> que tus antojos suelen aparecer en la <strong>${patron}</strong>. Prepara con anticipación un snack saludable para ese momento.</p>`;
     container.appendChild(tip);
   }
+
+  // --- Misión 12 semanas ---
+  const { mision } = getState();
+  const misionCard = document.createElement('div');
+  misionCard.className = 'card';
+  misionCard.style.borderLeft = '4px solid var(--primary)';
+  if (mision && mision.inicio) {
+    const done = (mision.completadas || []).length;
+    misionCard.innerHTML = `
+      <div class="spread"><h3>🎯 Misión 12 semanas</h3><span class="tag verde">${done}/12</span></div>
+      <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((done / 12) * 100)}%"></div></div>
+      <button class="link-btn small">Continuar mi misión →</button>`;
+  } else {
+    misionCard.innerHTML = `
+      <div class="spread"><h3>🎯 Misión 12 semanas</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
+      <p class="small">${MISSION.descripcion}</p>
+      <button class="link-btn small">${isPremium() ? 'Empezar mi misión →' : 'Conocer la misión →'}</button>`;
+  }
+  misionCard.querySelector('.link-btn').addEventListener('click', () => navigate('mission'));
+  container.appendChild(misionCard);
 
   // --- Botón SOS ---
   const sosBtn = document.createElement('button');

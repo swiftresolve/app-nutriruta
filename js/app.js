@@ -1,5 +1,7 @@
-// Router mínimo + arranque.
-import { getState } from './store.js';
+// Router mínimo + arranque con puerta de autenticación.
+import { getState, initCloud } from './store.js';
+import { getSession, supabase } from './supabase-client.js';
+import { renderAuth } from './views/auth.js';
 import { renderQuiz } from './views/quiz.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderPlanner } from './views/planner.js';
@@ -7,27 +9,38 @@ import { renderSOS } from './views/sos.js';
 import { renderProgress } from './views/progress.js';
 import { renderLearn } from './views/learn.js';
 import { renderSettings } from './views/settings.js';
+import { renderMission } from './views/mission.js';
+import { renderPlans } from './views/plans.js';
 
 const app = document.getElementById('app');
 const nav = document.getElementById('bottom-nav');
 
 const ROUTES = {
+  auth: renderAuth,
   quiz: renderQuiz,
   dashboard: renderDashboard,
   planner: renderPlanner,
   sos: renderSOS,
   progress: renderProgress,
   learn: renderLearn,
-  settings: renderSettings
+  settings: renderSettings,
+  mission: renderMission,
+  plans: renderPlans
 };
 
+const PUBLIC_ROUTES = ['auth'];
+let authed = false;
+
+export function setAuthed(v) { authed = v; }
+
 export function navigate(route, params = {}) {
+  if (!authed && !PUBLIC_ROUTES.includes(route)) route = 'auth';
   const render = ROUTES[route] || renderDashboard;
   app.innerHTML = '';
   window.scrollTo(0, 0);
   render(app, params);
 
-  const showNav = route !== 'quiz';
+  const showNav = route !== 'quiz' && route !== 'auth';
   nav.classList.toggle('hidden', !showNav);
   nav.querySelectorAll('.nav-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.route === route);
@@ -52,7 +65,7 @@ export function header(container) {
   const h = document.createElement('div');
   h.className = 'app-header';
   h.innerHTML = `
-    <span class="brand">🌿 NutrAlma</span>
+    <span class="brand">🌿 Savibra</span>
     <button class="icon-btn" data-go="settings" aria-label="Ajustes">⚙️</button>`;
   h.querySelector('[data-go]').addEventListener('click', () => navigate('settings'));
   container.appendChild(h);
@@ -78,5 +91,21 @@ export function openModal(contentBuilder) {
   return closeFn;
 }
 
-// Arranque
-navigate(getState().onboarded ? 'dashboard' : 'quiz');
+// Service worker (registrado aquí para cumplir la CSP sin scripts inline).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
+
+// Arranque: verificar sesión JWT antes de entrar.
+(async () => {
+  let session = null;
+  try { session = await getSession(); } catch { /* offline sin sesión previa */ }
+  authed = !!session;
+  if (session) await initCloud();
+  navigate(!authed ? 'auth' : getState().onboarded ? 'dashboard' : 'quiz');
+
+  supabase.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') { authed = false; navigate('auth'); }
+    if (event === 'SIGNED_IN' && !authed) { authed = true; }
+  });
+})();

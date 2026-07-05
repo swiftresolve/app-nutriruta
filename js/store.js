@@ -1,5 +1,7 @@
-// Estado persistente en localStorage.
-const KEY = 'nutralma-state-v1';
+// Estado persistente en localStorage + sincronización con Supabase.
+import { fetchProfile, pushProfileState } from './supabase-client.js';
+
+const KEY = 'savibra-state-v1';
 
 const DEFAULT_STATE = {
   onboarded: false,
@@ -39,11 +41,60 @@ export function getState() { return state; }
 export function setState(patch) {
   state = { ...state, ...patch };
   localStorage.setItem(KEY, JSON.stringify(state));
+  scheduleCloudPush();
 }
 
 export function resetState() {
   state = structuredClone(DEFAULT_STATE);
   localStorage.removeItem(KEY);
+}
+
+// ---------- Sincronización con la nube (Supabase, protegida por RLS) ----------
+let plan = { tipo: 'free', periodo: null };
+let pushTimer = null;
+let cloudReady = false;
+
+export function getPlan() { return plan; }
+export function setPlanCache(tipo, periodo) { plan = { tipo, periodo }; }
+export function isPremium() { return plan.tipo === 'premium'; }
+
+// Al iniciar sesión: baja el estado remoto (la nube manda) o sube el local si la nube está vacía.
+export async function initCloud() {
+  try {
+    const profile = await fetchProfile();
+    if (!profile) return;
+    plan = { tipo: profile.plan || 'free', periodo: profile.plan_periodo || null };
+    const remote = profile.state;
+    if (remote && typeof remote === 'object' && Object.keys(remote).length) {
+      state = { ...structuredClone(DEFAULT_STATE), ...remote };
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } else if (state.onboarded) {
+      await pushProfileState(state, state.user.nombre);
+    }
+    if (profile.nombre && !state.user.nombre) {
+      state = { ...state, user: { ...state.user, nombre: profile.nombre } };
+      localStorage.setItem(KEY, JSON.stringify(state));
+    }
+    cloudReady = true;
+  } catch (e) {
+    // Sin conexión: la app sigue funcionando offline con localStorage.
+    console.warn('Sync inicial no disponible:', e.message);
+  }
+}
+
+function scheduleCloudPush() {
+  if (!cloudReady) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => {
+    pushProfileState(state, state.user.nombre).catch((e) => console.warn('Sync pospuesto:', e.message));
+  }, 1500);
+}
+
+// ---------- Utilidad de seguridad: escapar contenido generado por el usuario ----------
+export function esc(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
 }
 
 export function today() {

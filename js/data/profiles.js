@@ -1,4 +1,4 @@
-// Perfiles de salud que gestiona NutrAlma.
+// Perfiles de salud que gestiona Savibra.
 export const PROFILES = {
   higado_graso: {
     id: 'higado_graso',
