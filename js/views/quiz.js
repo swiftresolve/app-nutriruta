@@ -21,8 +21,9 @@ const ACTIVITY = [
   { id: 'alto', nombre: 'Alto (ejercicio frecuente)' }
 ];
 
-const SUGAR_FREQ = [
-  { id: 'nunca', nombre: 'Casi nunca' },
+const FREQ_OPTIONS = [
+  { id: 'nunca', nombre: 'Nunca' },
+  { id: 'casi_nunca', nombre: 'Casi nunca' },
   { id: 'a_veces', nombre: 'A veces' },
   { id: 'frecuente', nombre: 'Frecuente' },
   { id: 'muy_frecuente', nombre: 'Muy frecuente' }
@@ -36,6 +37,7 @@ function deriveProfiles(a) {
     else if (c !== 'ninguna' && PROFILES[c]) p.add(c);
   }
   if (a.objetivos.includes('azucar') || a.azucarFreq === 'muy_frecuente') p.add('resistencia_insulina');
+  if (a.alcoholFreq === 'frecuente' || a.alcoholFreq === 'muy_frecuente') p.add('higado_graso');
   if (a.objetivos.includes('colesterol')) p.add('colesterol');
   if (a.objetivos.includes('migranas')) p.add('migranas');
   if (a.objetivos.includes('digestion') && !p.size) p.add('colon_irritable');
@@ -47,7 +49,7 @@ function deriveProfiles(a) {
 export function renderQuiz(container) {
   const answers = {
     nombre: '', objetivos: [], condiciones: [], exclusiones: [],
-    habitosDificiles: [], actividad: 'medio', azucarFreq: 'a_veces'
+    habitosDificiles: [], actividad: 'medio', azucarFreq: 'a_veces', alcoholFreq: 'nunca'
   };
   let step = 0;
 
@@ -92,9 +94,14 @@ export function renderQuiz(container) {
       render: (el) => chips(el, ACTIVITY, answers, false, 'actividad')
     },
     {
-      title: '¿Con qué frecuencia consumes azúcar o alcohol?',
-      sub: 'Gaseosas, jugos, postres, cerveza…',
-      render: (el) => chips(el, SUGAR_FREQ, answers, false, 'azucarFreq')
+      title: '¿Con qué frecuencia consumes azúcar?',
+      sub: 'Gaseosas, jugos industriales, postres, dulces, panadería…',
+      render: (el) => chips(el, FREQ_OPTIONS, answers, false, 'azucarFreq')
+    },
+    {
+      title: '¿Con qué frecuencia consumes alcohol?',
+      sub: 'Cerveza, vino, licores… Si no tomas, elige "Nunca".',
+      render: (el) => chips(el, FREQ_OPTIONS, answers, false, 'alcoholFreq')
     }
   ];
 
@@ -167,7 +174,8 @@ export function renderQuiz(container) {
         exclusiones: answers.exclusiones,
         habitosDificiles: answers.habitosDificiles,
         actividad: answers.actividad,
-        azucarFreq: answers.azucarFreq
+        azucarFreq: answers.azucarFreq,
+        alcoholFreq: answers.alcoholFreq
       }
     });
 
@@ -176,6 +184,7 @@ export function renderQuiz(container) {
     const [main, ...rest] = perfiles;
     const prioridades = [];
     if (answers.azucarFreq === 'frecuente' || answers.azucarFreq === 'muy_frecuente') prioridades.push('Reducir el azúcar líquido (jugos y gaseosas)');
+    if (answers.alcoholFreq === 'frecuente' || answers.alcoholFreq === 'muy_frecuente') prioridades.push('Reducir el alcohol de forma gradual (tu hígado lo agradecerá)');
     if (answers.habitosDificiles.includes('poca_agua')) prioridades.push('Llegar a tu meta diaria de agua');
     prioridades.push('Proteína en el desayuno todos los días');
     if (answers.actividad === 'bajo') prioridades.push('Caminar 30 minutos, 5 días a la semana');

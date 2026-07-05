@@ -12,7 +12,8 @@ const DEFAULT_STATE = {
     exclusiones: [],
     habitosDificiles: [],
     actividad: 'medio',
-    azucarFreq: 'a_veces'
+    azucarFreq: 'a_veces',
+    alcoholFreq: 'nunca'
   },
   agua: { fecha: '', vasos: 0, meta: 8 },
   habitos: { fecha: '', checks: {} },

@@ -1,6 +1,7 @@
-// Planes de suscripción: mensual y anual.
+// Planes de suscripción: mensual y anual (pago vía Hotmart).
 import { getPlan, setPlanCache } from '../store.js';
 import { updatePlan } from '../supabase-client.js';
+import { HOTMART_CHECKOUT } from '../config.js';
 import { header, navigate, toast, openModal } from '../app.js';
 
 const PLANS = [
@@ -75,11 +76,23 @@ export function renderPlans(container) {
 
   const note = document.createElement('div');
   note.className = 'legal-note';
-  note.innerHTML = 'ℹ️ <strong>Versión de lanzamiento:</strong> la pasarela de pagos aún no está conectada; al elegir un plan se activa Premium en tu cuenta sin costo, como cortesía de prueba. Podrás cancelar o cambiar de plan en cualquier momento.';
+  note.innerHTML = hotmartReady()
+    ? 'ℹ️ El pago se procesa de forma segura a través de <strong>Hotmart</strong>. Tras completar tu compra, tu plan Premium se activará en tu cuenta. Puedes cancelar en cualquier momento desde Hotmart.'
+    : 'ℹ️ <strong>Versión de lanzamiento:</strong> la pasarela de pagos (Hotmart) aún no está conectada; al elegir un plan se activa Premium en tu cuenta sin costo, como cortesía de prueba. Podrás cancelar o cambiar de plan en cualquier momento.';
   container.appendChild(note);
 }
 
+function hotmartReady() {
+  return !!(HOTMART_CHECKOUT.mensual && HOTMART_CHECKOUT.anual);
+}
+
 function confirmPlan(p, container) {
+  // Con Hotmart configurado, el checkout se abre en la plataforma de pago.
+  if (hotmartReady()) {
+    window.open(HOTMART_CHECKOUT[p.id], '_blank', 'noopener');
+    toast('Completa tu compra en Hotmart; tu plan se activará al confirmarse el pago.');
+    return;
+  }
   openModal((modal, close) => {
     modal.insertAdjacentHTML('beforeend', `
       <h2>${p.emoji} ${p.nombre}</h2>

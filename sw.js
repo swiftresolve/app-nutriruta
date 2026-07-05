@@ -1,4 +1,4 @@
-const CACHE = 'savibra-v2';
+const CACHE = 'savibra-v3';
 const ASSETS = [
   './',
   './index.html',
