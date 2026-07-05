@@ -1,4 +1,4 @@
-// Perfiles de salud que gestiona Savibra.
+// Perfiles de salud que gestiona NutriRuta.
 export const PROFILES = {
   higado_graso: {
     id: 'higado_graso',

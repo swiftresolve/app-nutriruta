@@ -1,8 +1,8 @@
-# 🌿 Savibra
+# 🌿 NutriRuta
 
-**Nutre tu energía. Vibra con tu vida.**
+**Tu ruta hacia hábitos saludables, paso a paso.**
 
-Savibra es una PWA (Progressive Web App) de nutrición y hábitos alimenticios saludables, centrada en salud hormonal, metabólica, digestiva y cardiovascular — con enfoque especial en mujeres, pero útil para cualquier persona.
+NutriRuta es una PWA (Progressive Web App) de nutrición y hábitos alimenticios saludables, centrada en salud hormonal, metabólica, digestiva y cardiovascular — con enfoque especial en mujeres, pero útil para cualquier persona.
 
 Es una herramienta de **autoayuda y educación**: no diagnostica ni reemplaza la atención de profesionales de la salud.
 
@@ -67,4 +67,4 @@ Esta aplicación es una herramienta de autoayuda basada en buenas prácticas de 
 
 ---
 
-Hecha con 💚 · Savibra v2.0
+Hecha con 💚 · NutriRuta v2.0

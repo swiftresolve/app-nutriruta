@@ -1,6 +1,6 @@
 {
-  "name": "Savibra — Nutrición y hábitos saludables",
-  "short_name": "Savibra",
+  "name": "NutriRuta — Nutrición y hábitos saludables",
+  "short_name": "NutriRuta",
   "description": "Guía de autoayuda en nutrición y hábitos para salud metabólica, hormonal, digestiva y cardiovascular.",
   "lang": "es",
   "start_url": "./index.html",

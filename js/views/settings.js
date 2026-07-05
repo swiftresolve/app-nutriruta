@@ -132,13 +132,13 @@ export function renderSettings(container) {
 
   const ver = document.createElement('p');
   ver.className = 'muted small center mt';
-  ver.textContent = 'Savibra v2.0 · Hecha con 💚 para tu bienestar';
+  ver.textContent = 'NutriRuta v2.1 · Hecha con 💚 para tu bienestar';
   container.appendChild(ver);
 }
 
 const TERMS = `
   <h2>Términos de uso</h2>
-  <p class="mt">Savibra ofrece contenido educativo, herramientas de autoayuda y recomendaciones generales de hábitos saludables en nutrición, hidratación y estilo de vida.</p>
+  <p class="mt">NutriRuta ofrece contenido educativo, herramientas de autoayuda y recomendaciones generales de hábitos saludables en nutrición, hidratación y estilo de vida.</p>
   <p class="mt"><strong>Qué hace la app:</strong> personaliza menús, recetas, recordatorios y contenido educativo según los perfiles y preferencias que tú configuras.</p>
   <p class="mt"><strong>Qué NO hace la app:</strong> no diagnostica, no prescribe tratamientos ni medicación, y no sustituye el criterio de un profesional de la salud. No garantiza resultados médicos específicos, pues dependen de factores individuales.</p>
   <p class="mt">Las recomendaciones son generales y deben adaptarse con apoyo profesional si tienes enfermedades, tomas medicación o estás en embarazo o lactancia. Eres responsable de verificar con tu profesional de salud cualquier cambio importante en dieta o ejercicio.</p>
@@ -156,4 +156,4 @@ const DISCLAIMER = `
   <h2>Descargo de responsabilidad médica</h2>
   <p class="mt">Esta aplicación es una herramienta de autoayuda basada en buenas prácticas de hábitos saludables. <strong>No reemplaza el consejo ni el seguimiento de un médico, nutricionista, psicólogo u otro profesional de salud.</strong></p>
   <p class="mt">Si tienes diagnósticos, medicación o síntomas importantes, consulta siempre con tu profesional de confianza. Ante síntomas graves, busca atención médica de inmediato.</p>
-  <p class="mt">Usa Savibra como complemento, nunca como sustituto, de la atención profesional.</p>`;
+  <p class="mt">Usa NutriRuta como complemento, nunca como sustituto, de la atención profesional.</p>`;

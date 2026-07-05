@@ -32,7 +32,7 @@ export function renderPlans(container) {
   hero.className = 'card center';
   hero.innerHTML = `
     <div style="font-size:2.6rem">✨</div>
-    <h2>Planes Savibra</h2>
+    <h2>Planes NutriRuta</h2>
     <p class="small">Invierte en tu salud lo que cuestan un par de comidas fuera.</p>
     ${plan.tipo === 'premium'
       ? `<p class="mt"><span class="tag verde">Plan actual: Premium ${plan.periodo}</span></p>`

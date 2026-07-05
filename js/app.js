@@ -65,7 +65,7 @@ export function header(container) {
   const h = document.createElement('div');
   h.className = 'app-header';
   h.innerHTML = `
-    <span class="brand">🌿 Savibra</span>
+    <span class="brand">🌿 NutriRuta</span>
     <button class="icon-btn" data-go="settings" aria-label="Ajustes">⚙️</button>`;
   h.querySelector('[data-go]').addEventListener('click', () => navigate('settings'));
   container.appendChild(h);

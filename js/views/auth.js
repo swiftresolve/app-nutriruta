@@ -22,8 +22,8 @@ export function renderAuth(container) {
     view.innerHTML = `
       <div class="splash" style="min-height:22vh">
         <div class="splash-logo">🌿</div>
-        <h1>Savibra</h1>
-        <p>Nutre tu energía. Vibra con tu vida.</p>
+        <h1>NutriRuta</h1>
+        <p>Tu ruta hacia hábitos saludables, paso a paso.</p>
       </div>
       <div class="card">
         <h2>${mode === 'login' ? 'Inicia sesión' : 'Crea tu cuenta'}</h2>
@@ -45,7 +45,7 @@ export function renderAuth(container) {
           <button class="link-btn" id="a-toggle">${mode === 'login' ? 'Crea tu cuenta' : 'Inicia sesión'}</button>
         </p>
       </div>
-      <div class="legal-note">🔒 Tu sesión usa tokens JWT seguros y tus datos se guardan cifrados en tránsito, protegidos por reglas de acceso por usuario (RLS). Savibra es una guía de autoayuda: no reemplaza atención médica.</div>`;
+      <div class="legal-note">🔒 Tu sesión usa tokens JWT seguros y tus datos se guardan cifrados en tránsito, protegidos por reglas de acceso por usuario (RLS). NutriRuta es una guía de autoayuda: no reemplaza atención médica.</div>`;
 
     // Estilo de inputs (una vez)
     if (!document.getElementById('auth-style')) {
@@ -97,7 +97,7 @@ export function renderAuth(container) {
         }
         setAuthed(true);
         await initCloud();
-        toast('¡Bienvenida a Savibra! 🌿');
+        toast('¡Bienvenida a NutriRuta! 🌿');
         navigate(getState().onboarded ? 'dashboard' : 'quiz');
       } catch (err) {
         errEl.textContent = friendlyError(err);

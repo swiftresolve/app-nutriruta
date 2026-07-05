@@ -1,7 +1,7 @@
 // Estado persistente en localStorage + sincronización con Supabase.
 import { fetchProfile, pushProfileState } from './supabase-client.js';
 
-const KEY = 'savibra-state-v1';
+const KEY = 'nutriruta-state-v1';
 
 const DEFAULT_STATE = {
   onboarded: false,

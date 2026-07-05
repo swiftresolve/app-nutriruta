@@ -1,4 +1,4 @@
-// Recetario Savibra.
+// Recetario NutriRuta.
 // Cada ingrediente puede tener `grupo` (clave de exclusión) y `sub` (sustituto si el grupo está excluido).
 // `apto`: perfiles donde la receta es especialmente recomendada (verde).
 // `moderar`: perfiles donde conviene consumo moderado (amarillo).

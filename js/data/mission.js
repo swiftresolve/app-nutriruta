@@ -20,7 +20,7 @@ export const MISSION = {
     {
       n: 3, titulo: 'Meta de agua diaria', emoji: '💧',
       objetivo: 'Llegar a tu meta de agua (6–8 vasos) todos los días de la semana.',
-      acciones: ['Un vaso de agua al despertar', 'Botella visible en tu espacio de trabajo', 'Registra tus vasos en Savibra cada día'],
+      acciones: ['Un vaso de agua al despertar', 'Botella visible en tu espacio de trabajo', 'Registra tus vasos en NutriRuta cada día'],
       reflexion: '¿Cambia algo en tu digestión, tu piel o tus dolores de cabeza?'
     },
     {

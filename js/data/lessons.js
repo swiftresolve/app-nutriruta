@@ -31,7 +31,7 @@ export const LESSONS = [
     ]
   },
   {
-    id: 'plato_modelo', emoji: '🍽️', titulo: 'El plato modelo Savibra',
+    id: 'plato_modelo', emoji: '🍽️', titulo: 'El plato modelo NutriRuta',
     resumen: 'La regla de oro para armar cualquier comida.',
     contenido: [
       '½ plato de verduras (crudas o cocidas, cuanta más variedad y color, mejor).',

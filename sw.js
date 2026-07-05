@@ -1,4 +1,4 @@
-const CACHE = 'savibra-v3';
+const CACHE = 'nutriruta-v4';
 const ASSETS = [
   './',
   './index.html',

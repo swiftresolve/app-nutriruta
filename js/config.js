@@ -1,4 +1,4 @@
-// Configuración pública de Savibra.
+// Configuración pública de NutriRuta.
 // La clave "publishable" está diseñada para usarse en el cliente:
 // los datos están protegidos por Row Level Security (RLS) en Supabase.
 export const SUPABASE_URL = 'https://rlcnxhykwfeasehmuhqe.supabase.co';
