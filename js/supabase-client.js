@@ -43,11 +43,10 @@ export async function fetchProfile() {
 export async function pushProfileState(state, nombre) {
   const session = await getSession();
   if (!session) return;
-  const { error } = await supabase.from('profiles').upsert({
-    id: session.user.id,
-    nombre: (nombre || '').slice(0, 60),
-    state
-  });
+  const row = { id: session.user.id, state };
+  // Nunca borrar el nombre guardado (p. ej. el dado al registrarse) con un vacío.
+  if (nombre) row.nombre = String(nombre).slice(0, 60);
+  const { error } = await supabase.from('profiles').upsert(row);
   if (error) throw error;
 }
 

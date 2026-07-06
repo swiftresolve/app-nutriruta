@@ -1,6 +1,6 @@
 // Misión 12 semanas (función premium).
 import { MISSION } from '../data/mission.js';
-import { getState, setState, isPremium, today } from '../store.js';
+import { getState, setState, isPremium, planExpired, today } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
 
 export function renderMission(container) {
@@ -38,6 +38,22 @@ export function renderMission(container) {
       start.querySelector('#m-preview').addEventListener('click', () => openWeek(MISSION.semanas[0], false));
     }
     container.appendChild(start);
+    return;
+  }
+
+  // Misión iniciada pero el plan Premium ya no está activo (pago vencido o plan cancelado):
+  // el progreso se conserva, pero el contenido queda pausado hasta renovar.
+  if (!premium) {
+    const paused = document.createElement('div');
+    paused.className = 'card center';
+    paused.innerHTML = `
+      <div style="font-size:2.6rem">⏸️</div>
+      <h2>Tu misión está pausada</h2>
+      <p class="mt">${planExpired() ? 'Tu plan Premium venció y no se ha renovado.' : 'Tu plan Premium ya no está activo.'}
+      Tu progreso (${(mision.completadas || []).length}/12 semanas) está guardado y te espera.</p>
+      <button class="btn accent full mt">Renovar Premium y continuar</button>`;
+    paused.querySelector('.btn').addEventListener('click', () => navigate('plans'));
+    container.appendChild(paused);
     return;
   }
 

@@ -29,7 +29,14 @@ let state = load();
 
 function load() {
   try {
-    const raw = localStorage.getItem(KEY);
+    // Migrar el estado guardado bajo nombres anteriores de la app.
+    let raw = localStorage.getItem(KEY);
+    if (!raw) {
+      for (const oldKey of ['savibra-state-v1', 'nutralma-state-v1']) {
+        const old = localStorage.getItem(oldKey);
+        if (old) { raw = old; localStorage.setItem(KEY, old); localStorage.removeItem(oldKey); break; }
+      }
+    }
     if (!raw) return structuredClone(DEFAULT_STATE);
     return { ...structuredClone(DEFAULT_STATE), ...JSON.parse(raw) };
   } catch {
@@ -51,20 +58,40 @@ export function resetState() {
 }
 
 // ---------- Sincronización con la nube (Supabase, protegida por RLS) ----------
-let plan = { tipo: 'free', periodo: null };
+let plan = { tipo: 'free', periodo: null, desde: null };
 let pushTimer = null;
 let cloudReady = false;
 
+// Vigencia de cada periodo (con un pequeño margen de gracia).
+const PLAN_DIAS = { mensual: 33, anual: 368 };
+
 export function getPlan() { return plan; }
-export function setPlanCache(tipo, periodo) { plan = { tipo, periodo }; }
-export function isPremium() { return plan.tipo === 'premium'; }
+export function setPlanCache(tipo, periodo, desde = null) { plan = { tipo, periodo, desde }; }
+
+// Fecha de vencimiento del plan actual (null si es gratuito o no hay fecha de inicio).
+export function planExpiry() {
+  if (plan.tipo !== 'premium' || !plan.desde || !PLAN_DIAS[plan.periodo]) return null;
+  return new Date(new Date(plan.desde).getTime() + PLAN_DIAS[plan.periodo] * 86400000);
+}
+
+// Premium activo = plan premium Y dentro de su vigencia.
+export function isPremium() {
+  const vence = planExpiry();
+  return plan.tipo === 'premium' && !!vence && Date.now() < vence.getTime();
+}
+
+// Plan premium cuya vigencia ya terminó (pago no renovado).
+export function planExpired() {
+  const vence = planExpiry();
+  return plan.tipo === 'premium' && !!vence && Date.now() >= vence.getTime();
+}
 
 // Al iniciar sesión: baja el estado remoto (la nube manda) o sube el local si la nube está vacía.
 export async function initCloud() {
   try {
     const profile = await fetchProfile();
     if (!profile) return;
-    plan = { tipo: profile.plan || 'free', periodo: profile.plan_periodo || null };
+    plan = { tipo: profile.plan || 'free', periodo: profile.plan_periodo || null, desde: profile.plan_desde || null };
     const remote = profile.state;
     if (remote && typeof remote === 'object' && Object.keys(remote).length) {
       state = { ...structuredClone(DEFAULT_STATE), ...remote };

@@ -1,5 +1,5 @@
 // Quiz inicial de personalización (onboarding).
-import { getState, setState } from '../store.js';
+import { getState, setState, esc } from '../store.js';
 import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
 import { navigate } from '../app.js';
 
@@ -47,8 +47,10 @@ function deriveProfiles(a) {
 }
 
 export function renderQuiz(container) {
+  // Prellenar con lo ya conocido (p. ej. el nombre dado al registrarse).
+  const known = getState().user;
   const answers = {
-    nombre: '', objetivos: [], condiciones: [], exclusiones: [],
+    nombre: known.nombre || '', objetivos: [], condiciones: [], exclusiones: [],
     habitosDificiles: [], actividad: 'medio', azucarFreq: 'a_veces', alcoholFreq: 'nunca'
   };
   let step = 0;
@@ -59,7 +61,7 @@ export function renderQuiz(container) {
       sub: 'Vamos a conocerte un poco para personalizar tu experiencia. Esto no reemplaza una consulta médica, pero nos ayuda a darte mejores recomendaciones.',
       render(el) {
         el.innerHTML = `
-          <label class="muted" for="q-nombre">¿Cómo te llamas? (opcional)</label>
+          <label class="muted" for="q-nombre">${answers.nombre ? `Te llamaremos <strong>${esc(answers.nombre)}</strong>. Puedes cambiarlo si quieres:` : '¿Cómo te llamas? (opcional)'}</label>
           <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60"
             style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:8px">
           <div class="legal-note">🔒 Tus datos se guardan en tu cuenta protegida y solo tú puedes verlos. NutriRuta es una herramienta de autoayuda: no diagnostica ni reemplaza a tu médico o nutricionista.</div>`;
@@ -84,8 +86,8 @@ export function renderQuiz(container) {
       render: (el) => chips(el, EXCLUSIONS, answers.exclusiones, true)
     },
     {
-      title: '¿Qué hábitos te cuesta sostener?',
-      sub: 'Sin culpa: esto nos ayuda a acompañarte mejor.',
+      title: '¿Con cuáles de estos retos te identificas?',
+      sub: 'Marca lo que te pasa hoy en día. Sin culpa: nos ayuda a acompañarte mejor.',
       render: (el) => chips(el, HARD_HABITS, answers.habitosDificiles, true)
     },
     {

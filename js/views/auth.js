@@ -45,7 +45,7 @@ export function renderAuth(container) {
           <button class="link-btn" id="a-toggle">${mode === 'login' ? 'Crea tu cuenta' : 'Inicia sesión'}</button>
         </p>
       </div>
-      <div class="legal-note">🔒 Tu sesión usa tokens JWT seguros y tus datos se guardan cifrados en tránsito, protegidos por reglas de acceso por usuario (RLS). NutriRuta es una guía de autoayuda: no reemplaza atención médica.</div>`;
+      <div class="legal-note">NutriRuta es una guía de autoayuda: no reemplaza la atención de un profesional de salud.</div>`;
 
     // Estilo de inputs (una vez)
     if (!document.getElementById('auth-style')) {

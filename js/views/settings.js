@@ -1,5 +1,5 @@
 // Ajustes: cuenta, perfiles, exclusiones, quiz, datos y sección legal.
-import { getState, setState, resetState, getPlan, esc } from '../store.js';
+import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { getSession, signOut, pushProfileState } from '../supabase-client.js';
 import { navigate, header, openModal, toast } from '../app.js';
@@ -12,12 +12,16 @@ export function renderSettings(container) {
   const account = document.createElement('div');
   account.className = 'card';
   const plan = getPlan();
+  const vence = planExpiry();
+  const planHtml = planExpired()
+    ? '<span class="tag rojo">Premium vencido</span> <span class="muted small">renueva en Planes</span>'
+    : isPremium()
+      ? `<span class="tag verde">✨ Premium ${plan.periodo}</span> <span class="muted small">activo hasta el ${vence.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}</span>`
+      : '<span class="tag info">Plan gratuito</span>';
   account.innerHTML = `
     <h2>👤 Mi cuenta</h2>
     <p class="small" id="acc-email">Cargando…</p>
-    <p class="mt">${plan.tipo === 'premium'
-      ? `<span class="tag verde">✨ Premium ${plan.periodo}</span>`
-      : '<span class="tag info">Plan gratuito</span>'}</p>`;
+    <p class="mt">${planHtml}</p>`;
   getSession().then((s) => {
     const el = account.querySelector('#acc-email');
     if (el) el.innerHTML = s ? `Sesión iniciada como <strong>${esc(s.user.email)}</strong> 🔐` : 'Sin sesión activa.';

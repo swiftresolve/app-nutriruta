@@ -28,8 +28,8 @@ export function renderDashboard(container) {
     <div class="chips mt">${user.perfiles.map((p) => `<span class="tag perfil">${PROFILES[p].emoji} ${PROFILES[p].nombre}</span>`).join(' ')}</div>`;
   container.appendChild(hero);
 
-  // --- Aviso de patrón de antojos (mini IA local) ---
-  const patron = cravingPattern();
+  // --- Aviso de patrón de antojos (función Premium) ---
+  const patron = isPremium() ? cravingPattern() : null;
   if (patron) {
     const tip = document.createElement('div');
     tip.className = 'card';
@@ -45,10 +45,11 @@ export function renderDashboard(container) {
   misionCard.style.borderLeft = '4px solid var(--primary)';
   if (mision && mision.inicio) {
     const done = (mision.completadas || []).length;
+    const activa = isPremium();
     misionCard.innerHTML = `
-      <div class="spread"><h3>🎯 Misión 12 semanas</h3><span class="tag verde">${done}/12</span></div>
+      <div class="spread"><h3>🎯 Misión 12 semanas</h3><span class="tag ${activa ? 'verde' : 'rojo'}">${activa ? `${done}/12` : 'Pausada'}</span></div>
       <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((done / 12) * 100)}%"></div></div>
-      <button class="link-btn small">Continuar mi misión →</button>`;
+      <button class="link-btn small">${activa ? 'Continuar mi misión →' : 'Renovar Premium para continuar →'}</button>`;
   } else {
     misionCard.innerHTML = `
       <div class="spread"><h3>🎯 Misión 12 semanas</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>

@@ -1,8 +1,11 @@
 // Aprende: micro-lecciones, glosario y claves por perfil.
 import { LESSONS, GLOSSARY } from '../data/lessons.js';
 import { PROFILES } from '../data/profiles.js';
-import { getState } from '../store.js';
-import { header, openModal } from '../app.js';
+import { getState, isPremium } from '../store.js';
+import { header, openModal, navigate } from '../app.js';
+
+// Lecciones incluidas en el plan gratuito.
+const FREE_LESSONS = 2;
 
 export function renderLearn(container) {
   header(container);
@@ -25,21 +28,27 @@ export function renderLearn(container) {
   const lessons = document.createElement('div');
   lessons.className = 'card';
   lessons.innerHTML = '<h2>📚 Micro-lecciones (3–5 min)</h2>';
-  for (const l of LESSONS) {
+  const premium = isPremium();
+  LESSONS.forEach((l, i) => {
+    const locked = !premium && i >= FREE_LESSONS;
     const item = document.createElement('button');
     item.className = 'recipe-item lesson-item';
+    if (locked) item.style.opacity = '0.5';
     item.innerHTML = `
-      <span class="recipe-emoji">${l.emoji}</span>
-      <span class="info"><strong>${l.titulo}</strong><br><span class="muted small">${l.resumen}</span></span>
+      <span class="recipe-emoji">${locked ? '🔒' : l.emoji}</span>
+      <span class="info"><strong>${l.titulo}</strong><br><span class="muted small">${locked ? 'Disponible en el plan Premium' : l.resumen}</span></span>
       <span>›</span>`;
-    item.addEventListener('click', () => openModal((modal) => {
-      modal.insertAdjacentHTML('beforeend', `
-        <div style="font-size:2.4rem">${l.emoji}</div>
-        <h2>${l.titulo}</h2>
-        ${l.contenido.map((p) => `<p class="mt">${p}</p>`).join('')}`);
-    }));
+    item.addEventListener('click', () => {
+      if (locked) { navigate('plans'); return; }
+      openModal((modal) => {
+        modal.insertAdjacentHTML('beforeend', `
+          <div style="font-size:2.4rem">${l.emoji}</div>
+          <h2>${l.titulo}</h2>
+          ${l.contenido.map((p) => `<p class="mt">${p}</p>`).join('')}`);
+      });
+    });
     lessons.appendChild(item);
-  }
+  });
   container.appendChild(lessons);
 
   // Glosario

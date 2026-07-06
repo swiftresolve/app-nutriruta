@@ -1,5 +1,5 @@
 // Planes de suscripción: mensual y anual (pago vía Hotmart).
-import { getPlan, setPlanCache } from '../store.js';
+import { getPlan, setPlanCache, isPremium, planExpired, planExpiry } from '../store.js';
 import { updatePlan } from '../supabase-client.js';
 import { HOTMART_CHECKOUT } from '../config.js';
 import { header, navigate, toast, openModal } from '../app.js';
@@ -15,13 +15,22 @@ const PLANS = [
   }
 ];
 
+const FREE_FEATURES = [
+  '📋 Quiz y perfiles de salud personalizados',
+  '🍽️ Menú diario adaptado a ti',
+  '💧 Seguimiento de agua, hábitos y rachas',
+  '💚 Botón SOS antojo con respiración guiada',
+  '📚 2 micro-lecciones',
+  '🎯 Semana 1 de la Misión (prueba)'
+];
+
 const PREMIUM_FEATURES = [
   '🎯 Misión 12 semanas completa',
-  '🥗 Recetario completo y menús ilimitados',
-  '🛒 Listas de compras automáticas',
-  '💚 SOS antojos con detección de patrones',
+  '🥗 Recetario completo (el plan gratis ve una selección)',
+  '🛒 Lista de compras automática',
+  '💡 Detección de patrones de antojos',
   '📚 Todas las micro-lecciones',
-  '☁️ Respaldo en la nube en todos tus dispositivos'
+  'Todo lo del plan gratuito, sin límites'
 ];
 
 export function renderPlans(container) {
@@ -34,9 +43,7 @@ export function renderPlans(container) {
     <div style="font-size:2.6rem">✨</div>
     <h2>Planes NutriRuta</h2>
     <p class="small">Invierte en tu salud lo que cuestan un par de comidas fuera.</p>
-    ${plan.tipo === 'premium'
-      ? `<p class="mt"><span class="tag verde">Plan actual: Premium ${plan.periodo}</span></p>`
-      : '<p class="mt"><span class="tag info">Plan actual: Gratuito</span></p>'}`;
+    ${planBadge(plan)}`;
   container.appendChild(hero);
 
   // Plan gratuito
@@ -44,7 +51,7 @@ export function renderPlans(container) {
   free.className = 'card';
   free.innerHTML = `
     <div class="spread"><h3>🍃 Plan Gratuito</h3><strong>USD 0</strong></div>
-    <p class="small mt">Quiz personalizado, menú diario, seguimiento de agua y hábitos, y Semana 1 de la Misión.</p>`;
+    <ul class="steps small mt">${FREE_FEATURES.map((f) => `<li>${f}</li>`).join('')}</ul>`;
   if (plan.tipo === 'premium') {
     const back = document.createElement('button');
     back.className = 'btn ghost sm mt';
@@ -59,7 +66,7 @@ export function renderPlans(container) {
     const card = document.createElement('div');
     card.className = 'card';
     if (p.destacado) card.style.border = '2px solid var(--primary)';
-    const isCurrent = plan.tipo === 'premium' && plan.periodo === p.id;
+    const isCurrent = isPremium() && plan.periodo === p.id;
     card.innerHTML = `
       ${p.destacado ? '<span class="tag verde">Recomendado · ahorra 17 %</span>' : ''}
       <div class="spread mt"><h3>${p.emoji} ${p.nombre}</h3><strong>${p.precio} <span class="muted small">${p.periodo}</span></strong></div>
@@ -84,6 +91,18 @@ export function renderPlans(container) {
 
 function hotmartReady() {
   return !!(HOTMART_CHECKOUT.mensual && HOTMART_CHECKOUT.anual);
+}
+
+function planBadge(plan) {
+  if (planExpired()) {
+    return '<p class="mt"><span class="tag rojo">Tu plan Premium venció</span></p><p class="small">Renueva para recuperar tus funciones Premium. Tu progreso está guardado.</p>';
+  }
+  if (isPremium()) {
+    const vence = planExpiry();
+    const fecha = vence ? vence.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    return `<p class="mt"><span class="tag verde">Plan actual: Premium ${plan.periodo}</span></p><p class="small">Activo hasta el ${fecha}.</p>`;
+  }
+  return '<p class="mt"><span class="tag info">Plan actual: Gratuito</span></p>';
 }
 
 function confirmPlan(p, container) {
@@ -113,12 +132,12 @@ async function choose(periodo, container) {
   try {
     if (periodo) {
       await updatePlan('premium', periodo);
-      setPlanCache('premium', periodo);
+      setPlanCache('premium', periodo, new Date().toISOString());
       toast('✨ ¡Premium activado! Tu Misión 12 semanas te espera.');
       navigate('mission');
     } else {
       await updatePlan('free', null);
-      setPlanCache('free', null);
+      setPlanCache('free', null, null);
       toast('Plan gratuito activado.');
       container.innerHTML = '';
       renderPlans(container);

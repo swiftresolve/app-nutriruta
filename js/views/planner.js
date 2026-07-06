@@ -1,10 +1,12 @@
 // Recetario + lista de compras.
-import { getState, setState } from '../store.js';
+import { getState, setState, isPremium } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
-import { PROFILES } from '../data/profiles.js';
 import { isRecipeAvailable, trafficLight, shoppingList } from '../menu.js';
-import { header } from '../app.js';
+import { header, navigate } from '../app.js';
 import { openRecipe } from './dashboard.js';
+
+// Recetas visibles en el plan gratuito (el resto se muestra bloqueado).
+const FREE_RECIPE_LIMIT = 12;
 
 export function renderPlanner(container, params = {}) {
   header(container);
@@ -55,20 +57,23 @@ export function renderPlanner(container, params = {}) {
     if (!list.length) {
       card.innerHTML = '<p>No hay recetas disponibles con tus exclusiones actuales en esta categoría.</p>';
     }
-    for (const r of list) {
+    const premium = isPremium();
+    list.forEach((r, i) => {
+      const locked = !premium && i >= FREE_RECIPE_LIMIT;
       const light = trafficLight(r, user.perfiles);
       const item = document.createElement('button');
       item.className = 'recipe-item';
+      if (locked) item.style.opacity = '0.5';
       item.innerHTML = `
-        <span class="recipe-emoji">${r.emoji}</span>
+        <span class="recipe-emoji">${locked ? '🔒' : r.emoji}</span>
         <span class="info">
           <strong>${r.nombre}</strong><br>
-          <span class="muted small">${r.descripcion}</span>
+          <span class="muted small">${locked ? 'Disponible en el plan Premium' : r.descripcion}</span>
         </span>
-        <span class="dot ${light}" title="Semáforo: ${light}"></span>`;
-      item.addEventListener('click', () => openRecipe(r));
+        ${locked ? '' : `<span class="dot ${light}" title="Semáforo: ${light}"></span>`}`;
+      item.addEventListener('click', () => locked ? navigate('plans') : openRecipe(r));
       card.appendChild(item);
-    }
+    });
     body.appendChild(card);
 
     const note = document.createElement('p');
@@ -78,6 +83,18 @@ export function renderPlanner(container, params = {}) {
   }
 
   function drawShopping() {
+    if (!isPremium()) {
+      const upsell = document.createElement('div');
+      upsell.className = 'card center';
+      upsell.innerHTML = `
+        <div style="font-size:2.4rem">🛒</div>
+        <h2>Lista de compras automática</h2>
+        <p class="mt">Genera tu lista de mercado a partir de tu menú del día, con sustituciones incluidas. Es parte del <strong>plan Premium</strong>.</p>
+        <button class="btn accent full mt">Ver planes Premium</button>`;
+      upsell.querySelector('.btn').addEventListener('click', () => navigate('plans'));
+      body.appendChild(upsell);
+      return;
+    }
     const { compras } = getState();
     const items = shoppingList();
     const card = document.createElement('div');

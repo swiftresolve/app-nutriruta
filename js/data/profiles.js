@@ -109,12 +109,13 @@ export const GOALS = [
   { id: 'ansiedad', nombre: 'Menos ansiedad por comida', emoji: '💚' }
 ];
 
+// Retos frecuentes, en primera persona para que se lean como "me pasa esto".
 export const HARD_HABITS = [
-  { id: 'hambre_emocional', nombre: 'Hambre emocional' },
-  { id: 'antojo_dulce', nombre: 'Antojos de dulce' },
-  { id: 'picoteo_nocturno', nombre: 'Comer tarde en la noche' },
-  { id: 'comer_fuera', nombre: 'Comer fuera de casa' },
-  { id: 'poca_agua', nombre: 'Tomar poca agua' },
-  { id: 'constancia', nombre: 'Ser constante' },
-  { id: 'estres', nombre: 'Comer rápido o por estrés' }
+  { id: 'hambre_emocional', nombre: 'Como por emociones, no por hambre' },
+  { id: 'antojo_dulce', nombre: 'Me dan antojos de dulce' },
+  { id: 'picoteo_nocturno', nombre: 'Picoteo tarde en la noche' },
+  { id: 'comer_fuera', nombre: 'Como fuera de casa muy seguido' },
+  { id: 'poca_agua', nombre: 'Tomo poca agua' },
+  { id: 'constancia', nombre: 'Me cuesta ser constante' },
+  { id: 'estres', nombre: 'Como rápido o por estrés' }
 ];
