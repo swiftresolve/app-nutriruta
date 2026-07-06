@@ -28,10 +28,26 @@ Es una herramienta de **autoayuda y educación**: no diagnostica ni reemplaza la
 
 - Autenticación JWT gestionada por Supabase Auth (access token + refresh token rotativo).
 - Row Level Security en todas las tablas: sin sesión válida no se puede leer ni escribir ninguna fila.
+- **Contenido premium validado por el servidor**: las semanas 2–12 de la Misión viven en la base de datos y solo se entregan a cuentas con Premium vigente (la vigencia se evalúa en SQL, no en el navegador).
+- **Columnas de plan protegidas**: los usuarios no pueden modificar `plan`, `plan_periodo` ni `plan_desde` (privilegios de columna revocados); solo el webhook de pagos (service role) o las funciones de cortesía del servidor pueden hacerlo.
 - Content Security Policy estricta (solo `self`, `esm.sh` y la API de Supabase; sin scripts inline).
 - Escapado de todo contenido generado por el usuario (prevención XSS).
 - Validación de contraseña (mínimo 8 caracteres con letras y números) y mensajes de error que no revelan información.
 - La clave `publishable` del cliente es pública por diseño; los datos los protege RLS, no la clave.
+
+## 💳 Pagos con Hotmart
+
+La Edge Function `hotmart-webhook` (Supabase) activa o desactiva Premium automáticamente según los eventos de Hotmart (compra aprobada, reembolso, chargeback, cancelación de suscripción). Para conectarla:
+
+1. En Hotmart → Herramientas → **Webhook (v2)**, crea un webhook hacia
+   `https://rlcnxhykwfeasehmuhqe.supabase.co/functions/v1/hotmart-webhook`
+   con los eventos de compra y suscripción.
+2. Copia el **hottok** que muestra Hotmart y guárdalo en Supabase → Edge Functions → Secrets como `HOTMART_HOTTOK`. Opcional: `HOTMART_OFERTA_ANUAL` con el código de oferta del plan anual.
+3. Pega las URLs de checkout en `js/config.js` (`HOTMART_CHECKOUT`).
+4. Al salir a producción, elimina la activación de cortesía:
+   `drop function public.cortesia_activar_premium(text);`
+
+El comprador debe registrarse en la app con el mismo correo que usó en Hotmart.
 
 ## 🚀 Uso local
 

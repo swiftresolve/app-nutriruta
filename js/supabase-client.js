@@ -51,12 +51,25 @@ export async function pushProfileState(state, nombre) {
 }
 
 export async function updatePlan(plan, periodo) {
-  const session = await getSession();
-  if (!session) throw new Error('Sin sesión');
-  const { error } = await supabase.from('profiles').update({
-    plan,
-    plan_periodo: periodo,
-    plan_desde: plan === 'premium' ? new Date().toISOString() : null
-  }).eq('id', session.user.id);
+  // El plan ya no se escribe directo en la tabla (columnas protegidas):
+  // se pasa por funciones del servidor. La activación real la hace el
+  // webhook de Hotmart; esta vía queda para la cortesía de lanzamiento.
+  if (plan === 'premium') {
+    const { error } = await supabase.rpc('cortesia_activar_premium', { p_periodo: periodo });
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.rpc('bajar_a_gratuito');
+    if (error) throw error;
+  }
+}
+
+// Semanas de la misión: el servidor solo entrega las que el plan permite
+// (semana 1 para todos; 2–12 únicamente con Premium vigente).
+export async function fetchMissionWeeks() {
+  const { data, error } = await supabase
+    .from('mission_weeks')
+    .select('n, emoji, titulo, objetivo, acciones, reflexion, gratis')
+    .order('n');
   if (error) throw error;
+  return data || [];
 }

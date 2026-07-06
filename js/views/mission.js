@@ -1,7 +1,23 @@
 // Misión 12 semanas (función premium).
+// El contenido de las semanas se pide al servidor, que solo entrega lo que el
+// plan del usuario permite (semana 1 gratis; 2–12 con Premium vigente).
 import { MISSION } from '../data/mission.js';
+import { fetchMissionWeeks } from '../supabase-client.js';
 import { getState, setState, isPremium, planExpired, today } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
+
+const WEEKS_CACHE_KEY = 'nutriruta-mission-weeks';
+
+// Últimas semanas entregadas por el servidor, para poder leerlas sin conexión.
+async function loadWeeks() {
+  try {
+    const weeks = await fetchMissionWeeks();
+    if (weeks.length) localStorage.setItem(WEEKS_CACHE_KEY, JSON.stringify(weeks));
+    return weeks;
+  } catch {
+    try { return JSON.parse(localStorage.getItem(WEEKS_CACHE_KEY) || '[]'); } catch { return []; }
+  }
+}
 
 export function renderMission(container) {
   header(container);
@@ -30,12 +46,17 @@ export function renderMission(container) {
     if (premium) {
       start.querySelector('.btn').addEventListener('click', () => {
         setState({ mision: { inicio: today(), completadas: [] } });
-        toast('¡Misión iniciada! Semana 1: ' + MISSION.semanas[0].titulo);
+        toast('¡Misión iniciada! Un cambio a la vez 🌱');
         renderMission(clear(container));
       });
     } else {
       start.querySelector('#m-plans').addEventListener('click', () => navigate('plans'));
-      start.querySelector('#m-preview').addEventListener('click', () => openWeek(MISSION.semanas[0], false));
+      start.querySelector('#m-preview').addEventListener('click', async () => {
+        const weeks = await loadWeeks();
+        const w1 = weeks.find((w) => w.n === 1);
+        if (w1) openWeek(w1, false);
+        else toast('No se pudo cargar la semana de prueba. Revisa tu conexión.');
+      });
     }
     container.appendChild(start);
     return;
@@ -71,33 +92,42 @@ export function renderMission(container) {
 
   const list = document.createElement('div');
   list.className = 'card';
-  for (const w of MISSION.semanas) {
-    const done = completadas.includes(w.n);
-    const isCurrent = w.n === semanaActual;
-    const locked = w.n > semanaActual;
-    const item = document.createElement('button');
-    item.className = 'recipe-item';
-    if (locked) item.style.opacity = '0.45';
-    item.innerHTML = `
-      <span class="recipe-emoji">${done ? '✅' : locked ? '🔒' : w.emoji}</span>
-      <span class="info">
-        <strong>Semana ${w.n}: ${w.titulo}</strong>${isCurrent ? ' <span class="tag verde">actual</span>' : ''}<br>
-        <span class="muted small">${w.objetivo}</span>
-      </span><span>›</span>`;
-    item.addEventListener('click', () => {
-      if (locked) { toast('Esta semana se desbloquea más adelante. Un cambio a la vez 🌱'); return; }
-      openWeek(w, true, done, () => renderMission(clear(container)));
-    });
-    list.appendChild(item);
-  }
+  list.innerHTML = '<p class="muted small center">Cargando tu misión…</p>';
   container.appendChild(list);
 
-  if (completadas.length === 12) {
-    const fin = document.createElement('div');
-    fin.className = 'card center';
-    fin.innerHTML = '<div style="font-size:3rem">🏆</div><h2>¡Misión cumplida!</h2><p>Doce semanas de cambios reales. Agenda tus exámenes de control y celebra tu progreso.</p>';
-    container.appendChild(fin);
-  }
+  loadWeeks().then((weeks) => {
+    list.innerHTML = '';
+    if (!weeks.length) {
+      list.innerHTML = '<p class="center">No se pudo cargar el contenido. Revisa tu conexión e inténtalo de nuevo.</p>';
+      return;
+    }
+    for (const w of weeks) {
+      const done = completadas.includes(w.n);
+      const isCurrent = w.n === semanaActual;
+      const locked = w.n > semanaActual;
+      const item = document.createElement('button');
+      item.className = 'recipe-item';
+      if (locked) item.style.opacity = '0.45';
+      item.innerHTML = `
+        <span class="recipe-emoji">${done ? '✅' : locked ? '🔒' : w.emoji}</span>
+        <span class="info">
+          <strong>Semana ${w.n}: ${w.titulo}</strong>${isCurrent ? ' <span class="tag verde">actual</span>' : ''}<br>
+          <span class="muted small">${w.objetivo}</span>
+        </span><span>›</span>`;
+      item.addEventListener('click', () => {
+        if (locked) { toast('Esta semana se desbloquea más adelante. Un cambio a la vez 🌱'); return; }
+        openWeek(w, true, done, () => renderMission(clear(container)));
+      });
+      list.appendChild(item);
+    }
+
+    if (completadas.length === 12) {
+      const fin = document.createElement('div');
+      fin.className = 'card center';
+      fin.innerHTML = '<div style="font-size:3rem">🏆</div><h2>¡Misión cumplida!</h2><p>Doce semanas de cambios reales. Agenda tus exámenes de control y celebra tu progreso.</p>';
+      container.appendChild(fin);
+    }
+  });
 }
 
 function openWeek(week, canComplete, done = false, onChange) {
@@ -107,7 +137,7 @@ function openWeek(week, canComplete, done = false, onChange) {
       <h2>Semana ${week.n}: ${week.titulo}</h2>
       <p class="mt"><strong>Objetivo:</strong> ${week.objetivo}</p>
       <h3 class="mt">Acciones de la semana</h3>
-      <ul class="steps">${week.acciones.map((a) => `<li>${a}</li>`).join('')}</ul>
+      <ul class="steps">${(week.acciones || []).map((a) => `<li>${a}</li>`).join('')}</ul>
       <h3 class="mt">Para reflexionar</h3>
       <p>${week.reflexion}</p>`);
     if (canComplete) {
