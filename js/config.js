@@ -4,10 +4,8 @@
 export const SUPABASE_URL = 'https://rlcnxhykwfeasehmuhqe.supabase.co';
 export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_jPGbbXPuwSggBMgiwY3EWw_5ey8BJgC';
 
-// Checkout de Hotmart: pega aquí las URLs de pago de cada plan cuando los
-// crees en Hotmart (Producto → Enlaces de divulgación / checkout).
-// Mientras estén vacías, la app activa Premium como cortesía de lanzamiento.
+// Checkout de Hotmart (Producto NutriRuta Premium, ID 8074107).
 export const HOTMART_CHECKOUT = {
-  mensual: '',
-  anual: ''
+  mensual: 'https://pay.hotmart.com/D106628820F?off=je8nuijj&checkoutMode=6',
+  anual: 'https://pay.hotmart.com/D106628820F?off=ti1e49b3&checkoutMode=6'
 };

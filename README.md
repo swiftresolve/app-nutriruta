@@ -42,12 +42,16 @@ La Edge Function `hotmart-webhook` (Supabase) activa o desactiva Premium automá
 1. En Hotmart → Herramientas → **Webhook (v2)**, crea un webhook hacia
    `https://rlcnxhykwfeasehmuhqe.supabase.co/functions/v1/hotmart-webhook`
    con los eventos de compra y suscripción.
-2. Copia el **hottok** que muestra Hotmart y guárdalo en Supabase → Edge Functions → Secrets como `HOTMART_HOTTOK`. Opcional: `HOTMART_OFERTA_ANUAL` con el código de oferta del plan anual.
-3. Pega las URLs de checkout en `js/config.js` (`HOTMART_CHECKOUT`).
+2. Copia el **hottok** que muestra Hotmart y guárdalo en Supabase → Edge Functions → Secrets como `HOTMART_HOTTOK` (ya configurado). Falta `HOTMART_OFERTA_ANUAL` = `ti1e49b3` (código de oferta del plan anual) para que el webhook distinga mensual de anual.
+3. URLs de checkout ya conectadas en `js/config.js` (`HOTMART_CHECKOUT`).
 4. Al salir a producción, elimina la activación de cortesía:
    `drop function public.cortesia_activar_premium(text);`
 
 El comprador debe registrarse en la app con el mismo correo que usó en Hotmart.
+
+### Blindaje del plan (columnas `plan`, `plan_periodo`, `plan_desde`)
+
+Estas columnas solo pueden cambiarlas el `service_role` (webhook) o funciones `SECURITY DEFINER` (`cortesia_activar_premium`, `bajar_a_gratuito`). Un trigger `protect_plan_columns` compara el valor viejo con el nuevo en cada `UPDATE` y **rechaza cualquier cambio si quien ejecuta la consulta es el rol `authenticated`** (un usuario normal), sin importar qué combinación de valores envíe. Esto reemplazó una política RLS anterior que parecía restrictiva pero no lo era (permitía enviar `plan` y `plan_periodo` juntos para autoasignarse Premium) — verificado con un intento de escritura directa por API que ahora responde 403.
 
 ## 🚀 Uso local
 
