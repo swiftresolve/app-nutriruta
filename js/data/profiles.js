@@ -143,6 +143,19 @@ export const SYMPTOM_TYPES = [
   { id: 'otro', nombre: 'Otro', emoji: '📋' }
 ];
 
+// Causas reales y específicas al empezar cambios de alimentación (no "detox":
+// el cuerpo no necesita ayuda para "eliminar toxinas" con la comida; estos
+// síntomas tienen explicaciones fisiológicas conocidas). Incluye cuándo
+// consultar a un profesional en vez de asumir que "es normal".
+export const SYMPTOM_CAUSES = {
+  gases: 'Un aumento de fibra (verduras, legumbres, granos) suele producir más gas mientras tu microbiota intestinal se adapta a fermentar nuevas fibras. Suele mejorar en 1–2 semanas si subes la fibra de forma gradual y tomas suficiente agua.',
+  estrenimiento: 'Si subiste la fibra pero no el agua, el resultado puede ser el contrario al esperado: la fibra necesita agua para moverse bien por el intestino. Revisa tu consumo de agua estos días antes que nada.',
+  diarrea: 'Cambios grandes en la alimentación (más grasas saludables, más fibra, menos ultraprocesados) pueden acelerar el tránsito intestinal los primeros días mientras tu cuerpo se ajusta.',
+  dolor_abdominal: 'Una molestia leve puede aparecer cuando el intestino se adapta a nuevos alimentos. Si el dolor es intenso, no mejora en unos días o viene con otros síntomas, consulta a tu médico: no lo asumas como parte normal del proceso.',
+  migrana: 'Saltarte comidas, la deshidratación y los cambios bruscos de horario son disparadores frecuentes de migraña. Revisa tu horario de comidas y agua antes de asumir que es por la alimentación nueva.',
+  otro: null
+};
+
 // Retos frecuentes, en primera persona para que se lean como "me pasa esto".
 export const HARD_HABITS = [
   { id: 'hambre_emocional', nombre: 'Como por emociones, no por hambre' },

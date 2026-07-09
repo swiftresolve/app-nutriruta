@@ -14,18 +14,27 @@ const DEFAULT_STATE = {
     actividad: 'medio',
     azucarFreq: 'a_veces',
     alcoholFreq: 'nunca',
-    colonPredominante: null
+    colonPredominante: null,
+    pesoKg: null,           // opcional: solo para calcular la meta de agua
+    trackearPeso: false     // opcional y apagado por defecto: registro de peso en el tiempo
   },
-  agua: { fecha: '', vasos: 0, meta: 8 },
+  agua: { fecha: '', vasos: 0 },
   habitos: { fecha: '', checks: {} },
   racha: { actual: 0, mejor: 0, ultimoDia: '' },
   diasCumplidos: [],           // fechas ISO en que se completó el día
   antojos: [],                 // { fecha, hora, tipo, resultado }
   sintomas: [],                 // { fecha, hora, tipo, disparador }
+  pesos: [],                    // { fecha, kg } — solo si user.trackearPeso está activo
+  historialDiario: [],          // rollup diario para las gráficas de progreso
+  checkins: [],                 // { fecha, hora, animo, antojosImpulsos, menuExperiencia, notas, compartir }
+  checkinPospuesto: null,       // última fecha en que se pospuso el check-in
   logros: [],                  // ids de logros desbloqueados
   menuOverrides: {},           // { 'fecha|comida': n } desplazamiento al cambiar receta
   compras: {}                  // { itemId: true } marcados en lista de compras
 };
+
+// Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
+const TOTAL_HABITOS_DIA = 5;
 
 let state = load();
 
@@ -140,21 +149,72 @@ export function today() {
   return localDateStr(new Date());
 }
 
+// --- Meta de agua: 30–35 mL por kg de peso corporal, el rango estándar
+// usado en nutrición clínica (p. ej. guías de la EFSA) — no una marca ni
+// una persona. Con 32.5 mL/kg de punto medio, en vasos de 250 mL.
+// Sin peso registrado, se usa un valor general de 8 vasos.
+export function getWaterGoal() {
+  const kg = state.user.pesoKg;
+  if (!kg || kg < 30 || kg > 200) return 8;
+  const vasos = Math.round((kg * 32.5) / 250);
+  return Math.min(12, Math.max(6, vasos));
+}
+
 // --- Agua ---
 export function getWater() {
+  archivePreviousDay();
   if (state.agua.fecha !== today()) {
-    setState({ agua: { ...state.agua, fecha: today(), vasos: 0 } });
+    setState({ agua: { fecha: today(), vasos: 0 } });
   }
-  return state.agua;
+  return { ...state.agua, meta: getWaterGoal() };
 }
 
 export function setWater(vasos) {
-  setState({ agua: { ...state.agua, fecha: today(), vasos } });
+  setState({ agua: { fecha: today(), vasos } });
   checkAchievements();
+}
+
+// --- Peso (opcional, apagado por defecto) ---
+export function logPeso(kg) {
+  const valor = Number(kg);
+  if (!valor || valor < 30 || valor > 300) return false;
+  const pesos = [...state.pesos, { fecha: today(), kg: valor }].slice(-180);
+  const user = { ...state.user, pesoKg: valor };
+  setState({ pesos, user });
+  return true;
+}
+
+export function ultimoPeso() {
+  return state.pesos.length ? state.pesos[state.pesos.length - 1] : null;
+}
+
+// --- Archivo diario para las gráficas de progreso ---
+// Se llama de forma perezosa (idempotente) cada vez que se abre agua o
+// hábitos: si el día guardado ya no es "hoy", guarda un resumen de ese
+// día antes de resetear, para poder mostrar tendencias semana/mes.
+function archivePreviousDay() {
+  const prevFecha = state.habitos.fecha;
+  if (!prevFecha || prevFecha === today()) return;
+  if (state.historialDiario.some((h) => h.fecha === prevFecha)) return;
+
+  const checks = state.habitos.checks || {};
+  const entry = {
+    fecha: prevFecha,
+    habitosCompletados: Object.values(checks).filter(Boolean).length,
+    habitosTotal: TOTAL_HABITOS_DIA,
+    vasosAgua: state.agua.fecha === prevFecha ? state.agua.vasos : 0,
+    metaAgua: getWaterGoal(),
+    antojosTotal: state.antojos.filter((a) => a.fecha === prevFecha).length,
+    antojosSuperados: state.antojos.filter((a) => a.fecha === prevFecha && a.resultado === 'alternativa').length,
+    sintomasTotal: state.sintomas.filter((s) => s.fecha === prevFecha).length
+  };
+  const historialDiario = [...state.historialDiario, entry].slice(-90);
+  setState({ historialDiario });
 }
 
 // --- Hábitos diarios ---
 export function getHabits() {
+  archivePreviousDay();
   if (state.habitos.fecha !== today()) {
     setState({ habitos: { fecha: today(), checks: {} } });
   }
@@ -244,6 +304,46 @@ export function sintomaPattern() {
   return topFranja && topFranja[1] >= 2 ? { tipo: 'franja', valor: topFranja[0] } : null;
 }
 
+// --- Check-ins de seguimiento (breves, nunca obligatorios) ---
+// Aparecen cada ~3 días de uso; si se posponen, vuelven a aparecer al
+// día siguiente. Nunca bloquean el uso de la app.
+function diffDias(fechaA, fechaB) {
+  return Math.round((new Date(fechaB) - new Date(fechaA)) / 86400000);
+}
+
+export function shouldShowCheckin() {
+  if (!state.onboarded || state.diasCumplidos.length < 1) return false;
+  const t = today();
+  const last = state.checkins.length ? state.checkins[state.checkins.length - 1].fecha : null;
+  const diasDesdeUltimo = last ? diffDias(last, t) : 999;
+  const diasDesdePospuesto = state.checkinPospuesto ? diffDias(state.checkinPospuesto, t) : 999;
+  return diasDesdeUltimo >= 3 && diasDesdePospuesto >= 1;
+}
+
+export function postponeCheckin() {
+  setState({ checkinPospuesto: today() });
+}
+
+export function logCheckin({ animo, antojosImpulsos, menuExperiencia, notas }) {
+  const ahora = new Date();
+  const entry = {
+    fecha: today(),
+    hora: `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`,
+    animo, antojosImpulsos, menuExperiencia,
+    notas: (notas || '').trim().slice(0, 300),
+    compartir: null // null = aún no se invitó a compartir; true/false = respuesta
+  };
+  const checkins = [...state.checkins, entry];
+  setState({ checkins, checkinPospuesto: null });
+  return checkins.length - 1;
+}
+
+// Guarda la respuesta a "¿nos autorizas a compartir esto como testimonio?".
+export function responderInvitacionTestimonio(index, compartir) {
+  const checkins = state.checkins.map((c, i) => (i === index ? { ...c, compartir } : c));
+  setState({ checkins });
+}
+
 // --- Logros ---
 export const ACHIEVEMENTS = [
   { id: 'primer_dia', emoji: '🌱', nombre: 'Primer día', desc: 'Completaste tu primer día de hábitos.' },
@@ -271,7 +371,7 @@ export function checkAchievements() {
   if (state.racha.actual >= 3 && unlock('racha_3')) nuevos.push('racha_3');
   if (state.racha.actual >= 7 && unlock('racha_7')) nuevos.push('racha_7');
   if (state.racha.actual >= 30 && unlock('racha_30')) nuevos.push('racha_30');
-  if (state.agua.fecha === today() && state.agua.vasos >= state.agua.meta && unlock('hidratada')) nuevos.push('hidratada');
+  if (state.agua.fecha === today() && state.agua.vasos >= getWaterGoal() && unlock('hidratada')) nuevos.push('hidratada');
   const superados = state.antojos.filter((a) => a.resultado === 'alternativa').length;
   if (superados >= 1 && unlock('sos_superado')) nuevos.push('sos_superado');
   if (superados >= 5 && unlock('sos_5')) nuevos.push('sos_5');

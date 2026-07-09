@@ -141,13 +141,13 @@ export function renderDashboard(container) {
     const m = document.createElement('div');
     m.className = 'meal';
     if (!recipe) {
-      m.innerHTML = `<div class="meal-name">${meal.emoji} ${meal.nombre}</div><p class="small">Sin opciones con tus exclusiones actuales. Revisa Ajustes.</p>`;
+      m.innerHTML = `<div class="meal-name">${meal.emoji} ${meal.nombre} <span class="muted small">· ${meal.hora}</span></div><p class="small">Sin opciones con tus exclusiones actuales. Revisa Ajustes.</p>`;
     } else {
       const { perfiles, exclusiones } = getState().user;
       const light = trafficLight(recipe, perfiles);
       const shown = displayRecipe(recipe, exclusiones);
       m.innerHTML = `
-        <div class="meal-name">${meal.emoji} ${meal.nombre}</div>
+        <div class="meal-name">${meal.emoji} ${meal.nombre} <span class="muted small">· ${meal.hora}</span></div>
         <div class="spread">
           <button class="link-btn" style="text-align:left">${shown.emoji} ${shown.nombre}</button>
           <span class="row"><span class="dot ${light}"></span>

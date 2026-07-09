@@ -13,6 +13,8 @@ import { renderMission } from './views/mission.js';
 import { renderPlans } from './views/plans.js';
 import { renderEmergency } from './views/emergency.js';
 import { renderAssistant } from './views/assistant.js';
+import { renderTestimonials } from './views/testimonials.js';
+import { maybeShowCheckin } from './views/checkin.js';
 
 const app = document.getElementById('app');
 const nav = document.getElementById('bottom-nav');
@@ -29,7 +31,8 @@ const ROUTES = {
   mission: renderMission,
   plans: renderPlans,
   emergency: renderEmergency,
-  assistant: renderAssistant
+  assistant: renderAssistant,
+  testimonials: renderTestimonials
 };
 
 const PUBLIC_ROUTES = ['auth'];
@@ -43,6 +46,7 @@ export function navigate(route, params = {}) {
   app.innerHTML = '';
   window.scrollTo(0, 0);
   render(app, params);
+  if (route === 'dashboard') maybeShowCheckin();
 
   const showNav = route !== 'quiz' && route !== 'auth';
   nav.classList.toggle('hidden', !showNav);

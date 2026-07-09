@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-v9';
+const CACHE = 'nutriruta-v10';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   './js/supabase-client.js',
   './js/store.js',
   './js/menu.js',
+  './js/charts.js',
   './js/data/profiles.js',
   './js/data/recipes.js',
   './js/data/lessons.js',
@@ -26,6 +27,8 @@ const ASSETS = [
   './js/views/plans.js',
   './js/views/emergency.js',
   './js/views/assistant.js',
+  './js/views/checkin.js',
+  './js/views/testimonials.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png'
