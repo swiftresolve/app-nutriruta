@@ -83,6 +83,30 @@ export const PROFILES = {
       'Sustituir grasas saturadas por aceite de oliva, aguacate y frutos secos.'
     ],
     habitos: ['Ejercicio 150–300 min/semana', 'No fumar', 'Dormir bien y manejar estrés']
+  },
+  gases: {
+    id: 'gases',
+    nombre: 'Gases e hinchazón',
+    emoji: '🎈',
+    objetivo: 'Reducir gases y distensión abdominal identificando tus disparadores personales.',
+    claves: [
+      'Aumentar la fibra poco a poco, no de golpe.',
+      'Moderar legumbres, crucíferas (brócoli, coliflor, repollo), cebolla y ajo si te inflaman.',
+      'Comer despacio y en porciones más pequeñas si hay distensión.'
+    ],
+    habitos: ['Registrar qué te hincha en el diario de síntomas', 'Comer sin afán', 'Subir la fibra de forma gradual']
+  },
+  estrenimiento: {
+    id: 'estrenimiento',
+    nombre: 'Estreñimiento',
+    emoji: '🚰',
+    objetivo: 'Mejorar la frecuencia y facilidad de evacuación con fibra, agua y movimiento.',
+    claves: [
+      'Agua suficiente durante todo el día, no solo con las comidas.',
+      'Fibra de frutas (kiwi, papaya, pera, ciruela), avena, chía y linaza.',
+      'Movimiento diario: hasta caminar ayuda al tránsito intestinal.'
+    ],
+    habitos: ['Meta diaria de agua', 'Fibra en cada comida', 'No aguantar las ganas de ir al baño']
   }
 };
 
@@ -107,6 +131,16 @@ export const GOALS = [
   { id: 'hormonas', nombre: 'Equilibrio hormonal', emoji: '🌸' },
   { id: 'migranas', nombre: 'Menos migrañas', emoji: '🧠' },
   { id: 'ansiedad', nombre: 'Menos ansiedad por comida', emoji: '💚' }
+];
+
+// Tipos de síntoma para el diario (detector de disparadores unificado).
+export const SYMPTOM_TYPES = [
+  { id: 'gases', nombre: 'Gases / hinchazón', emoji: '🎈' },
+  { id: 'estrenimiento', nombre: 'Estreñimiento', emoji: '🚰' },
+  { id: 'diarrea', nombre: 'Diarrea', emoji: '💧' },
+  { id: 'dolor_abdominal', nombre: 'Dolor abdominal', emoji: '🤕' },
+  { id: 'migrana', nombre: 'Dolor de cabeza / migraña', emoji: '🧠' },
+  { id: 'otro', nombre: 'Otro', emoji: '📋' }
 ];
 
 // Retos frecuentes, en primera persona para que se lean como "me pasa esto".

@@ -7,6 +7,23 @@ import { header, openModal, navigate } from '../app.js';
 // Lecciones incluidas en el plan gratuito.
 const FREE_LESSONS = 2;
 
+function colonTip(predominante) {
+  return {
+    diarrea: 'prioriza alimentos suaves y astringentes (arroz, plátano maduro, zanahoria cocida) y modera la fibra insoluble.',
+    estrenimiento: 'sube la fibra soluble poco a poco (avena, chía, ciruela) y no olvides el agua.',
+    mixto: 'observa qué predomina cada semana y ajusta: fibra suave siempre, más soluble si hay estreñimiento, más astringente si hay diarrea.'
+  }[predominante] || '';
+}
+
+// Reglas cruzadas del documento de protocolos: combinaciones frecuentes de perfiles.
+const COMBO_TIPS = [
+  { perfiles: ['higado_graso', 'resistencia_insulina'], texto: '🫀🩸 <strong>Hígado graso + resistencia a la insulina:</strong> reducir azúcar y subir proteína es tu palanca más fuerte.' },
+  { perfiles: ['colesterol', 'prediabetes'], texto: '❤️🛡️ <strong>Colesterol alto + prediabetes:</strong> sube la fibra soluble (avena, legumbres) y baja las harinas refinadas.' },
+  { perfiles: ['gases', 'colon_irritable'], texto: '🎈🌱 <strong>Gases + colon irritable:</strong> cuida las porciones de cebolla, ajo y legumbres; sube la fibra despacio, no de golpe.' },
+  { perfiles: ['colon_irritable', 'estrenimiento'], texto: '🌱🚰 <strong>Colon irritable + estreñimiento:</strong> prioriza fibra suave (avena, chía) y evita subirla de golpe para no irritar más.' },
+  { perfiles: ['migranas'], habitos: ['hambre_emocional'], texto: '🧠💚 <strong>Migrañas + ansiedad por comida:</strong> evita ayunos largos y ten siempre a mano un snack estable en glucosa.' }
+];
+
 export function renderLearn(container) {
   header(container);
   const { user } = getState();
@@ -20,9 +37,25 @@ export function renderLearn(container) {
     keys.insertAdjacentHTML('beforeend', `
       <h3 class="mt">${p.emoji} ${p.nombre}</h3>
       <p class="small">${p.objetivo}</p>
-      <ul class="steps small">${p.claves.map((c) => `<li>${c}</li>`).join('')}</ul>`);
+      <ul class="steps small">${p.claves.map((c) => `<li>${c}</li>`).join('')}</ul>
+      ${pid === 'colon_irritable' && user.colonPredominante ? `<p class="small mt"><strong>Tu foco:</strong> ${colonTip(user.colonPredominante)}</p>` : ''}`);
   }
   container.appendChild(keys);
+
+  // Combinaciones frecuentes: solo las que apliquen a tus perfiles activos.
+  const combos = COMBO_TIPS.filter((c) =>
+    c.perfiles.every((p) => user.perfiles.includes(p)) &&
+    (c.habitos || []).every((h) => user.habitosDificiles.includes(h))
+  );
+  if (combos.length) {
+    const comboCard = document.createElement('div');
+    comboCard.className = 'card';
+    comboCard.innerHTML = '<h2>🔗 Cuando se combinan tus perfiles</h2>';
+    for (const c of combos) {
+      comboCard.insertAdjacentHTML('beforeend', `<p class="small mt">${c.texto}</p>`);
+    }
+    container.appendChild(comboCard);
+  }
 
   // Micro-lecciones
   const lessons = document.createElement('div');

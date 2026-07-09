@@ -38,6 +38,15 @@ export function renderDashboard(container) {
     container.appendChild(tip);
   }
 
+  // --- Aviso de hidratación/ayuno para migrañas: mitad del día, poca agua ---
+  if (user.perfiles.includes('migranas') && hora >= 14 && getWater().vasos <= 1) {
+    const migTip = document.createElement('div');
+    migTip.className = 'card';
+    migTip.style.borderLeft = '4px solid var(--secondary)';
+    migTip.innerHTML = '<p class="small">🧠💧 Vas con poca agua hoy y en migrañas los horarios y la hidratación importan tanto como la comida. Toma un vaso y no dejes pasar mucho tiempo sin comer.</p>';
+    container.appendChild(migTip);
+  }
+
   // --- Misión 12 semanas ---
   const { mision } = getState();
   const misionCard = document.createElement('div');

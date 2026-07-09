@@ -62,6 +62,30 @@ export function renderSettings(container) {
   }
   container.appendChild(perf);
 
+  // Colon irritable: síntoma predominante (solo si el perfil está activo)
+  if (user.perfiles.includes('colon_irritable')) {
+    const colon = document.createElement('div');
+    colon.className = 'card';
+    colon.innerHTML = '<h2>🌱 Tu colon irritable</h2><p class="small mb">¿Qué predomina en tus síntomas?</p><div class="chips"></div>';
+    const colonChips = colon.querySelector('.chips');
+    const opciones = [
+      { id: 'diarrea', nombre: 'Diarrea' },
+      { id: 'estrenimiento', nombre: 'Estreñimiento' },
+      { id: 'mixto', nombre: 'Mixto' }
+    ];
+    for (const o of opciones) {
+      const b = document.createElement('button');
+      b.className = 'chip' + (user.colonPredominante === o.id ? ' selected' : '');
+      b.textContent = o.nombre;
+      b.addEventListener('click', () => {
+        setState({ user: { ...getState().user, colonPredominante: o.id } });
+        colonChips.querySelectorAll('.chip').forEach((c) => c.classList.toggle('selected', c === b));
+      });
+      colonChips.appendChild(b);
+    }
+    container.appendChild(colon);
+  }
+
   // Exclusiones
   const excl = document.createElement('div');
   excl.className = 'card';

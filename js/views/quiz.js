@@ -9,6 +9,8 @@ const CONDITIONS = [
   { id: 'prediabetes', nombre: 'Prediabetes', emoji: '🛡️' },
   { id: 'colesterol', nombre: 'Colesterol alto', emoji: '❤️' },
   { id: 'colon_irritable', nombre: 'Colon irritable', emoji: '🌱' },
+  { id: 'gases', nombre: 'Gases / hinchazón frecuente', emoji: '🎈' },
+  { id: 'estrenimiento', nombre: 'Estreñimiento', emoji: '🚰' },
   { id: 'candidiasis', nombre: 'Candidiasis', emoji: '🌸' },
   { id: 'migranas', nombre: 'Migrañas', emoji: '🧠' },
   { id: 'sop', nombre: 'SOP / tema hormonal', emoji: '🌺' },

@@ -13,13 +13,15 @@ const DEFAULT_STATE = {
     habitosDificiles: [],
     actividad: 'medio',
     azucarFreq: 'a_veces',
-    alcoholFreq: 'nunca'
+    alcoholFreq: 'nunca',
+    colonPredominante: null
   },
   agua: { fecha: '', vasos: 0, meta: 8 },
   habitos: { fecha: '', checks: {} },
   racha: { actual: 0, mejor: 0, ultimoDia: '' },
   diasCumplidos: [],           // fechas ISO en que se completó el día
   antojos: [],                 // { fecha, hora, tipo, resultado }
+  sintomas: [],                 // { fecha, hora, tipo, disparador }
   logros: [],                  // ids de logros desbloqueados
   menuOverrides: {},           // { 'fecha|comida': n } desplazamiento al cambiar receta
   compras: {}                  // { itemId: true } marcados en lista de compras
@@ -200,6 +202,39 @@ export function cravingPattern() {
   return top && top[1] >= 2 ? top[0] : null;
 }
 
+// --- Diario de síntomas (detector de disparadores unificado) ---
+export function logSintoma(tipo, disparador) {
+  const ahora = new Date();
+  const sintomas = [...state.sintomas, {
+    fecha: today(),
+    hora: `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`,
+    tipo, disparador: (disparador || '').trim().toLowerCase().slice(0, 60)
+  }];
+  setState({ sintomas });
+  checkAchievements();
+}
+
+// Busca un disparador repetido (≥2 veces) o, si no hay, la franja horaria más frecuente.
+export function sintomaPattern() {
+  if (state.sintomas.length < 3) return null;
+  const disparadores = {};
+  for (const s of state.sintomas) {
+    if (!s.disparador) continue;
+    disparadores[s.disparador] = (disparadores[s.disparador] || 0) + 1;
+  }
+  const topDisparador = Object.entries(disparadores).sort((a, b) => b[1] - a[1])[0];
+  if (topDisparador && topDisparador[1] >= 2) return { tipo: 'disparador', valor: topDisparador[0] };
+
+  const franjas = {};
+  for (const s of state.sintomas) {
+    const h = parseInt(s.hora.slice(0, 2), 10);
+    const franja = h < 12 ? 'mañana' : h < 15 ? 'mediodía' : h < 19 ? 'tarde' : 'noche';
+    franjas[franja] = (franjas[franja] || 0) + 1;
+  }
+  const topFranja = Object.entries(franjas).sort((a, b) => b[1] - a[1])[0];
+  return topFranja && topFranja[1] >= 2 ? { tipo: 'franja', valor: topFranja[0] } : null;
+}
+
 // --- Logros ---
 export const ACHIEVEMENTS = [
   { id: 'primer_dia', emoji: '🌱', nombre: 'Primer día', desc: 'Completaste tu primer día de hábitos.' },
@@ -208,7 +243,8 @@ export const ACHIEVEMENTS = [
   { id: 'racha_30', emoji: '🏆', nombre: 'Reto 30 días', desc: '30 días seguidos. Cambiaste tu historia.' },
   { id: 'hidratada', emoji: '💧', nombre: 'Bien hidratada', desc: 'Alcanzaste tu meta de agua del día.' },
   { id: 'sos_superado', emoji: '💚', nombre: 'Antojo superado', desc: 'Usaste una alternativa saludable ante un antojo.' },
-  { id: 'sos_5', emoji: '🛡️', nombre: '5 antojos vencidos', desc: 'Cinco veces elegiste la alternativa saludable.' }
+  { id: 'sos_5', emoji: '🛡️', nombre: '5 antojos vencidos', desc: 'Cinco veces elegiste la alternativa saludable.' },
+  { id: 'detective', emoji: '🔍', nombre: 'Detective de síntomas', desc: 'Registraste 3 síntomas: ya podemos buscar tus patrones.' }
 ];
 
 function unlock(id) {
@@ -229,5 +265,6 @@ export function checkAchievements() {
   const superados = state.antojos.filter((a) => a.resultado === 'alternativa').length;
   if (superados >= 1 && unlock('sos_superado')) nuevos.push('sos_superado');
   if (superados >= 5 && unlock('sos_5')) nuevos.push('sos_5');
+  if (state.sintomas.length >= 3 && unlock('detective')) nuevos.push('detective');
   return nuevos;
 }

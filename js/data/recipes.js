@@ -31,7 +31,7 @@ export const RECIPES = [
       'Cocinar en sartén con el aceite de oliva a fuego medio.',
       'Servir con el aguacate y el pan integral.'
     ],
-    apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'colesterol', 'candidiasis', 'migranas'],
+    apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'colesterol', 'candidiasis', 'migranas', 'gases'],
     etiquetas: ['alto_proteina', 'bajo_azucar']
   },
   {
@@ -50,7 +50,7 @@ export const RECIPES = [
       'Refrigerar toda la noche.',
       'Servir con las fresas y canela por encima.'
     ],
-    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'colon_irritable', 'migranas'],
+    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'colon_irritable', 'migranas', 'estrenimiento'],
     moderar: ['candidiasis'],
     etiquetas: ['alto_fibra', 'fibra_soluble']
   },
@@ -69,7 +69,7 @@ export const RECIPES = [
       'Untar el aguacate y colocar el huevo encima.',
       'Terminar con linaza, limón y pimienta.'
     ],
-    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'higado_graso'],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'higado_graso', 'gases', 'estrenimiento'],
     moderar: ['candidiasis'],
     etiquetas: ['grasa_saludable']
   },
@@ -88,7 +88,7 @@ export const RECIPES = [
       'Licuar todos los ingredientes hasta que quede cremoso.',
       'Tomar despacio, acompañado de un puñado pequeño de frutos secos si hay más hambre.'
     ],
-    apto: ['migranas', 'colon_irritable', 'higado_graso', 'colesterol'],
+    apto: ['migranas', 'colon_irritable', 'higado_graso', 'colesterol', 'gases', 'estrenimiento'],
     moderar: ['resistencia_insulina', 'candidiasis'],
     etiquetas: ['rapido']
   },
@@ -107,7 +107,7 @@ export const RECIPES = [
       'Revolver el huevo con el tomate y el cilantro.',
       'Servir junto con un vaso de agua o café sin azúcar.'
     ],
-    apto: ['candidiasis', 'migranas', 'higado_graso'],
+    apto: ['candidiasis', 'migranas', 'higado_graso', 'gases'],
     moderar: ['resistencia_insulina', 'prediabetes'],
     etiquetas: ['sin_gluten', 'local']
   },
@@ -126,7 +126,7 @@ export const RECIPES = [
       'Agregar la fruta, las nueces y la avena.',
       'Comer despacio, masticando bien.'
     ],
-    apto: ['candidiasis', 'colesterol', 'resistencia_insulina', 'prediabetes', 'colon_irritable'],
+    apto: ['candidiasis', 'colesterol', 'resistencia_insulina', 'prediabetes', 'colon_irritable', 'estrenimiento'],
     etiquetas: ['fermentado', 'microbiota']
   },
   {
@@ -144,7 +144,7 @@ export const RECIPES = [
       'Cocinar porciones pequeñas en sartén a fuego bajo.',
       'Servir con fruta fresca, no con miel ni sirope.'
     ],
-    apto: ['migranas', 'colon_irritable'],
+    apto: ['migranas', 'colon_irritable', 'estrenimiento'],
     moderar: ['resistencia_insulina', 'prediabetes', 'higado_graso'],
     evitar: ['candidiasis'],
     etiquetas: ['antojo_dulce_saludable']
@@ -163,7 +163,7 @@ export const RECIPES = [
       'Lavar y cortar la manzana en rebanadas.',
       'Comer alternando con las almendras, despacio y respirando entre bocados.'
     ],
-    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'higado_graso', 'migranas'],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'higado_graso', 'migranas', 'gases', 'estrenimiento'],
     etiquetas: ['snack_antiansiedad', 'alto_fibra']
   },
   {
@@ -176,8 +176,8 @@ export const RECIPES = [
       { n: 'Pepino en bastones (opcional)' }
     ],
     pasos: ['Cortar los vegetales.', 'Untar en el hummus y disfrutar despacio.'],
-    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'candidiasis', 'higado_graso'],
-    moderar: ['colon_irritable'],
+    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'candidiasis', 'higado_graso', 'estrenimiento'],
+    moderar: ['colon_irritable', 'gases'],
     etiquetas: ['snack_antiansiedad', 'proteina_vegetal']
   },
   {
@@ -189,7 +189,8 @@ export const RECIPES = [
       { n: '½ taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur vegetal sin azúcar' }
     ],
     pasos: ['Picar la pera y mezclar con el yogur.', 'Agregar canela si se desea.'],
-    apto: ['colesterol', 'colon_irritable', 'prediabetes', 'migranas'],
+    apto: ['colesterol', 'colon_irritable', 'prediabetes', 'migranas', 'estrenimiento'],
+    moderar: ['gases'],
     etiquetas: ['fibra_soluble', 'fermentado']
   },
   {
@@ -202,7 +203,7 @@ export const RECIPES = [
       { n: 'Sal marina y orégano' }
     ],
     pasos: ['Pelar el huevo y partirlo.', 'Acompañar con los tomates.'],
-    apto: ['resistencia_insulina', 'prediabetes', 'candidiasis', 'higado_graso', 'colesterol'],
+    apto: ['resistencia_insulina', 'prediabetes', 'candidiasis', 'higado_graso', 'colesterol', 'gases'],
     etiquetas: ['alto_proteina', 'snack_antiansiedad']
   },
   {
@@ -214,7 +215,7 @@ export const RECIPES = [
       { n: '6 nueces', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
     ],
     pasos: ['Pelar la naranja y comerla en gajos con las nueces.'],
-    apto: ['colesterol', 'higado_graso', 'colon_irritable', 'migranas', 'prediabetes'],
+    apto: ['colesterol', 'higado_graso', 'colon_irritable', 'migranas', 'prediabetes', 'estrenimiento'],
     etiquetas: ['fibra_soluble']
   },
   {
@@ -226,7 +227,7 @@ export const RECIPES = [
       { n: '1 cda de semillas de chía' }
     ],
     pasos: ['Mezclar y dejar reposar 10 minutos antes de tomar.'],
-    apto: ['candidiasis', 'colon_irritable', 'resistencia_insulina', 'prediabetes'],
+    apto: ['candidiasis', 'colon_irritable', 'resistencia_insulina', 'prediabetes', 'estrenimiento'],
     etiquetas: ['fermentado', 'microbiota']
   },
 
@@ -262,8 +263,8 @@ export const RECIPES = [
       'Guisar las lentejas con verduras y especias naturales (sin cubos industriales).',
       'Servir con el arroz integral y la ensalada.'
     ],
-    apto: ['colesterol', 'higado_graso', 'prediabetes', 'resistencia_insulina'],
-    moderar: ['colon_irritable'],
+    apto: ['colesterol', 'higado_graso', 'prediabetes', 'resistencia_insulina', 'estrenimiento'],
+    moderar: ['colon_irritable', 'gases'],
     etiquetas: ['fibra_soluble', 'proteina_vegetal', 'economico']
   },
   {
@@ -281,7 +282,8 @@ export const RECIPES = [
       'Cocinar el brócoli al vapor 5 minutos.',
       'Servir con un hilo de aceite de oliva.'
     ],
-    apto: ['resistencia_insulina', 'prediabetes', 'candidiasis', 'higado_graso', 'colesterol', 'colon_irritable', 'migranas'],
+    apto: ['resistencia_insulina', 'prediabetes', 'candidiasis', 'higado_graso', 'colesterol', 'colon_irritable', 'migranas', 'estrenimiento'],
+    moderar: ['gases'],
     etiquetas: ['bajo_ig', 'plato_modelo']
   },
   {
@@ -299,8 +301,8 @@ export const RECIPES = [
       'Mezclar los garbanzos con las verduras.',
       'Agregar la quinoa, aliñar con aceite de oliva, limón y orégano.'
     ],
-    apto: ['prediabetes', 'colesterol', 'resistencia_insulina', 'higado_graso'],
-    moderar: ['colon_irritable'],
+    apto: ['prediabetes', 'colesterol', 'resistencia_insulina', 'higado_graso', 'estrenimiento'],
+    moderar: ['colon_irritable', 'gases'],
     etiquetas: ['mediterraneo', 'proteina_vegetal']
   },
   {
@@ -318,7 +320,7 @@ export const RECIPES = [
       'Asar las verduras con un poco de aceite de oliva.',
       'Servir todo junto con el arroz.'
     ],
-    apto: ['colon_irritable', 'higado_graso', 'colesterol', 'migranas', 'candidiasis', 'prediabetes'],
+    apto: ['colon_irritable', 'higado_graso', 'colesterol', 'migranas', 'candidiasis', 'prediabetes', 'gases'],
     etiquetas: ['suave', 'colon_friendly']
   },
   {
@@ -337,6 +339,7 @@ export const RECIPES = [
       'Servir sobre el arroz con jengibre y ajonjolí.'
     ],
     apto: ['colesterol', 'higado_graso', 'resistencia_insulina', 'prediabetes', 'candidiasis'],
+    moderar: ['gases'],
     etiquetas: ['vegano', 'proteina_vegetal']
   },
   {
@@ -353,7 +356,7 @@ export const RECIPES = [
       'Cocinar las verduras en el caldo hasta que ablanden.',
       'Agregar el pollo desmechado y el cilantro al final.'
     ],
-    apto: ['colon_irritable', 'migranas', 'candidiasis', 'higado_graso', 'prediabetes', 'colesterol', 'resistencia_insulina'],
+    apto: ['colon_irritable', 'migranas', 'candidiasis', 'higado_graso', 'prediabetes', 'colesterol', 'resistencia_insulina', 'gases'],
     etiquetas: ['suave', 'colon_friendly', 'hidratante']
   },
   {
@@ -370,7 +373,7 @@ export const RECIPES = [
       'Mezclar las verduras con el atún escurrido.',
       'Agregar el aguacate y aliñar.'
     ],
-    apto: ['colesterol', 'higado_graso', 'resistencia_insulina', 'prediabetes', 'candidiasis'],
+    apto: ['colesterol', 'higado_graso', 'resistencia_insulina', 'prediabetes', 'candidiasis', 'gases'],
     etiquetas: ['rapido', 'omega3']
   },
 
@@ -441,8 +444,8 @@ export const RECIPES = [
       'Secar los garbanzos y mezclarlos con el aceite y las especias.',
       'Hornear 25 minutos a 200 °C hasta que estén crocantes.'
     ],
-    apto: ['colesterol', 'prediabetes', 'resistencia_insulina', 'higado_graso'],
-    moderar: ['colon_irritable'],
+    apto: ['colesterol', 'prediabetes', 'resistencia_insulina', 'higado_graso', 'estrenimiento'],
+    moderar: ['colon_irritable', 'gases'],
     etiquetas: ['snack_antiansiedad', 'reemplaza_paquetes']
   },
   {
@@ -475,7 +478,7 @@ export const RECIPES = [
       'Cocinar el pollo a la plancha.',
       'Servir con la ensalada verde.'
     ],
-    apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'colon_irritable', 'migranas', 'candidiasis', 'colesterol'],
+    apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'colon_irritable', 'migranas', 'candidiasis', 'colesterol', 'gases'],
     etiquetas: ['ligero', 'plato_modelo', 'colon_friendly']
   },
   {
@@ -493,7 +496,7 @@ export const RECIPES = [
       'Cuajar en sartén a fuego bajo por ambos lados.'
     ],
     apto: ['resistencia_insulina', 'prediabetes', 'candidiasis', 'higado_graso', 'colesterol'],
-    moderar: ['colon_irritable'],
+    moderar: ['colon_irritable', 'gases'],
     etiquetas: ['ligero', 'rapido']
   },
   {
@@ -511,7 +514,7 @@ export const RECIPES = [
       'Saltear las espinacas 2 minutos.'
     ],
     apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'candidiasis', 'colesterol', 'migranas'],
-    moderar: ['colon_irritable'],
+    moderar: ['colon_irritable', 'gases'],
     etiquetas: ['bajo_ig', 'ligero']
   },
   {
@@ -528,7 +531,7 @@ export const RECIPES = [
       'Asar las verduras y el pollo.',
       'Servir sobre las hojas verdes con el aguacate y aliñar.'
     ],
-    apto: ['resistencia_insulina', 'prediabetes', 'higado_graso', 'colesterol', 'migranas', 'candidiasis'],
+    apto: ['resistencia_insulina', 'prediabetes', 'higado_graso', 'colesterol', 'migranas', 'candidiasis', 'gases'],
     etiquetas: ['ligero']
   },
   {
@@ -545,8 +548,8 @@ export const RECIPES = [
       'Cocinar todo junto 20 minutos hasta que la lenteja se deshaga.',
       'Servir caliente con cilantro.'
     ],
-    apto: ['colesterol', 'prediabetes', 'higado_graso', 'resistencia_insulina'],
-    moderar: ['colon_irritable'],
+    apto: ['colesterol', 'prediabetes', 'higado_graso', 'resistencia_insulina', 'estrenimiento'],
+    moderar: ['colon_irritable', 'gases'],
     etiquetas: ['fibra_soluble', 'economico']
   },
   {
@@ -564,7 +567,7 @@ export const RECIPES = [
       'Armar los tacos usando las hojas de lechuga como base.',
       'Servir con pico de gallo y aguacate.'
     ],
-    apto: ['resistencia_insulina', 'prediabetes', 'candidiasis', 'higado_graso', 'colesterol', 'migranas'],
+    apto: ['resistencia_insulina', 'prediabetes', 'candidiasis', 'higado_graso', 'colesterol', 'migranas', 'gases'],
     etiquetas: ['antojo_salado_saludable', 'bajo_ig'],
   },
   {
@@ -582,7 +585,7 @@ export const RECIPES = [
       'Añadir los huevos batidos y revolver a fuego bajo.'
     ],
     apto: ['resistencia_insulina', 'prediabetes', 'higado_graso', 'colesterol', 'migranas'],
-    moderar: ['candidiasis', 'colon_irritable'],
+    moderar: ['candidiasis', 'colon_irritable', 'gases'],
     etiquetas: ['rapido', 'ligero']
   }
 ];
