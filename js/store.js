@@ -127,8 +127,17 @@ export function esc(str) {
   ));
 }
 
+// Fecha local (no UTC) en formato YYYY-MM-DD. Usar toISOString() directo
+// aquí es un bug clásico: en Colombia (UTC-5) el día "cambiaría" a las
+// 7pm hora local en vez de medianoche, reseteando agua/hábitos temprano
+// y rompiendo rachas sin motivo real.
+function localDateStr(date) {
+  const tz = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - tz).toISOString().slice(0, 10);
+}
+
 export function today() {
-  return new Date().toISOString().slice(0, 10);
+  return localDateStr(new Date());
 }
 
 // --- Agua ---
@@ -171,7 +180,7 @@ function updateStreak() {
   if (state.diasCumplidos.includes(t)) return;
 
   const dias = [...state.diasCumplidos, t];
-  const ayer = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const ayer = localDateStr(new Date(Date.now() - 86400000));
   const actual = state.racha.ultimoDia === ayer ? state.racha.actual + 1 : 1;
   const mejor = Math.max(actual, state.racha.mejor);
   setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t } });
