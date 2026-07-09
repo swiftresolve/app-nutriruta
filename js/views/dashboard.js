@@ -1,8 +1,9 @@
 // Dashboard diario: menú del día, agua, hábitos y acceso rápido al SOS.
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium } from '../store.js';
 import { MISSION } from '../data/mission.js';
+import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
-import { dailyMenu, swapMeal, trafficLight, displayIngredient } from '../menu.js';
+import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
 
 const DAILY_HABITS = [
@@ -45,6 +46,28 @@ export function renderDashboard(container) {
     migTip.style.borderLeft = '4px solid var(--secondary)';
     migTip.innerHTML = '<p class="small">🧠💧 Vas con poca agua hoy y en migrañas los horarios y la hidratación importan tanto como la comida. Toma un vaso y no dejes pasar mucho tiempo sin comer.</p>';
     container.appendChild(migTip);
+  }
+
+  // --- Plan de 7 días (gratis, respuesta inmediata) ---
+  const { emergencia } = getState();
+  const diasCompletados = (emergencia?.completados || []).length;
+  if (diasCompletados < 7) {
+    const emergCard = document.createElement('div');
+    emergCard.className = 'card';
+    emergCard.style.borderLeft = '4px solid var(--accent)';
+    if (emergencia?.inicio) {
+      emergCard.innerHTML = `
+        <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag verde">${diasCompletados}/7</span></div>
+        <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((diasCompletados / 7) * 100)}%"></div></div>
+        <button class="link-btn small">Continuar mi plan →</button>`;
+    } else {
+      emergCard.innerHTML = `
+        <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag info">Gratis</span></div>
+        <p class="small">${EMERGENCY_PLAN.descripcion}</p>
+        <button class="link-btn small">Empezar hoy mismo →</button>`;
+    }
+    emergCard.querySelector('.link-btn').addEventListener('click', () => navigate('emergency'));
+    container.appendChild(emergCard);
   }
 
   // --- Misión 12 semanas ---
@@ -108,11 +131,13 @@ export function renderDashboard(container) {
     if (!recipe) {
       m.innerHTML = `<div class="meal-name">${meal.emoji} ${meal.nombre}</div><p class="small">Sin opciones con tus exclusiones actuales. Revisa Ajustes.</p>`;
     } else {
-      const light = trafficLight(recipe, getState().user.perfiles);
+      const { perfiles, exclusiones } = getState().user;
+      const light = trafficLight(recipe, perfiles);
+      const shown = displayRecipe(recipe, exclusiones);
       m.innerHTML = `
         <div class="meal-name">${meal.emoji} ${meal.nombre}</div>
         <div class="spread">
-          <button class="link-btn" style="text-align:left">${recipe.emoji} ${recipe.nombre}</button>
+          <button class="link-btn" style="text-align:left">${shown.emoji} ${shown.nombre}</button>
           <span class="row"><span class="dot ${light}"></span>
             <button class="icon-btn" title="Cambiar receta" aria-label="Cambiar receta">🔄</button></span>
         </div>`;
@@ -163,13 +188,14 @@ export function openRecipe(recipe) {
   const { user } = getState();
   openModal((modal) => {
     const light = trafficLight(recipe, user.perfiles);
+    const shown = displayRecipe(recipe, user.exclusiones);
     const ings = recipe.ingredientes.map((ing) => {
       const d = displayIngredient(ing, user.exclusiones);
       return `<div class="ingredient">• ${d.texto}${d.sustituido ? ` <span class="sub-note">(sustituto de ${d.original})</span>` : ''}</div>`;
     }).join('');
     modal.insertAdjacentHTML('beforeend', `
-      <div style="font-size:2.4rem">${recipe.emoji}</div>
-      <h2>${recipe.nombre}</h2>
+      <div style="font-size:2.4rem">${shown.emoji}</div>
+      <h2>${shown.nombre}</h2>
       <p class="small">${recipe.descripcion}</p>
       <p class="mt"><span class="tag ${light}">Semáforo: ${light}</span>
         ${recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => `<span class="tag perfil">${PROFILES[p].nombre}</span>`).join(' ')}</p>

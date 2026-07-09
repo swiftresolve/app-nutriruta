@@ -72,6 +72,18 @@ export function swapMeal(mealId, dateStr = today()) {
   setState({ menuOverrides: { ...menuOverrides, [key]: (menuOverrides[key] || 0) + 1 } });
 }
 
+// Nombre y emoji a mostrar para una receta: si el ingrediente que nombra el
+// título está excluido (p. ej. "Tilapia al horno" cuando no se come pescado),
+// se muestra el título alternativo en vez del original, no solo por dentro.
+export function displayRecipe(recipe, exclusiones) {
+  if (recipe.tituloSub) {
+    for (const grupo of Object.keys(recipe.tituloSub)) {
+      if (exclusiones.includes(grupo)) return recipe.tituloSub[grupo];
+    }
+  }
+  return { nombre: recipe.nombre, emoji: recipe.emoji };
+}
+
 // Ingrediente a mostrar (aplica sustitución si el grupo está excluido).
 export function displayIngredient(ing, exclusiones) {
   if (ing.grupo && exclusiones.includes(ing.grupo) && ing.sub) {
@@ -86,10 +98,11 @@ export function shoppingList(dateStr = today()) {
   const items = [];
   for (const { recipe } of dailyMenu(dateStr)) {
     if (!recipe) continue;
+    const rNombre = displayRecipe(recipe, user.exclusiones).nombre;
     for (const ing of recipe.ingredientes) {
       const d = displayIngredient(ing, user.exclusiones);
       if (!items.some((i) => i.texto === d.texto)) {
-        items.push({ id: `${recipe.id}-${items.length}`, texto: d.texto, receta: recipe.nombre });
+        items.push({ id: `${recipe.id}-${items.length}`, texto: d.texto, receta: rNombre });
       }
     }
   }

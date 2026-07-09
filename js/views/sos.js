@@ -1,6 +1,6 @@
 // SOS antojo: pausa guiada, alternativas y registro del episodio.
-import { logCraving, checkAchievements } from '../store.js';
-import { sosSnacks } from '../menu.js';
+import { logCraving, checkAchievements, getState } from '../store.js';
+import { sosSnacks, displayRecipe } from '../menu.js';
 import { header, toast, navigate } from '../app.js';
 import { openRecipe } from './dashboard.js';
 
@@ -91,12 +91,14 @@ export function renderSOS(container) {
   const step4 = document.createElement('div');
   step4.className = 'card';
   step4.innerHTML = '<h3>4. Elige tu alternativa saludable</h3><p class="small mb">Aptas para tus perfiles y exclusiones:</p>';
+  const { exclusiones } = getState().user;
   for (const r of sosSnacks().slice(0, 5)) {
+    const shown = displayRecipe(r, exclusiones);
     const item = document.createElement('button');
     item.className = 'recipe-item';
     item.innerHTML = `
-      <span class="recipe-emoji">${r.emoji}</span>
-      <span class="info"><strong>${r.nombre}</strong><br><span class="muted small">${r.descripcion}</span></span>`;
+      <span class="recipe-emoji">${shown.emoji}</span>
+      <span class="info"><strong>${shown.nombre}</strong><br><span class="muted small">${r.descripcion}</span></span>`;
     item.addEventListener('click', () => openRecipe(r));
     step4.appendChild(item);
   }

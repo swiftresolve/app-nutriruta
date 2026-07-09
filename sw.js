@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-v7';
+const CACHE = 'nutriruta-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const ASSETS = [
   './js/data/recipes.js',
   './js/data/lessons.js',
   './js/data/mission.js',
+  './js/data/emergencyPlan.js',
   './js/views/auth.js',
   './js/views/quiz.js',
   './js/views/dashboard.js',
@@ -23,6 +24,7 @@ const ASSETS = [
   './js/views/settings.js',
   './js/views/mission.js',
   './js/views/plans.js',
+  './js/views/emergency.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png'

@@ -18,6 +18,7 @@ export const RECIPES = [
     id: 'omelette_espinaca', comida: 'desayuno', emoji: '🍳',
     nombre: 'Omelette de espinaca y tomate',
     descripcion: 'Proteína y verduras para empezar el día con glucosa estable.',
+    tituloSub: { huevo: { nombre: 'Revuelto de tofu con espinaca y tomate', emoji: '🌱' } },
     ingredientes: [
       { n: '2 huevos', grupo: 'huevo', sub: 'tofu firme revuelto (media taza)' },
       { n: '1 taza de espinaca fresca' },
@@ -58,6 +59,7 @@ export const RECIPES = [
     id: 'tostada_aguacate_huevo', comida: 'desayuno', emoji: '🥑',
     nombre: 'Tostada integral con aguacate y huevo',
     descripcion: 'Grasa buena + proteína: saciedad sin picos de glucosa.',
+    tituloSub: { huevo: { nombre: 'Tostada integral con aguacate y hummus', emoji: '🥑' } },
     ingredientes: [
       { n: '1 rebanada de pan 100 % integral', grupo: 'gluten', sub: 'tortilla de maíz o pan sin gluten' },
       { n: '½ aguacate' },
@@ -96,6 +98,7 @@ export const RECIPES = [
     id: 'arepa_huevo_verduras', comida: 'desayuno', emoji: '🫓',
     nombre: 'Arepa de maíz con huevo y verduras',
     descripcion: 'Versión balanceada del clásico: maíz integral + proteína.',
+    tituloSub: { huevo: { nombre: 'Arepa de maíz con frijoles y verduras', emoji: '🫓' } },
     ingredientes: [
       { n: '1 arepa pequeña de maíz (sin queso)' },
       { n: '1 huevo revuelto', grupo: 'huevo', sub: 'frijoles negros (media taza)', subGrupo: 'legumbres' },
@@ -155,6 +158,7 @@ export const RECIPES = [
     id: 'manzana_almendras', comida: 'media_manana', emoji: '🍎',
     nombre: 'Manzana con almendras',
     descripcion: 'El snack anti-antojo clásico: fibra + grasa buena.',
+    tituloSub: { frutos_secos: { nombre: 'Manzana con semillas de calabaza', emoji: '🍎' } },
     ingredientes: [
       { n: '1 manzana con piel' },
       { n: '12 almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de calabaza' }
@@ -170,6 +174,7 @@ export const RECIPES = [
     id: 'hummus_zanahoria', comida: 'media_manana', emoji: '🥕',
     nombre: 'Hummus con bastones de zanahoria',
     descripcion: 'Proteína vegetal y crunch para media mañana.',
+    tituloSub: { legumbres: { nombre: 'Guacamole con bastones de zanahoria', emoji: '🥑' } },
     ingredientes: [
       { n: '3 cdas de hummus de garbanzo', grupo: 'legumbres', sub: 'guacamole natural' },
       { n: '1 zanahoria en bastones' },
@@ -197,6 +202,7 @@ export const RECIPES = [
     id: 'huevo_duro_tomates', comida: 'media_manana', emoji: '🥚',
     nombre: 'Huevo duro con tomates cherry',
     descripcion: 'Snack de pura proteína para cortar el antojo salado.',
+    tituloSub: { huevo: { nombre: 'Garbanzos tostados con tomates cherry', emoji: '🫘' } },
     ingredientes: [
       { n: '1 huevo duro', grupo: 'huevo', sub: 'un puñado de garbanzos tostados', subGrupo: 'legumbres' },
       { n: '6 tomates cherry' },
@@ -210,6 +216,7 @@ export const RECIPES = [
     id: 'naranja_nueces', comida: 'media_manana', emoji: '🍊',
     nombre: 'Naranja entera + nueces',
     descripcion: 'Vitamina C y omega vegetal; la fruta entera, nunca en jugo.',
+    tituloSub: { frutos_secos: { nombre: 'Naranja entera + semillas de girasol', emoji: '🍊' } },
     ingredientes: [
       { n: '1 naranja en gajos' },
       { n: '6 nueces', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
@@ -236,6 +243,7 @@ export const RECIPES = [
     id: 'salmon_quinoa', comida: 'almuerzo', emoji: '🐟',
     nombre: 'Salmón a la plancha con quinoa y ensalada',
     descripcion: 'Plato modelo: ½ verduras, ¼ integral, ¼ proteína + grasa buena.',
+    tituloSub: { pescado: { nombre: 'Pollo a la plancha con quinoa y ensalada', emoji: '🍗' } },
     ingredientes: [
       { n: '1 filete de salmón o trucha', grupo: 'pescado', sub: 'pechuga de pollo a la plancha' },
       { n: '¾ taza de quinoa cocida' },
@@ -254,6 +262,7 @@ export const RECIPES = [
     id: 'lentejas_arroz_integral', comida: 'almuerzo', emoji: '🫘',
     nombre: 'Lentejas guisadas con arroz integral',
     descripcion: 'Fibra soluble + proteína vegetal, el combo cardioprotector.',
+    tituloSub: { legumbres: { nombre: 'Pollo guisado con arroz integral', emoji: '🍗' } },
     ingredientes: [
       { n: '1 taza de lentejas guisadas con tomate y zanahoria', grupo: 'legumbres', sub: 'pollo desmechado guisado' },
       { n: '½ taza de arroz integral' },
@@ -290,6 +299,7 @@ export const RECIPES = [
     id: 'bowl_garbanzos', comida: 'almuerzo', emoji: '🥙',
     nombre: 'Bowl mediterráneo de garbanzos',
     descripcion: 'Inspirado en la dieta mediterránea, la más estudiada para prevenir diabetes.',
+    tituloSub: { legumbres: { nombre: 'Bowl mediterráneo de pollo', emoji: '🥙' } },
     ingredientes: [
       { n: '1 taza de garbanzos cocidos', grupo: 'legumbres', sub: 'pollo en cubos salteado' },
       { n: 'Tomate, pepino y pimentón picados' },
@@ -309,6 +319,7 @@ export const RECIPES = [
     id: 'pescado_verduras_horno', comida: 'almuerzo', emoji: '🐠',
     nombre: 'Tilapia al horno con verduras asadas',
     descripcion: 'Pescado blanco suave, apto para digestiones sensibles.',
+    tituloSub: { pescado: { nombre: 'Pavo al horno con verduras asadas', emoji: '🍗' } },
     ingredientes: [
       { n: '1 filete de tilapia o pescado blanco', grupo: 'pescado', sub: 'pechuga de pavo' },
       { n: 'Calabacín, zanahoria y pimentón asados' },
@@ -327,6 +338,7 @@ export const RECIPES = [
     id: 'tofu_salteado', comida: 'almuerzo', emoji: '🥦',
     nombre: 'Salteado de tofu con verduras y arroz integral',
     descripcion: 'Opción 100 % vegetal alta en proteína.',
+    tituloSub: { soya: { nombre: 'Salteado de pollo con verduras y arroz integral', emoji: '🍗' } },
     ingredientes: [
       { n: '150 g de tofu firme en cubos', grupo: 'soya', sub: 'pollo o huevo revuelto' },
       { n: 'Brócoli, zanahoria y habichuelas' },
@@ -363,6 +375,7 @@ export const RECIPES = [
     id: 'ensalada_atun', comida: 'almuerzo', emoji: '🥗',
     nombre: 'Ensalada completa de atún y aguacate',
     descripcion: 'Rápida, alta en omega 3 y sin cocción.',
+    tituloSub: { pescado: { nombre: 'Ensalada completa de huevo y aguacate', emoji: '🥗' } },
     ingredientes: [
       { n: '1 lata de atún en agua', grupo: 'pescado', sub: 'huevo duro picado (2 unidades)', subGrupo: 'huevo' },
       { n: 'Lechuga, tomate, pepino y maíz tierno' },
@@ -395,6 +408,7 @@ export const RECIPES = [
     id: 'te_almendras_cacao', comida: 'media_tarde', emoji: '🍵',
     nombre: 'Infusión + almendras y cacao amargo',
     descripcion: 'Para el antojo de dulce de la tarde, sin azúcar.',
+    tituloSub: { frutos_secos: { nombre: 'Infusión + semillas de calabaza y cacao amargo', emoji: '🍵' } },
     ingredientes: [
       { n: '1 infusión de manzanilla o canela' },
       { n: '10 almendras', grupo: 'frutos_secos', sub: 'semillas de calabaza tostadas' },
@@ -409,6 +423,7 @@ export const RECIPES = [
     id: 'palitos_apio_mani', comida: 'media_tarde', emoji: '🥬',
     nombre: 'Apio con crema de maní 100 %',
     descripcion: 'Crunch + grasa buena = antojo controlado.',
+    tituloSub: { frutos_secos: { nombre: 'Apio con hummus', emoji: '🥬' } },
     ingredientes: [
       { n: '2 tallos de apio en bastones' },
       { n: '1 cda de crema de maní 100 % (sin azúcar)', grupo: 'frutos_secos', sub: 'hummus', subGrupo: 'legumbres' }
@@ -422,6 +437,7 @@ export const RECIPES = [
     id: 'fruta_queso_fresco', comida: 'media_tarde', emoji: '🍓',
     nombre: 'Fresas con cuajada o queso fresco bajo en grasa',
     descripcion: 'Dulce natural + proteína láctea ligera.',
+    tituloSub: { lacteos: { nombre: 'Fresas con nueces', emoji: '🍓' } },
     ingredientes: [
       { n: '1 taza de fresas' },
       { n: '1 tajada de queso fresco bajo en grasa o cuajada', grupo: 'lacteos', sub: 'un puñado de nueces', subGrupo: 'frutos_secos' }
@@ -435,6 +451,7 @@ export const RECIPES = [
     id: 'garbanzos_tostados', comida: 'media_tarde', emoji: '🧆',
     nombre: 'Garbanzos tostados especiados',
     descripcion: 'Snack crocante que reemplaza los paquetes.',
+    tituloSub: { legumbres: { nombre: 'Semillas de calabaza tostadas especiadas', emoji: '🎃' } },
     ingredientes: [
       { n: '1 taza de garbanzos cocidos', grupo: 'legumbres', sub: 'semillas de calabaza tostadas' },
       { n: 'Pimentón en polvo, comino y sal marina' },
@@ -485,6 +502,7 @@ export const RECIPES = [
     id: 'tortilla_calabacin', comida: 'cena', emoji: '🥒',
     nombre: 'Tortilla de calabacín y cebolla',
     descripcion: 'Cena vegetal alta en proteína.',
+    tituloSub: { huevo: { nombre: 'Tortilla de garbanzo y calabacín', emoji: '🥒' } },
     ingredientes: [
       { n: '2 huevos', grupo: 'huevo', sub: 'garbanzos en harina (tortilla de garbanzo)', subGrupo: 'legumbres' },
       { n: '1 calabacín rallado' },
@@ -503,6 +521,7 @@ export const RECIPES = [
     id: 'pescado_pure_coliflor', comida: 'cena', emoji: '🐟',
     nombre: 'Pescado al vapor con puré de coliflor',
     descripcion: 'Baja carga glucémica y crucíferas para el hígado.',
+    tituloSub: { pescado: { nombre: 'Pavo a la plancha con puré de coliflor', emoji: '🍗' } },
     ingredientes: [
       { n: '1 filete de pescado blanco al vapor', grupo: 'pescado', sub: 'pechuga de pavo a la plancha' },
       { n: '2 tazas de coliflor cocida (hacer puré con aceite de oliva)' },
@@ -538,6 +557,7 @@ export const RECIPES = [
     id: 'sopa_lentejas_cena', comida: 'cena', emoji: '🍜',
     nombre: 'Sopa ligera de lentejas rojas y zanahoria',
     descripcion: 'Fibra soluble en versión suave para la noche.',
+    tituloSub: { legumbres: { nombre: 'Sopa ligera de pollo y zanahoria', emoji: '🍜' } },
     ingredientes: [
       { n: '¾ taza de lentejas rojas', grupo: 'legumbres', sub: 'pollo desmechado con verduras' },
       { n: 'Zanahoria y apio en cubos' },
@@ -574,6 +594,7 @@ export const RECIPES = [
     id: 'revuelto_champinones', comida: 'cena', emoji: '🍄',
     nombre: 'Revuelto de champiñones, espinaca y huevo',
     descripcion: 'Cena exprés en 10 minutos.',
+    tituloSub: { huevo: { nombre: 'Revuelto de champiñones, espinaca y tofu', emoji: '🍄' } },
     ingredientes: [
       { n: '2 huevos', grupo: 'huevo', sub: 'tofu firme desmenuzado', subGrupo: 'soya' },
       { n: '1 taza de champiñones laminados' },

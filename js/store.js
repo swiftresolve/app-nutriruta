@@ -244,7 +244,8 @@ export const ACHIEVEMENTS = [
   { id: 'hidratada', emoji: '💧', nombre: 'Bien hidratada', desc: 'Alcanzaste tu meta de agua del día.' },
   { id: 'sos_superado', emoji: '💚', nombre: 'Antojo superado', desc: 'Usaste una alternativa saludable ante un antojo.' },
   { id: 'sos_5', emoji: '🛡️', nombre: '5 antojos vencidos', desc: 'Cinco veces elegiste la alternativa saludable.' },
-  { id: 'detective', emoji: '🔍', nombre: 'Detective de síntomas', desc: 'Registraste 3 síntomas: ya podemos buscar tus patrones.' }
+  { id: 'detective', emoji: '🔍', nombre: 'Detective de síntomas', desc: 'Registraste 3 síntomas: ya podemos buscar tus patrones.' },
+  { id: 'plan7_completo', emoji: '🎉', nombre: 'Primer paso dado', desc: 'Completaste el plan de 7 días. Empezaste sin esperar.' }
 ];
 
 function unlock(id) {
@@ -266,5 +267,6 @@ export function checkAchievements() {
   if (superados >= 1 && unlock('sos_superado')) nuevos.push('sos_superado');
   if (superados >= 5 && unlock('sos_5')) nuevos.push('sos_5');
   if (state.sintomas.length >= 3 && unlock('detective')) nuevos.push('detective');
+  if ((state.emergencia?.completados || []).length >= 7 && unlock('plan7_completo')) nuevos.push('plan7_completo');
   return nuevos;
 }

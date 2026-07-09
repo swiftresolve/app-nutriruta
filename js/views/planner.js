@@ -1,7 +1,7 @@
 // Recetario + lista de compras.
 import { getState, setState, isPremium } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
-import { isRecipeAvailable, trafficLight, shoppingList } from '../menu.js';
+import { isRecipeAvailable, trafficLight, shoppingList, displayRecipe } from '../menu.js';
 import { header, navigate } from '../app.js';
 import { openRecipe } from './dashboard.js';
 
@@ -61,13 +61,14 @@ export function renderPlanner(container, params = {}) {
     list.forEach((r, i) => {
       const locked = !premium && i >= FREE_RECIPE_LIMIT;
       const light = trafficLight(r, user.perfiles);
+      const shown = displayRecipe(r, user.exclusiones);
       const item = document.createElement('button');
       item.className = 'recipe-item';
       if (locked) item.style.opacity = '0.5';
       item.innerHTML = `
-        <span class="recipe-emoji">${locked ? '🔒' : r.emoji}</span>
+        <span class="recipe-emoji">${locked ? '🔒' : shown.emoji}</span>
         <span class="info">
-          <strong>${r.nombre}</strong><br>
+          <strong>${shown.nombre}</strong><br>
           <span class="muted small">${locked ? 'Disponible en el plan Premium' : r.descripcion}</span>
         </span>
         ${locked ? '' : `<span class="dot ${light}" title="Semáforo: ${light}"></span>`}`;

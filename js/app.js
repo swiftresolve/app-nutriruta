@@ -11,6 +11,7 @@ import { renderLearn } from './views/learn.js';
 import { renderSettings } from './views/settings.js';
 import { renderMission } from './views/mission.js';
 import { renderPlans } from './views/plans.js';
+import { renderEmergency } from './views/emergency.js';
 
 const app = document.getElementById('app');
 const nav = document.getElementById('bottom-nav');
@@ -25,7 +26,8 @@ const ROUTES = {
   learn: renderLearn,
   settings: renderSettings,
   mission: renderMission,
-  plans: renderPlans
+  plans: renderPlans,
+  emergency: renderEmergency
 };
 
 const PUBLIC_ROUTES = ['auth'];
