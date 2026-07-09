@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-v8';
+const CACHE = 'nutriruta-v9';
 const ASSETS = [
   './',
   './index.html',
@@ -25,6 +25,7 @@ const ASSETS = [
   './js/views/mission.js',
   './js/views/plans.js',
   './js/views/emergency.js',
+  './js/views/assistant.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png'

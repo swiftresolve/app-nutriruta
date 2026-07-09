@@ -73,3 +73,32 @@ export async function fetchMissionWeeks() {
   if (error) throw error;
   return data || [];
 }
+
+// --- Pregúntale a tu guía (asistente IA, Premium) ---
+// Todo pasa por la Edge Function: valida Premium vigente y la cuota
+// mensual en el servidor, y es la única vía con permiso de escribir en
+// ai_conversations (la tabla no tiene políticas RLS para clientes).
+export async function fetchGuideHistory() {
+  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'history' } });
+  if (error) throw error;
+  return data;
+}
+
+export async function askGuide(message) {
+  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'send', message } });
+  if (error) {
+    // supabase-js expone el cuerpo de error en error.context (un Response ya
+    // parcialmente leído por el SDK); hay que clonarlo antes de leerlo de nuevo,
+    // o .json() falla con "body stream already read" y perdemos el mensaje.
+    let body = null;
+    try { body = await error.context.clone().json(); } catch { /* respuesta no era JSON */ }
+    if (body) {
+      const e = new Error(body.message || body.error || 'No se pudo enviar tu pregunta.');
+      e.code = body.error;
+      e.resetDate = body.resetDate;
+      throw e;
+    }
+    throw error;
+  }
+  return data;
+}
