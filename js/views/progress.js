@@ -17,7 +17,7 @@ export function renderProgress(container) {
   const streak = document.createElement('div');
   streak.className = 'card streak-hero';
   streak.innerHTML = `
-    <div class="num">${racha.actual} 🔥</div>
+    <div class="num">${racha.actual} <span class="streak-flame ${racha.actual > 0 ? 'lit' : 'out'}">🔥</span></div>
     <p><strong>días seguidos</strong> cumpliendo tus hábitos</p>
     <p class="small muted mt">Mejor racha: ${racha.mejor} días · Total de días cumplidos: ${diasCumplidos.length}</p>`;
   container.appendChild(streak);

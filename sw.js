@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-v10';
+const CACHE = 'nutriruta-v11';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   './js/store.js',
   './js/menu.js',
   './js/charts.js',
+  './js/streakAnim.js',
   './js/data/profiles.js',
   './js/data/recipes.js',
   './js/data/lessons.js',

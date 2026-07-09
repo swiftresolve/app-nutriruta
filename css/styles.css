@@ -173,6 +173,43 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* ===== Progress ===== */
 .streak-hero { text-align: center; padding: 24px 16px; }
 .streak-hero .num { font-size: 3rem; font-weight: 800; color: var(--primary-dark); line-height: 1; }
+
+/* Llamita animada de la racha: viva y con flicker sutil si hay racha activa,
+   apagada y quieta si el usuario aún no ha completado un día. */
+.streak-flame { display: inline-block; transform-origin: 50% 85%; }
+.streak-flame.lit { animation: flame-flicker 2.6s ease-in-out infinite; }
+.streak-flame.out { filter: grayscale(1) opacity(0.45); }
+@keyframes flame-flicker {
+  0%, 100% { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 0 rgba(255, 138, 107, 0)); }
+  25% { transform: scale(1.07, 0.95) rotate(2deg); }
+  50% { transform: scale(0.96, 1.06) rotate(-1deg); filter: drop-shadow(0 3px 8px rgba(255, 138, 107, 0.4)); }
+  75% { transform: scale(1.04, 0.97) rotate(1deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .streak-flame.lit { animation: none; }
+}
+
+/* Celebración al sumar un día nuevo a la racha (overlay decorativo, no bloqueante). */
+.streak-celebrate {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  z-index: 300; pointer-events: none;
+}
+.streak-celebrate .ring {
+  position: absolute; width: 110px; height: 110px; border-radius: 50%;
+  border: 3px solid var(--accent); animation: streak-burst-ring 0.7s ease-out forwards;
+}
+.streak-celebrate .flame-big { font-size: 4.4rem; animation: streak-pop 0.55s cubic-bezier(.34,1.56,.64,1); filter: drop-shadow(0 4px 14px rgba(255, 138, 107, 0.5)); }
+.streak-celebrate .label {
+  position: absolute; bottom: 32%; left: 50%; transform: translateX(-50%);
+  background: var(--card); color: var(--ink); font-weight: 700; font-size: 0.9rem;
+  padding: 8px 16px; border-radius: 999px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  opacity: 0; animation: streak-label-in 0.4s ease 0.15s forwards;
+  white-space: nowrap;
+}
+@keyframes streak-pop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes streak-burst-ring { 0% { transform: scale(0.6); opacity: 0.6; } 100% { transform: scale(2.4); opacity: 0; } }
+@keyframes streak-label-in { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes streak-fade-out { to { opacity: 0; } }
 .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
 .badge { text-align: center; padding: 12px 6px; border-radius: 14px; background: #FBFDFC; border: 1.5px solid #EFF5F3; }
 .badge .emoji { font-size: 1.8rem; }

@@ -5,6 +5,7 @@ import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
+import { celebrateStreak } from '../streakAnim.js';
 
 const DAILY_HABITS = [
   { id: 'agua', nombre: 'Tomé suficiente agua 💧' },
@@ -180,8 +181,11 @@ export function renderDashboard(container) {
       <input type="checkbox" id="h-${h.id}" ${checks[h.id] ? 'checked' : ''}>
       <label for="h-${h.id}">${h.nombre}</label>`;
     row.querySelector('input').addEventListener('change', () => {
+      const rachaAntes = getState().racha.actual;
       toggleHabit(h.id);
+      const rachaDespues = getState().racha.actual;
       const nuevos = checkAchievements();
+      if (rachaDespues > rachaAntes) celebrateStreak(rachaDespues);
       if (nuevos.length) toast('🏆 ¡Nuevo logro desbloqueado! Míralo en Progreso.');
       renderDashboard(clearAndGet(container));
     });
