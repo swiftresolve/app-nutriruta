@@ -116,13 +116,17 @@ function openDia(dia, done, onChange) {
       <ul class="steps">${dia.acciones.map((a) => `<li>${a}</li>`).join('')}</ul>
       <h3 class="mt">Para reflexionar</h3>
       <p>${dia.reflexion}</p>
-      <label class="muted small mt" for="dia-reflexion" style="display:block">¿Quieres escribir tu respuesta? (opcional)</label>
+      <label class="muted small mt" for="dia-reflexion" style="display:block">Escribe tu respuesta (mínimo 40 caracteres) para poder marcar el día como completado</label>
       <textarea id="dia-reflexion" maxlength="500" rows="3" placeholder="Escribe lo que quieras..."
         style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:8px;resize:vertical">${esc(reflexionGuardada)}</textarea>`);
     const textarea = modal.querySelector('#dia-reflexion');
     const btn = document.createElement('button');
     btn.className = done ? 'btn ghost full mt' : 'btn full mt';
     btn.textContent = done ? '↩️ Desmarcar día' : '✅ Marcar día como completado';
+    if (!done) {
+      btn.disabled = !esTextoReal(textarea.value);
+      textarea.addEventListener('input', () => { btn.disabled = !esTextoReal(textarea.value); });
+    }
     btn.addEventListener('click', () => {
       guardarReflexionDia(dia.n, textarea.value);
       const { emergencia } = getState();
@@ -140,6 +144,21 @@ function openDia(dia, done, onChange) {
     });
     modal.appendChild(btn);
   });
+}
+
+// Valida que sea una reflexión real, no relleno para pasar el mínimo:
+// suficientes letras (no solo símbolos/números), variedad de caracteres
+// (no "aaaaaaaa..." ni "jajajaja...") y al menos un espacio (una reflexión
+// real casi siempre tiene más de una palabra).
+function esTextoReal(texto) {
+  const t = (texto || '').trim();
+  if (t.length < 40) return false;
+  const letras = t.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ]/g, '');
+  if (letras.length < 25) return false;
+  const unicas = new Set(letras.toLowerCase()).size;
+  if (unicas < 8) return false;
+  if (!/\s/.test(t)) return false;
+  return true;
 }
 
 // Invitación cálida a compartir las reflexiones de la semana como
