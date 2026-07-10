@@ -344,6 +344,23 @@ export function responderInvitacionTestimonio(index, compartir) {
   setState({ checkins });
 }
 
+// --- Reflexiones del Plan de 7 días (opcionales, día a día) ---
+export function guardarReflexionDia(diaN, texto) {
+  const { emergencia } = state;
+  if (!emergencia) return;
+  const reflexiones = { ...(emergencia.reflexiones || {}), [diaN]: (texto || '').trim().slice(0, 500) };
+  setState({ emergencia: { ...emergencia, reflexiones } });
+}
+
+// La invitación a compartir las reflexiones como testimonio se pregunta UNA
+// sola vez, al completar el día 7 — no cada día (fatiga de permisos) — y
+// queda marcada aunque la respuesta sea "no", para no volver a preguntar.
+export function responderInvitacionTestimonioPlan(compartir) {
+  const { emergencia } = state;
+  if (!emergencia) return;
+  setState({ emergencia: { ...emergencia, compartirReflexiones: compartir, testimonioPlanPreguntado: true } });
+}
+
 // --- Logros ---
 export const ACHIEVEMENTS = [
   { id: 'primer_dia', emoji: '🌱', nombre: 'Primer día', desc: 'Completaste tu primer día de hábitos.' },

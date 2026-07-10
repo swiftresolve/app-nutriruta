@@ -2,7 +2,7 @@
 // Termina con un CTA hacia la Misión 12 semanas (Premium).
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
-import { getState, setState, checkAchievements, today, esc } from '../store.js';
+import { getState, setState, checkAchievements, today, esc, guardarReflexionDia, responderInvitacionTestimonioPlan } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
 
 export function renderEmergency(container) {
@@ -106,6 +106,8 @@ function showVuelveManana(dia) {
 
 function openDia(dia, done, onChange) {
   openModal((modal, close) => {
+    const { emergencia } = getState();
+    const reflexionGuardada = (emergencia?.reflexiones || {})[dia.n] || '';
     modal.insertAdjacentHTML('beforeend', `
       <div style="font-size:2.4rem">${dia.emoji}</div>
       <h2>Día ${dia.n}: ${dia.titulo}</h2>
@@ -113,21 +115,56 @@ function openDia(dia, done, onChange) {
       <h3 class="mt">Hoy vas a…</h3>
       <ul class="steps">${dia.acciones.map((a) => `<li>${a}</li>`).join('')}</ul>
       <h3 class="mt">Para reflexionar</h3>
-      <p>${dia.reflexion}</p>`);
+      <p>${dia.reflexion}</p>
+      <label class="muted small mt" for="dia-reflexion" style="display:block">¿Quieres escribir tu respuesta? (opcional)</label>
+      <textarea id="dia-reflexion" maxlength="500" rows="3" placeholder="Escribe lo que quieras..."
+        style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:8px;resize:vertical">${esc(reflexionGuardada)}</textarea>`);
+    const textarea = modal.querySelector('#dia-reflexion');
     const btn = document.createElement('button');
     btn.className = done ? 'btn ghost full mt' : 'btn full mt';
     btn.textContent = done ? '↩️ Desmarcar día' : '✅ Marcar día como completado';
     btn.addEventListener('click', () => {
+      guardarReflexionDia(dia.n, textarea.value);
       const { emergencia } = getState();
       const completados = new Set(emergencia.completados || []);
       done ? completados.delete(dia.n) : completados.add(dia.n);
       setState({ emergencia: { ...emergencia, completados: [...completados] } });
       const nuevos = checkAchievements();
       close();
-      if (nuevos.includes('plan7_completo')) toast('🎉 ¡Completaste tu plan de 7 días!');
+      if (nuevos.includes('plan7_completo')) {
+        toast('🎉 ¡Completaste tu plan de 7 días!');
+        const { emergencia: e2 } = getState();
+        if (!e2.testimonioPlanPreguntado) setTimeout(() => abrirInvitacionTestimonioPlan(), 500);
+      }
       if (onChange) onChange();
     });
     modal.appendChild(btn);
+  });
+}
+
+// Invitación cálida a compartir las reflexiones de la semana como
+// testimonio — se pregunta UNA sola vez, justo al completar el día 7,
+// el momento de mayor logro real, no en cada día.
+function abrirInvitacionTestimonioPlan() {
+  openModal((modal, close) => {
+    modal.insertAdjacentHTML('beforeend', `
+      <div style="font-size:2rem">💛</div>
+      <h2>Completaste tus 7 días</h2>
+      <p class="small mt">Nos encantaría compartir lo que escribiste en tus reflexiones de esta semana — con tu nombre o de forma anónima, como prefieras — para inspirar a alguien que está empezando justo como tú hace una semana.
+      Es completamente tu decisión, y no pasa nada si prefieres que quede solo entre nosotros.</p>
+      <div class="row mt" style="gap:10px">
+        <button class="btn ghost sm" id="tp-no">Prefiero que quede privado</button>
+        <button class="btn sm" id="tp-si" style="flex:1">Sí, compartan mi historia 💛</button>
+      </div>`);
+    modal.querySelector('#tp-no').addEventListener('click', () => {
+      responderInvitacionTestimonioPlan(false);
+      close();
+    });
+    modal.querySelector('#tp-si').addEventListener('click', () => {
+      responderInvitacionTestimonioPlan(true);
+      close();
+      toast('Gracias por confiar en nosotros 💛');
+    });
   });
 }
 

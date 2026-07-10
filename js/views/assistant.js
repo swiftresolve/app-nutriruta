@@ -74,7 +74,7 @@ export function renderAssistant(container) {
   }
 
   function setQuota(used, limit) {
-    quotaEl.textContent = `${used}/${limit} preguntas este mes`;
+    quotaEl.textContent = `${used}/${limit} mensajes este mes`;
     limitReached = used >= limit;
     sendBtn.disabled = limitReached;
     input.disabled = limitReached;
@@ -128,7 +128,7 @@ export function renderAssistant(container) {
       if (e.code === 'cuota_agotada') {
         const fecha = e.resetDate ? new Date(e.resetDate).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : 'el próximo mes';
         const nombre = getState().user?.nombre;
-        addBubble('assistant', `Por hoy llegamos hasta aquí${nombre ? ', ' + nombre : ''} — ya usamos tus 25 preguntas de este mes 💚 Ha sido un gusto acompañarte. Nos vemos de nuevo el ${fecha}; mientras tanto sigo aquí en la app, en tu menú y tu progreso de cada día. ¡Cuídate mucho!`);
+        addBubble('assistant', `Por hoy llegamos hasta aquí${nombre ? ', ' + nombre : ''} — ya usamos tus 25 mensajes de este mes 💚 Ha sido un gusto acompañarte. Nos vemos de nuevo el ${fecha}; mientras tanto sigo aquí en la app, en tu menú y tu progreso de cada día. ¡Cuídate mucho!`);
         setQuota(25, 25);
       } else if (e.code === 'premium_requerido') {
         toast('Tu plan Premium ya no está activo.');
