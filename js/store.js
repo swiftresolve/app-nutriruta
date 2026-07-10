@@ -36,16 +36,22 @@ const DEFAULT_STATE = {
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
 const TOTAL_HABITOS_DIA = 5;
 
-let state = load();
+// La llave de localStorage se aísla por cuenta (user.id) una vez hay sesión.
+// Sin esto, en un dispositivo compartido/de pruebas, el progreso cacheado de
+// una cuenta puede terminar subiéndose al perfil de otra al iniciar sesión
+// (no solo al registrarse) — fue la causa real de que aparecieran antojos,
+// racha o plan de 7 días de otra cuenta en una recién creada.
+function keyFor(userId) { return userId ? `${KEY}:${userId}` : KEY; }
+let activeKey = KEY;
 
-function load() {
+function loadFromKey(key) {
   try {
     // Migrar el estado guardado bajo nombres anteriores de la app.
-    let raw = localStorage.getItem(KEY);
-    if (!raw) {
+    let raw = localStorage.getItem(key);
+    if (!raw && key === KEY) {
       for (const oldKey of ['savibra-state-v1', 'nutralma-state-v1']) {
         const old = localStorage.getItem(oldKey);
-        if (old) { raw = old; localStorage.setItem(KEY, old); localStorage.removeItem(oldKey); break; }
+        if (old) { raw = old; localStorage.setItem(key, old); localStorage.removeItem(oldKey); break; }
       }
     }
     if (!raw) return structuredClone(DEFAULT_STATE);
@@ -55,17 +61,20 @@ function load() {
   }
 }
 
+let state = loadFromKey(activeKey);
+
 export function getState() { return state; }
 
 export function setState(patch) {
   state = { ...state, ...patch };
-  localStorage.setItem(KEY, JSON.stringify(state));
+  localStorage.setItem(activeKey, JSON.stringify(state));
   scheduleCloudPush();
 }
 
 export function resetState() {
   state = structuredClone(DEFAULT_STATE);
-  localStorage.removeItem(KEY);
+  localStorage.removeItem(activeKey);
+  activeKey = KEY;
 }
 
 // ---------- Sincronización con la nube (Supabase, protegida por RLS) ----------
@@ -103,16 +112,20 @@ export async function initCloud() {
     const profile = await fetchProfile();
     if (!profile) return;
     plan = { tipo: profile.plan || 'free', periodo: profile.plan_periodo || null, desde: profile.plan_desde || null };
+    // A partir de aquí, todo lo que se lea o suba a la nube es exclusivo de
+    // esta cuenta — nunca el caché que pudo dejar otra cuenta en este navegador.
+    activeKey = keyFor(profile.id);
+    state = loadFromKey(activeKey);
     const remote = profile.state;
     if (remote && typeof remote === 'object' && Object.keys(remote).length) {
       state = { ...structuredClone(DEFAULT_STATE), ...remote };
-      localStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem(activeKey, JSON.stringify(state));
     } else if (state.onboarded) {
       await pushProfileState(state, state.user.nombre);
     }
     if (profile.nombre && !state.user.nombre) {
       state = { ...state, user: { ...state.user, nombre: profile.nombre } };
-      localStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem(activeKey, JSON.stringify(state));
     }
     cloudReady = true;
   } catch (e) {
