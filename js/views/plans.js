@@ -1,8 +1,8 @@
 // Planes de suscripción: mensual y anual (pago vía Hotmart).
 import { getPlan, setPlanCache, isPremium, planExpired, planExpiry } from '../store.js';
-import { updatePlan } from '../supabase-client.js';
+import { downgradeToFree } from '../supabase-client.js';
 import { HOTMART_CHECKOUT } from '../config.js';
-import { header, navigate, toast, openModal } from '../app.js';
+import { header, navigate, toast } from '../app.js';
 
 const PLANS = [
   {
@@ -56,7 +56,7 @@ export function renderPlans(container) {
     const back = document.createElement('button');
     back.className = 'btn ghost sm mt';
     back.textContent = 'Volver al plan gratuito';
-    back.addEventListener('click', () => choose(null, container));
+    back.addEventListener('click', () => choose(container));
     free.appendChild(back);
   }
   container.appendChild(free);
@@ -76,21 +76,15 @@ export function renderPlans(container) {
     btn.className = isCurrent ? 'btn ghost full mt' : 'btn accent full mt';
     btn.textContent = isCurrent ? '✓ Tu plan actual' : `Elegir ${p.nombre}`;
     btn.disabled = isCurrent;
-    btn.addEventListener('click', () => confirmPlan(p, container));
+    btn.addEventListener('click', () => confirmPlan(p));
     card.appendChild(btn);
     container.appendChild(card);
   }
 
   const note = document.createElement('div');
   note.className = 'legal-note';
-  note.innerHTML = hotmartReady()
-    ? 'ℹ️ El pago se procesa de forma segura a través de <strong>Hotmart</strong>. Tras completar tu compra, tu plan Premium se activará en tu cuenta. Puedes cancelar en cualquier momento desde Hotmart.'
-    : 'ℹ️ <strong>Versión de lanzamiento:</strong> la pasarela de pagos (Hotmart) aún no está conectada; al elegir un plan se activa Premium en tu cuenta sin costo, como cortesía de prueba. Podrás cancelar o cambiar de plan en cualquier momento.';
+  note.innerHTML = 'ℹ️ El pago se procesa de forma segura a través de <strong>Hotmart</strong>. Tras completar tu compra, tu plan Premium se activará en tu cuenta. Puedes cancelar en cualquier momento desde Hotmart.';
   container.appendChild(note);
-}
-
-function hotmartReady() {
-  return !!(HOTMART_CHECKOUT.mensual && HOTMART_CHECKOUT.anual);
 }
 
 function planBadge(plan) {
@@ -105,43 +99,18 @@ function planBadge(plan) {
   return '<p class="mt"><span class="tag info">Plan actual: Gratuito</span></p>';
 }
 
-function confirmPlan(p, container) {
-  // Con Hotmart configurado, el checkout se abre en la plataforma de pago.
-  if (hotmartReady()) {
-    window.open(HOTMART_CHECKOUT[p.id], '_blank', 'noopener');
-    toast('Completa tu compra en Hotmart; tu plan se activará al confirmarse el pago.');
-    return;
-  }
-  openModal((modal, close) => {
-    modal.insertAdjacentHTML('beforeend', `
-      <h2>${p.emoji} ${p.nombre}</h2>
-      <p class="mt">Activarás el plan <strong>${p.nombre}</strong> (${p.precio} ${p.periodo}).</p>
-      <p class="small muted mt">Sin pasarela de pagos conectada: se activa como cortesía de lanzamiento.</p>`);
-    const yes = document.createElement('button');
-    yes.className = 'btn full mt';
-    yes.textContent = 'Confirmar';
-    yes.addEventListener('click', async () => {
-      close();
-      await choose(p.id, container);
-    });
-    modal.appendChild(yes);
-  });
+function confirmPlan(p) {
+  window.open(HOTMART_CHECKOUT[p.id], '_blank', 'noopener');
+  toast('Completa tu compra en Hotmart; tu plan se activará al confirmarse el pago.');
 }
 
-async function choose(periodo, container) {
+async function choose(container) {
   try {
-    if (periodo) {
-      await updatePlan('premium', periodo);
-      setPlanCache('premium', periodo, new Date().toISOString());
-      toast('✨ ¡Premium activado! Tu Misión 12 semanas te espera.');
-      navigate('mission');
-    } else {
-      await updatePlan('free', null);
-      setPlanCache('free', null, null);
-      toast('Plan gratuito activado.');
-      container.innerHTML = '';
-      renderPlans(container);
-    }
+    await downgradeToFree();
+    setPlanCache('free', null, null);
+    toast('Plan gratuito activado.');
+    container.innerHTML = '';
+    renderPlans(container);
   } catch (e) {
     toast('No se pudo actualizar el plan. Revisa tu conexión.');
   }

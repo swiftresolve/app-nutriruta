@@ -50,17 +50,12 @@ export async function pushProfileState(state, nombre) {
   if (error) throw error;
 }
 
-export async function updatePlan(plan, periodo) {
-  // El plan ya no se escribe directo en la tabla (columnas protegidas):
-  // se pasa por funciones del servidor. La activación real la hace el
-  // webhook de Hotmart; esta vía queda para la cortesía de lanzamiento.
-  if (plan === 'premium') {
-    const { error } = await supabase.rpc('cortesia_activar_premium', { p_periodo: periodo });
-    if (error) throw error;
-  } else {
-    const { error } = await supabase.rpc('bajar_a_gratuito');
-    if (error) throw error;
-  }
+export async function downgradeToFree() {
+  // El plan Premium ya no se activa desde el cliente (columnas protegidas):
+  // lo activa el webhook de Hotmart al confirmarse el pago. Solo bajar a
+  // gratis sigue siendo una acción legítima que la propia usuaria controla.
+  const { error } = await supabase.rpc('bajar_a_gratuito');
+  if (error) throw error;
 }
 
 // Semanas de la misión: el servidor solo entrega las que el plan permite
@@ -82,6 +77,29 @@ export async function fetchGuideHistory() {
   const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'history' } });
   if (error) throw error;
   return data;
+}
+
+// --- Notificaciones push ---
+// El cliente solo puede crear/borrar SU PROPIA suscripción (RLS); nunca leer
+// suscripciones de nadie, ni siquiera la propia de vuelta. El envío real lo
+// hace la Edge Function push-notify con service_role, disparada por cron.
+export async function savePushSubscription(sub) {
+  const session = await getSession();
+  if (!session) return;
+  const json = sub.toJSON();
+  const { error } = await supabase.from('push_subscriptions').insert({
+    user_id: session.user.id,
+    endpoint: json.endpoint,
+    p256dh: json.keys.p256dh,
+    auth: json.keys.auth
+  });
+  // Si ya existía (endpoint único), no es un error real: mismo dispositivo re-suscribiendo.
+  if (error && error.code !== '23505') throw error;
+}
+
+export async function deletePushSubscription(endpoint) {
+  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
+  if (error) throw error;
 }
 
 export async function askGuide(message) {

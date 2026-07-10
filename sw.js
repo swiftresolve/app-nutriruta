@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-v14';
+const CACHE = 'nutriruta-v16';
 const ASSETS = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const ASSETS = [
   './js/menu.js',
   './js/charts.js',
   './js/streakAnim.js',
+  './js/push.js',
   './js/data/profiles.js',
   './js/data/recipes.js',
   './js/data/lessons.js',
@@ -68,6 +69,33 @@ self.addEventListener('fetch', (e) => {
         }
         return res;
       }).catch(() => caches.match('./index.html'));
+    })
+  );
+});
+
+// ---------- Notificaciones push ----------
+self.addEventListener('push', (e) => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch { data = { title: 'NutriRuta', body: e.data ? e.data.text() : '' }; }
+  const title = data.title || 'NutriRuta';
+  const options = {
+    body: data.body || '',
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    data: { url: data.url || './' }
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if (c.url.includes(self.location.origin) && 'focus' in c) return c.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
     })
   );
 });

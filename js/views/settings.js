@@ -3,6 +3,7 @@ import { getState, setState, resetState, getPlan, isPremium, planExpired, planEx
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { getSession, signOut, pushProfileState } from '../supabase-client.js';
 import { navigate, header, openModal, toast } from '../app.js';
+import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
 export function renderSettings(container) {
   header(container);
@@ -40,6 +41,47 @@ export function renderSettings(container) {
   });
   account.appendChild(outBtn);
   container.appendChild(account);
+
+  // Notificaciones push
+  if (pushSupported()) {
+    const notif = document.createElement('div');
+    notif.className = 'card';
+    notif.innerHTML = `
+      <h2>🔔 Notificaciones</h2>
+      <p class="small mt">Avisos ocasionales para no perder tu racha, saber cuándo se desbloquea un nuevo día de tu plan, o cuando te toca un check-in. Nada de spam.</p>
+      <p class="small mt" id="notif-estado">Consultando…</p>
+      <button class="btn full mt" id="notif-btn" disabled>Cargando…</button>`;
+    container.appendChild(notif);
+    const estadoEl = notif.querySelector('#notif-estado');
+    const btn = notif.querySelector('#notif-btn');
+
+    async function pintarEstadoNotif() {
+      const sub = await currentSubscription();
+      const activas = !!sub && Notification.permission === 'granted';
+      estadoEl.textContent = activas ? '✅ Activadas en este dispositivo.' : 'Aún no están activadas en este dispositivo.';
+      btn.textContent = activas ? 'Desactivar' : 'Activar notificaciones';
+      btn.className = activas ? 'btn ghost full mt' : 'btn full mt';
+      btn.disabled = false;
+    }
+    pintarEstadoNotif();
+
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        const sub = await currentSubscription();
+        if (sub) {
+          await disablePush();
+          toast('Notificaciones desactivadas.');
+        } else {
+          await enablePush();
+          toast('¡Notificaciones activadas! 🔔');
+        }
+      } catch (e) {
+        toast(e.message || 'No se pudo cambiar el estado de las notificaciones.');
+      }
+      pintarEstadoNotif();
+    });
+  }
 
   // Perfiles activos
   const perf = document.createElement('div');
