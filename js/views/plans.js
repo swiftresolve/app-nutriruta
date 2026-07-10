@@ -6,12 +6,12 @@ import { header, navigate, toast, openModal } from '../app.js';
 
 const PLANS = [
   {
-    id: 'mensual', nombre: 'Premium Mensual', precio: 'USD 9', periodo: '/ mes', emoji: '🌱',
-    detalle: 'Menos de lo que cuestan 2 comidas fuera de casa.'
-  },
-  {
     id: 'anual', nombre: 'Premium Anual', precio: 'USD 90', periodo: '/ año', emoji: '🌳',
     detalle: 'Equivale a USD 7.50/mes — 2 meses gratis.', destacado: true
+  },
+  {
+    id: 'mensual', nombre: 'Premium Mensual', precio: 'USD 9', periodo: '/ mes', emoji: '🌱',
+    detalle: 'Menos de lo que cuestan 2 comidas fuera de casa.'
   }
 ];
 

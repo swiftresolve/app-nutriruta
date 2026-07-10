@@ -1,7 +1,7 @@
 // Pregúntale a tu guía: asistente conversacional Premium.
 // Cuota, verificación de plan y la llamada a la IA viven en el servidor
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
-import { isPremium } from '../store.js';
+import { isPremium, getState } from '../store.js';
 import { fetchGuideHistory, askGuide } from '../supabase-client.js';
 import { header, navigate, toast } from '../app.js';
 
@@ -127,7 +127,8 @@ export function renderAssistant(container) {
       divider.remove();
       if (e.code === 'cuota_agotada') {
         const fecha = e.resetDate ? new Date(e.resetDate).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : 'el próximo mes';
-        addBubble('system', `Usaste tus preguntas de este mes. Se renuevan el ${fecha}.`);
+        const nombre = getState().user?.nombre;
+        addBubble('assistant', `Por hoy llegamos hasta aquí${nombre ? ', ' + nombre : ''} — ya usamos tus 25 preguntas de este mes 💚 Ha sido un gusto acompañarte. Nos vemos de nuevo el ${fecha}; mientras tanto sigo aquí en la app, en tu menú y tu progreso de cada día. ¡Cuídate mucho!`);
         setQuota(25, 25);
       } else if (e.code === 'premium_requerido') {
         toast('Tu plan Premium ya no está activo.');

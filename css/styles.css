@@ -68,6 +68,7 @@ strong { color: var(--ink); }
 .mt { margin-top: 10px; }
 .mb { margin-bottom: 10px; }
 .center { text-align: center; }
+.center h2 { justify-content: center; }
 
 /* ===== Buttons ===== */
 button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
