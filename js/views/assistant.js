@@ -48,12 +48,28 @@ export function renderAssistant(container) {
 
   let limitReached = false;
 
+  // .chat-log no tiene scroll propio (crece con la página completa), así que
+  // "hacer scroll" real es desplazar el elemento nuevo a la vista, no mover
+  // log.scrollTop (eso no hacía nada — era la causa de que las respuestas
+  // "no se vieran" hasta buscarlas manualmente).
+  function scrollToView(el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  function addDivider(text) {
+    const d = document.createElement('div');
+    d.className = 'chat-divider';
+    d.innerHTML = `<span>${text}</span>`;
+    log.appendChild(d);
+    return d;
+  }
+
   function addBubble(role, text) {
     const b = document.createElement('div');
     b.className = `chat-msg ${role}`;
     b.textContent = text;
     log.appendChild(b);
-    log.scrollTop = log.scrollHeight;
+    scrollToView(b);
     return b;
   }
 
@@ -89,19 +105,26 @@ export function renderAssistant(container) {
     sendBtn.disabled = true;
     input.disabled = true;
 
+    const divider = addDivider('Nuevo mensaje');
     const typing = document.createElement('div');
     typing.className = 'chat-typing';
     typing.innerHTML = '<span></span><span></span><span></span>';
     log.appendChild(typing);
-    log.scrollTop = log.scrollHeight;
+    scrollToView(typing);
 
     try {
       const data = await askGuide(text);
       typing.remove();
-      addBubble('assistant', data.reply);
+      const reply = addBubble('assistant', data.reply);
       setQuota(data.usedCount, data.limit);
+      // El divisor solo marca "hasta aquí llegó lo nuevo" mientras esta
+      // respuesta sigue siendo la más reciente; deja de tener sentido en
+      // cuanto la usuaria manda la siguiente pregunta.
+      setTimeout(() => divider.remove(), 4000);
+      scrollToView(reply);
     } catch (e) {
       typing.remove();
+      divider.remove();
       if (e.code === 'cuota_agotada') {
         const fecha = e.resetDate ? new Date(e.resetDate).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : 'el próximo mes';
         addBubble('system', `Usaste tus preguntas de este mes. Se renuevan el ${fecha}.`);

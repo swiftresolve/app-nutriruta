@@ -280,6 +280,9 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 .chat-typing span:nth-child(2) { animation-delay: 0.15s; }
 .chat-typing span:nth-child(3) { animation-delay: 0.3s; }
 @keyframes chat-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+.chat-divider { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+.chat-divider::before, .chat-divider::after { content: ''; flex: 1; height: 1px; background: var(--primary-soft); }
+.chat-divider span { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--primary-dark); white-space: nowrap; }
 .chat-input-row { display: flex; gap: 8px; position: sticky; bottom: calc(var(--nav-h) + 12px); background: var(--bg); padding-top: 8px; }
 .chat-input-row textarea {
   flex: 1; resize: none; border: 1.5px solid #D8E6E2; border-radius: 14px; padding: 12px 14px;
