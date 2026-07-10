@@ -36,7 +36,7 @@ export function renderDashboard(container) {
   guideCard.style.background = 'linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))';
   guideCard.style.border = 'none';
   guideCard.innerHTML = `
-    <div class="spread"><h3>💬 Pregúntale a tu guía</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
+    <div class="spread"><h3>💬 Sana, tu guía</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
     <p class="small mt">Una duda puntual, ahora mismo, con el contexto de tu perfil.</p>
     <button class="btn ghost sm mt">${isPremium() ? 'Abrir chat →' : 'Conocer más →'}</button>`;
   guideCard.querySelector('.btn').addEventListener('click', () => navigate('assistant'));

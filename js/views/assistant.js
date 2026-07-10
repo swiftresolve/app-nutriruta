@@ -13,7 +13,7 @@ export function renderAssistant(container) {
     lock.className = 'card center';
     lock.innerHTML = `
       <div style="font-size:2.6rem">💬</div>
-      <h2>Pregúntale a tu guía</h2>
+      <h2>Sana, tu guía</h2>
       <p class="mt">Un espacio para resolver dudas puntuales de nutrición y hábitos, con el contexto de tu perfil — como tener acompañamiento a la mano. Es parte del <strong>plan Premium</strong>.</p>
       <button class="btn accent full mt">Ver planes Premium</button>`;
     lock.querySelector('.btn').addEventListener('click', () => navigate('plans'));
@@ -24,8 +24,8 @@ export function renderAssistant(container) {
   const hero = document.createElement('div');
   hero.className = 'card';
   hero.innerHTML = `
-    <h2>💬 Pregúntale a tu guía</h2>
-    <p class="small mt">Pregunta lo que quieras sobre tu alimentación, tus síntomas o tus antojos. Tiene en cuenta tu perfil, pero recuerda: <strong>no reemplaza a tu médico o nutricionista</strong>, y ante señales de alarma, busca atención profesional de inmediato.</p>
+    <h2>💬 Sana, tu guía</h2>
+    <p class="small mt">Pregúntale lo que quieras sobre tu alimentación, tus síntomas o tus antojos. Tiene en cuenta tu perfil, pero recuerda: <strong>no reemplaza a tu médico o nutricionista</strong>, y ante señales de alarma, busca atención profesional de inmediato.</p>
     <p class="chat-quota mt" id="chatQuota">Cargando…</p>`;
   container.appendChild(hero);
 
@@ -86,7 +86,7 @@ export function renderAssistant(container) {
       const data = await fetchGuideHistory();
       log.innerHTML = '';
       if (!data.history.length) {
-        addBubble('system', 'Escribe tu primera pregunta cuando quieras. Por ejemplo: "tengo antojo de dulce a las 4pm, ¿qué hago?"');
+        addBubble('system', '¡Hola! Soy Sana 🌿 Escribe tu primera pregunta cuando quieras. Por ejemplo: "tengo antojo de dulce a las 4pm, ¿qué hago?"');
       } else {
         for (const m of data.history) addBubble(m.role, m.content);
       }
