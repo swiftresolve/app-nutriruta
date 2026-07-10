@@ -1,7 +1,7 @@
 // Recetario + lista de compras.
 import { getState, setState, isPremium } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
-import { isRecipeAvailable, trafficLight, shoppingList, displayRecipe } from '../menu.js';
+import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe } from '../menu.js';
 import { header, navigate } from '../app.js';
 import { openRecipe } from './dashboard.js';
 
@@ -12,6 +12,7 @@ export function renderPlanner(container, params = {}) {
   header(container);
   let tab = params.tab || 'recetas';
   let mealFilter = 'todas';
+  let rango = 'hoy';
 
   const tabs = document.createElement('div');
   tabs.className = 'chips mb';
@@ -96,21 +97,53 @@ export function renderPlanner(container, params = {}) {
       body.appendChild(upsell);
       return;
     }
+    const rangos = document.createElement('div');
+    rangos.className = 'chips mb';
+    for (const [id, label] of [['hoy', 'Hoy'], ['semana', 'Esta semana'], ['mes', 'Este mes']]) {
+      const b = document.createElement('button');
+      b.className = 'chip small' + (rango === id ? ' selected' : '');
+      b.textContent = label;
+      b.addEventListener('click', () => { rango = id; drawBody(); });
+      rangos.appendChild(b);
+    }
+    body.appendChild(rangos);
+
     const { compras } = getState();
-    const items = shoppingList();
     const card = document.createElement('div');
     card.className = 'card';
-    card.innerHTML = '<h2>🛒 Compras para tu menú de hoy</h2><p class="small mb">Generada automáticamente desde tu menú del día.</p>';
-    for (const it of items) {
-      const row = document.createElement('div');
-      const done = !!compras[it.texto];
-      row.className = 'shop-item' + (done ? ' done' : '');
-      row.innerHTML = `<input type="checkbox" ${done ? 'checked' : ''} id="s-${it.id}"><span>${it.texto}</span>`;
-      row.querySelector('input').addEventListener('change', (e) => {
-        setState({ compras: { ...getState().compras, [it.texto]: e.target.checked } });
-        row.classList.toggle('done', e.target.checked);
-      });
-      card.appendChild(row);
+
+    if (rango === 'hoy') {
+      const items = shoppingList();
+      card.innerHTML = '<h2>🛒 Compras para tu menú de hoy</h2><p class="small mb">Generada automáticamente desde tu menú del día.</p>';
+      for (const it of items) {
+        const row = document.createElement('div');
+        const done = !!compras[it.texto];
+        row.className = 'shop-item' + (done ? ' done' : '');
+        row.innerHTML = `<input type="checkbox" ${done ? 'checked' : ''} id="s-${it.id}"><span>${it.texto}</span>`;
+        row.querySelector('input').addEventListener('change', (e) => {
+          setState({ compras: { ...getState().compras, [it.texto]: e.target.checked } });
+          row.classList.toggle('done', e.target.checked);
+        });
+        card.appendChild(row);
+      }
+    } else {
+      const dias = rango === 'semana' ? 7 : 30;
+      const items = rangeShoppingList(dias);
+      card.innerHTML = `<h2>🛒 Compras para ${rango === 'semana' ? 'esta semana' : 'este mes'}</h2>
+        <p class="small mb">Proyectada desde tu menú de los próximos ${dias} días. No sabemos cantidades exactas por receta, así que te mostramos en cuántos días aparece cada cosa — úsalo como guía de cuánto comprar.</p>`;
+      for (const it of items) {
+        const row = document.createElement('div');
+        const done = !!compras[it.texto];
+        row.className = 'shop-item' + (done ? ' done' : '');
+        const diasTexto = [...new Set(it.dias)].slice(0, 6).join(', ');
+        row.innerHTML = `<input type="checkbox" ${done ? 'checked' : ''} id="s-r-${it.texto}">
+          <span>${it.texto} <span class="muted small">· ${it.count}× (${diasTexto})</span></span>`;
+        row.querySelector('input').addEventListener('change', (e) => {
+          setState({ compras: { ...getState().compras, [it.texto]: e.target.checked } });
+          row.classList.toggle('done', e.target.checked);
+        });
+        card.appendChild(row);
+      }
     }
     body.appendChild(card);
   }

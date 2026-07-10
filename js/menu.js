@@ -109,6 +109,43 @@ export function shoppingList(dateStr = today()) {
   return items;
 }
 
+const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+
+// Suma "n" días a una fecha YYYY-MM-DD usando componentes locales (no UTC):
+// como aquí solo movemos una fecha de calendario, no un instante, no hay
+// riesgo de los líos de zona horaria que sí aplican a today().
+function addDays(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+// Lista de compras proyectada a varios días: como el menú es determinístico
+// por fecha (misma semilla + overrides guardados), se puede calcular el menú
+// de cualquier día futuro sin que la usuaria tenga que "visitarlo" primero.
+// Como las recetas no tienen cantidades, no inventamos números — en vez de
+// eso mostramos en cuántos días/recetas aparece cada ingrediente, para que
+// la usuaria calcule el volumen con ese criterio real.
+export function rangeShoppingList(days, startDate = today()) {
+  const { user } = getState();
+  const map = new Map();
+  for (let i = 0; i < days; i++) {
+    const dateStr = addDays(startDate, i);
+    const weekday = DIAS_CORTOS[new Date(dateStr + 'T00:00:00').getDay()];
+    for (const { recipe } of dailyMenu(dateStr)) {
+      if (!recipe) continue;
+      for (const ing of recipe.ingredientes) {
+        const d = displayIngredient(ing, user.exclusiones);
+        if (!map.has(d.texto)) map.set(d.texto, { texto: d.texto, count: 0, dias: [] });
+        const entry = map.get(d.texto);
+        entry.count += 1;
+        entry.dias.push(weekday);
+      }
+    }
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count);
+}
+
 // Snacks anti-ansiedad disponibles para el usuario.
 export function sosSnacks() {
   const { user } = getState();

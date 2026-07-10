@@ -34,6 +34,9 @@ export function renderEmergency(container) {
   }
 
   const completados = emergencia.completados || [];
+  // Cuántos días han pasado desde que empezó (día de inicio = día 1), para
+  // que cada día se desbloquee con el calendario y no se puedan adelantar.
+  const diaDesbloqueado = Math.min(7, diasDesde(emergencia.inicio, today()) + 1);
 
   // Plan completado: cierre + CTA a la Misión
   if (completados.length >= 7) {
@@ -59,15 +62,46 @@ export function renderEmergency(container) {
   list.className = 'card';
   for (const d of EMERGENCY_PLAN.dias) {
     const done = completados.includes(d.n);
+    const locked = d.n > diaDesbloqueado;
     const item = document.createElement('button');
     item.className = 'recipe-item';
+    if (locked) item.style.opacity = '0.45';
     item.innerHTML = `
-      <span class="recipe-emoji">${done ? '✅' : d.emoji}</span>
+      <span class="recipe-emoji">${done ? '✅' : locked ? '🔒' : d.emoji}</span>
       <span class="info"><strong>Día ${d.n}: ${d.titulo}</strong><br><span class="muted small">${d.objetivo}</span></span><span>›</span>`;
-    item.addEventListener('click', () => openDia(d, done, () => renderEmergency(clear(container))));
+    item.addEventListener('click', () => {
+      if (locked) { showVuelveManana(d); return; }
+      openDia(d, done, () => renderEmergency(clear(container)));
+    });
     list.appendChild(item);
   }
   container.appendChild(list);
+}
+
+// Diferencia en días completos entre dos fechas YYYY-MM-DD (sin horas, sin
+// líos de zona horaria: compara solo la fecha calendario).
+function diasDesde(fechaInicio, fechaHoy) {
+  const [y1, m1, d1] = fechaInicio.split('-').map(Number);
+  const [y2, m2, d2] = fechaHoy.split('-').map(Number);
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
+}
+
+// Mensaje cálido cuando intentan adelantarse a un día que aún no toca —
+// celebra lo que ya hicieron en vez de solo bloquear.
+function showVuelveManana(dia) {
+  const overlay = document.createElement('div');
+  overlay.className = 'streak-celebrate';
+  overlay.setAttribute('aria-live', 'polite');
+  overlay.innerHTML = `
+    <div class="ring"></div>
+    <div class="flame-big">🌙</div>
+    <div class="label wrap">Ya diste tu paso de hoy — vuelve mañana para el Día ${dia.n}</div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', () => overlay.remove());
+  setTimeout(() => {
+    overlay.style.animation = 'streak-fade-out 0.3s ease forwards';
+    setTimeout(() => overlay.remove(), 320);
+  }, 2600);
 }
 
 function openDia(dia, done, onChange) {

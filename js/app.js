@@ -1,5 +1,5 @@
 // Router mínimo + arranque con puerta de autenticación.
-import { getState, initCloud } from './store.js';
+import { getState, initCloud, resetState } from './store.js';
 import { getSession, supabase } from './supabase-client.js';
 import { renderAuth } from './views/auth.js';
 import { renderQuiz } from './views/quiz.js';
@@ -113,7 +113,10 @@ if ('serviceWorker' in navigator) {
   navigate(!authed ? 'auth' : getState().onboarded ? 'dashboard' : 'quiz');
 
   supabase.auth.onAuthStateChange((event) => {
-    if (event === 'SIGNED_OUT') { authed = false; navigate('auth'); }
+    // Al cerrar sesión, nunca dejar el progreso de esta cuenta en el
+    // navegador: si alguien más entra o se registra aquí después, no debe
+    // heredar racha, misión ni plan de 7 días de la sesión anterior.
+    if (event === 'SIGNED_OUT') { authed = false; resetState(); navigate('auth'); }
     if (event === 'SIGNED_IN' && !authed) { authed = true; }
   });
 })();

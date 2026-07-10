@@ -53,7 +53,8 @@ export function renderQuiz(container) {
   const known = getState().user;
   const answers = {
     nombre: known.nombre || '', objetivos: [], condiciones: [], exclusiones: [],
-    habitosDificiles: [], actividad: 'medio', azucarFreq: 'a_veces', alcoholFreq: 'nunca'
+    habitosDificiles: [], actividad: 'medio', azucarFreq: 'a_veces', alcoholFreq: 'nunca',
+    pesoKg: known.pesoKg || ''
   };
   let step = 0;
 
@@ -96,6 +97,22 @@ export function renderQuiz(container) {
       title: '¿Tu nivel de actividad física?',
       sub: '',
       render: (el) => chips(el, ACTIVITY, answers, false, 'actividad')
+    },
+    {
+      title: '¿Cuál es tu peso? (opcional)',
+      sub: 'Solo lo usamos para calcular tu meta diaria de agua, personalizada según tu cuerpo (30–35 mL por kg). Puedes dejarlo en blanco y usamos una meta general.',
+      render(el) {
+        el.innerHTML = `
+          <div class="row" style="align-items:center;gap:10px">
+            <input id="q-peso" type="number" inputmode="numeric" min="30" max="300" placeholder="Ej: 65"
+              style="width:120px;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit">
+            <span class="muted">kg</span>
+          </div>
+          <div class="legal-note">🔒 Es privado, nadie más lo ve, y puedes borrarlo cuando quieras desde Ajustes.</div>`;
+        const input = el.querySelector('#q-peso');
+        input.value = answers.pesoKg;
+        input.addEventListener('input', (e) => { answers.pesoKg = e.target.value; });
+      }
     },
     {
       title: '¿Con qué frecuencia consumes azúcar?',
@@ -169,6 +186,7 @@ export function renderQuiz(container) {
 
   function result() {
     const perfiles = deriveProfiles(answers);
+    const pesoValido = Number(answers.pesoKg);
     setState({
       onboarded: true,
       user: {
@@ -179,7 +197,9 @@ export function renderQuiz(container) {
         habitosDificiles: answers.habitosDificiles,
         actividad: answers.actividad,
         azucarFreq: answers.azucarFreq,
-        alcoholFreq: answers.alcoholFreq
+        alcoholFreq: answers.alcoholFreq,
+        pesoKg: pesoValido >= 30 && pesoValido <= 300 ? pesoValido : null,
+        trackearPeso: false
       }
     });
 

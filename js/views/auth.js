@@ -1,6 +1,6 @@
 // Inicio de sesión y registro (Supabase Auth: JWT + refresh token rotativo).
 import { signIn, signUp } from '../supabase-client.js';
-import { initCloud, getState } from '../store.js';
+import { initCloud, getState, resetState } from '../store.js';
 import { navigate, toast, setAuthed } from '../app.js';
 
 const MIN_PASSWORD = 8;
@@ -80,6 +80,10 @@ export function renderAuth(container) {
           const nombre = (view.querySelector('#a-nombre')?.value || '').trim();
           const { data, error } = await signUp(email, pass, nombre);
           if (error) throw error;
+          // Una cuenta nueva nunca debe heredar progreso de una sesión anterior
+          // en este mismo navegador (racha, misión, plan de 7 días, onboarded…).
+          // Sin esto, initCloud() podría subir ese estado viejo al perfil nuevo.
+          resetState();
           if (!data.session) {
             container.innerHTML = `
               <div class="card center" style="margin-top:20vh">
