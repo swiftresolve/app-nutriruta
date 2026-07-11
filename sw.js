@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-v20';
+const CACHE = 'nutriruta-v21';
 const ASSETS = [
   './',
   './index.html',
@@ -31,6 +31,7 @@ const ASSETS = [
   './js/views/assistant.js',
   './js/views/checkin.js',
   './js/views/testimonials.js',
+  './js/views/resetPassword.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png'

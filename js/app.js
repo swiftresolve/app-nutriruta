@@ -14,6 +14,7 @@ import { renderPlans } from './views/plans.js';
 import { renderEmergency } from './views/emergency.js';
 import { renderAssistant } from './views/assistant.js';
 import { renderTestimonials } from './views/testimonials.js';
+import { renderResetPassword } from './views/resetPassword.js';
 import { maybeShowCheckin } from './views/checkin.js';
 
 const app = document.getElementById('app');
@@ -32,10 +33,11 @@ const ROUTES = {
   plans: renderPlans,
   emergency: renderEmergency,
   assistant: renderAssistant,
-  testimonials: renderTestimonials
+  testimonials: renderTestimonials,
+  resetPassword: renderResetPassword
 };
 
-const PUBLIC_ROUTES = ['auth'];
+const PUBLIC_ROUTES = ['auth', 'resetPassword'];
 let authed = false;
 
 export function setAuthed(v) { authed = v; }
@@ -48,7 +50,7 @@ export function navigate(route, params = {}) {
   render(app, params);
   if (route === 'dashboard') maybeShowCheckin();
 
-  const showNav = route !== 'quiz' && route !== 'auth';
+  const showNav = route !== 'quiz' && route !== 'auth' && route !== 'resetPassword';
   nav.classList.toggle('hidden', !showNav);
   nav.querySelectorAll('.nav-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.route === route);
@@ -106,11 +108,31 @@ if ('serviceWorker' in navigator) {
 
 // Arranque: verificar sesión JWT antes de entrar.
 (async () => {
+  // Enlace de invitación (compró en Hotmart, cuenta creada automáticamente,
+  // falta poner contraseña) o de "olvidé mi contraseña": Supabase ya deja
+  // la sesión lista al leer la URL (detectSessionInUrl en supabase-client.js);
+  // aquí solo hace falta llevar a la pantalla de crear contraseña en vez del
+  // flujo normal de login/dashboard.
+  //
+  // No se detecta con el "type=" que agrega Supabase (ese parámetro solo
+  // aparece en el flujo antiguo/implícito; con PKCE, que es el que usan la
+  // mayoría de proyectos hoy, el enlace solo trae "?code=..." sin "type").
+  // En su lugar, el propio redirectTo (ver hotmart-webhook) agrega
+  // "?invite=1" como marca propia en la query string — ahí Supabase solo
+  // añade su "code" al lado sin tocarla, así que la detección no depende de
+  // un detalle interno de Supabase que puede cambiar entre versiones.
+  const isInviteLink = new URLSearchParams(window.location.search).has('invite');
+
   let session = null;
   try { session = await getSession(); } catch { /* offline sin sesión previa */ }
   authed = !!session;
-  if (session) await initCloud();
-  navigate(!authed ? 'auth' : getState().onboarded ? 'dashboard' : 'quiz');
+
+  if (isInviteLink && session) {
+    navigate('resetPassword');
+  } else {
+    if (session) await initCloud();
+    navigate(!authed ? 'auth' : getState().onboarded ? 'dashboard' : 'quiz');
+  }
 
   supabase.auth.onAuthStateChange((event) => {
     // Al cerrar sesión, nunca dejar el progreso de esta cuenta en el

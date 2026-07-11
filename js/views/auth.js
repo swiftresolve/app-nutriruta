@@ -3,9 +3,9 @@ import { signIn, signUp } from '../supabase-client.js';
 import { initCloud, getState, resetState } from '../store.js';
 import { navigate, toast, setAuthed } from '../app.js';
 
-const MIN_PASSWORD = 8;
+export const MIN_PASSWORD = 8;
 
-function passwordIssues(pw) {
+export function passwordIssues(pw) {
   const issues = [];
   if (pw.length < MIN_PASSWORD) issues.push(`mínimo ${MIN_PASSWORD} caracteres`);
   if (!/[a-záéíóúñ]/i.test(pw)) issues.push('al menos una letra');
