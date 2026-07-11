@@ -60,7 +60,7 @@ export function renderQuiz(container) {
 
   const steps = [
     {
-      title: '¡Hola! 🌿 Bienvenida a NutriRuta',
+      title: '¡Hola! 🌿 Empecemos con NutriRuta',
       sub: 'Vamos a conocerte un poco para personalizar tu experiencia. Esto no reemplaza una consulta médica, pero nos ayuda a darte mejores recomendaciones.',
       render(el) {
         el.innerHTML = `

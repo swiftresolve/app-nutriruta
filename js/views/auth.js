@@ -101,7 +101,7 @@ export function renderAuth(container) {
         }
         setAuthed(true);
         await initCloud();
-        toast('¡Bienvenida a NutriRuta! 🌿');
+        toast('¡Qué gusto tenerte en NutriRuta! 🌿');
         navigate(getState().onboarded ? 'dashboard' : 'quiz');
       } catch (err) {
         errEl.textContent = friendlyError(err);
