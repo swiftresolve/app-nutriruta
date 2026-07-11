@@ -1,7 +1,7 @@
 // Ajustes: cuenta, perfiles, exclusiones, quiz, datos y sección legal.
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
-import { getSession, signOut, pushProfileState } from '../supabase-client.js';
+import { getSession, signOut, pushProfileState, fetchMyResena, submitResena } from '../supabase-client.js';
 import { navigate, header, openModal, toast } from '../app.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
@@ -41,6 +41,69 @@ export function renderSettings(container) {
   });
   account.appendChild(outBtn);
   container.appendChild(account);
+
+  // Calificación (visible en vivo en nutriruta.com — vista pública, nunca
+  // expone correo ni datos de la cuenta, solo calificación + mini reseña).
+  const resena = document.createElement('div');
+  resena.className = 'card';
+  resena.innerHTML = `
+    <h2>🌿 Califica tu experiencia</h2>
+    <p class="small mt">Tu calificación y reseña pueden mostrarse en nutriruta.com para ayudar a otras personas a decidir — nunca tu correo ni datos de tu cuenta.</p>
+    <div class="row mt" id="resena-hojas" style="gap:4px"></div>
+    <textarea id="resena-texto" maxlength="300" rows="3" placeholder="Cuéntanos brevemente qué te ha parecido (opcional)"
+      style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:10px;resize:vertical"></textarea>
+    <button class="btn full mt" id="resena-guardar" disabled>Guardar calificación</button>
+    <p class="small muted mt" id="resena-estado"></p>`;
+  container.appendChild(resena);
+
+  const hojasEl = resena.querySelector('#resena-hojas');
+  const textoEl = resena.querySelector('#resena-texto');
+  const guardarBtn = resena.querySelector('#resena-guardar');
+  const estadoEl = resena.querySelector('#resena-estado');
+  let calificacionActual = 0;
+
+  function pintarHojas() {
+    hojasEl.innerHTML = '';
+    for (let n = 1; n <= 5; n++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('aria-label', `${n} de 5`);
+      b.style.cssText = 'font-size:1.6rem;background:none;border:none;cursor:pointer;opacity:' + (n <= calificacionActual ? '1' : '0.3');
+      b.textContent = '🌿';
+      b.addEventListener('click', () => {
+        calificacionActual = n;
+        guardarBtn.disabled = false;
+        pintarHojas();
+      });
+      hojasEl.appendChild(b);
+    }
+  }
+  pintarHojas();
+
+  fetchMyResena().then((mia) => {
+    if (mia) {
+      calificacionActual = mia.calificacion;
+      textoEl.value = mia.texto || '';
+      guardarBtn.disabled = false;
+      estadoEl.textContent = 'Ya calificaste — puedes actualizarla cuando quieras.';
+      pintarHojas();
+    }
+  }).catch(() => {});
+
+  guardarBtn.addEventListener('click', async () => {
+    if (!calificacionActual) return;
+    guardarBtn.disabled = true;
+    guardarBtn.textContent = 'Guardando…';
+    try {
+      await submitResena(calificacionActual, textoEl.value.trim(), getState().user.nombre);
+      toast('¡Gracias por tu calificación! 🌿');
+      estadoEl.textContent = 'Ya calificaste — puedes actualizarla cuando quieras.';
+    } catch (e) {
+      toast('No se pudo guardar. Intenta de nuevo.');
+    }
+    guardarBtn.disabled = false;
+    guardarBtn.textContent = 'Guardar calificación';
+  });
 
   // Notificaciones push
   if (pushSupported()) {

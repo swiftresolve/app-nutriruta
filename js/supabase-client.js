@@ -50,6 +50,28 @@ export async function pushProfileState(state, nombre) {
   if (error) throw error;
 }
 
+// --- Reseñas (calificación 1-5 + mini reseña opcional) ---
+// Una por usuaria (se puede editar), visible en vivo en la landing vía la
+// vista pública resenas_publicas — nunca expone user_id ni correo.
+export async function fetchMyResena() {
+  const { data, error } = await supabase.from('resenas').select('*').maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function submitResena(calificacion, texto, nombreMostrado) {
+  const session = await getSession();
+  if (!session) throw new Error('No autenticado');
+  const row = {
+    user_id: session.user.id,
+    calificacion,
+    texto: texto ? String(texto).slice(0, 300) : null,
+    nombre_mostrado: (nombreMostrado || 'Usuaria de NutriRuta').slice(0, 60)
+  };
+  const { error } = await supabase.from('resenas').upsert(row, { onConflict: 'user_id' });
+  if (error) throw error;
+}
+
 export async function downgradeToFree() {
   // El plan Premium ya no se activa desde el cliente (columnas protegidas):
   // lo activa el webhook de Hotmart al confirmarse el pago. Solo bajar a
