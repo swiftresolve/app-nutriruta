@@ -48,7 +48,7 @@ strong { color: var(--ink); }
 
 /* ===== Splash ===== */
 .splash { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; gap: 8px; }
-.splash-logo { font-size: 4rem; }
+.splash-logo svg { width: 76px; height: 76px; }
 
 /* ===== Cards & layout ===== */
 .card {
@@ -125,6 +125,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* ===== Header ===== */
 .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .app-header .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary-dark); font-size: 1.2rem; }
+.app-header .brand svg { width: 26px; height: 26px; border-radius: 6px; flex: none; }
 .icon-btn { font-size: 1.35rem; padding: 6px; border-radius: 50%; }
 
 /* ===== Water tracker ===== */
