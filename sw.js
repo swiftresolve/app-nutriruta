@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-v22';
+const CACHE = 'nutriruta-v23';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS = [
   './js/config.js',
   './js/supabase-client.js',
   './js/store.js',
+  './js/pathMap.js',
   './js/menu.js',
   './js/charts.js',
   './js/streakAnim.js',

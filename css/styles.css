@@ -244,6 +244,39 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   font-size: 0.86rem; color: #2E6396; margin: 12px 0;
 }
 
+/* ===== Camino (Misión, Plan de 7 días) ===== */
+.path-wrap { position: relative; margin: 4px auto 0; width: 100%; max-width: 340px; }
+.path-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.path-node-wrap { position: absolute; width: 69%; display: flex; align-items: center; gap: 14px; }
+.path-node-wrap.right { flex-direction: row-reverse; text-align: right; }
+.path-node {
+  width: 58px; height: 58px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
+  display: flex; align-items: center; justify-content: center; font-size: 1.35rem;
+  border: 3px solid var(--primary-soft); background: var(--card); color: var(--ink-soft);
+  box-shadow: 0 3px 0 var(--primary-soft); transition: transform .12s ease; padding: 0;
+}
+.path-node:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--primary-soft); }
+.path-node.done { background: var(--primary); border-color: var(--primary-dark); color: #fff; box-shadow: 0 3px 0 var(--primary-dark); }
+.path-node.now {
+  background: var(--card); border-color: var(--accent); color: var(--accent);
+  box-shadow: 0 3px 0 var(--accent); animation: path-pulse 2s infinite;
+}
+.path-node.locked { opacity: 0.45; cursor: default; box-shadow: 0 3px 0 var(--primary-soft); }
+@keyframes path-pulse {
+  0% { box-shadow: 0 3px 0 var(--accent), 0 0 0 0 rgba(255,138,107,0.35); }
+  70% { box-shadow: 0 3px 0 var(--accent), 0 0 0 12px rgba(255,138,107,0); }
+  100% { box-shadow: 0 3px 0 var(--accent), 0 0 0 0 rgba(255,138,107,0); }
+}
+.path-mascot { position: absolute; font-size: 1.7rem; animation: path-bob 2.4s ease-in-out infinite; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.15)); }
+@keyframes path-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.path-label .path-t { font-weight: 700; font-size: 0.92rem; line-height: 1.25; color: var(--ink); }
+.path-label .path-s { font-size: 0.76rem; color: var(--ink-soft); margin-top: 1px; }
+.path-tag {
+  display: inline-block; margin-top: 3px; font-size: 0.62rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+}
+.path-tag-now { color: var(--accent); background: var(--accent-soft); }
+
 /* ===== Bottom nav ===== */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-h) + env(safe-area-inset-bottom));

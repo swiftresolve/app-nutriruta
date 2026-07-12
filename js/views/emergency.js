@@ -4,6 +4,7 @@ import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
 import { getState, setState, checkAchievements, today, esc, guardarReflexionDia, responderInvitacionTestimonioPlan } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
+import { renderPathMap } from '../pathMap.js';
 
 export function renderEmergency(container) {
   header(container);
@@ -60,21 +61,20 @@ export function renderEmergency(container) {
 
   const list = document.createElement('div');
   list.className = 'card';
-  for (const d of EMERGENCY_PLAN.dias) {
+  const items = EMERGENCY_PLAN.dias.map((d) => {
     const done = completados.includes(d.n);
     const locked = d.n > diaDesbloqueado;
-    const item = document.createElement('button');
-    item.className = 'recipe-item';
-    if (locked) item.style.opacity = '0.45';
-    item.innerHTML = `
-      <span class="recipe-emoji">${done ? '✅' : locked ? '🔒' : d.emoji}</span>
-      <span class="info"><strong>Día ${d.n}: ${d.titulo}</strong><br><span class="muted small">${d.objetivo}</span></span><span>›</span>`;
-    item.addEventListener('click', () => {
-      if (locked) { showVuelveManana(d); return; }
-      openDia(d, done, () => renderEmergency(clear(container)));
-    });
-    list.appendChild(item);
-  }
+    const isCurrent = d.n === diaDesbloqueado && !done;
+    return {
+      icon: d.emoji, title: `Día ${d.n}`, subtitle: d.titulo,
+      done, now: isCurrent, locked, nowLabel: 'Hoy',
+      onClick: () => {
+        if (locked) { showVuelveManana(d); return; }
+        openDia(d, done, () => renderEmergency(clear(container)));
+      }
+    };
+  });
+  renderPathMap(list, items);
   container.appendChild(list);
 }
 

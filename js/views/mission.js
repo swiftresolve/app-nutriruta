@@ -5,6 +5,7 @@ import { MISSION } from '../data/mission.js';
 import { fetchMissionWeeks } from '../supabase-client.js';
 import { getState, setState, isPremium, planExpired, today } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
+import { renderPathMap } from '../pathMap.js';
 
 const WEEKS_CACHE_KEY = 'nutriruta-mission-weeks';
 
@@ -101,25 +102,20 @@ export function renderMission(container) {
       list.innerHTML = '<p class="center">No se pudo cargar el contenido. Revisa tu conexión e inténtalo de nuevo.</p>';
       return;
     }
-    for (const w of weeks) {
+    const items = weeks.map((w) => {
       const done = completadas.includes(w.n);
       const isCurrent = w.n === semanaActual;
       const locked = w.n > semanaActual;
-      const item = document.createElement('button');
-      item.className = 'recipe-item';
-      if (locked) item.style.opacity = '0.45';
-      item.innerHTML = `
-        <span class="recipe-emoji">${done ? '✅' : locked ? '🔒' : w.emoji}</span>
-        <span class="info">
-          <strong>Semana ${w.n}: ${w.titulo}</strong>${isCurrent ? ' <span class="tag verde">actual</span>' : ''}<br>
-          <span class="muted small">${w.objetivo}</span>
-        </span><span>›</span>`;
-      item.addEventListener('click', () => {
-        if (locked) { toast('Esta semana se desbloquea más adelante. Un cambio a la vez 🌱'); return; }
-        openWeek(w, true, done, () => renderMission(clear(container)));
-      });
-      list.appendChild(item);
-    }
+      return {
+        icon: w.emoji, title: `Semana ${w.n}`, subtitle: w.titulo,
+        done, now: isCurrent, locked, nowLabel: 'Actual',
+        onClick: () => {
+          if (locked) { toast('Esta semana se desbloquea más adelante. Un cambio a la vez 🌱'); return; }
+          openWeek(w, true, done, () => renderMission(clear(container)));
+        }
+      };
+    });
+    renderPathMap(list, items);
 
     if (completadas.length === 12) {
       const fin = document.createElement('div');
