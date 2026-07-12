@@ -6,6 +6,7 @@ import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
 import { celebrateStreak } from '../streakAnim.js';
+import { renderPathMap } from '../pathMap.js';
 
 const DAILY_HABITS = [
   { id: 'agua', nombre: 'Tomé suficiente agua 💧' },
@@ -134,40 +135,50 @@ export function renderDashboard(container) {
   }
   container.appendChild(waterCard);
 
-  // --- Menú del día ---
+  // --- Menú del día: la ruta de hoy, misma línea que Misión y Plan de 7 días ---
   const menuCard = document.createElement('div');
   menuCard.className = 'card';
-  menuCard.innerHTML = '<div class="spread"><h2>🍽️ Tu menú de hoy</h2></div>';
-  for (const { meal, recipe } of dailyMenu()) {
-    const m = document.createElement('div');
-    m.className = 'meal';
+  menuCard.innerHTML = '<div class="spread"><h2>🍽️ Tu ruta de hoy</h2></div><div id="menu-path"></div>';
+  container.appendChild(menuCard);
+
+  // Horas de inicio reales (24h) de cada comida, en el mismo orden que
+  // MEALS — no se parsean del texto mostrado ("4:00 pm") porque parseInt
+  // no distingue am/pm y calcularía mal la tarde/noche.
+  const HORAS_INICIO_COMIDA = [7, 10, 12, 16, 19];
+  const horaActual = new Date().getHours();
+  const menuHoy = dailyMenu();
+  const menuItems = menuHoy.map(({ meal, recipe }, i) => {
+    const horaInicio = HORAS_INICIO_COMIDA[i] ?? 0;
+    const horaSiguiente = HORAS_INICIO_COMIDA[i + 1] ?? 24;
+    const esAhora = horaActual >= horaInicio && horaActual < horaSiguiente;
     if (!recipe) {
-      m.innerHTML = `<div class="meal-name">${meal.emoji} ${meal.nombre} <span class="muted small">· ${meal.hora}</span></div><p class="small">Sin opciones con tus exclusiones actuales. Revisa Ajustes.</p>`;
-    } else {
-      const { perfiles, exclusiones } = getState().user;
-      const light = trafficLight(recipe, perfiles);
-      const shown = displayRecipe(recipe, exclusiones);
-      m.innerHTML = `
-        <div class="meal-name">${meal.emoji} ${meal.nombre} <span class="muted small">· ${meal.hora}</span></div>
-        <div class="spread">
-          <button class="link-btn" style="text-align:left">${shown.emoji} ${shown.nombre}</button>
-          <span class="row"><span class="dot ${light}"></span>
-            <button class="icon-btn" title="Cambiar receta" aria-label="Cambiar receta">🔄</button></span>
-        </div>`;
-      m.querySelector('.link-btn').addEventListener('click', () => openRecipe(recipe));
-      m.querySelector('.icon-btn').addEventListener('click', () => {
-        swapMeal(meal.id);
-        renderDashboard(clearAndGet(container));
-      });
+      return { icon: meal.emoji, title: meal.nombre, subtitle: 'Sin opciones con tus exclusiones actuales', now: esAhora, nowLabel: 'Ahora' };
     }
-    menuCard.appendChild(m);
-  }
+    const { perfiles, exclusiones } = getState().user;
+    const light = trafficLight(recipe, perfiles);
+    const shown = displayRecipe(recipe, exclusiones);
+    return {
+      icon: meal.emoji, title: meal.nombre, subtitle: shown.nombre, now: esAhora, nowLabel: 'Ahora',
+      onClick: () => openRecipe(recipe),
+      extraHtml: `<div class="row mt" style="gap:8px"><span class="dot ${light}"></span><button type="button" class="icon-btn swap-btn" title="Cambiar receta" aria-label="Cambiar receta">🔄</button></div>`
+    };
+  });
+  renderPathMap(menuCard.querySelector('#menu-path'), menuItems);
+  menuHoy.forEach(({ meal, recipe }, i) => {
+    if (!recipe) return;
+    const btn = menuCard.querySelector(`[data-wrap-idx="${i}"] .swap-btn`);
+    if (btn) btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      swapMeal(meal.id);
+      renderDashboard(clearAndGet(container));
+    });
+  });
+
   const shopBtn = document.createElement('button');
   shopBtn.className = 'btn ghost sm mt';
   shopBtn.textContent = '🛒 Ver lista de compras';
   shopBtn.addEventListener('click', () => navigate('planner', { tab: 'compras' }));
   menuCard.appendChild(shopBtn);
-  container.appendChild(menuCard);
 
   // --- Hábitos ---
   const checks = getHabits();

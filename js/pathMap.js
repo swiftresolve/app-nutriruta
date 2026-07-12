@@ -23,7 +23,10 @@ function svgPathD(n) {
   return d;
 }
 
-// items: [{ icon, title, subtitle, done, now, locked, nowLabel, onClick }]
+// items: [{ icon, title, subtitle, done, now, locked, nowLabel, onClick, extraHtml }]
+// extraHtml: HTML adicional dentro de la etiqueta (ej. un botón de acción
+// secundaria) — quien llama a renderPathMap puede engancharle sus propios
+// listeners después, buscando `[data-idx="N"]` dentro del contenedor.
 export function renderPathMap(container, items) {
   const totalH = items.length * ROW_H;
   const svg = `<svg class="path-svg" viewBox="0 0 340 ${totalH}" preserveAspectRatio="none">
@@ -43,12 +46,13 @@ export function renderPathMap(container, items) {
     const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
     const icon = it.done ? '✓' : (it.locked ? '🔒' : it.icon);
     const tag = it.now ? `<span class="path-tag path-tag-now">${it.nowLabel || 'Actual'}</span>` : '';
-    return `<div class="path-node-wrap ${isLeft ? '' : 'right'}" style="${posStyle}">
+    return `<div class="path-node-wrap ${isLeft ? '' : 'right'}" style="${posStyle}" data-wrap-idx="${i}">
         <button type="button" class="path-node ${stateClass}" data-idx="${i}" aria-label="${it.title}">${icon}</button>
         <div class="path-label">
           <div class="path-t">${it.title}</div>
           ${it.subtitle ? `<div class="path-s">${it.subtitle}</div>` : ''}
           ${tag}
+          ${it.extraHtml || ''}
         </div>
       </div>${mascot}`;
   }).join('');
