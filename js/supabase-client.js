@@ -91,6 +91,18 @@ export async function fetchMissionWeeks() {
   return data || [];
 }
 
+// Índice público de la misión (solo n/emoji/título/gratis, nunca el
+// contenido): para pintar el mapa completo de 12 semanas también a cuentas
+// gratuitas, con las semanas premium bloqueadas.
+export async function fetchMissionIndex() {
+  const { data, error } = await supabase
+    .from('mission_weeks_indice')
+    .select('n, emoji, titulo, gratis')
+    .order('n');
+  if (error) throw error;
+  return data || [];
+}
+
 // --- Pregúntale a tu guía (asistente IA, Premium) ---
 // Todo pasa por la Edge Function: valida Premium vigente y la cuota
 // mensual en el servidor, y es la única vía con permiso de escribir en

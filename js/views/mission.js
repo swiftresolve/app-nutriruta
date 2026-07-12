@@ -2,12 +2,13 @@
 // El contenido de las semanas se pide al servidor, que solo entrega lo que el
 // plan del usuario permite (semana 1 gratis; 2–12 con Premium vigente).
 import { MISSION } from '../data/mission.js';
-import { fetchMissionWeeks } from '../supabase-client.js';
+import { fetchMissionWeeks, fetchMissionIndex } from '../supabase-client.js';
 import { getState, setState, isPremium, planExpired, today } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
 import { renderPathMap } from '../pathMap.js';
 
 const WEEKS_CACHE_KEY = 'nutriruta-mission-weeks';
+const INDEX_CACHE_KEY = 'nutriruta-mission-index';
 
 // Últimas semanas entregadas por el servidor, para poder leerlas sin conexión.
 async function loadWeeks() {
@@ -17,6 +18,18 @@ async function loadWeeks() {
     return weeks;
   } catch {
     try { return JSON.parse(localStorage.getItem(WEEKS_CACHE_KEY) || '[]'); } catch { return []; }
+  }
+}
+
+// Índice de las 12 semanas (solo títulos): visible también sin Premium,
+// para que el mapa completo se vea igual y lo bloqueado invite a desbloquear.
+async function loadIndex() {
+  try {
+    const idx = await fetchMissionIndex();
+    if (idx.length) localStorage.setItem(INDEX_CACHE_KEY, JSON.stringify(idx));
+    return idx;
+  } catch {
+    try { return JSON.parse(localStorage.getItem(INDEX_CACHE_KEY) || '[]'); } catch { return []; }
   }
 }
 
@@ -32,50 +45,70 @@ export function renderMission(container) {
     <p>${MISSION.descripcion}</p>`;
   container.appendChild(hero);
 
-  // Sin misión iniciada
+  // Sin Premium (nunca lo tuvo, o venció): el mapa completo se ve igual que
+  // para Premium — la Semana 1 es gratis y abre su contenido real; las demás
+  // aparecen bloqueadas y llevan a Planes. Así lo bloqueado se antoja, en
+  // vez de esconderse detrás de un botón.
+  if (!premium) {
+    const note = document.createElement('div');
+    note.className = 'card';
+    const completadasFree = (mision?.completadas || []).length;
+    note.innerHTML = planExpired()
+      ? `<p class="small">⏸️ <strong>Tu plan Premium venció.</strong> Tu progreso (${completadasFree}/12 semanas) está guardado y te espera. Renueva para continuar donde ibas.</p>
+         <button class="btn accent full mt">Renovar Premium</button>`
+      : `<p class="small">✨ La <strong>Semana 1 es gratis</strong> — pruébala hoy mismo. Las demás se desbloquean con el <strong>plan Premium</strong>.</p>
+         <button class="btn accent full mt">Desbloquear las 12 semanas</button>`;
+    note.querySelector('.btn').addEventListener('click', () => navigate('plans'));
+    container.appendChild(note);
+
+    const list = document.createElement('div');
+    list.className = 'card';
+    list.innerHTML = '<p class="muted small center">Cargando el mapa de tu misión…</p>';
+    container.appendChild(list);
+
+    loadIndex().then((idx) => {
+      list.innerHTML = '';
+      if (!idx.length) {
+        list.innerHTML = '<p class="center">No se pudo cargar el contenido. Revisa tu conexión e inténtalo de nuevo.</p>';
+        return;
+      }
+      const completadas = mision?.completadas || [];
+      const items = idx.map((w) => ({
+        icon: w.emoji, title: `Semana ${w.n}`, subtitle: w.titulo,
+        done: completadas.includes(w.n),
+        now: w.gratis && !completadas.includes(w.n),
+        locked: !w.gratis,
+        nowLabel: 'Gratis',
+        onClick: async () => {
+          if (!w.gratis) {
+            toast('✨ Esta semana es parte del plan Premium.');
+            navigate('plans');
+            return;
+          }
+          const weeks = await loadWeeks();
+          const full = weeks.find((x) => x.n === w.n);
+          if (full) openWeek(full, false);
+          else toast('No se pudo cargar la semana. Revisa tu conexión.');
+        }
+      }));
+      renderPathMap(list, items);
+    });
+    return;
+  }
+
+  // Sin misión iniciada (con Premium)
   if (!mision || !mision.inicio) {
     const start = document.createElement('div');
     start.className = 'card center';
     start.innerHTML = `
       <p>Doce semanas, un cambio por semana. Cada semana tiene un objetivo claro, acciones concretas y una reflexión.</p>
-      ${premium
-        ? '<button class="btn accent full mt">🚀 Empezar mi misión</button>'
-        : `<div class="legal-note" style="text-align:left">✨ La Misión 12 semanas es parte del <strong>plan Premium</strong>. Puedes ver la Semana 1 gratis como prueba.</div>
-           <button class="btn accent full mt" id="m-plans">Ver planes Premium</button>
-           <button class="btn ghost full mt" id="m-preview">Ver Semana 1 gratis</button>`}
-    `;
-    if (premium) {
-      start.querySelector('.btn').addEventListener('click', () => {
-        setState({ mision: { inicio: today(), completadas: [] } });
-        toast('¡Misión iniciada! Un cambio a la vez 🌱');
-        renderMission(clear(container));
-      });
-    } else {
-      start.querySelector('#m-plans').addEventListener('click', () => navigate('plans'));
-      start.querySelector('#m-preview').addEventListener('click', async () => {
-        const weeks = await loadWeeks();
-        const w1 = weeks.find((w) => w.n === 1);
-        if (w1) openWeek(w1, false);
-        else toast('No se pudo cargar la semana de prueba. Revisa tu conexión.');
-      });
-    }
+      <button class="btn accent full mt">🚀 Empezar mi misión</button>`;
+    start.querySelector('.btn').addEventListener('click', () => {
+      setState({ mision: { inicio: today(), completadas: [] } });
+      toast('¡Misión iniciada! Un cambio a la vez 🌱');
+      renderMission(clear(container));
+    });
     container.appendChild(start);
-    return;
-  }
-
-  // Misión iniciada pero el plan Premium ya no está activo (pago vencido o plan cancelado):
-  // el progreso se conserva, pero el contenido queda pausado hasta renovar.
-  if (!premium) {
-    const paused = document.createElement('div');
-    paused.className = 'card center';
-    paused.innerHTML = `
-      <div style="font-size:2.6rem">⏸️</div>
-      <h2>Tu misión está pausada</h2>
-      <p class="mt">${planExpired() ? 'Tu plan Premium venció y no se ha renovado.' : 'Tu plan Premium ya no está activo.'}
-      Tu progreso (${(mision.completadas || []).length}/12 semanas) está guardado y te espera.</p>
-      <button class="btn accent full mt">Renovar Premium y continuar</button>`;
-    paused.querySelector('.btn').addEventListener('click', () => navigate('plans'));
-    container.appendChild(paused);
     return;
   }
 
