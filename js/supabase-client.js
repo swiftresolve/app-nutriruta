@@ -91,14 +91,12 @@ export async function fetchMissionWeeks() {
   return data || [];
 }
 
-// Índice público de la misión (solo n/emoji/título/gratis, nunca el
-// contenido): para pintar el mapa completo de 12 semanas también a cuentas
-// gratuitas, con las semanas premium bloqueadas.
+// Índice de la misión (solo n/emoji/título/gratis, nunca el contenido):
+// para pintar el mapa completo de 12 semanas también a cuentas gratuitas,
+// con las semanas premium bloqueadas. Es una función con permisos solo
+// para cuentas autenticadas, no una tabla/vista abierta.
 export async function fetchMissionIndex() {
-  const { data, error } = await supabase
-    .from('mission_weeks_indice')
-    .select('n, emoji, titulo, gratis')
-    .order('n');
+  const { data, error } = await supabase.rpc('mission_indice');
   if (error) throw error;
   return data || [];
 }
