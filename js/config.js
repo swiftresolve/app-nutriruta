@@ -12,4 +12,4 @@ export const HOTMART_CHECKOUT = {
 
 // Llave pública VAPID para notificaciones push (Web Push estándar).
 // La privada vive solo en el servidor (secreto de la Edge Function), nunca aquí.
-export const VAPID_PUBLIC_KEY = 'BFDmm0lamuqrOI3tE6ANqDV1xzDaY3hup1TuGRh7g4wrebx6UZF4ZiJO2QenKVmk1j-s2hprJbFd5Gi-gRuf0a4';
+export const VAPID_PUBLIC_KEY = 'BPS6eFYYD2r3tO60JZxKq18XxDgjCrQiE0nM-36dm-HaanX7O67NzG3oF29Fjj2YTlRH2snSqlLtJZaFgYHEG7s';

@@ -111,12 +111,48 @@ export function renderSettings(container) {
     notif.className = 'card';
     notif.innerHTML = `
       <h2>🔔 Notificaciones</h2>
-      <p class="small mt">Avisos ocasionales para no perder tu racha, saber cuándo se desbloquea un nuevo día de tu plan, o cuando te toca un check-in. Nada de spam.</p>
+      <p class="small mt">Avisos para acompañarte durante el día. Tú decides cuáles recibir — nada de spam.</p>
       <p class="small mt" id="notif-estado">Consultando…</p>
-      <button class="btn full mt" id="notif-btn" disabled>Cargando…</button>`;
+      <button class="btn full mt" id="notif-btn" disabled>Cargando…</button>
+      <div id="notif-prefs" style="display:none">
+        <p class="small mt" style="font-weight:600">Qué avisos quieres recibir:</p>
+        <label class="habit"><input type="checkbox" data-pref="plan"><span>🏁 Tu plan y tu racha <span class="muted small">(día nuevo, check-in, racha en riesgo)</span></span></label>
+        <label class="habit"><input type="checkbox" data-pref="comidas"><span>🍽️ Horas de tus comidas <span class="muted small">(a la hora sugerida de cada una)</span></span></label>
+        <label class="habit"><input type="checkbox" data-pref="agua"><span>💧 Recordatorios de agua <span class="muted small">(según tu meta personalizada)</span></span></label>
+        <button class="btn ghost sm mt" id="notif-test">🔔 Enviar notificación de prueba</button>
+      </div>`;
     container.appendChild(notif);
     const estadoEl = notif.querySelector('#notif-estado');
     const btn = notif.querySelector('#notif-btn');
+    const prefsBox = notif.querySelector('#notif-prefs');
+
+    function pintarPrefs() {
+      const prefs = getState().notifPrefs || {};
+      notif.querySelectorAll('[data-pref]').forEach((chk) => {
+        chk.checked = prefs[chk.dataset.pref] !== false;
+      });
+    }
+    notif.querySelectorAll('[data-pref]').forEach((chk) => {
+      chk.addEventListener('change', () => {
+        const prefs = { ...(getState().notifPrefs || {}) };
+        prefs[chk.dataset.pref] = chk.checked;
+        setState({ notifPrefs: prefs });
+        toast(chk.checked ? 'Aviso activado ✅' : 'Aviso desactivado');
+      });
+    });
+
+    notif.querySelector('#notif-test').addEventListener('click', async () => {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification('🌿 NutriRuta', {
+          body: '¡Perfecto! Así se verán tus avisos en este dispositivo.',
+          icon: './icons/icon-192.png',
+          badge: './icons/icon-192.png'
+        });
+      } catch (e) {
+        toast('No se pudo mostrar la prueba. Revisa los permisos de notificación.');
+      }
+    });
 
     async function pintarEstadoNotif() {
       const sub = await currentSubscription();
@@ -125,6 +161,8 @@ export function renderSettings(container) {
       btn.textContent = activas ? 'Desactivar' : 'Activar notificaciones';
       btn.className = activas ? 'btn ghost full mt' : 'btn full mt';
       btn.disabled = false;
+      prefsBox.style.display = activas ? 'block' : 'none';
+      if (activas) pintarPrefs();
     }
     pintarEstadoNotif();
 

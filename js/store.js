@@ -30,7 +30,8 @@ const DEFAULT_STATE = {
   checkinPospuesto: null,       // última fecha en que se pospuso el check-in
   logros: [],                  // ids de logros desbloqueados
   menuOverrides: {},           // { 'fecha|comida': n } desplazamiento al cambiar receta
-  compras: {}                  // { itemId: true } marcados en lista de compras
+  compras: {},                 // { itemId: true } marcados en lista de compras
+  notifPrefs: { plan: true, comidas: true, agua: true } // qué tipos de aviso push recibir
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
