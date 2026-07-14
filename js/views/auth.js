@@ -21,7 +21,7 @@ export function renderAuth(container) {
     const view = document.createElement('div');
     view.innerHTML = `
       <div class="splash" style="min-height:22vh">
-        <div class="splash-logo"><svg viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#2BB5A0"/><path d="M256 416c-72-48-136-102-136-176 0-45 34-80 78-80 28 0 48 13 58 32 10-19 30-32 58-32 44 0 78 35 78 80 0 74-64 128-136 176z" fill="#FFFFFF"/><path d="M256 300c-6-52 18-104 78-124-4 58-26 106-78 124z" fill="#2BB5A0"/><path d="M256 310c0-40-22-78-64-92 2 46 20 82 64 92z" fill="#7FD9CB"/></svg></div>
+        <div class="splash-logo"><svg viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#2BB5A0"/><path d="M256 84 C176 84 116 146 116 226 C116 322 256 428 256 428 C256 428 396 322 396 226 C396 146 336 84 256 84 Z" fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linejoin="round"/><g transform="translate(256 222) scale(0.62) translate(-256 -288)"><path d="M256 416c-72-48-136-102-136-176 0-45 34-80 78-80 28 0 48 13 58 32 10-19 30-32 58-32 44 0 78 35 78 80 0 74-64 128-136 176z" fill="#FFFFFF"/></g><g transform="translate(256 212) rotate(18)"><path d="M0 -36 C24 -21 26 9 0 36 C-26 9 -24 -21 0 -36 Z" fill="#3BAE5C"/><path d="M0 -27 L0 28 M0 -12 L11 -20 M0 -12 L-11 -20 M0 6 L12 -2 M0 6 L-12 -2" stroke="#FFFFFF" stroke-width="4.5" fill="none" stroke-linecap="round"/></g></svg></div>
         <h1>NutriRuta</h1>
         <p>Tu ruta hacia hábitos saludables, paso a paso.</p>
       </div>
