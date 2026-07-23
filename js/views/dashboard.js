@@ -1,5 +1,5 @@
 // Dashboard diario: menú del día, agua, hábitos y acceso rápido al SOS.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, sanaApertura } from '../store.js';
 import { MISSION } from '../data/mission.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
@@ -59,9 +59,10 @@ export function renderDashboard(container) {
   guideCard.className = 'card';
   guideCard.style.background = 'linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))';
   guideCard.style.border = 'none';
+  const subtitulo = isPremium() ? esc(sanaApertura()) : 'Una duda puntual, ahora mismo, con el contexto de tu perfil.';
   guideCard.innerHTML = `
     <div class="spread"><h3>💬 Sana, tu guía</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
-    <p class="small mt">Una duda puntual, ahora mismo, con el contexto de tu perfil.</p>
+    <p class="small mt">${subtitulo}</p>
     <button class="btn ghost sm mt">${isPremium() ? 'Abrir chat →' : 'Conocer más →'}</button>`;
   guideCard.querySelector('.btn').addEventListener('click', () => navigate('assistant'));
   container.appendChild(guideCard);
@@ -216,9 +217,10 @@ export function renderDashboard(container) {
       <label for="h-${h.id}">${h.nombre}</label>`;
     row.querySelector('input').addEventListener('change', () => {
       const rachaAntes = getState().racha.actual;
-      toggleHabit(h.id);
+      const escudoUsado = toggleHabit(h.id);
       const rachaDespues = getState().racha.actual;
       const nuevos = checkAchievements();
+      if (escudoUsado) toast('🛡️ Usamos un escudo para proteger tu racha');
       if (rachaDespues > rachaAntes) celebrateStreak(rachaDespues);
       if (nuevos.length) toast('🏆 ¡Nuevo logro desbloqueado! Míralo en Progreso.');
       renderDashboard(clearAndGet(container));

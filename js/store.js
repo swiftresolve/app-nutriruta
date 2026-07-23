@@ -1,6 +1,7 @@
 // Estado persistente en localStorage + sincronización con Supabase.
 import { fetchProfile, pushProfileState } from './supabase-client.js';
 import { DAILY_STEPS } from './data/dailySteps.js';
+import { SANA_OPENERS } from './data/sanaOpeners.js';
 
 const KEY = 'nutriruta-state-v1';
 
@@ -33,7 +34,8 @@ const DEFAULT_STATE = {
   menuOverrides: {},           // { 'fecha|comida': n } desplazamiento al cambiar receta
   compras: {},                 // { itemId: true } marcados en lista de compras
   notifPrefs: { plan: true, comidas: true, agua: true }, // qué tipos de aviso push recibir
-  pasoHechos: []                // fechas ISO en que se marcó "Tu paso de hoy" como hecho
+  pasoHechos: [],               // fechas ISO en que se marcó "Tu paso de hoy" como hecho
+  escudos: 0                    // escudos disponibles para proteger la racha (máx MAX_ESCUDOS)
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
@@ -240,8 +242,9 @@ export function getHabits() {
 export function toggleHabit(id) {
   const checks = { ...getHabits(), [id]: !getHabits()[id] };
   setState({ habitos: { fecha: today(), checks } });
-  updateStreak();
+  const escudoUsado = updateStreak();
   checkAchievements();
+  return escudoUsado;
 }
 
 // --- Racha: un día cuenta si se marcan al menos 3 hábitos ---
@@ -250,16 +253,39 @@ export function dayCompleted() {
   return Object.values(checks).filter(Boolean).length >= 3;
 }
 
+// --- Escudos: protegen la racha si se falla exactamente un día. Se ganan
+// 1 cada 7 días de racha, con un máximo de 2 guardados a la vez (mismo
+// límite que usa Duolingo con su "streak freeze" — evita que el sistema
+// todo-o-nada sea la razón de abandonar, que es la causa #1 documentada
+// de dejar un hábito nuevo).
+export const MAX_ESCUDOS = 2;
+
 function updateStreak() {
   const t = today();
   if (!dayCompleted()) return;
   if (state.diasCumplidos.includes(t)) return;
 
   const dias = [...state.diasCumplidos, t];
-  const ayer = localDateStr(new Date(Date.now() - 86400000));
-  const actual = state.racha.ultimoDia === ayer ? state.racha.actual + 1 : 1;
+  const gap = state.racha.ultimoDia ? diffDias(state.racha.ultimoDia, t) : null;
+  let escudos = state.escudos;
+  let actual;
+  let escudoUsado = false;
+
+  if (gap === 1 || gap === null) {
+    actual = state.racha.actual + 1;
+  } else if (gap === 2 && escudos > 0) {
+    escudos -= 1;
+    escudoUsado = true;
+    actual = state.racha.actual + 1;
+  } else {
+    actual = 1;
+  }
+
+  if (actual > 0 && actual % 7 === 0 && escudos < MAX_ESCUDOS) escudos += 1;
+
   const mejor = Math.max(actual, state.racha.mejor);
-  setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t } });
+  setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t }, escudos });
+  return escudoUsado;
 }
 
 // --- Antojos (SOS) ---
@@ -420,6 +446,31 @@ export function marcarPasoHecho() {
   const pasoHechos = [...state.pasoHechos, today()].slice(-180);
   setState({ pasoHechos });
   return pasoRacha();
+}
+
+// --- Sana proactiva: elige una línea de apertura según el contexto real
+// (nunca genérica al azar si hay una señal más específica disponible).
+// Determinista por día, igual que pasoDeHoy() — no llama a la IA, así que
+// no consume cuota ni cuesta nada mostrarla.
+function elegirDeLista(lista) {
+  if (!lista.length) return null;
+  return lista[hashDia(today() + lista.length) % lista.length];
+}
+
+export function sanaApertura() {
+  const ultimo = state.checkins.length ? state.checkins[state.checkins.length - 1] : null;
+  if (ultimo && ultimo.animo === 'dificil' && diffDias(ultimo.fecha, today()) <= 1) {
+    return elegirDeLista(SANA_OPENERS.animo_dificil);
+  }
+  const patron = cravingPattern();
+  if (patron) {
+    const linea = elegirDeLista(SANA_OPENERS.patron_antojo);
+    return linea.replace('{franja}', patron);
+  }
+  if (state.racha.actual === 0 && state.diasCumplidos.length > 0) {
+    return elegirDeLista(SANA_OPENERS.racha_rota);
+  }
+  return elegirDeLista(SANA_OPENERS.general);
 }
 
 // --- Logros ---

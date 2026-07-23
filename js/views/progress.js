@@ -1,5 +1,5 @@
 // Mi progreso: rachas, logros, gráficas, historial de antojos y diario de síntomas.
-import { getState, ACHIEVEMENTS, logSintoma, sintomaPattern, esc, today, getWaterGoal } from '../store.js';
+import { getState, ACHIEVEMENTS, logSintoma, sintomaPattern, esc, today, getWaterGoal, MAX_ESCUDOS } from '../store.js';
 import { SYMPTOM_TYPES, SYMPTOM_CAUSES } from '../data/profiles.js';
 import { header, openModal, toast, navigate } from '../app.js';
 import { barChart, lineChart } from '../charts.js';
@@ -9,17 +9,31 @@ const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 's
 
 let rangoActivo = 'semana';
 
+// Etapa visual de constancia: usa los mismos umbrales que ya validan los
+// logros racha_3/racha_7/racha_30 (no se inventa un número nuevo de
+// "hábito consolidado" — esa cifra fija no tiene respaldo científico sólido,
+// ver memoria "solo info comprobada").
+function growthStage(n) {
+  if (n >= 30) return { emoji: '🌸', label: 'Floreciendo' };
+  if (n >= 7) return { emoji: '🌿', label: 'Creciendo fuerte' };
+  if (n >= 3) return { emoji: '🌱', label: 'Primeros brotes' };
+  return { emoji: '🌰', label: 'Sembrando' };
+}
+
 export function renderProgress(container) {
   header(container);
-  const { racha, diasCumplidos, logros, antojos, sintomas, checkins, user } = getState();
+  const { racha, diasCumplidos, logros, antojos, sintomas, checkins, user, escudos } = getState();
 
   // Racha
+  const etapa = growthStage(racha.actual);
   const streak = document.createElement('div');
   streak.className = 'card streak-hero';
   streak.innerHTML = `
     <div class="num">${racha.actual} <span class="streak-flame ${racha.actual > 0 ? 'lit' : 'out'}">🔥</span></div>
     <p><strong>días seguidos</strong> cumpliendo tus hábitos</p>
-    <p class="small muted mt">Mejor racha: ${racha.mejor} días · Total de días cumplidos: ${diasCumplidos.length}</p>`;
+    <p class="small mt">${etapa.emoji} <strong>${etapa.label}</strong> — tu constancia crece con cada día.</p>
+    <p class="small muted mt">Mejor racha: ${racha.mejor} días · Total de días cumplidos: ${diasCumplidos.length}</p>
+    <p class="small muted mt">🛡️ Escudos: ${escudos}/${MAX_ESCUDOS} — protegen tu racha si fallas un solo día. Se gana 1 cada 7 días de racha.</p>`;
   container.appendChild(streak);
 
   // --- Gráficas de progreso ---

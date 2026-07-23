@@ -1,7 +1,7 @@
 // Pregúntale a tu guía: asistente conversacional Premium.
 // Cuota, verificación de plan y la llamada a la IA viven en el servidor
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
-import { isPremium, getState } from '../store.js';
+import { isPremium, getState, sanaApertura } from '../store.js';
 import { fetchGuideHistory, askGuide } from '../supabase-client.js';
 import { header, navigate, toast } from '../app.js';
 
@@ -86,7 +86,7 @@ export function renderAssistant(container) {
       const data = await fetchGuideHistory();
       log.innerHTML = '';
       if (!data.history.length) {
-        addBubble('system', '¡Hola! Soy Sana 🌿 Escribe tu primera pregunta cuando quieras. Por ejemplo: "tengo antojo de dulce a las 4pm, ¿qué hago?"');
+        addBubble('system', `¡Hola! Soy Sana 🌿 ${sanaApertura()}`);
       } else {
         for (const m of data.history) addBubble(m.role, m.content);
       }
