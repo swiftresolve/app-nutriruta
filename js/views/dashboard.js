@@ -1,5 +1,5 @@
 // Dashboard diario: menú del día, agua, hábitos y acceso rápido al SOS.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho } from '../store.js';
 import { MISSION } from '../data/mission.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
@@ -30,6 +30,29 @@ export function renderDashboard(container) {
     <p class="small">Hoy es un buen día para cuidarte. Progreso, no perfección.</p>
     <div class="chips mt">${user.perfiles.map((p) => `<span class="tag perfil">${PROFILES[p].emoji} ${PROFILES[p].nombre}</span>`).join(' ')}</div>`;
   container.appendChild(hero);
+
+  // --- Tu paso de hoy: obstáculo + micro-acción concreta, gratis para todas ---
+  const paso = pasoDeHoy();
+  const pasoHecho = pasoHechoHoy();
+  const racha = pasoRacha();
+  const pasoCard = document.createElement('div');
+  pasoCard.className = 'card';
+  pasoCard.style.borderLeft = '4px solid var(--primary)';
+  pasoCard.innerHTML = `
+    <div class="spread"><h3>🌿 Tu paso de hoy</h3>${pasoHecho ? '<span class="tag verde">Hecho ✓</span>' : ''}</div>
+    <p class="small mt" style="font-weight:600">${esc(paso.obstaculo)}</p>
+    <p class="mt">${esc(paso.accion)}</p>
+    <p class="small muted mt">${esc(paso.porque)}</p>
+    ${racha >= 2 ? `<p class="small mt">🔥 ${racha} días seguidos dando tu paso</p>` : ''}
+    <button class="btn ${pasoHecho ? 'ghost' : 'accent'} full mt" id="paso-btn" ${pasoHecho ? 'disabled' : ''}>${pasoHecho ? 'Completado por hoy 🌿' : 'Ya lo hice ✓'}</button>`;
+  const pasoBtn = pasoCard.querySelector('#paso-btn');
+  pasoBtn.addEventListener('click', () => {
+    const nuevaRacha = marcarPasoHecho();
+    if (nuevaRacha >= 2) celebrateStreak(nuevaRacha);
+    else toast('¡Bien hecho! 🌿');
+    renderDashboard(clearAndGet(container));
+  });
+  container.appendChild(pasoCard);
 
   // --- Pregúntale a tu guía (asistente Premium, entrada destacada) ---
   const guideCard = document.createElement('div');

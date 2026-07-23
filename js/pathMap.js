@@ -9,6 +9,13 @@ const X_LEFT = 60;
 const X_RIGHT = 280;
 const pct = (x) => (x / REF_W * 100).toFixed(3);
 
+// Todo texto que entra al HTML se escapa aquí, aunque hoy las fuentes sean
+// de confianza (títulos de la BD, datos estáticos): este componente es
+// reutilizable y no debe depender de que quien lo llame recuerde escapar.
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+));
+
 function svgPathD(n) {
   let d = '';
   for (let i = 0; i < n; i++) {
@@ -44,13 +51,13 @@ export function renderPathMap(container, items) {
       ? `<div class="path-mascot" style="top:${y - 58}px; ${isLeft ? `left: calc(${pct(x)}% - 14px)` : `right: calc(${pct(REF_W - x)}% - 44px)`}">🌿</div>`
       : '';
     const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
-    const icon = it.done ? '✓' : (it.locked ? '🔒' : it.icon);
-    const tag = it.now ? `<span class="path-tag path-tag-now">${it.nowLabel || 'Actual'}</span>` : '';
+    const icon = it.done ? '✓' : (it.locked ? '🔒' : esc(it.icon));
+    const tag = it.now ? `<span class="path-tag path-tag-now">${esc(it.nowLabel || 'Actual')}</span>` : '';
     return `<div class="path-node-wrap ${isLeft ? '' : 'right'}" style="${posStyle}" data-wrap-idx="${i}">
-        <button type="button" class="path-node ${stateClass}" data-idx="${i}" aria-label="${it.title}">${icon}</button>
+        <button type="button" class="path-node ${stateClass}" data-idx="${i}" aria-label="${esc(it.title)}">${icon}</button>
         <div class="path-label">
-          <div class="path-t">${it.title}</div>
-          ${it.subtitle ? `<div class="path-s">${it.subtitle}</div>` : ''}
+          <div class="path-t">${esc(it.title)}</div>
+          ${it.subtitle ? `<div class="path-s">${esc(it.subtitle)}</div>` : ''}
           ${tag}
           ${it.extraHtml || ''}
         </div>

@@ -1,5 +1,6 @@
 // Estado persistente en localStorage + sincronización con Supabase.
 import { fetchProfile, pushProfileState } from './supabase-client.js';
+import { DAILY_STEPS } from './data/dailySteps.js';
 
 const KEY = 'nutriruta-state-v1';
 
@@ -31,7 +32,8 @@ const DEFAULT_STATE = {
   logros: [],                  // ids de logros desbloqueados
   menuOverrides: {},           // { 'fecha|comida': n } desplazamiento al cambiar receta
   compras: {},                 // { itemId: true } marcados en lista de compras
-  notifPrefs: { plan: true, comidas: true, agua: true } // qué tipos de aviso push recibir
+  notifPrefs: { plan: true, comidas: true, agua: true }, // qué tipos de aviso push recibir
+  pasoHechos: []                // fechas ISO en que se marcó "Tu paso de hoy" como hecho
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
@@ -373,6 +375,51 @@ export function responderInvitacionTestimonioPlan(compartir) {
   const { emergencia } = state;
   if (!emergencia) return;
   setState({ emergencia: { ...emergencia, compartirReflexiones: compartir, testimonioPlanPreguntado: true } });
+}
+
+// --- "Tu paso de hoy": obstáculo + micro-acción, elegido según el patrón de
+// antojos ya detectado (misma franja horaria que usa cravingPattern()). Sin
+// patrón suficiente todavía, usa el pozo 'general'. La elección es
+// determinista por día (todas las usuarias con el mismo contexto ven el
+// mismo paso ese día, y cambia al día siguiente) — no requiere IA ni red.
+function hashDia(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+export function pasoDeHoy() {
+  const contexto = cravingPattern() || 'general';
+  const pool = DAILY_STEPS.filter((s) => s.contexto === contexto);
+  const usado = pool.length ? pool : DAILY_STEPS.filter((s) => s.contexto === 'general');
+  const idx = hashDia(today() + contexto) % usado.length;
+  return usado[idx];
+}
+
+export function pasoHechoHoy() {
+  return state.pasoHechos.includes(today());
+}
+
+// Racha de días consecutivos marcando "Tu paso de hoy" (independiente de la
+// racha de hábitos). Se rompe si el último día registrado no es hoy ni ayer.
+export function pasoRacha() {
+  const dias = [...new Set(state.pasoHechos)].sort();
+  if (!dias.length) return 0;
+  let racha = 1;
+  for (let i = dias.length - 1; i > 0; i--) {
+    if (diffDias(dias[i - 1], dias[i]) === 1) racha++; else break;
+  }
+  const ultimo = dias[dias.length - 1];
+  const t = today();
+  const ayer = localDateStr(new Date(Date.now() - 86400000));
+  return (ultimo === t || ultimo === ayer) ? racha : 0;
+}
+
+export function marcarPasoHecho() {
+  if (pasoHechoHoy()) return pasoRacha();
+  const pasoHechos = [...state.pasoHechos, today()].slice(-180);
+  setState({ pasoHechos });
+  return pasoRacha();
 }
 
 // --- Logros ---
