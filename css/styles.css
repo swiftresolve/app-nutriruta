@@ -1,4 +1,5 @@
 /* ===== NutriRuta design system ===== */
+/* (prueba del hook de version de cache automatica — se revertira) */
 :root {
   --primary: #2BB5A0;        /* verde agua */
   --primary-dark: #1E8A7A;

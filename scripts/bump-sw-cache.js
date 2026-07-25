@@ -21,7 +21,7 @@ const assets = [...assetsMatch[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
 const hash = crypto.createHash('sha256');
 for (const rel of assets) {
   const file = path.join(ROOT, rel.replace(/^\.\//, ''));
-  if (fs.existsSync(file)) hash.update(fs.readFileSync(file));
+  if (fs.existsSync(file) && fs.statSync(file).isFile()) hash.update(fs.readFileSync(file));
 }
 const version = hash.digest('hex').slice(0, 10);
 const newCacheLine = `const CACHE = 'nutriruta-${version}';`;
