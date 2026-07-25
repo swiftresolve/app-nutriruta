@@ -1,0 +1,5 @@
+#!/bin/sh
+# Recalcula la version de cache del service worker antes de cada commit,
+# para que nunca quede desactualizada por olvido humano (ver scripts/bump-sw-cache.js).
+node scripts/bump-sw-cache.js
+git add sw.js
