@@ -15,7 +15,6 @@ import { renderEmergency } from './views/emergency.js';
 import { renderAssistant } from './views/assistant.js';
 import { renderTestimonials } from './views/testimonials.js';
 import { renderResetPassword } from './views/resetPassword.js';
-import { maybeShowCheckin } from './views/checkin.js';
 
 const app = document.getElementById('app');
 const nav = document.getElementById('bottom-nav');
@@ -53,7 +52,6 @@ export function navigate(route, params = {}) {
   app.classList.remove('page-enter');
   void app.offsetWidth;
   app.classList.add('page-enter');
-  if (route === 'dashboard') maybeShowCheckin();
 
   const showNav = route !== 'quiz' && route !== 'auth' && route !== 'resetPassword';
   nav.classList.toggle('hidden', !showNav);

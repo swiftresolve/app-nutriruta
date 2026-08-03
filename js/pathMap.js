@@ -35,7 +35,11 @@ function svgPathD(n) {
 // secundaria) — quien llama a renderPathMap puede engancharle sus propios
 // listeners después, buscando `[data-idx="N"]` dentro del contenedor.
 export function renderPathMap(container, items) {
-  const totalH = items.length * ROW_H;
+  // +28px de colchón: las etiquetas con contenido extra (ej. el botón de
+  // cambiar receta del menú del día) pueden ser más altas que ROW_H, y sin
+  // este margen la última fila se salía del contenedor y tapaba lo que
+  // viniera justo después (ej. "Ver lista de compras").
+  const totalH = items.length * ROW_H + 28;
   const svg = `<svg class="path-svg" viewBox="0 0 340 ${totalH}" preserveAspectRatio="none">
     <path d="${svgPathD(items.length)}" fill="none" stroke="var(--primary-soft)" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 14"/>
   </svg>`;

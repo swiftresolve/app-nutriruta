@@ -24,13 +24,32 @@ const EXPERIENCIA_MENU = [
   { id: 'me_encanto', label: '🤩 Me encantó' }
 ];
 
-// Se llama solo al entrar a Hoy (navigate), no en los re-renders internos
-// del dashboard al marcar un hábito o un vaso de agua, para no reabrir el
-// modal en cada clic.
-export function maybeShowCheckin() {
-  if (!shouldShowCheckin()) return;
-  // Pequeña pausa para que no aparezca encima de la primera pintura del dashboard.
-  setTimeout(abrirCheckin, 600);
+// Ya no se abre solo como modal al entrar al dashboard (se sentía invasivo,
+// bloqueaba la pantalla apenas se abría la app). Ahora es una tarjeta más
+// del dashboard, como cualquier otra — se puede ignorar, cerrar o abrir
+// cuando la usuaria quiera, nunca interrumpe.
+export function checkinBannerVisible() {
+  return shouldShowCheckin();
+}
+
+export function renderCheckinBanner(container, onChange) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.borderLeft = '4px solid var(--secondary)';
+  card.innerHTML = `
+    <div class="spread">
+      <span class="small" style="font-weight:700">👋 ¿Cómo vas?</span>
+      <button class="icon-btn" id="ci-cerrar" aria-label="Cerrar">✕</button>
+    </div>
+    <p class="small mt">Dos minutos, para acompañarte mejor. Cuéntanos cuando quieras.</p>
+    <button class="btn ghost sm mt" id="ci-abrir">Contarnos cómo voy →</button>`;
+  container.appendChild(card);
+
+  card.querySelector('#ci-cerrar').addEventListener('click', () => {
+    postponeCheckin();
+    if (onChange) onChange();
+  });
+  card.querySelector('#ci-abrir').addEventListener('click', () => abrirCheckin(onChange));
 }
 
 function chipGroup(wrap, options, onPick) {
@@ -50,10 +69,10 @@ function chipGroup(wrap, options, onPick) {
   return () => picked;
 }
 
-function abrirCheckin() {
+function abrirCheckin(onChange) {
   let animo = null, impulsos = null, experiencia = null;
   openModal((modal, close) => {
-    const cerrarYPosponer = () => { postponeCheckin(); close(); };
+    const cerrarYPosponer = () => { postponeCheckin(); close(); if (onChange) onChange(); };
     modal.insertAdjacentHTML('beforeend', `
       <h2>👋 ¿Cómo vas?</h2>
       <p class="small mt">Dos minutos, para acompañarte mejor. Puedes saltarlo si no es buen momento.</p>
@@ -86,6 +105,7 @@ function abrirCheckin() {
       const index = logCheckin({ animo, antojosImpulsos: impulsos, menuExperiencia: experiencia, notas });
       close();
       toast('Gracias por contarnos cómo vas 🌱');
+      if (onChange) onChange();
       const positivo = (animo === 'bien' || animo === 'muy_bien') && (experiencia === 'me_gusto' || experiencia === 'me_encanto');
       if (positivo) setTimeout(() => abrirInvitacionTestimonio(index), 500);
     });

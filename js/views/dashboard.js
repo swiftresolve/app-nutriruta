@@ -8,6 +8,7 @@ import { navigate, header, openModal, toast } from '../app.js';
 import { celebrateStreak } from '../streakAnim.js';
 import { renderPathMap } from '../pathMap.js';
 import { renderPrimerosPasos, primerosPasosVisible } from './primerosPasos.js';
+import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
 
 const DAILY_HABITS = [
   { id: 'agua', nombre: 'Tomé suficiente agua 💧' },
@@ -35,6 +36,11 @@ export function renderDashboard(container) {
   // --- Primeros pasos: checklist de onboarding, solo cuentas nuevas ---
   if (primerosPasosVisible()) {
     renderPrimerosPasos(container, () => renderDashboard(clearAndGet(container)));
+  }
+
+  // --- Check-in: tarjeta descartable, nunca modal automático ---
+  if (checkinBannerVisible()) {
+    renderCheckinBanner(container, () => renderDashboard(clearAndGet(container)));
   }
 
   // --- Tu paso de hoy: obstáculo + micro-acción concreta, gratis para todas ---
@@ -206,6 +212,7 @@ export function renderDashboard(container) {
 
   const shopBtn = document.createElement('button');
   shopBtn.className = 'btn ghost sm mt';
+  shopBtn.style.marginTop = '20px';
   shopBtn.textContent = '🛒 Ver lista de compras';
   shopBtn.addEventListener('click', () => navigate('planner', { tab: 'compras' }));
   menuCard.appendChild(shopBtn);

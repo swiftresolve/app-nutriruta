@@ -69,7 +69,7 @@ export function renderSettings(container) {
       b.type = 'button';
       b.setAttribute('aria-label', `${n} de 5`);
       b.style.cssText = 'font-size:1.6rem;background:none;border:none;cursor:pointer;opacity:' + (n <= calificacionActual ? '1' : '0.3');
-      b.textContent = '🌿';
+      b.textContent = '🍏';
       b.addEventListener('click', () => {
         calificacionActual = n;
         guardarBtn.disabled = false;
