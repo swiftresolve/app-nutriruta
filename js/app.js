@@ -48,6 +48,11 @@ export function navigate(route, params = {}) {
   app.innerHTML = '';
   window.scrollTo(0, 0);
   render(app, params);
+  // Reinicia la animación de entrada (quitar+forzar reflow+agregar la clase)
+  // para que se vea en cada navegación, no solo la primera vez.
+  app.classList.remove('page-enter');
+  void app.offsetWidth;
+  app.classList.add('page-enter');
   if (route === 'dashboard') maybeShowCheckin();
 
   const showNav = route !== 'quiz' && route !== 'auth' && route !== 'resetPassword';
