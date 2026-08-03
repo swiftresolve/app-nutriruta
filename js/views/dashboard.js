@@ -7,6 +7,7 @@ import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe } f
 import { navigate, header, openModal, toast } from '../app.js';
 import { celebrateStreak } from '../streakAnim.js';
 import { renderPathMap } from '../pathMap.js';
+import { renderPrimerosPasos, primerosPasosVisible } from './primerosPasos.js';
 
 const DAILY_HABITS = [
   { id: 'agua', nombre: 'Tomé suficiente agua 💧' },
@@ -30,6 +31,11 @@ export function renderDashboard(container) {
     <p class="small">Hoy es un buen día para cuidarte. Progreso, no perfección.</p>
     <div class="chips mt">${user.perfiles.map((p) => `<span class="tag perfil">${PROFILES[p].emoji} ${PROFILES[p].nombre}</span>`).join(' ')}</div>`;
   container.appendChild(hero);
+
+  // --- Primeros pasos: checklist de onboarding, solo cuentas nuevas ---
+  if (primerosPasosVisible()) {
+    renderPrimerosPasos(container, () => renderDashboard(clearAndGet(container)));
+  }
 
   // --- Tu paso de hoy: obstáculo + micro-acción concreta, gratis para todas ---
   const paso = pasoDeHoy();
