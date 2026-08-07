@@ -92,3 +92,18 @@ export function playSparkleSound() {
     });
   });
 }
+
+// Día completo (nueva racha): fanfarria corta — arpegio que sube y cierra
+// en acorde, para el hito más grande del día, distinto del destello de una
+// sola micro-acción.
+export function playCelebrateSound() {
+  conAudio((audioCtx) => {
+    const start = audioCtx.currentTime;
+    [523, 659, 784].forEach((freq, i) => {
+      tono(audioCtx, freq, start + i * 0.09, 0.24, { type: 'triangle', peak: 0.14 });
+    });
+    [784, 988, 1175].forEach((freq) => {
+      tono(audioCtx, freq, start + 0.3, 0.5, { type: 'sine', peak: 0.1 });
+    });
+  });
+}

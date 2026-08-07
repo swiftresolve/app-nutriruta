@@ -11,7 +11,7 @@ import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe } from '../menu.js';
 import { navigate, header, openModal, toast, susanaName } from '../app.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
-import { playCheckSound, playWaterSound, playSparkleSound } from '../sound.js';
+import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
 import { renderPathMap } from '../pathMap.js';
 import { renderPrimerosPasos, primerosPasosVisible } from './primerosPasos.js';
 import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
@@ -110,6 +110,7 @@ export function renderDashboard(container) {
         const checksAhora = getHabits();
         const completados = Object.values(checksAhora).filter(Boolean).length;
         const aguaAhora = getWater();
+        playCelebrateSound();
         celebrateStreak(rachaDespues, { habitos: completados, totalHabitos: DAILY_HABITS.length, vasos: aguaAhora.vasos, meta: aguaAhora.meta });
       }
       if (nuevos.length) toast('🏆 ¡Nuevo logro desbloqueado! Míralo en Progreso.');

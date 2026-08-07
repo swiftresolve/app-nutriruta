@@ -1,24 +1,45 @@
 // Animación decorativa (no bloqueante) al sumar un día nuevo a la racha.
-// Se autodestruye sola; no requiere interacción ni pausa el resto de la app.
+// Se autodestruye sola; no requiere interacción ni pausa el resto de la app
+// (el checklist de "cómo vas" invasivo ya se rehizo una vez por esto mismo —
+// esta celebración nunca debe convertirse en un modal que haya que cerrar).
 //
 // stats (opcional): { habitos, totalHabitos, vasos, meta } — cuando se
-// pasa, la celebración se convierte en un pequeño "recibo" del día
-// (cuántos hábitos, cuánta agua), no solo el número de racha.
+// pasa, la celebración se convierte en un pequeño "recibo" del día en
+// chips de colores (inspirado en la pantalla de fin de lección de
+// Duolingo: EXP / precisión / ritmo, cada una en su propia caja).
+import { growthStage, rutiBadge } from './ruti.js';
+
+const CONFETI = ['#2BB5A0', '#FF8A6B', '#6FA8DC', '#FFD86B'];
+
 export function celebrateStreak(n, stats) {
   if (document.querySelector('.streak-celebrate')) return; // ya hay una en curso
   vibrate([30, 40, 30]);
   const el = document.createElement('div');
   el.className = 'streak-celebrate';
   el.setAttribute('aria-live', 'polite');
+  const etapa = growthStage(n);
   const resumen = stats
-    ? `<div class="streak-resumen"><span>✅ ${stats.habitos}/${stats.totalHabitos} hábitos</span><span>💧 ${stats.vasos}/${stats.meta} vasos</span></div>`
+    ? `<div class="streak-resumen">
+        <span class="streak-chip chip-a">✅ ${stats.habitos}/${stats.totalHabitos}<em>hábitos</em></span>
+        <span class="streak-chip chip-b">💧 ${stats.vasos}/${stats.meta}<em>vasos</em></span>
+        <span class="streak-chip chip-c">🔥 ${n}<em>racha</em></span>
+      </div>`
+    : '';
+  const confeti = stats
+    ? Array.from({ length: 14 }, (_, i) => {
+        const left = 8 + Math.random() * 84;
+        const delay = (Math.random() * 0.25).toFixed(2);
+        const color = CONFETI[i % CONFETI.length];
+        return `<span class="confeti-bit" style="left:${left}%; background:${color}; animation-delay:${delay}s"></span>`;
+      }).join('')
     : '';
   el.innerHTML = `
     <div class="ring"></div>
-    <div class="flame-big">🔥</div>
+    ${confeti}
+    <div class="flame-big">${rutiBadge(etapa, { size: 72 })}</div>
     <div class="label${stats ? ' wrap' : ''}">¡${n} día${n === 1 ? '' : 's'} seguido${n === 1 ? '' : 's'}!${resumen}</div>`;
   document.body.appendChild(el);
-  const duracion = stats ? 2400 : 1400;
+  const duracion = stats ? 2600 : 1400;
   setTimeout(() => {
     el.style.animation = 'streak-fade-out 0.3s ease forwards';
     setTimeout(() => el.remove(), 320);
