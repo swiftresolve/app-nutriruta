@@ -76,10 +76,16 @@ export function renderDashboard(container) {
   guideCard.style.background = 'linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))';
   guideCard.style.border = 'none';
   const subtitulo = isPremium() ? esc(sanaApertura()) : 'Una duda puntual, ahora mismo, con el contexto de tu perfil.';
+  const mood = sanaMood(getState());
   guideCard.innerHTML = `
-    <div class="spread"><h3>💬 Sana, tu guía</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
-    <p class="small mt">${subtitulo}</p>
-    <button class="btn ghost sm mt">${isPremium() ? 'Abrir chat →' : 'Conocer más →'}</button>`;
+    <div class="row" style="gap:12px;align-items:flex-start">
+      <div class="sana-avatar">🌿${mood.badge ? `<span class="mood-badge">${mood.badge}</span>` : ''}</div>
+      <div style="flex:1;min-width:0">
+        <div class="spread"><h3>Sana, tu guía</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
+        <p class="small mt">${subtitulo}</p>
+        <button class="btn ghost sm mt">${isPremium() ? 'Abrir chat →' : 'Conocer más →'}</button>
+      </div>
+    </div>`;
   guideCard.querySelector('.btn').addEventListener('click', () => navigate('assistant'));
   container.appendChild(guideCard);
 
@@ -248,13 +254,31 @@ export function renderDashboard(container) {
       const rachaDespues = getState().racha.actual;
       const nuevos = checkAchievements();
       if (escudoUsado) toast('🛡️ Usamos un escudo para proteger tu racha');
-      if (rachaDespues > rachaAntes) celebrateStreak(rachaDespues);
+      if (rachaDespues > rachaAntes) {
+        const checksAhora = getHabits();
+        const completados = Object.values(checksAhora).filter(Boolean).length;
+        const aguaAhora = getWater();
+        celebrateStreak(rachaDespues, { habitos: completados, totalHabitos: DAILY_HABITS.length, vasos: aguaAhora.vasos, meta: aguaAhora.meta });
+      }
       if (nuevos.length) toast('🏆 ¡Nuevo logro desbloqueado! Míralo en Progreso.');
       renderDashboard(clearAndGet(container));
     });
     habitCard.appendChild(row);
   }
   container.appendChild(habitCard);
+}
+
+// Estado de ánimo de Sana: se deriva 100% de datos que ya existen (último
+// check-in, racha, hábitos de hoy) — nada nuevo que trackear. Nunca es
+// negativa de más: ante la duda, la lectura queda en calma.
+function sanaMood(state) {
+  const ultimo = state.checkins?.length ? state.checkins[state.checkins.length - 1] : null;
+  const animoDificil = ultimo?.animo === 'dificil';
+  const habitosHoy = Object.values(state.habitos?.checks || {}).filter(Boolean).length;
+  const rachaEnRiesgo = (state.racha?.actual || 0) >= 2 && habitosHoy < 3 && new Date().getHours() >= 18;
+  if (animoDificil || rachaEnRiesgo) return { badge: '🤗' };
+  if ((state.racha?.actual || 0) >= 3) return { badge: '✨' };
+  return { badge: '' };
 }
 
 function clearAndGet(container) {

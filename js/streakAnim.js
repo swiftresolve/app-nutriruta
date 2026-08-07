@@ -1,19 +1,28 @@
 // Animación decorativa (no bloqueante) al sumar un día nuevo a la racha.
 // Se autodestruye sola; no requiere interacción ni pausa el resto de la app.
-export function celebrateStreak(n) {
+//
+// stats (opcional): { habitos, totalHabitos, vasos, meta } — cuando se
+// pasa, la celebración se convierte en un pequeño "recibo" del día
+// (cuántos hábitos, cuánta agua), no solo el número de racha.
+export function celebrateStreak(n, stats) {
   if (document.querySelector('.streak-celebrate')) return; // ya hay una en curso
+  vibrate([30, 40, 30]);
   const el = document.createElement('div');
   el.className = 'streak-celebrate';
   el.setAttribute('aria-live', 'polite');
+  const resumen = stats
+    ? `<div class="streak-resumen"><span>✅ ${stats.habitos}/${stats.totalHabitos} hábitos</span><span>💧 ${stats.vasos}/${stats.meta} vasos</span></div>`
+    : '';
   el.innerHTML = `
     <div class="ring"></div>
     <div class="flame-big">🔥</div>
-    <div class="label">¡${n} día${n === 1 ? '' : 's'} seguido${n === 1 ? '' : 's'}!</div>`;
+    <div class="label${stats ? ' wrap' : ''}">¡${n} día${n === 1 ? '' : 's'} seguido${n === 1 ? '' : 's'}!${resumen}</div>`;
   document.body.appendChild(el);
+  const duracion = stats ? 2400 : 1400;
   setTimeout(() => {
     el.style.animation = 'streak-fade-out 0.3s ease forwards';
     setTimeout(() => el.remove(), 320);
-  }, 1400);
+  }, duracion);
 }
 
 // Estallido pequeño e inmediato al completar una micro-acción (marcar un
@@ -24,6 +33,7 @@ export function celebrateStreak(n) {
 const SPARKS = ['✨', '🌟', '💚', '⭐'];
 
 export function habitCheckPop(x, y) {
+  vibrate(15);
   // Tope de seguridad: si alguien toca varias cosas muy rápido, no acumular
   // decenas de estos elementos flotando.
   if (document.querySelectorAll('.habit-pop').length >= 5) return;
@@ -41,4 +51,14 @@ export function habitCheckPop(x, y) {
   el.innerHTML = `<span class="check">✅</span>${sparks}`;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 600);
+}
+
+// Vibración táctil corta (Android; iOS Safari no soporta la API y lo
+// ignora sin error). Nunca debe romper la interacción real si falla.
+export function vibrate(pattern) {
+  try {
+    if ('vibrate' in navigator) navigator.vibrate(pattern);
+  } catch {
+    // silencioso
+  }
 }
