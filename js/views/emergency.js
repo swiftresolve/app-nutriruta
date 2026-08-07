@@ -35,9 +35,14 @@ export function renderEmergency(container) {
   }
 
   const completados = emergencia.completados || [];
-  // Cuántos días han pasado desde que empezó (día de inicio = día 1), para
-  // que cada día se desbloquee con el calendario y no se puedan adelantar.
-  const diaDesbloqueado = Math.min(7, diasDesde(emergencia.inicio, today()) + 1);
+  // El día activo es el siguiente sin completar, nunca más de uno a la vez
+  // — si se salta un día, ese día se queda como "activo" hasta que se
+  // complete, en vez de desbloquear de golpe todos los días que pasaron
+  // en el calendario (eso permitía completar varios días de corrido en
+  // una sola sesión, que es justo lo que no debe pasar).
+  const siguientePendiente = EMERGENCY_PLAN.dias.find((d) => !completados.includes(d.n))?.n ?? 8;
+  const diaDesbloqueadoPorCalendario = Math.min(7, diasDesde(emergencia.inicio, today()) + 1);
+  const diaDesbloqueado = Math.min(siguientePendiente, diaDesbloqueadoPorCalendario);
 
   // Plan completado: cierre + CTA a la Misión
   if (completados.length >= 7) {
