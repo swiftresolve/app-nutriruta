@@ -165,10 +165,39 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .quiz-nav .btn { flex: 1; }
 
 /* ===== Header ===== */
-.app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.app-header .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary-dark); font-size: 1.2rem; }
+.app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; }
+.app-header .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary-dark); font-size: 1.2rem; flex: none; }
 .app-header .brand svg { width: 26px; height: 26px; border-radius: 6px; flex: none; }
-.icon-btn { font-size: 1.35rem; padding: 6px; border-radius: 50%; }
+.icon-btn { font-size: 1.35rem; padding: 6px; border-radius: 50%; flex: none; }
+
+/* Racha + escudos, arriba a la derecha (persistentes, como Duolingo) */
+.header-stats { display: flex; align-items: center; gap: 2px; }
+.header-stat {
+  position: relative; display: flex; align-items: center; gap: 3px;
+  font-weight: 800; font-size: 0.9rem; color: var(--ink);
+  padding: 5px 8px; border-radius: 12px; transition: background 0.15s;
+}
+.header-stat:active { background: var(--primary-soft); }
+.header-stat .icon { font-size: 1.05rem; line-height: 1; }
+.header-tooltip {
+  position: absolute; top: calc(100% + 8px); right: -6px; z-index: 90;
+  background: var(--card); color: var(--ink); border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(35, 56, 51, 0.2); padding: 12px 14px;
+  width: max-content; max-width: 240px; text-align: left; white-space: normal;
+  animation: tooltip-in 0.18s cubic-bezier(.34,1.56,.64,1);
+}
+.header-tooltip::after {
+  content: ''; position: absolute; bottom: 100%; right: 16px;
+  border: 6px solid transparent; border-bottom-color: var(--card);
+}
+@keyframes tooltip-in { from { opacity: 0; transform: translateY(-6px) scale(0.95); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .header-tooltip { animation: none; }
+}
+
+/* Nombre de Susana en dos colores: "Su" + "Sana" */
+.susana-name .su { color: var(--secondary); }
+.susana-name .sana { color: var(--primary-dark); }
 
 /* ===== Water tracker ===== */
 .water-glasses { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
@@ -221,13 +250,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* Llamita animada de la racha: viva y con flicker sutil si hay racha activa,
    apagada y quieta si el usuario aún no ha completado un día. */
 .streak-flame { display: inline-block; transform-origin: 50% 85%; }
-.streak-flame.lit { animation: flame-flicker 2.6s ease-in-out infinite; }
+.streak-flame.lit { animation: flame-flicker 1.8s ease-in-out infinite; }
 .streak-flame.out { filter: grayscale(1) opacity(0.45); }
 @keyframes flame-flicker {
-  0%, 100% { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 0 rgba(255, 138, 107, 0)); }
-  25% { transform: scale(1.07, 0.95) rotate(2deg); }
-  50% { transform: scale(0.96, 1.06) rotate(-1deg); filter: drop-shadow(0 3px 8px rgba(255, 138, 107, 0.4)); }
-  75% { transform: scale(1.04, 0.97) rotate(1deg); }
+  0%, 100% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 2px 5px rgba(255, 138, 107, 0.3)) brightness(1); }
+  18% { transform: scale(1.1, 0.92) rotate(3deg); filter: drop-shadow(0 4px 10px rgba(255, 138, 107, 0.5)) brightness(1.08); }
+  38% { transform: scale(0.93, 1.09) rotate(-4deg); filter: drop-shadow(0 5px 13px rgba(255, 90, 60, 0.55)) brightness(1.12); }
+  58% { transform: scale(1.06, 0.95) rotate(2deg); filter: drop-shadow(0 3px 9px rgba(255, 138, 107, 0.4)) brightness(1.05); }
+  78% { transform: scale(0.97, 1.03) rotate(-2deg); filter: drop-shadow(0 2px 6px rgba(255, 138, 107, 0.3)) brightness(1); }
 }
 @media (prefers-reduced-motion: reduce) {
   .streak-flame.lit { animation: none; }

@@ -3,7 +3,7 @@
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, sanaApertura } from '../store.js';
 import { fetchGuideHistory, askGuide } from '../supabase-client.js';
-import { header, navigate, toast } from '../app.js';
+import { header, navigate, toast, susanaName } from '../app.js';
 
 export function renderAssistant(container) {
   header(container);
@@ -13,7 +13,7 @@ export function renderAssistant(container) {
     lock.className = 'card center';
     lock.innerHTML = `
       <div style="font-size:2.6rem">💬</div>
-      <h2>Sana, tu guía</h2>
+      <h2>${susanaName()}, tu guía</h2>
       <p class="mt">Un espacio para resolver dudas puntuales de nutrición y hábitos, con el contexto de tu perfil — como tener acompañamiento a la mano. Es parte del <strong>plan Premium</strong>.</p>
       <button class="btn accent full mt">Ver planes Premium</button>`;
     lock.querySelector('.btn').addEventListener('click', () => navigate('plans'));
@@ -24,7 +24,7 @@ export function renderAssistant(container) {
   const hero = document.createElement('div');
   hero.className = 'card';
   hero.innerHTML = `
-    <h2>💬 Sana, tu guía</h2>
+    <h2>💬 ${susanaName()}, tu guía</h2>
     <p class="small mt">Pregúntale lo que quieras sobre tu alimentación, tus síntomas o tus antojos. Tiene en cuenta tu perfil, pero recuerda: <strong>no reemplaza a tu médico o nutricionista</strong>, y ante señales de alarma, busca atención profesional de inmediato.</p>
     <p class="chat-quota mt" id="chatQuota">Cargando…</p>`;
   container.appendChild(hero);
@@ -86,7 +86,7 @@ export function renderAssistant(container) {
       const data = await fetchGuideHistory();
       log.innerHTML = '';
       if (!data.history.length) {
-        addBubble('system', `¡Hola! Soy Sana 🌿 ${sanaApertura()}`);
+        addBubble('system', `¡Hola! Soy Susana 🌿 ${sanaApertura()}`);
       } else {
         for (const m of data.history) addBubble(m.role, m.content);
       }

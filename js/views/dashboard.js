@@ -5,14 +5,13 @@
 // día, hábitos, agua, menú, SOS, plan de 7 días); Sana y la Misión —lo
 // Premium— van después, cuando ya sentiste valor real, no antes.
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, sanaApertura } from '../store.js';
-import { growthStage } from './progress.js';
 import { MISSION } from '../data/mission.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe } from '../menu.js';
-import { navigate, header, openModal, toast } from '../app.js';
+import { navigate, header, openModal, toast, susanaName } from '../app.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
-import { playCheckSound } from '../sound.js';
+import { playCheckSound, playWaterSound, playSparkleSound } from '../sound.js';
 import { renderPathMap } from '../pathMap.js';
 import { renderPrimerosPasos, primerosPasosVisible } from './primerosPasos.js';
 import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
@@ -28,23 +27,18 @@ const DAILY_HABITS = [
 export function renderDashboard(container) {
   header(container);
   const state = getState();
-  const { user, racha, escudos } = state;
+  const { user } = state;
   const hora = new Date().getHours();
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
   const mood = sanaMood(state);
 
-  // --- Saludo + estado de constancia, en una sola tarjeta condensada ---
-  const etapa = growthStage(racha.actual);
+  // --- Saludo, en una sola tarjeta condensada (racha/escudos ya viven
+  // de forma persistente arriba a la derecha, en el header) ---
   const hero = document.createElement('div');
   hero.className = 'card';
   hero.innerHTML = `
     <h2>${saludo}${user.nombre ? ', ' + esc(user.nombre) : ''} 🌿</h2>
     <p class="small">Hoy es un buen día para cuidarte. Progreso, no perfección.</p>
-    <div class="stat-strip">
-      <span class="stat-pill">🔥 ${racha.actual} día${racha.actual === 1 ? '' : 's'}</span>
-      <span class="stat-pill">${etapa.emoji} ${etapa.label}</span>
-      ${escudos > 0 ? `<span class="stat-pill">🛡️ ${escudos}</span>` : ''}
-    </div>
     <div class="chips mt">${user.perfiles.map((p) => `<span class="tag perfil">${PROFILES[p].emoji} ${PROFILES[p].nombre}</span>`).join(' ')}</div>`;
   container.appendChild(hero);
 
@@ -82,7 +76,7 @@ export function renderDashboard(container) {
   pasoBtn.addEventListener('click', () => {
     const rect = pasoBtn.getBoundingClientRect();
     habitCheckPop(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    playCheckSound();
+    playSparkleSound();
     const nuevaRacha = marcarPasoHecho();
     if (nuevaRacha >= 2) celebrateStreak(nuevaRacha);
     else toast('¡Bien hecho! 🌿');
@@ -143,7 +137,7 @@ export function renderDashboard(container) {
       if (nuevo > agua.vasos) {
         const rect = g.getBoundingClientRect();
         habitCheckPop(rect.left + rect.width / 2, rect.top + rect.height / 2);
-        playCheckSound();
+        playWaterSound();
       }
       setWater(nuevo);
       if (nuevo >= agua.meta) toast('¡Meta de agua cumplida! 💧🎉');
@@ -256,7 +250,7 @@ export function renderDashboard(container) {
   guideCard.style.border = 'none';
   const subtitulo = isPremium() ? esc(sanaApertura()) : 'Una duda puntual, ahora mismo, con el contexto de tu perfil.';
   guideCard.innerHTML = `
-    <div class="spread"><h3>💬 Sana, tu guía</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
+    <div class="spread"><h3>💬 ${susanaName()}, tu guía</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
     <p class="small mt">${subtitulo}</p>
     <button class="btn ghost sm mt">${isPremium() ? 'Abrir chat →' : 'Conocer más →'}</button>`;
   guideCard.querySelector('.btn').addEventListener('click', () => navigate('assistant'));

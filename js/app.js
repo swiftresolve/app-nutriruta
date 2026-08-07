@@ -1,5 +1,5 @@
 // Router mínimo + arranque con puerta de autenticación.
-import { getState, initCloud, resetState } from './store.js';
+import { getState, initCloud, resetState, MAX_ESCUDOS } from './store.js';
 import { getSession, supabase } from './supabase-client.js';
 import { renderAuth } from './views/auth.js';
 import { renderQuiz } from './views/quiz.js';
@@ -75,14 +75,76 @@ export function toast(msg, ms = 2600) {
   el._t = setTimeout(() => el.classList.add('hidden'), ms);
 }
 
-// Cabecera común de las vistas principales.
+// Nombre de la guía IA, "Su" + "Sana" en dos colores (ver CSS .susana-name).
+export function susanaName() {
+  return '<span class="susana-name"><span class="su">Su</span><span class="sana">Sana</span></span>';
+}
+
+// Mismos umbrales que los logros racha_3/7/30 — no se inventa un número
+// nuevo de "hábito consolidado" (ver memoria "solo info comprobada").
+// Vive aquí (no importada de progress.js) para no crear una dependencia
+// circular: progress.js ya importa de app.js.
+function growthStage(n) {
+  if (n >= 30) return { emoji: '🌸', label: 'Floreciendo' };
+  if (n >= 7) return { emoji: '🌿', label: 'Creciendo fuerte' };
+  if (n >= 3) return { emoji: '🌱', label: 'Primeros brotes' };
+  return { emoji: '🌰', label: 'Sembrando' };
+}
+
+// Abre/cierra un tooltip anclado al botón, se cierra solo a los pocos
+// segundos o al tocar fuera. Un solo tooltip abierto a la vez.
+function attachStatTooltip(btn, html) {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const yaAbierto = btn.querySelector('.header-tooltip');
+    document.querySelectorAll('.header-tooltip').forEach((t) => t.remove());
+    if (yaAbierto) return;
+    const tip = document.createElement('div');
+    tip.className = 'header-tooltip';
+    tip.innerHTML = html;
+    btn.appendChild(tip);
+    const cerrar = () => { tip.remove(); document.removeEventListener('click', fuera); };
+    const timer = setTimeout(cerrar, 3500);
+    const fuera = (ev) => { if (!btn.contains(ev.target)) { clearTimeout(timer); cerrar(); } };
+    setTimeout(() => document.addEventListener('click', fuera), 0);
+  });
+}
+
+// Cabecera común de las vistas principales. Cuando ya hay cuenta activa,
+// muestra racha y escudos arriba a la derecha (persistentes, como el
+// marcador de racha de Duolingo) — tocar cualquiera abre el detalle.
 export function header(container) {
   const h = document.createElement('div');
   h.className = 'app-header';
+  const state = getState();
+  const mostrarStats = state.onboarded;
+  const racha = state.racha?.actual || 0;
+  const escudos = state.escudos || 0;
+
   h.innerHTML = `
     <span class="brand"><svg viewBox="0 0 512 512"><defs><linearGradient id="nrleaf" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#7CC96A"/><stop offset="1" stop-color="#3E9E52"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="#2BB5A0"/><g fill="none" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="13"><ellipse cx="256" cy="396" rx="148" ry="36"/><ellipse cx="256" cy="396" rx="86" ry="21"/></g><path d="M256 68 C168 68 100 136 100 222 C100 316 202 398 256 434 C310 398 412 316 412 222 C412 136 344 68 256 68 Z" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linejoin="round"/><g transform="translate(252 210) scale(0.55) translate(-256 -288)"><path d="M256 416c-72-48-136-102-136-176 0-45 34-80 78-80 28 0 48 13 58 32 10-19 30-32 58-32 44 0 78 35 78 80 0 74-64 128-136 176z" fill="#FFFFFF"/></g><g transform="translate(288 210) rotate(35)"><path d="M0 -40 C26 -24 28 10 0 40 C-28 10 -26 -24 0 -40 Z" fill="url(#nrleaf)"/><path d="M0 36 L-9 60" stroke="#3E9E52" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M0 -30 L0 32 M0 -16 L13 -25 M0 -16 L-13 -25 M0 2 L15 -7 M0 2 L-15 -7 M0 18 L12 9 M0 18 L-12 9" stroke="#FFFFFF" stroke-width="3.5" fill="none" stroke-linecap="round"/></g></svg>NutriRuta</span>
-    <button class="icon-btn" data-go="settings" aria-label="Ajustes">⚙️</button>`;
+    <div class="row" style="gap:2px">
+      ${mostrarStats ? `
+        <div class="header-stats">
+          <button class="header-stat" id="hs-racha" aria-label="Tu racha"><span class="icon streak-flame ${racha > 0 ? 'lit' : 'out'}">🔥</span>${racha}</button>
+          <button class="header-stat" id="hs-escudos" aria-label="Tus escudos"><span class="icon">🛡️</span>${escudos}</button>
+        </div>` : ''}
+      <button class="icon-btn" data-go="settings" aria-label="Ajustes">⚙️</button>
+    </div>`;
   h.querySelector('[data-go]').addEventListener('click', () => navigate('settings'));
+
+  if (mostrarStats) {
+    const etapa = growthStage(racha);
+    const mejor = state.racha?.mejor || 0;
+    attachStatTooltip(h.querySelector('#hs-racha'), `
+      <strong>🔥 ${racha} día${racha === 1 ? '' : 's'} seguido${racha === 1 ? '' : 's'}</strong>
+      <p class="small muted mt" style="margin-top:4px">${etapa.emoji} ${etapa.label}</p>
+      <p class="small muted" style="margin-top:2px">Mejor racha: ${mejor} día${mejor === 1 ? '' : 's'}</p>`);
+    attachStatTooltip(h.querySelector('#hs-escudos'), `
+      <strong>🛡️ ${escudos}/${MAX_ESCUDOS} escudos</strong>
+      <p class="small muted mt" style="margin-top:4px">Protegen tu racha si fallas un solo día. Se gana 1 cada 7 días de racha.</p>`);
+  }
+
   container.appendChild(h);
 }
 
