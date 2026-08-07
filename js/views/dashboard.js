@@ -5,7 +5,7 @@ import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
-import { celebrateStreak } from '../streakAnim.js';
+import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { renderPathMap } from '../pathMap.js';
 import { renderPrimerosPasos, primerosPasosVisible } from './primerosPasos.js';
 import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
@@ -59,6 +59,8 @@ export function renderDashboard(container) {
     <button class="btn ${pasoHecho ? 'ghost' : 'accent'} full mt" id="paso-btn" ${pasoHecho ? 'disabled' : ''}>${pasoHecho ? 'Completado por hoy 🌿' : 'Ya lo hice ✓'}</button>`;
   const pasoBtn = pasoCard.querySelector('#paso-btn');
   pasoBtn.addEventListener('click', () => {
+    const rect = pasoBtn.getBoundingClientRect();
+    habitCheckPop(rect.left + rect.width / 2, rect.top + rect.height / 2);
     const nuevaRacha = marcarPasoHecho();
     if (nuevaRacha >= 2) celebrateStreak(nuevaRacha);
     else toast('¡Bien hecho! 🌿');
@@ -163,6 +165,10 @@ export function renderDashboard(container) {
     g.setAttribute('aria-label', `Vaso ${i + 1}`);
     g.addEventListener('click', () => {
       const nuevo = i < agua.vasos ? i : i + 1;
+      if (nuevo > agua.vasos) {
+        const rect = g.getBoundingClientRect();
+        habitCheckPop(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      }
       setWater(nuevo);
       if (nuevo >= agua.meta) toast('¡Meta de agua cumplida! 💧🎉');
       renderDashboard(clearAndGet(container));
@@ -228,7 +234,11 @@ export function renderDashboard(container) {
     row.innerHTML = `
       <input type="checkbox" id="h-${h.id}" ${checks[h.id] ? 'checked' : ''}>
       <label for="h-${h.id}">${h.nombre}</label>`;
-    row.querySelector('input').addEventListener('change', () => {
+    row.querySelector('input').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        const rect = row.getBoundingClientRect();
+        habitCheckPop(rect.left + 16, rect.top + rect.height / 2);
+      }
       const rachaAntes = getState().racha.actual;
       const escudoUsado = toggleHabit(h.id);
       const rachaDespues = getState().racha.actual;

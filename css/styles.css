@@ -236,6 +236,24 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @keyframes streak-burst-ring { 0% { transform: scale(0.6); opacity: 0.6; } 100% { transform: scale(2.4); opacity: 0; } }
 @keyframes streak-label-in { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes streak-fade-out { to { opacity: 0; } }
+/* Feedback inmediato al marcar un hábito, un vaso de agua o "Tu paso de
+   hoy": un estallido chiquito en el punto exacto del toque. */
+.habit-pop { position: fixed; z-index: 200; pointer-events: none; transform: translate(-50%, -50%); }
+.habit-pop .check { display: block; font-size: 1.7rem; animation: habit-pop-check 0.5s cubic-bezier(.34,1.56,.64,1) forwards; }
+.habit-pop .spark { position: absolute; top: 50%; left: 50%; font-size: 0.85rem; animation: habit-pop-spark 0.55s ease-out forwards; }
+@keyframes habit-pop-check {
+  0% { transform: scale(0.3); opacity: 0; }
+  55% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+@keyframes habit-pop-spark {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .habit-pop .check, .habit-pop .spark { animation: none; opacity: 0; }
+}
+
 .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
 .badge { text-align: center; padding: 12px 6px; border-radius: 14px; background: #FBFDFC; border: 1.5px solid #EFF5F3; }
 .badge .emoji { font-size: 1.8rem; }
