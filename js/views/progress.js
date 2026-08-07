@@ -13,7 +13,7 @@ let rangoActivo = 'semana';
 // logros racha_3/racha_7/racha_30 (no se inventa un número nuevo de
 // "hábito consolidado" — esa cifra fija no tiene respaldo científico sólido,
 // ver memoria "solo info comprobada").
-function growthStage(n) {
+export function growthStage(n) {
   if (n >= 30) return { emoji: '🌸', label: 'Floreciendo' };
   if (n >= 7) return { emoji: '🌿', label: 'Creciendo fuerte' };
   if (n >= 3) return { emoji: '🌱', label: 'Primeros brotes' };

@@ -1,5 +1,11 @@
 // Dashboard diario: menú del día, agua, hábitos y acceso rápido al SOS.
+//
+// Orden pensado a propósito (no es solo la lista de features en el orden en
+// que se construyeron): arriba lo que se usa gratis todos los días (paso del
+// día, hábitos, agua, menú, SOS, plan de 7 días); Sana y la Misión —lo
+// Premium— van después, cuando ya sentiste valor real, no antes.
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, sanaApertura } from '../store.js';
+import { growthStage } from './progress.js';
 import { MISSION } from '../data/mission.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
@@ -21,16 +27,24 @@ const DAILY_HABITS = [
 
 export function renderDashboard(container) {
   header(container);
-  const { user } = getState();
+  const state = getState();
+  const { user, racha, escudos } = state;
   const hora = new Date().getHours();
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const mood = sanaMood(state);
 
-  // --- Saludo + perfiles activos ---
+  // --- Saludo + estado de constancia, en una sola tarjeta condensada ---
+  const etapa = growthStage(racha.actual);
   const hero = document.createElement('div');
   hero.className = 'card';
   hero.innerHTML = `
     <h2>${saludo}${user.nombre ? ', ' + esc(user.nombre) : ''} 🌿</h2>
     <p class="small">Hoy es un buen día para cuidarte. Progreso, no perfección.</p>
+    <div class="stat-strip">
+      <span class="stat-pill">🔥 ${racha.actual} día${racha.actual === 1 ? '' : 's'}</span>
+      <span class="stat-pill">${etapa.emoji} ${etapa.label}</span>
+      ${escudos > 0 ? `<span class="stat-pill">🛡️ ${escudos}</span>` : ''}
+    </div>
     <div class="chips mt">${user.perfiles.map((p) => `<span class="tag perfil">${PROFILES[p].emoji} ${PROFILES[p].nombre}</span>`).join(' ')}</div>`;
   container.appendChild(hero);
 
@@ -44,20 +58,26 @@ export function renderDashboard(container) {
     renderCheckinBanner(container, () => renderDashboard(clearAndGet(container)));
   }
 
-  // --- Tu paso de hoy: obstáculo + micro-acción concreta, gratis para todas ---
+  // --- Tu paso de hoy: la tarjeta principal del día, con Sana como voz ---
   const paso = pasoDeHoy();
   const pasoHecho = pasoHechoHoy();
-  const racha = pasoRacha();
+  const pasoRachaActual = pasoRacha();
   const pasoCard = document.createElement('div');
   pasoCard.className = 'card';
-  pasoCard.style.borderLeft = '4px solid var(--primary)';
+  pasoCard.style.background = 'linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))';
+  pasoCard.style.border = 'none';
   pasoCard.innerHTML = `
-    <div class="spread"><h3>🌿 Tu paso de hoy</h3>${pasoHecho ? '<span class="tag verde">Hecho ✓</span>' : ''}</div>
-    <p class="small mt" style="font-weight:600">${esc(paso.obstaculo)}</p>
-    <p class="mt">${esc(paso.accion)}</p>
-    <p class="small muted mt">${esc(paso.porque)}</p>
-    ${racha >= 2 ? `<p class="small mt">🔥 ${racha} días seguidos dando tu paso</p>` : ''}
-    <button class="btn ${pasoHecho ? 'ghost' : 'accent'} full mt" id="paso-btn" ${pasoHecho ? 'disabled' : ''}>${pasoHecho ? 'Completado por hoy 🌿' : 'Ya lo hice ✓'}</button>`;
+    <div class="row" style="gap:12px;align-items:flex-start">
+      <div class="sana-avatar">🌿${mood.badge ? `<span class="mood-badge">${mood.badge}</span>` : ''}</div>
+      <div style="flex:1;min-width:0">
+        <div class="spread"><h3>Tu paso de hoy</h3>${pasoHecho ? '<span class="tag verde">Hecho ✓</span>' : ''}</div>
+        <p class="small mt" style="font-weight:600">${esc(paso.obstaculo)}</p>
+        <p class="mt">${esc(paso.accion)}</p>
+        <p class="small muted mt">${esc(paso.porque)}</p>
+        ${pasoRachaActual >= 2 ? `<p class="small mt">🔥 ${pasoRachaActual} días seguidos dando tu paso</p>` : ''}
+        <button class="btn ${pasoHecho ? 'ghost' : 'accent'} full mt" id="paso-btn" ${pasoHecho ? 'disabled' : ''}>${pasoHecho ? 'Completado por hoy 🌿' : 'Ya lo hice ✓'}</button>
+      </div>
+    </div>`;
   const pasoBtn = pasoCard.querySelector('#paso-btn');
   pasoBtn.addEventListener('click', () => {
     const rect = pasoBtn.getBoundingClientRect();
@@ -70,93 +90,40 @@ export function renderDashboard(container) {
   });
   container.appendChild(pasoCard);
 
-  // --- Pregúntale a tu guía (asistente Premium, entrada destacada) ---
-  const guideCard = document.createElement('div');
-  guideCard.className = 'card';
-  guideCard.style.background = 'linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))';
-  guideCard.style.border = 'none';
-  const subtitulo = isPremium() ? esc(sanaApertura()) : 'Una duda puntual, ahora mismo, con el contexto de tu perfil.';
-  const mood = sanaMood(getState());
-  guideCard.innerHTML = `
-    <div class="row" style="gap:12px;align-items:flex-start">
-      <div class="sana-avatar">🌿${mood.badge ? `<span class="mood-badge">${mood.badge}</span>` : ''}</div>
-      <div style="flex:1;min-width:0">
-        <div class="spread"><h3>Sana, tu guía</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
-        <p class="small mt">${subtitulo}</p>
-        <button class="btn ghost sm mt">${isPremium() ? 'Abrir chat →' : 'Conocer más →'}</button>
-      </div>
-    </div>`;
-  guideCard.querySelector('.btn').addEventListener('click', () => navigate('assistant'));
-  container.appendChild(guideCard);
-
-  // --- Aviso de patrón de antojos (función Premium) ---
-  const patron = isPremium() ? cravingPattern() : null;
-  if (patron) {
-    const tip = document.createElement('div');
-    tip.className = 'card';
-    tip.style.borderLeft = '4px solid var(--accent)';
-    tip.innerHTML = `<p class="small">💡 <strong>Hemos notado</strong> que tus antojos suelen aparecer en la <strong>${patron}</strong>. Prepara con anticipación un snack saludable para ese momento.</p>`;
-    container.appendChild(tip);
+  // --- Hábitos: el ciclo diario central, justo después del paso de hoy ---
+  const checks = getHabits();
+  const habitCard = document.createElement('div');
+  habitCard.className = 'card';
+  habitCard.innerHTML = '<h2>✅ Hábitos de hoy</h2><p class="small">Marca al menos 3 para sumar a tu racha.</p>';
+  for (const h of DAILY_HABITS) {
+    const row = document.createElement('div');
+    row.className = 'habit' + (checks[h.id] ? ' done' : '');
+    row.innerHTML = `
+      <input type="checkbox" id="h-${h.id}" ${checks[h.id] ? 'checked' : ''}>
+      <label for="h-${h.id}">${h.nombre}</label>`;
+    row.querySelector('input').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        const rect = row.getBoundingClientRect();
+        habitCheckPop(rect.left + 16, rect.top + rect.height / 2);
+        playCheckSound();
+      }
+      const rachaAntes = getState().racha.actual;
+      const escudoUsado = toggleHabit(h.id);
+      const rachaDespues = getState().racha.actual;
+      const nuevos = checkAchievements();
+      if (escudoUsado) toast('🛡️ Usamos un escudo para proteger tu racha');
+      if (rachaDespues > rachaAntes) {
+        const checksAhora = getHabits();
+        const completados = Object.values(checksAhora).filter(Boolean).length;
+        const aguaAhora = getWater();
+        celebrateStreak(rachaDespues, { habitos: completados, totalHabitos: DAILY_HABITS.length, vasos: aguaAhora.vasos, meta: aguaAhora.meta });
+      }
+      if (nuevos.length) toast('🏆 ¡Nuevo logro desbloqueado! Míralo en Progreso.');
+      renderDashboard(clearAndGet(container));
+    });
+    habitCard.appendChild(row);
   }
-
-  // --- Aviso de hidratación/ayuno para migrañas: mitad del día, poca agua ---
-  if (user.perfiles.includes('migranas') && hora >= 14 && getWater().vasos <= 1) {
-    const migTip = document.createElement('div');
-    migTip.className = 'card';
-    migTip.style.borderLeft = '4px solid var(--secondary)';
-    migTip.innerHTML = '<p class="small">🧠💧 Vas con poca agua hoy y en migrañas los horarios y la hidratación importan tanto como la comida. Toma un vaso y no dejes pasar mucho tiempo sin comer.</p>';
-    container.appendChild(migTip);
-  }
-
-  // --- Plan de 7 días (gratis, respuesta inmediata) ---
-  const { emergencia } = getState();
-  const diasCompletados = (emergencia?.completados || []).length;
-  if (diasCompletados < 7) {
-    const emergCard = document.createElement('div');
-    emergCard.className = 'card';
-    emergCard.style.borderLeft = '4px solid var(--accent)';
-    if (emergencia?.inicio) {
-      emergCard.innerHTML = `
-        <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag verde">${diasCompletados}/7</span></div>
-        <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((diasCompletados / 7) * 100)}%"></div></div>
-        <button class="link-btn small">Continuar mi plan →</button>`;
-    } else {
-      emergCard.innerHTML = `
-        <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag info">Gratis</span></div>
-        <p class="small">${EMERGENCY_PLAN.descripcion}</p>
-        <button class="link-btn small">Empezar hoy mismo →</button>`;
-    }
-    emergCard.querySelector('.link-btn').addEventListener('click', () => navigate('emergency'));
-    container.appendChild(emergCard);
-  }
-
-  // --- Misión 12 semanas ---
-  const { mision } = getState();
-  const misionCard = document.createElement('div');
-  misionCard.className = 'card';
-  misionCard.style.borderLeft = '4px solid var(--primary)';
-  if (mision && mision.inicio) {
-    const done = (mision.completadas || []).length;
-    const activa = isPremium();
-    misionCard.innerHTML = `
-      <div class="spread"><h3>🎯 Misión 12 semanas</h3><span class="tag ${activa ? 'verde' : 'rojo'}">${activa ? `${done}/12` : 'Pausada'}</span></div>
-      <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((done / 12) * 100)}%"></div></div>
-      <button class="link-btn small">${activa ? 'Continuar mi misión →' : 'Renovar Premium para continuar →'}</button>`;
-  } else {
-    misionCard.innerHTML = `
-      <div class="spread"><h3>🎯 Misión 12 semanas</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
-      <p class="small">${MISSION.descripcion}</p>
-      <button class="link-btn small">${isPremium() ? 'Empezar mi misión →' : 'Conocer la misión →'}</button>`;
-  }
-  misionCard.querySelector('.link-btn').addEventListener('click', () => navigate('mission'));
-  container.appendChild(misionCard);
-
-  // --- Botón SOS ---
-  const sosBtn = document.createElement('button');
-  sosBtn.className = 'btn accent full mb';
-  sosBtn.innerHTML = '💚 Tengo ansiedad / antojo';
-  sosBtn.addEventListener('click', () => navigate('sos'));
-  container.appendChild(sosBtn);
+  container.appendChild(habitCard);
 
   // --- Agua ---
   const agua = getWater();
@@ -186,7 +153,26 @@ export function renderDashboard(container) {
   }
   container.appendChild(waterCard);
 
-  // --- Menú del día: la ruta de hoy, misma línea que Misión y Plan de 7 días ---
+  // --- Aviso de patrón de antojos (función Premium) ---
+  const patron = isPremium() ? cravingPattern() : null;
+  if (patron) {
+    const tip = document.createElement('div');
+    tip.className = 'card';
+    tip.style.borderLeft = '4px solid var(--accent)';
+    tip.innerHTML = `<p class="small">💡 <strong>Hemos notado</strong> que tus antojos suelen aparecer en la <strong>${patron}</strong>. Prepara con anticipación un snack saludable para ese momento.</p>`;
+    container.appendChild(tip);
+  }
+
+  // --- Aviso de hidratación/ayuno para migrañas: mitad del día, poca agua ---
+  if (user.perfiles.includes('migranas') && hora >= 14 && getWater().vasos <= 1) {
+    const migTip = document.createElement('div');
+    migTip.className = 'card';
+    migTip.style.borderLeft = '4px solid var(--secondary)';
+    migTip.innerHTML = '<p class="small">🧠💧 Vas con poca agua hoy y en migrañas los horarios y la hidratación importan tanto como la comida. Toma un vaso y no dejes pasar mucho tiempo sin comer.</p>';
+    container.appendChild(migTip);
+  }
+
+  // --- Menú del día: la ruta de hoy ---
   const menuCard = document.createElement('div');
   menuCard.className = 'card';
   menuCard.innerHTML = '<div class="spread"><h2>🍽️ Tu ruta de hoy</h2></div><div id="menu-path"></div>';
@@ -232,40 +218,70 @@ export function renderDashboard(container) {
   shopBtn.addEventListener('click', () => navigate('planner', { tab: 'compras' }));
   menuCard.appendChild(shopBtn);
 
-  // --- Hábitos ---
-  const checks = getHabits();
-  const habitCard = document.createElement('div');
-  habitCard.className = 'card';
-  habitCard.innerHTML = '<h2>✅ Hábitos de hoy</h2><p class="small">Marca al menos 3 para sumar a tu racha.</p>';
-  for (const h of DAILY_HABITS) {
-    const row = document.createElement('div');
-    row.className = 'habit' + (checks[h.id] ? ' done' : '');
-    row.innerHTML = `
-      <input type="checkbox" id="h-${h.id}" ${checks[h.id] ? 'checked' : ''}>
-      <label for="h-${h.id}">${h.nombre}</label>`;
-    row.querySelector('input').addEventListener('change', (e) => {
-      if (e.target.checked) {
-        const rect = row.getBoundingClientRect();
-        habitCheckPop(rect.left + 16, rect.top + rect.height / 2);
-        playCheckSound();
-      }
-      const rachaAntes = getState().racha.actual;
-      const escudoUsado = toggleHabit(h.id);
-      const rachaDespues = getState().racha.actual;
-      const nuevos = checkAchievements();
-      if (escudoUsado) toast('🛡️ Usamos un escudo para proteger tu racha');
-      if (rachaDespues > rachaAntes) {
-        const checksAhora = getHabits();
-        const completados = Object.values(checksAhora).filter(Boolean).length;
-        const aguaAhora = getWater();
-        celebrateStreak(rachaDespues, { habitos: completados, totalHabitos: DAILY_HABITS.length, vasos: aguaAhora.vasos, meta: aguaAhora.meta });
-      }
-      if (nuevos.length) toast('🏆 ¡Nuevo logro desbloqueado! Míralo en Progreso.');
-      renderDashboard(clearAndGet(container));
-    });
-    habitCard.appendChild(row);
+  // --- Botón SOS ---
+  const sosBtn = document.createElement('button');
+  sosBtn.className = 'btn accent full mb';
+  sosBtn.innerHTML = '💚 Tengo ansiedad / antojo';
+  sosBtn.addEventListener('click', () => navigate('sos'));
+  container.appendChild(sosBtn);
+
+  // --- Plan de 7 días (gratis, respuesta inmediata) ---
+  const { emergencia } = getState();
+  const diasCompletados = (emergencia?.completados || []).length;
+  if (diasCompletados < 7) {
+    const emergCard = document.createElement('div');
+    emergCard.className = 'card';
+    emergCard.style.borderLeft = '4px solid var(--accent)';
+    if (emergencia?.inicio) {
+      emergCard.innerHTML = `
+        <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag verde">${diasCompletados}/7</span></div>
+        <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((diasCompletados / 7) * 100)}%"></div></div>
+        <button class="link-btn small">Continuar mi plan →</button>`;
+    } else {
+      emergCard.innerHTML = `
+        <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag info">Gratis</span></div>
+        <p class="small">${EMERGENCY_PLAN.descripcion}</p>
+        <button class="link-btn small">Empezar hoy mismo →</button>`;
+    }
+    emergCard.querySelector('.link-btn').addEventListener('click', () => navigate('emergency'));
+    container.appendChild(emergCard);
   }
-  container.appendChild(habitCard);
+
+  // --- Lo Premium va al final: ya viviste el valor gratis, ahora la invitación ---
+
+  // --- Pregúntale a tu guía ---
+  const guideCard = document.createElement('div');
+  guideCard.className = 'card';
+  guideCard.style.background = 'linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))';
+  guideCard.style.border = 'none';
+  const subtitulo = isPremium() ? esc(sanaApertura()) : 'Una duda puntual, ahora mismo, con el contexto de tu perfil.';
+  guideCard.innerHTML = `
+    <div class="spread"><h3>💬 Sana, tu guía</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
+    <p class="small mt">${subtitulo}</p>
+    <button class="btn ghost sm mt">${isPremium() ? 'Abrir chat →' : 'Conocer más →'}</button>`;
+  guideCard.querySelector('.btn').addEventListener('click', () => navigate('assistant'));
+  container.appendChild(guideCard);
+
+  // --- Misión 12 semanas ---
+  const { mision } = getState();
+  const misionCard = document.createElement('div');
+  misionCard.className = 'card';
+  misionCard.style.borderLeft = '4px solid var(--primary)';
+  if (mision && mision.inicio) {
+    const done = (mision.completadas || []).length;
+    const activa = isPremium();
+    misionCard.innerHTML = `
+      <div class="spread"><h3>🎯 Misión 12 semanas</h3><span class="tag ${activa ? 'verde' : 'rojo'}">${activa ? `${done}/12` : 'Pausada'}</span></div>
+      <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((done / 12) * 100)}%"></div></div>
+      <button class="link-btn small">${activa ? 'Continuar mi misión →' : 'Renovar Premium para continuar →'}</button>`;
+  } else {
+    misionCard.innerHTML = `
+      <div class="spread"><h3>🎯 Misión 12 semanas</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
+      <p class="small">${MISSION.descripcion}</p>
+      <button class="link-btn small">${isPremium() ? 'Empezar mi misión →' : 'Conocer la misión →'}</button>`;
+  }
+  misionCard.querySelector('.link-btn').addEventListener('click', () => navigate('mission'));
+  container.appendChild(misionCard);
 }
 
 // Estado de ánimo de Sana: se deriva 100% de datos que ya existen (último

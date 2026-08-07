@@ -107,6 +107,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 
 .link-btn { color: var(--primary-dark); font-weight: 600; text-decoration: underline; }
 
+/* ===== Franja de estado (racha/planta/escudos) en el saludo ===== */
+.stat-strip { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.stat-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--bg); border: 1.5px solid #E2EEEB; border-radius: 999px;
+  padding: 5px 12px; font-size: 0.8rem; font-weight: 700; color: var(--ink);
+}
+
 /* ===== Avatar de Sana (presencia visual, no solo texto) ===== */
 .sana-avatar {
   width: 52px; height: 52px; border-radius: 50%; flex: none; position: relative;
