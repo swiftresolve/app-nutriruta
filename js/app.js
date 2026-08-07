@@ -15,6 +15,7 @@ import { renderEmergency } from './views/emergency.js';
 import { renderAssistant } from './views/assistant.js';
 import { renderTestimonials } from './views/testimonials.js';
 import { renderResetPassword } from './views/resetPassword.js';
+import { renderAdmin } from './views/admin.js';
 
 const app = document.getElementById('app');
 const nav = document.getElementById('bottom-nav');
@@ -33,7 +34,8 @@ const ROUTES = {
   emergency: renderEmergency,
   assistant: renderAssistant,
   testimonials: renderTestimonials,
-  resetPassword: renderResetPassword
+  resetPassword: renderResetPassword,
+  admin: renderAdmin
 };
 
 const PUBLIC_ROUTES = ['auth', 'resetPassword'];

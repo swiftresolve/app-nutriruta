@@ -134,6 +134,16 @@ export async function deletePushSubscription(endpoint) {
   if (error) throw error;
 }
 
+// --- Panel de administración ---
+// admin_dashboard() valida ella misma (en el servidor) si quien pregunta
+// está en admin_emails; para cualquier otra cuenta lanza una excepción y
+// no entrega nada. El cliente nunca decide quién es admin, solo pregunta.
+export async function fetchAdminDashboard() {
+  const { data, error } = await supabase.rpc('admin_dashboard');
+  if (error) throw error;
+  return data;
+}
+
 export async function askGuide(message) {
   const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'send', message } });
   if (error) {
