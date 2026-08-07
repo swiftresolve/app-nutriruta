@@ -1,78 +1,68 @@
-// Camino visual reutilizable: línea + nodos alternados, para cualquier lista
-// secuencial de pasos (Misión 12 semanas, Plan de 7 días). Los nodos y la
-// línea se calculan con las mismas coordenadas (un ancho de referencia de
-// 340, expresado en % para que escale igual que el SVG en cualquier ancho
-// real de pantalla), así nunca se desalinean.
-const ROW_H = 108;
-const REF_W = 340;
-const X_LEFT = 60;
-const X_RIGHT = 280;
-const pct = (x) => (x / REF_W * 100).toFixed(3);
-
-// Todo texto que entra al HTML se escapa aquí, aunque hoy las fuentes sean
-// de confianza (títulos de la BD, datos estáticos): este componente es
-// reutilizable y no debe depender de que quien lo llame recuerde escapar.
+// Camino visual reutilizable, para cualquier lista secuencial de pasos
+// (Misión 12 semanas, Plan de 7 días, menú del día). Los nodos se pintan en
+// el flujo normal del documento — nunca en posiciones calculadas a ciegas —
+// así una etiqueta más alta de lo normal (ej. el botón de cambiar receta)
+// jamás se superpone con la fila siguiente. La curva que los conecta se
+// traza DESPUÉS, midiendo el centro real de cada nodo ya pintado, por eso
+// siempre coincide exactamente sin importar cuánto mida cada etiqueta.
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
-
-function svgPathD(n) {
-  let d = '';
-  for (let i = 0; i < n; i++) {
-    const x = i % 2 === 0 ? X_LEFT : X_RIGHT;
-    const y = ROW_H / 2 + i * ROW_H;
-    if (i === 0) { d += `M ${x} ${y}`; continue; }
-    const px = (i - 1) % 2 === 0 ? X_LEFT : X_RIGHT;
-    const py = ROW_H / 2 + (i - 1) * ROW_H;
-    const midY = (py + y) / 2;
-    d += ` C ${px} ${midY}, ${x} ${midY}, ${x} ${y}`;
-  }
-  return d;
-}
 
 // items: [{ icon, title, subtitle, done, now, locked, nowLabel, onClick, extraHtml }]
 // extraHtml: HTML adicional dentro de la etiqueta (ej. un botón de acción
 // secundaria) — quien llama a renderPathMap puede engancharle sus propios
 // listeners después, buscando `[data-idx="N"]` dentro del contenedor.
 export function renderPathMap(container, items) {
-  // +28px de colchón: las etiquetas con contenido extra (ej. el botón de
-  // cambiar receta del menú del día) pueden ser más altas que ROW_H, y sin
-  // este margen la última fila se salía del contenedor y tapaba lo que
-  // viniera justo después (ej. "Ver lista de compras").
-  const totalH = items.length * ROW_H + 28;
-  const svg = `<svg class="path-svg" viewBox="0 0 340 ${totalH}" preserveAspectRatio="none">
-    <path d="${svgPathD(items.length)}" fill="none" stroke="var(--primary-soft)" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 14"/>
-  </svg>`;
-
-  const nodesHtml = items.map((it, i) => {
+  const rowsHtml = items.map((it, i) => {
     const isLeft = i % 2 === 0;
-    const x = isLeft ? X_LEFT : X_RIGHT;
-    const y = ROW_H / 2 + i * ROW_H;
-    const posStyle = isLeft
-      ? `left: calc(${pct(x)}% - 29px); top:${y - 29}px;`
-      : `right: calc(${pct(REF_W - x)}% - 29px); top:${y - 29}px;`;
-    const mascot = it.now
-      ? `<div class="path-mascot" style="top:${y - 58}px; ${isLeft ? `left: calc(${pct(x)}% - 14px)` : `right: calc(${pct(REF_W - x)}% - 44px)`}">🌿</div>`
-      : '';
     const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
     const icon = it.done ? '✓' : (it.locked ? '🔒' : esc(it.icon));
     const tag = it.now ? `<span class="path-tag path-tag-now">${esc(it.nowLabel || 'Actual')}</span>` : '';
-    return `<div class="path-node-wrap ${isLeft ? '' : 'right'}" style="${posStyle}" data-wrap-idx="${i}">
-        <button type="button" class="path-node ${stateClass}" data-idx="${i}" aria-label="${esc(it.title)}">${icon}</button>
+    const mascot = it.now ? '<div class="path-mascot">🌿</div>' : '';
+    return `<div class="path-row ${isLeft ? '' : 'right'}" data-row-idx="${i}">
+        <div class="path-node-col">
+          ${mascot}
+          <button type="button" class="path-node ${stateClass}" data-idx="${i}" aria-label="${esc(it.title)}">${icon}</button>
+        </div>
         <div class="path-label">
           <div class="path-t">${esc(it.title)}</div>
           ${it.subtitle ? `<div class="path-s">${esc(it.subtitle)}</div>` : ''}
           ${tag}
           ${it.extraHtml || ''}
         </div>
-      </div>${mascot}`;
+      </div>`;
   }).join('');
 
-  container.innerHTML = `<div class="path-wrap" style="height:${totalH}px">${svg}${nodesHtml}</div>`;
+  container.innerHTML = `<div class="path-wrap"><svg class="path-svg"></svg>${rowsHtml}</div>`;
+  drawCurve(container.querySelector('.path-wrap'));
 
   items.forEach((it, i) => {
     if (!it.onClick) return;
     const el = container.querySelector(`.path-node[data-idx="${i}"]`);
     if (el) el.addEventListener('click', () => it.onClick(it, i));
   });
+}
+
+// Curva suave que pasa por el centro real (ya medido en pantalla) de cada
+// nodo — nunca se calcula a ciegas, así que nunca se desalinea.
+function drawCurve(wrap) {
+  const svg = wrap.querySelector('.path-svg');
+  const nodes = Array.from(wrap.querySelectorAll('.path-node'));
+  if (nodes.length < 2) { svg.remove(); return; }
+  const wrapRect = wrap.getBoundingClientRect();
+  const points = nodes.map((n) => {
+    const r = n.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - wrapRect.left, y: r.top + r.height / 2 - wrapRect.top };
+  });
+  svg.setAttribute('viewBox', `0 0 ${wrapRect.width} ${wrapRect.height}`);
+  svg.setAttribute('width', wrapRect.width);
+  svg.setAttribute('height', wrapRect.height);
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    const p0 = points[i - 1], p1 = points[i];
+    const midY = (p0.y + p1.y) / 2;
+    d += ` C ${p0.x} ${midY}, ${p1.x} ${midY}, ${p1.x} ${p1.y}`;
+  }
+  svg.innerHTML = `<path d="${d}" fill="none" stroke="var(--primary-soft)" stroke-width="5" stroke-linecap="round"/>`;
 }

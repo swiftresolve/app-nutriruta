@@ -3,6 +3,7 @@ import { logCraving, checkAchievements, getState } from '../store.js';
 import { sosSnacks, displayRecipe } from '../menu.js';
 import { header, toast, navigate } from '../app.js';
 import { openRecipe } from './dashboard.js';
+import { playInhaleSound, playExhaleSound } from '../sound.js';
 
 const CRAVING_TYPES = [
   { id: 'dulce', nombre: '🍫 Dulce' },
@@ -68,10 +69,12 @@ export function renderSOS(container) {
       cycle++;
       circle.classList.add('in');
       circle.textContent = 'Inhala…';
+      playInhaleSound();
       setTimeout(() => {
         circle.classList.remove('in');
         circle.textContent = 'Exhala…';
         label.textContent = `Respiración ${cycle} de 5`;
+        playExhaleSound();
         setTimeout(doCycle, 3500);
       }, 3500);
     };
