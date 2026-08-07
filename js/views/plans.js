@@ -6,11 +6,13 @@ import { header, navigate, toast } from '../app.js';
 
 const PLANS = [
   {
-    id: 'anual', nombre: 'Premium Anual', precio: 'USD 90', periodo: '/ año', emoji: '🌳',
-    detalle: 'Equivale a USD 7.50/mes — 2 meses gratis.', destacado: true
+    id: 'anual', nombre: 'Premium Anual', emoji: '🌳',
+    precioMes: 'USD 7.50', cobro: 'Se cobra USD 90 una vez al año.',
+    detalle: 'Equivale a 2 meses gratis frente al plan mensual.', destacado: true
   },
   {
-    id: 'mensual', nombre: 'Premium Mensual', precio: 'USD 9', periodo: '/ mes', emoji: '🌱',
+    id: 'mensual', nombre: 'Premium Mensual', emoji: '🌱',
+    precioMes: 'USD 9', cobro: 'Sin compromiso — cancela cuando quieras.',
     detalle: 'Menos de lo que cuestan 2 comidas fuera de casa.'
   }
 ];
@@ -69,9 +71,14 @@ export function renderPlans(container) {
     const isCurrent = isPremium() && plan.periodo === p.id;
     card.innerHTML = `
       ${p.destacado ? '<span class="tag verde">Recomendado · ahorra 17 %</span>' : ''}
-      <div class="spread mt"><h3>${p.emoji} ${p.nombre}</h3><strong>${p.precio} <span class="muted small">${p.periodo}</span></strong></div>
-      <p class="small">${p.detalle}</p>
-      <ul class="steps small mt">${PREMIUM_FEATURES.map((f) => `<li>${f}</li>`).join('')}</ul>`;
+      <div class="mt"><h3>${p.emoji} ${p.nombre}</h3></div>
+      <div class="price-anchor mt">
+        <span class="price-big">${p.precioMes}</span><span class="muted small">&nbsp;/ mes</span>
+      </div>
+      <p class="small muted">${p.cobro}</p>
+      <p class="small mt">${p.detalle}</p>
+      <p class="small mt" style="font-weight:700">Todo lo que desbloqueas:</p>
+      <ul class="steps check small mt">${PREMIUM_FEATURES.map((f) => `<li>${f}</li>`).join('')}</ul>`;
     const btn = document.createElement('button');
     btn.className = isCurrent ? 'btn ghost full mt' : 'btn accent full mt';
     btn.textContent = isCurrent ? '✓ Tu plan actual' : `Elegir ${p.nombre}`;

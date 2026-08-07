@@ -1,6 +1,7 @@
 // Router mínimo + arranque con puerta de autenticación.
-import { getState, initCloud, resetState, MAX_ESCUDOS } from './store.js';
+import { getState, initCloud, resetState, isPremium, MAX_ESCUDOS } from './store.js';
 import { getSession, supabase } from './supabase-client.js';
+import { growthStage, rutiBadge } from './ruti.js';
 import { renderAuth } from './views/auth.js';
 import { renderQuiz } from './views/quiz.js';
 import { renderDashboard } from './views/dashboard.js';
@@ -80,17 +81,6 @@ export function susanaName() {
   return '<span class="susana-name"><span class="su">Su</span><span class="sana">Sana</span></span>';
 }
 
-// Mismos umbrales que los logros racha_3/7/30 — no se inventa un número
-// nuevo de "hábito consolidado" (ver memoria "solo info comprobada").
-// Vive aquí (no importada de progress.js) para no crear una dependencia
-// circular: progress.js ya importa de app.js.
-function growthStage(n) {
-  if (n >= 30) return { emoji: '🌸', label: 'Floreciendo' };
-  if (n >= 7) return { emoji: '🌿', label: 'Creciendo fuerte' };
-  if (n >= 3) return { emoji: '🌱', label: 'Primeros brotes' };
-  return { emoji: '🌰', label: 'Sembrando' };
-}
-
 // Abre/cierra un tooltip anclado al botón, se cierra solo a los pocos
 // segundos o al tocar fuera. Un solo tooltip abierto a la vez.
 function attachStatTooltip(btn, html) {
@@ -137,8 +127,11 @@ export function header(container) {
     const etapa = growthStage(racha);
     const mejor = state.racha?.mejor || 0;
     attachStatTooltip(h.querySelector('#hs-racha'), `
-      <strong>🔥 ${racha} día${racha === 1 ? '' : 's'} seguido${racha === 1 ? '' : 's'}</strong>
-      <p class="small muted mt" style="margin-top:4px">${etapa.emoji} ${etapa.label}</p>
+      <div class="row" style="gap:8px; align-items:center">
+        ${rutiBadge(etapa, { size: 34, premium: isPremium() })}
+        <strong>🔥 ${racha} día${racha === 1 ? '' : 's'} seguido${racha === 1 ? '' : 's'}</strong>
+      </div>
+      <p class="small muted mt" style="margin-top:4px">${etapa.label} — así se ve Ruti con tu constancia.</p>
       <p class="small muted" style="margin-top:2px">Mejor racha: ${mejor} día${mejor === 1 ? '' : 's'}</p>`);
     attachStatTooltip(h.querySelector('#hs-escudos'), `
       <strong>🛡️ ${escudos}/${MAX_ESCUDOS} escudos</strong>
