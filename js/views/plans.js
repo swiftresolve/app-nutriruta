@@ -79,6 +79,7 @@ export function renderPlans(container) {
       <div class="pg-item">✅ Cancelas cuando quieras desde Hotmart</div>
       <div class="pg-item">✅ Tu Premium se activa automático al confirmarse el pago</div>
       <div class="pg-item">✅ Pago procesado de forma segura por Hotmart</div>
+      <div class="pg-item">✅ 7 días de garantía de reembolso desde tu compra</div>
     </div>`;
   const optsEl = premCard.querySelector('#plan-options');
   const btnEl = premCard.querySelector('#plan-elegir');
