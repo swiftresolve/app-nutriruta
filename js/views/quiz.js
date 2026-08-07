@@ -2,6 +2,7 @@
 import { getState, setState, esc } from '../store.js';
 import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
 import { navigate } from '../app.js';
+import { rutiBadge } from '../ruti.js';
 
 const CONDITIONS = [
   { id: 'higado_graso', nombre: 'Hígado graso', emoji: '🫀' },
@@ -203,8 +204,6 @@ export function renderQuiz(container) {
       }
     });
 
-    container.innerHTML = '';
-    const view = document.createElement('div');
     const [main, ...rest] = perfiles;
     const prioridades = [];
     if (answers.azucarFreq === 'frecuente' || answers.azucarFreq === 'muy_frecuente') prioridades.push('Reducir el azúcar líquido (jugos y gaseosas)');
@@ -213,16 +212,51 @@ export function renderQuiz(container) {
     prioridades.push('Proteína en el desayuno todos los días');
     if (answers.actividad === 'bajo') prioridades.push('Caminar 30 minutos, 5 días a la semana');
 
+    armandoPlan(main, prioridades.slice(0, 3), () => mostrarResultado(main, rest, prioridades.slice(0, 3)));
+  }
+
+  // Breve pantalla de "construyendo tu plan" que va revelando, uno a uno,
+  // los datos reales que ya se calcularon arriba — nada inventado, solo
+  // ritmo: da la sensación de personalización antes de aterrizar en el
+  // resultado (igual patrón que usan Duolingo/MateFlex en su onboarding).
+  function armandoPlan(main, prioridades, onDone) {
+    container.innerHTML = '';
+    const view = document.createElement('div');
+    view.className = 'quiz-step center';
+    const nombreTxt = answers.nombre ? `, ${esc(answers.nombre)}` : '';
+    const items = [
+      `Perfil: ${PROFILES[main].nombre}`,
+      `Primer paso: ${esc(prioridades[0] || 'Progreso, no perfección')}`,
+      'Menú del día personalizado'
+    ];
+    view.innerHTML = `
+      <h2 class="mt">Armando tu plan${nombreTxt}…</h2>
+      <div class="armando-list mt">${items.map((t, i) => `<div class="armando-item" id="ap-${i}"><span class="armando-check">⏳</span><span>${t}</span></div>`).join('')}</div>`;
+    container.appendChild(view);
+    items.forEach((_, i) => {
+      setTimeout(() => {
+        const el = view.querySelector(`#ap-${i}`);
+        if (el) { el.classList.add('done'); el.querySelector('.armando-check').textContent = '✓'; }
+      }, 380 + i * 420);
+    });
+    setTimeout(onDone, 380 + items.length * 420 + 300);
+  }
+
+  function mostrarResultado(main, rest, prioridades) {
+    container.innerHTML = '';
+    const view = document.createElement('div');
+    const etapa = { key: 'semilla', emoji: PROFILES[main].emoji, label: PROFILES[main].nombre };
     view.innerHTML = `
       <div class="quiz-progress"><div style="width:100%"></div></div>
       <div class="card center">
-        <div style="font-size:3rem">${PROFILES[main].emoji}</div>
-        <h2>Tu perfil principal:<br>${PROFILES[main].nombre}</h2>
+        ${rutiBadge(etapa, { size: 72 })}
+        <h2 class="mt">${answers.nombre ? `${esc(answers.nombre)}, tu` : 'Tu'} plan está listo</h2>
+        <p class="small mt">Perfil principal: <strong>${PROFILES[main].nombre}</strong></p>
         ${rest.length ? `<p class="mt">También te conviene seguir: <strong>${rest.map((p) => PROFILES[p].nombre).join(', ')}</strong></p>` : ''}
       </div>
       <div class="card">
         <h3>Tus primeros pasos 👣</h3>
-        <ul class="steps mt">${prioridades.slice(0, 3).map((p) => `<li>${p}</li>`).join('')}</ul>
+        <ul class="steps check mt">${prioridades.map((p) => `<li>${p}</li>`).join('')}</ul>
       </div>
       <div class="legal-note">La información que diste nos ayuda a personalizar tu experiencia. Esta app es una guía de autoayuda y no reemplaza la atención de un profesional de salud.</div>
       <button class="btn full accent">Ver mi menú personalizado 🍽️</button>`;
