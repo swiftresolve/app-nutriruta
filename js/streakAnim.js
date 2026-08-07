@@ -46,6 +46,33 @@ export function celebrateStreak(n, stats) {
   }, duracion);
 }
 
+// Checkpoint de la Misión 12 semanas / Plan de 7 días: mismo confeti que
+// celebrateStreak, pero con una insignia de medalla en vez de Ruti — es un
+// hito de tramo completado, no de racha diaria.
+export function celebrateMilestone(titulo, subtitulo) {
+  if (document.querySelector('.streak-celebrate')) return;
+  vibrate([25, 35, 25, 35, 60]);
+  const el = document.createElement('div');
+  el.className = 'streak-celebrate';
+  el.setAttribute('aria-live', 'polite');
+  const confeti = Array.from({ length: 18 }, (_, i) => {
+    const left = 6 + Math.random() * 88;
+    const delay = (Math.random() * 0.3).toFixed(2);
+    const color = CONFETI[i % CONFETI.length];
+    return `<span class="confeti-bit" style="left:${left}%; background:${color}; animation-delay:${delay}s"></span>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="ring"></div>
+    ${confeti}
+    <div class="flame-big"><div class="milestone-badge">🏅</div></div>
+    <div class="label wrap">${titulo}${subtitulo ? `<div class="small muted mt" style="margin-top:4px">${subtitulo}</div>` : ''}</div>`;
+  document.body.appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'streak-fade-out 0.3s ease forwards';
+    setTimeout(() => el.remove(), 320);
+  }, 2800);
+}
+
 // Estallido pequeño e inmediato al completar una micro-acción (marcar un
 // hábito, un vaso de agua, "Tu paso de hoy"). Vive en <body>, no en el
 // elemento que se tocó, porque el dashboard vuelve a pintarse completo justo

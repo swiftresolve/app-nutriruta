@@ -6,6 +6,8 @@ import { fetchMissionWeeks, fetchMissionIndex } from '../supabase-client.js';
 import { getState, setState, isPremium, planExpired, today } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
 import { renderPathMap } from '../pathMap.js';
+import { celebrateMilestone } from '../streakAnim.js';
+import { playCelebrateSound } from '../sound.js';
 
 const WEEKS_CACHE_KEY = 'nutriruta-mission-weeks';
 const INDEX_CACHE_KEY = 'nutriruta-mission-index';
@@ -39,9 +41,9 @@ export function renderMission(container) {
   const premium = isPremium();
 
   const hero = document.createElement('div');
-  hero.className = 'sos-hero';
+  hero.className = 'mission-hero';
   hero.innerHTML = `
-    <h2>🎯 ${MISSION.nombre}</h2>
+    <h2>🧭 ${MISSION.nombre}</h2>
     <p>${MISSION.descripcion}</p>`;
   container.appendChild(hero);
 
@@ -91,7 +93,7 @@ export function renderMission(container) {
           else toast('No se pudo cargar la semana. Revisa tu conexión.');
         }
       }));
-      renderPathMap(list, items);
+      renderTramos(list, items);
     });
     return;
   }
@@ -143,20 +145,49 @@ export function renderMission(container) {
         icon: w.emoji, title: `Semana ${w.n}`, subtitle: w.titulo,
         done, now: isCurrent, locked, nowLabel: 'Actual',
         onClick: () => {
-          if (locked) { toast('Esta semana se desbloquea más adelante. Un cambio a la vez 🌱'); return; }
+          if (locked) { mostrarSemanaBloqueada(w, inicio); return; }
           openWeek(w, true, done, () => renderMission(clear(container)));
         }
       };
     });
-    renderPathMap(list, items);
+    renderTramos(list, items);
 
     if (completadas.length === 12) {
       const fin = document.createElement('div');
       fin.className = 'card center';
-      fin.innerHTML = '<div style="font-size:3rem">🏆</div><h2>¡Misión cumplida!</h2><p>Doce semanas de cambios reales. Agenda tus exámenes de control y celebra tu progreso.</p>';
+      fin.innerHTML = '<div style="font-size:3.4rem">🏆</div><h2 class="mt">¡Misión cumplida!</h2><p class="mt">Doce semanas de cambios reales. Agenda tus exámenes de control y celebra tu progreso.</p>';
       container.appendChild(fin);
     }
   });
+}
+
+// Agrupa las semanas en tramos de 3 (como paradas de una expedición), cada
+// uno con su propio camino y un banner de checkpoint — reordena visualmente
+// las mismas 12 semanas reales, no inventa contenido nuevo.
+const TRAMO_SIZE = 3;
+function renderTramos(container, items) {
+  container.innerHTML = '';
+  for (let i = 0; i < items.length; i += TRAMO_SIZE) {
+    const grupo = items.slice(i, i + TRAMO_SIZE);
+    const tramoN = i / TRAMO_SIZE + 1;
+    const desde = i + 1, hasta = Math.min(i + TRAMO_SIZE, items.length);
+    const grupoCompleto = grupo.every((it) => it.done);
+    const banner = document.createElement('div');
+    banner.className = 'tramo-banner' + (grupoCompleto ? ' done' : '');
+    banner.innerHTML = `<span class="tramo-badge">${grupoCompleto ? '🏅' : tramoN}</span><span class="tramo-label">Tramo ${tramoN} · Semanas ${desde}-${hasta}</span>`;
+    container.appendChild(banner);
+    const sub = document.createElement('div');
+    container.appendChild(sub);
+    renderPathMap(sub, grupo);
+  }
+}
+
+// Mensaje cálido con el número real de días que faltan (no un genérico
+// "más adelante") cuando se toca una semana que aún no toca por calendario.
+function mostrarSemanaBloqueada(week, inicio) {
+  const msDesbloqueo = inicio.getTime() + (week.n - 1) * 7 * 86400000;
+  const diasFaltan = Math.max(1, Math.ceil((msDesbloqueo - Date.now()) / 86400000));
+  celebrateMilestone(`Semana ${week.n} llega en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}`, 'Un cambio a la vez — disfruta la semana actual primero 🌱');
 }
 
 function openWeek(week, canComplete, done = false, onChange) {
@@ -176,9 +207,14 @@ function openWeek(week, canComplete, done = false, onChange) {
       btn.addEventListener('click', () => {
         const { mision } = getState();
         const completadas = new Set(mision.completadas || []);
+        const completando = !done;
         done ? completadas.delete(week.n) : completadas.add(week.n);
         setState({ mision: { ...mision, completadas: [...completadas] } });
         close();
+        if (completando) {
+          playCelebrateSound();
+          celebrateMilestone(`¡Semana ${week.n} completada!`, week.titulo);
+        }
         if (onChange) onChange();
       });
       modal.appendChild(btn);

@@ -198,10 +198,10 @@ export function renderDashboard(container) {
       extraHtml: `<div class="row mt" style="gap:8px"><span class="dot ${light}"></span><button type="button" class="icon-btn swap-btn" title="Cambiar receta" aria-label="Cambiar receta">🔄</button></div>`
     };
   });
-  renderPathMap(menuCard.querySelector('#menu-path'), menuItems);
+  renderPathMap(menuCard.querySelector('#menu-path'), menuItems, { showLine: false });
   menuHoy.forEach(({ meal, recipe }, i) => {
     if (!recipe) return;
-    const btn = menuCard.querySelector(`[data-wrap-idx="${i}"] .swap-btn`);
+    const btn = menuCard.querySelector(`[data-row-idx="${i}"] .swap-btn`);
     if (btn) btn.addEventListener('click', (e) => {
       e.stopPropagation();
       swapMeal(meal.id);

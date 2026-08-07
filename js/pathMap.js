@@ -13,7 +13,12 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
 // extraHtml: HTML adicional dentro de la etiqueta (ej. un botón de acción
 // secundaria) — quien llama a renderPathMap puede engancharle sus propios
 // listeners después, buscando `[data-idx="N"]` dentro del contenedor.
-export function renderPathMap(container, items) {
+// opts.showLine (default true): el menú del día lo pasa en false — ahí los
+// círculos van sueltos, con más aire entre sí, sin línea que los conecte
+// (igual que el camino real de Duolingo, sin la línea punteada que se
+// pensó al principio).
+export function renderPathMap(container, items, opts = {}) {
+  const showLine = opts.showLine !== false;
   const rowsHtml = items.map((it, i) => {
     const isLeft = i % 2 === 0;
     const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
@@ -34,8 +39,9 @@ export function renderPathMap(container, items) {
       </div>`;
   }).join('');
 
-  container.innerHTML = `<div class="path-wrap"><svg class="path-svg"></svg>${rowsHtml}</div>`;
-  drawCurve(container.querySelector('.path-wrap'));
+  container.innerHTML = `<div class="path-wrap${showLine ? '' : ' no-line'}"><svg class="path-svg"></svg>${rowsHtml}</div>`;
+  if (showLine) drawCurve(container.querySelector('.path-wrap'));
+  else container.querySelector('.path-svg').remove();
 
   items.forEach((it, i) => {
     if (!it.onClick) return;

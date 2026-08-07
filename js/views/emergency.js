@@ -5,6 +5,8 @@ import { PROFILES } from '../data/profiles.js';
 import { getState, setState, checkAchievements, today, esc, guardarReflexionDia, responderInvitacionTestimonioPlan } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
 import { renderPathMap } from '../pathMap.js';
+import { celebrateMilestone } from '../streakAnim.js';
+import { playCelebrateSound } from '../sound.js';
 
 export function renderEmergency(container) {
   header(container);
@@ -136,10 +138,15 @@ function openDia(dia, done, onChange) {
       guardarReflexionDia(dia.n, textarea.value);
       const { emergencia } = getState();
       const completados = new Set(emergencia.completados || []);
+      const completando = !done;
       done ? completados.delete(dia.n) : completados.add(dia.n);
       setState({ emergencia: { ...emergencia, completados: [...completados] } });
       const nuevos = checkAchievements();
       close();
+      if (completando) {
+        playCelebrateSound();
+        celebrateMilestone(`¡Día ${dia.n} completado!`, dia.titulo);
+      }
       if (nuevos.includes('plan7_completo')) {
         toast('🎉 ¡Completaste tu plan de 7 días!');
         const { emergencia: e2 } = getState();
