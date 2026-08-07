@@ -72,6 +72,49 @@ export async function submitResena(calificacion, texto, nombreMostrado) {
   if (error) throw error;
 }
 
+// --- Foto de perfil ---
+// Se guarda siempre como "<uid>.jpg" en el bucket público "avatars" — el
+// nombre fijo hace que la política de Storage sea simple (cada quien solo
+// puede escribir su propio archivo) y que la URL pública sea predecible sin
+// necesitar guardar nada más en profiles. El archivo se recorta/comprime en
+// el cliente antes de subir para no depender de límites de tamaño del lado
+// del servidor ni gastar espacio de más.
+export async function uploadAvatar(file) {
+  const session = await getSession();
+  if (!session) throw new Error('No autenticado');
+  const blob = await toSquareJpeg(file, 320);
+  const path = `${session.user.id}.jpg`;
+  const { error } = await supabase.storage.from('avatars').upload(path, blob, {
+    contentType: 'image/jpeg', upsert: true
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+  return `${data.publicUrl}?v=${Date.now()}`; // cache-buster: la URL base es siempre la misma
+}
+
+export function avatarUrlFor(userId) {
+  const { data } = supabase.storage.from('avatars').getPublicUrl(`${userId}.jpg`);
+  return data.publicUrl;
+}
+
+function toSquareJpeg(file, size) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      canvas.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, size, size);
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('No se pudo procesar la imagen.'))), 'image/jpeg', 0.85);
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => reject(new Error('Imagen inválida.'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export async function downgradeToFree() {
   // El plan Premium ya no se activa desde el cliente (columnas protegidas):
   // lo activa el webhook de Hotmart al confirmarse el pago. Solo bajar a

@@ -128,6 +128,21 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
 }
 
+/* ===== Foto de perfil ===== */
+.avatar-upload {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 84px; height: 84px; border-radius: 50%; cursor: pointer; margin-bottom: 6px;
+  background: linear-gradient(160deg, var(--primary-soft), var(--primary));
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -4px 6px rgba(35,56,51,0.12), 0 4px 10px rgba(35,56,51,0.16);
+}
+.avatar-upload img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.avatar-upload #avatar-fallback { font-size: 2.1rem; font-weight: 800; color: #fff; }
+.avatar-upload .avatar-cam {
+  position: absolute; bottom: -2px; right: -2px; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--card); display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem; box-shadow: 0 2px 6px rgba(0,0,0,0.22), 0 0 0 3px var(--card);
+}
+
 /* ===== Ruti (mascota-planta) ===== */
 .ruti-avatar {
   border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center;
@@ -190,7 +205,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; }
 .app-header .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary-dark); font-size: 1.2rem; flex: none; }
 .app-header .brand svg { width: 26px; height: 26px; border-radius: 6px; flex: none; }
-.icon-btn { font-size: 1.35rem; padding: 6px; border-radius: 50%; flex: none; }
+.icon-btn {
+  font-size: 1.2rem; width: 40px; height: 40px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center; background: var(--card);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.6), inset 0 -3px 4px rgba(35,56,51,0.06), 0 3px 0 var(--primary-soft), 0 4px 8px rgba(35,56,51,0.1);
+  transition: transform .12s ease;
+}
+.icon-btn:active { transform: translateY(2px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.6), inset 0 -3px 4px rgba(35,56,51,0.06), 0 1px 0 var(--primary-soft); }
 
 /* Racha + escudos, arriba a la derecha (persistentes, como Duolingo) */
 .header-stats { display: flex; align-items: center; gap: 2px; }
@@ -223,7 +244,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 
 /* ===== Water tracker ===== */
 .water-glasses { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.glass { font-size: 1.5rem; opacity: 0.25; transition: opacity 0.15s, transform 0.1s; padding: 2px; }
+.glass { color: var(--secondary); opacity: 0.35; transition: opacity 0.15s, transform 0.1s; padding: 2px; background: none; border: none; cursor: pointer; }
 .glass.filled { opacity: 1; }
 .glass:active { transform: scale(1.2); }
 

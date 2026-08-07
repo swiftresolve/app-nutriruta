@@ -1,7 +1,7 @@
 // Ajustes: cuenta, perfiles, exclusiones, quiz, datos y sección legal.
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
-import { getSession, signOut, pushProfileState, fetchMyResena, submitResena } from '../supabase-client.js';
+import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor } from '../supabase-client.js';
 import { navigate, header, openModal, toast } from '../app.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
@@ -19,13 +19,46 @@ export function renderSettings(container) {
     : isPremium()
       ? `<span class="tag verde">✨ Premium ${plan.periodo}</span> <span class="muted small">activo hasta el ${vence.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}</span>`
       : '<span class="tag info">Plan gratuito</span>';
+  const inicial = esc((user.nombre || 'N').trim().charAt(0).toUpperCase() || 'N');
   account.innerHTML = `
+    <div class="center">
+      <label class="avatar-upload" for="avatar-input" aria-label="Cambiar foto de perfil">
+        <img id="avatar-img" alt="" hidden>
+        <span id="avatar-fallback">${inicial}</span>
+        <span class="avatar-cam">📷</span>
+      </label>
+      <input type="file" id="avatar-input" accept="image/*" hidden>
+      <p class="small muted" id="avatar-estado" style="min-height:1em"></p>
+    </div>
     <h2>👤 Mi cuenta</h2>
     <p class="small" id="acc-email">Cargando…</p>
     <p class="mt">${planHtml}</p>`;
+  const avatarImg = account.querySelector('#avatar-img');
+  const avatarFallback = account.querySelector('#avatar-fallback');
+  const avatarEstado = account.querySelector('#avatar-estado');
   getSession().then((s) => {
     const el = account.querySelector('#acc-email');
     if (el) el.innerHTML = s ? `Sesión iniciada como <strong>${esc(s.user.email)}</strong> 🔐` : 'Sin sesión activa.';
+    if (!s) return;
+    avatarImg.src = avatarUrlFor(s.user.id);
+    avatarImg.onload = () => { avatarImg.hidden = false; avatarFallback.hidden = true; };
+    avatarImg.onerror = () => { avatarImg.hidden = true; avatarFallback.hidden = false; };
+  });
+  account.querySelector('#avatar-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast('Elige un archivo de imagen.'); return; }
+    avatarEstado.textContent = 'Subiendo…';
+    try {
+      const url = await uploadAvatar(file);
+      avatarImg.src = url;
+      avatarImg.onload = () => { avatarImg.hidden = false; avatarFallback.hidden = true; };
+      avatarEstado.textContent = '¡Foto actualizada! 🌿';
+      setTimeout(() => { if (avatarEstado.textContent === '¡Foto actualizada! 🌿') avatarEstado.textContent = ''; }, 2500);
+    } catch (err) {
+      avatarEstado.textContent = 'No se pudo subir la foto. Intenta de nuevo.';
+    }
   });
   const plansBtn = document.createElement('button');
   plansBtn.className = 'btn ghost full mt mb';
@@ -199,24 +232,25 @@ export function renderSettings(container) {
   });
   container.appendChild(sonido);
 
-  // Perfiles activos
+  // Perfiles activos — lista de una sola columna (antes eran chips que se
+  // amontonaban sin orden claro al haber varios activos a la vez).
   const perf = document.createElement('div');
   perf.className = 'card';
-  perf.innerHTML = '<h2>🩺 Mis perfiles de salud</h2><p class="small mb">Activa o desactiva según tu situación.</p><div class="chips"></div>';
-  const perfChips = perf.querySelector('.chips');
+  perf.innerHTML = '<h2>🩺 Mis perfiles de salud</h2><p class="small mb">Activa o desactiva según tu situación.</p>';
   for (const p of Object.values(PROFILES)) {
-    const b = document.createElement('button');
-    b.className = 'chip' + (user.perfiles.includes(p.id) ? ' selected' : '');
-    b.textContent = `${p.emoji} ${p.nombre}`;
-    b.addEventListener('click', () => {
+    const row = document.createElement('label');
+    row.className = 'habit';
+    row.innerHTML = `
+      <input type="checkbox" ${user.perfiles.includes(p.id) ? 'checked' : ''}>
+      <span>${p.emoji} ${p.nombre}</span>`;
+    row.querySelector('input').addEventListener('change', (e) => {
       const cur = getState().user;
       const has = cur.perfiles.includes(p.id);
       const perfiles = has ? cur.perfiles.filter((x) => x !== p.id) : [...cur.perfiles, p.id];
-      if (!perfiles.length) { toast('Debes mantener al menos un perfil activo.'); return; }
+      if (!perfiles.length) { toast('Debes mantener al menos un perfil activo.'); e.target.checked = true; return; }
       setState({ user: { ...cur, perfiles } });
-      b.classList.toggle('selected');
     });
-    perfChips.appendChild(b);
+    perf.appendChild(row);
   }
   container.appendChild(perf);
 

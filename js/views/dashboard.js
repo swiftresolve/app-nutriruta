@@ -131,7 +131,10 @@ export function renderDashboard(container) {
   for (let i = 0; i < agua.meta; i++) {
     const g = document.createElement('button');
     g.className = 'glass' + (i < agua.vasos ? ' filled' : '');
-    g.textContent = '🥤';
+    // SVG propio en vez del emoji 🥤: el emoji lo pinta cada sistema con su
+    // propio color fijo (rojo/naranja en la mayoría), no se puede recolorear
+    // por CSS. Con currentColor sí queda celeste, coherente con la paleta.
+    g.innerHTML = '<svg viewBox="0 0 24 28" width="22" height="26"><path d="M4 2h16l-1.6 22.5a2 2 0 0 1-2 1.5H7.6a2 2 0 0 1-2-1.5L4 2z" fill="currentColor"/><path d="M4 8.5c2 1.4 4 1.4 6 0s4-1.4 6 0 4 1.4 6 0" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.4"/></svg>';
     g.setAttribute('aria-label', `Vaso ${i + 1}`);
     g.addEventListener('click', () => {
       const nuevo = i < agua.vasos ? i : i + 1;
