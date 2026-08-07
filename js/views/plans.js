@@ -63,34 +63,59 @@ export function renderPlans(container) {
   }
   container.appendChild(free);
 
-  // Planes premium
-  for (const p of PLANS) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    if (p.destacado) card.style.border = '2px solid var(--primary)';
-    const isCurrent = isPremium() && plan.periodo === p.id;
-    card.innerHTML = `
-      ${p.destacado ? '<span class="tag verde">Recomendado · ahorra 17 %</span>' : ''}
-      <div class="mt"><h3>${p.emoji} ${p.nombre}</h3></div>
-      <div class="price-anchor mt">
-        <span class="price-big">${p.precioMes}</span><span class="muted small">&nbsp;/ mes</span>
-      </div>
-      <p class="small muted">${p.cobro}</p>
-      <p class="small mt">${p.detalle}</p>
-      <p class="small mt" style="font-weight:700">Todo lo que desbloqueas:</p>
-      <ul class="steps check small mt">${PREMIUM_FEATURES.map((f) => `<li>${f}</li>`).join('')}</ul>`;
-    const btn = document.createElement('button');
-    btn.className = isCurrent ? 'btn ghost full mt' : 'btn accent full mt';
-    btn.textContent = isCurrent ? '✓ Tu plan actual' : `Elegir ${p.nombre}`;
-    btn.disabled = isCurrent;
-    btn.addEventListener('click', () => confirmPlan(p));
-    card.appendChild(btn);
-    container.appendChild(card);
+  // Planes premium: una sola tarjeta con las dos opciones seleccionables
+  // (como filas de radio-button), no dos tarjetas sueltas — tocar una
+  // resalta esa opción; un solo botón abajo confirma la elegida.
+  const premCard = document.createElement('div');
+  premCard.className = 'card';
+  let elegido = PLANS.find((p) => p.destacado) || PLANS[0];
+  premCard.innerHTML = `
+    <h3>✨ Premium</h3>
+    <div class="plan-options mt" id="plan-options"></div>
+    <p class="small mt" style="font-weight:700">Todo lo que desbloqueas:</p>
+    <ul class="steps check small mt">${PREMIUM_FEATURES.map((f) => `<li>${f}</li>`).join('')}</ul>
+    <button class="btn accent full mt" id="plan-elegir"></button>
+    <div class="plan-guarantees mt">
+      <div class="pg-item">✅ Cancelas cuando quieras desde Hotmart</div>
+      <div class="pg-item">✅ Tu Premium se activa automático al confirmarse el pago</div>
+      <div class="pg-item">✅ Pago procesado de forma segura por Hotmart</div>
+    </div>`;
+  const optsEl = premCard.querySelector('#plan-options');
+  const btnEl = premCard.querySelector('#plan-elegir');
+
+  function pintarOpciones() {
+    optsEl.innerHTML = '';
+    for (const p of PLANS) {
+      const isCurrent = isPremium() && plan.periodo === p.id;
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'plan-option' + (elegido.id === p.id ? ' selected' : '');
+      row.innerHTML = `
+        <span class="plan-radio"></span>
+        <span class="plan-option-body">
+          <span class="spread">
+            <strong>${p.emoji} ${p.nombre}</strong>
+            ${p.destacado ? '<span class="tag verde">Ahorra 17%</span>' : ''}
+          </span>
+          <span class="price-anchor mt"><span class="price-big">${p.precioMes}</span><span class="muted small">&nbsp;/ mes</span></span>
+          <span class="small muted" style="display:block">${p.cobro}</span>
+          ${isCurrent ? '<span class="tag info mt" style="display:inline-block">Tu plan actual</span>' : ''}
+        </span>`;
+      row.addEventListener('click', () => { elegido = p; pintarOpciones(); });
+      optsEl.appendChild(row);
+    }
+    const isCurrentElegido = isPremium() && plan.periodo === elegido.id;
+    btnEl.textContent = isCurrentElegido ? '✓ Tu plan actual' : `Elegir ${elegido.nombre}`;
+    btnEl.disabled = isCurrentElegido;
+    btnEl.className = isCurrentElegido ? 'btn ghost full mt' : 'btn accent full mt';
   }
+  pintarOpciones();
+  btnEl.addEventListener('click', () => confirmPlan(elegido));
+  container.appendChild(premCard);
 
   const note = document.createElement('div');
   note.className = 'legal-note';
-  note.innerHTML = 'ℹ️ El pago se procesa de forma segura a través de <strong>Hotmart</strong>. Tras completar tu compra, tu plan Premium se activará en tu cuenta. Puedes cancelar en cualquier momento desde Hotmart.';
+  note.innerHTML = 'ℹ️ El pago se procesa de forma segura a través de <strong>Hotmart</strong>. Tras completar tu compra, tu plan Premium se activará en tu cuenta.';
   container.appendChild(note);
 }
 

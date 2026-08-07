@@ -312,6 +312,42 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .price-anchor { display: flex; align-items: baseline; }
 .price-big { font-size: 2rem; font-weight: 800; color: var(--primary-dark); }
 
+/* Opciones de plan tipo radio-card: tocar cualquiera la selecciona. */
+.plan-options { display: flex; flex-direction: column; gap: 10px; }
+.plan-option {
+  display: flex; align-items: flex-start; gap: 12px; text-align: left; width: 100%;
+  padding: 14px; border-radius: 14px; border: 2px solid #E2EEEB; background: var(--card);
+  cursor: pointer; transition: border-color .12s, background .12s;
+}
+.plan-option.selected { border-color: var(--primary); background: var(--primary-soft); }
+.plan-radio {
+  width: 22px; height: 22px; border-radius: 50%; flex: none; margin-top: 2px;
+  border: 2px solid #C7D6D2; background: var(--card); position: relative;
+}
+.plan-option.selected .plan-radio { border-color: var(--primary); }
+.plan-option.selected .plan-radio::after {
+  content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--primary);
+}
+.plan-option-body { flex: 1; min-width: 0; }
+.plan-guarantees { display: flex; flex-direction: column; gap: 6px; }
+.pg-item { font-size: 0.82rem; color: var(--ink-soft); font-weight: 600; }
+
+/* Tira semanal de racha: un cuadrito por cada uno de los últimos 7 días. */
+.week-strip { display: flex; justify-content: center; gap: 6px; }
+.week-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.week-day { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; color: var(--ink-soft); letter-spacing: .02em; }
+.week-dot {
+  width: 28px; height: 28px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  background: #E4ECEA; color: transparent; font-size: 0.85rem; font-weight: 800;
+  box-shadow: inset 0 -2px 3px rgba(35,56,51,0.06);
+}
+.week-cell.done .week-dot {
+  background: var(--primary); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 2px 0 var(--primary-dark);
+}
+.week-cell.today .week-day { color: var(--accent); }
+.week-cell.today:not(.done) .week-dot { box-shadow: inset 0 -2px 3px rgba(35,56,51,0.06), 0 0 0 2px var(--accent-soft); }
+
 /* ===== Modal ===== */
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(20, 34, 30, 0.45);

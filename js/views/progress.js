@@ -10,6 +10,27 @@ const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 's
 
 let rangoActivo = 'semana';
 
+// Tira de los últimos 7 días (terminando hoy), un cuadrito por día — a
+// simple vista de un vistazo, no solo el número de racha.
+function weekStrip(diasCumplidos) {
+  const set = new Set(diasCumplidos);
+  const hoyISO = new Date().toISOString().slice(0, 10);
+  const celdas = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const cumplido = set.has(iso);
+    const esHoy = iso === hoyISO;
+    celdas.push(`
+      <div class="week-cell${cumplido ? ' done' : ''}${esHoy ? ' today' : ''}">
+        <span class="week-day">${DIAS_CORTOS[d.getDay()]}</span>
+        <span class="week-dot">${cumplido ? '✓' : ''}</span>
+      </div>`);
+  }
+  return celdas.join('');
+}
+
 export function renderProgress(container) {
   header(container);
   const { racha, diasCumplidos, logros, antojos, sintomas, checkins, user, escudos } = getState();
@@ -25,6 +46,7 @@ export function renderProgress(container) {
     </div>
     <p class="mt"><strong>días seguidos</strong> cumpliendo tus hábitos</p>
     <p class="small mt"><strong>${etapa.label}</strong> — Ruti crece con tu constancia.</p>
+    <div class="week-strip mt">${weekStrip(diasCumplidos)}</div>
     <p class="small muted mt">Mejor racha: ${racha.mejor} días · Total de días cumplidos: ${diasCumplidos.length}</p>
     <p class="small muted mt">🛡️ Escudos: ${escudos}/${MAX_ESCUDOS} — protegen tu racha si fallas un solo día. Se gana 1 cada 7 días de racha.</p>`;
   container.appendChild(streak);
