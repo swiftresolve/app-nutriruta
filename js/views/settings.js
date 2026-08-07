@@ -184,6 +184,21 @@ export function renderSettings(container) {
     });
   }
 
+  // Sonido: chime corto al completar una micro-acción (hábito, agua, paso del día)
+  const sonido = document.createElement('div');
+  sonido.className = 'card';
+  sonido.innerHTML = `
+    <div class="spread"><h2>🔊 Sonido</h2></div>
+    <label class="habit" style="border-bottom:none">
+      <input type="checkbox" id="sonido-toggle" ${getState().sonidoActivado !== false ? 'checked' : ''}>
+      <span>Chime al marcar hábitos, agua o "Tu paso de hoy"</span>
+    </label>`;
+  sonido.querySelector('#sonido-toggle').addEventListener('change', (e) => {
+    setState({ sonidoActivado: e.target.checked });
+    toast(e.target.checked ? 'Sonido activado 🔊' : 'Sonido desactivado');
+  });
+  container.appendChild(sonido);
+
   // Perfiles activos
   const perf = document.createElement('div');
   perf.className = 'card';

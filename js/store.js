@@ -36,7 +36,8 @@ const DEFAULT_STATE = {
   notifPrefs: { plan: true, comidas: true, agua: true }, // qué tipos de aviso push recibir
   pasoHechos: [],               // fechas ISO en que se marcó "Tu paso de hoy" como hecho
   escudos: 0,                   // escudos disponibles para proteger la racha (máx MAX_ESCUDOS)
-  primerosPasos: { cerrado: false, minimizado: false } // checklist de onboarding, solo cuentas nuevas
+  primerosPasos: { cerrado: false, minimizado: false }, // checklist de onboarding, solo cuentas nuevas
+  sonidoActivado: true          // chime al completar una micro-acción; silenciable en Ajustes
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).

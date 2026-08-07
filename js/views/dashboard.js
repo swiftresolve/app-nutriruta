@@ -6,6 +6,7 @@ import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
+import { playCheckSound } from '../sound.js';
 import { renderPathMap } from '../pathMap.js';
 import { renderPrimerosPasos, primerosPasosVisible } from './primerosPasos.js';
 import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
@@ -61,6 +62,7 @@ export function renderDashboard(container) {
   pasoBtn.addEventListener('click', () => {
     const rect = pasoBtn.getBoundingClientRect();
     habitCheckPop(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    playCheckSound();
     const nuevaRacha = marcarPasoHecho();
     if (nuevaRacha >= 2) celebrateStreak(nuevaRacha);
     else toast('¡Bien hecho! 🌿');
@@ -168,6 +170,7 @@ export function renderDashboard(container) {
       if (nuevo > agua.vasos) {
         const rect = g.getBoundingClientRect();
         habitCheckPop(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        playCheckSound();
       }
       setWater(nuevo);
       if (nuevo >= agua.meta) toast('¡Meta de agua cumplida! 💧🎉');
@@ -238,6 +241,7 @@ export function renderDashboard(container) {
       if (e.target.checked) {
         const rect = row.getBoundingClientRect();
         habitCheckPop(rect.left + 16, rect.top + rect.height / 2);
+        playCheckSound();
       }
       const rachaAntes = getState().racha.actual;
       const escudoUsado = toggleHabit(h.id);
