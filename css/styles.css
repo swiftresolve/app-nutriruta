@@ -222,6 +222,10 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
      píldora (999px) se veía como un óvalo raro — mismo radio que .card. */
   border-radius: 16px;
 }
+/* Si el total de opciones es impar, la última queda sola en la columna
+   izquierda con un hueco vacío a la derecha — que ocupe las dos columnas
+   en vez de dejar ese espacio en blanco. */
+.quiz-step .chips .chip:last-child:nth-child(odd) { grid-column: 1 / -1; }
 /* Cada pregunta entra deslizándose, como el quiz de Duolingo — como
    draw() crea un .quiz-step nuevo en cada paso, la animación se repite
    sola en cada pregunta sin necesitar JS extra. */
