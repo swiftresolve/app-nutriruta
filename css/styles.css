@@ -749,8 +749,13 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    latido — solo la hojita de arriba (.path-mascot) sigue animada. */
 .path-node-col:has(.path-node.now)::before {
   content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 94px; height: 78px; border-radius: 50%;
-  background: var(--bg);
+  /* Tamaño calculado sobre el nodo YA escalado (scale 1.15, ~76x62) más un
+     margen parejo de 8px por lado — antes el cálculo era sobre el tamaño
+     sin escalar, dejando el hueco desigual. */
+  width: 92px; height: 78px; border-radius: 50%;
+  /* var(--bg) quedaba casi igual al blanco de la tarjeta, invisible. Un
+     tinte del color de acento sí se distingue sin ser un aro sólido. */
+  background: var(--accent-soft);
   pointer-events: none;
 }
 .path-node.locked {
