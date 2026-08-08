@@ -652,42 +652,51 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 /* ===== Camino (Misión, Plan de 7 días) ===== */
 .path-wrap { position: relative; margin: 4px auto 0; width: 100%; max-width: 340px; }
 .path-svg { position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none; }
-/* Ancho más angosto + margen fijo (no "auto" hasta el borde) para que el
-   vaivén izquierda/derecha quede suave y cercano al centro, como el
-   camino real de Duolingo — antes los círculos llegaban hasta el borde
-   mismo del contenedor (0% / 100%), una curva demasiado marcada. */
-.path-row { position: relative; z-index: 1; display: flex; align-items: flex-start; gap: 14px; width: 54%; margin-bottom: 24px; }
+/* El desplazamiento horizontal de cada fila ya viene calculado en JS
+   (onda seno, ver AMPLITUD/PERIODO en pathMap.js) como margin-left en
+   línea — aquí solo el ancho y el resto del look, no la posición. */
+.path-row {
+  position: relative; z-index: 1; display: flex; align-items: flex-start; gap: 14px; width: 56%;
+  margin-bottom: 24px; transition: margin-left 0.25s ease;
+}
 .path-row:last-child { margin-bottom: 0; }
 /* Sin línea (menú del día): círculos sueltos, con más aire entre sí. */
 .path-wrap.no-line .path-row { margin-bottom: 34px; }
-.path-row:not(.right) { margin-left: 12%; }
-.path-row.right { flex-direction: row-reverse; text-align: right; margin-right: 12%; }
 .path-node-col { position: relative; flex: none; }
 .path-node {
-  width: 64px; height: 64px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
-  display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+  /* Achatado (ovalado), no un círculo perfecto — como los tokens 3D de
+     Duolingo: más ancho que alto, con el "canto" inferior a la vista. */
+  width: 66px; height: 54px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
+  display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
   border: none; color: #fff;
   /* Estado por defecto (ej. comidas del día, que no tienen concepto de
      "bloqueada"): un gema celeste con relieve, como los nodos disponibles
      de Duolingo — antes esto caía en blanco/gris plano. */
   background: linear-gradient(160deg, #8ED4F0, var(--secondary));
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(20,50,80,0.15), 0 4px 0 #4E86B8, 0 6px 10px rgba(35,56,51,0.14);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(20,50,80,0.15), 0 6px 0 #4E86B8, 0 8px 10px rgba(35,56,51,0.14);
   transition: transform .12s ease; padding: 0;
+}
+/* Aro inferior (el "canto" del token, siguiendo la curva ovalada) — más
+   alto y con transición más marcada, para que se lea como el borde
+   grueso de un token 3D y no solo una sombra suave. */
+.path-node::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(to top, rgba(20,50,90,0.4) 0%, rgba(20,50,90,0.4) 30%, rgba(20,50,90,0.2) 42%, transparent 62%);
 }
 /* Brillo superior (look "botón de caramelo" 3D) — se oculta en nodos bloqueados. */
 .path-node::after {
-  content: ''; position: absolute; top: 7px; left: 11px; width: 36%; height: 28%;
-  border-radius: 50%; background: rgba(255,255,255,0.45); pointer-events: none;
+  content: ''; position: absolute; top: 6px; left: 11px; width: 34%; height: 24%;
+  border-radius: 50%; background: rgba(255,255,255,0.5); pointer-events: none;
 }
 .path-node:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(20,50,80,0.15), 0 1px 0 #4E86B8; }
 .path-node.done {
   background: var(--primary); color: #fff;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -5px 6px rgba(0,0,0,0.12), 0 4px 0 var(--primary-dark), 0 6px 10px rgba(35,56,51,0.14);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 var(--primary-dark), 0 8px 10px rgba(35,56,51,0.14);
 }
 .path-node.done:active { box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -5px 6px rgba(0,0,0,0.12), 0 1px 0 var(--primary-dark); }
 .path-node.now {
   background: var(--accent); color: #fff; transform: scale(1.15);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 4px 0 #D96B4F, 0 6px 10px rgba(255,138,107,0.25);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 #D96B4F, 0 8px 10px rgba(255,138,107,0.25);
   animation: path-pulse 2s infinite;
 }
 .path-node.now:active { transform: scale(1.15) translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 1px 0 #D96B4F; }

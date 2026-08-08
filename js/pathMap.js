@@ -18,15 +18,23 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
 // solo el zigzag de .path-row/.right, no un trazo dibujado. Se dejó la
 // opción por si alguna pantalla futura sí la necesita, pero Plan de 7
 // días, Misión y menú del día van todos sin línea.
+// Desplazamiento en onda (no zigzag): varios nodos seguidos se mueven en
+// la misma dirección antes de invertir, como el camino real de Duolingo
+// — no es "uno a la izquierda, uno a la derecha" (eso dibuja picos rectos
+// en V), es una curva continua tipo seno. AMPLITUD = cuánto se aleja del
+// centro; PERIODO = cuántos nodos entran en una vuelta completa de la onda.
+const AMPLITUD = 17;
+const PERIODO = 4.2;
+
 export function renderPathMap(container, items, opts = {}) {
   const showLine = opts.showLine === true;
   const rowsHtml = items.map((it, i) => {
-    const isLeft = i % 2 === 0;
+    const offset = AMPLITUD * Math.sin((i / PERIODO) * Math.PI * 2);
     const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
     const icon = it.done ? '✓' : (it.locked ? '🔒' : esc(it.icon));
     const tag = it.now ? `<span class="path-tag path-tag-now">${esc(it.nowLabel || 'Actual')}</span>` : '';
     const mascot = it.now ? '<div class="path-mascot">🌿</div>' : '';
-    return `<div class="path-row ${isLeft ? '' : 'right'}" data-row-idx="${i}">
+    return `<div class="path-row" data-row-idx="${i}" style="margin-left:${(22 + offset).toFixed(1)}%">
         <div class="path-node-col">
           ${mascot}
           <button type="button" class="path-node ${stateClass}" data-idx="${i}" aria-label="${esc(it.title)}">${icon}</button>
