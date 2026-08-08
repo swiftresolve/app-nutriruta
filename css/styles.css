@@ -701,7 +701,7 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 }
 
 /* ===== Camino (Misión, Plan de 7 días) ===== */
-.path-wrap { position: relative; margin: 4px auto 0; width: 100%; max-width: 340px; }
+.path-wrap { position: relative; margin: 4px auto 0; width: 100%; max-width: 340px; padding-top: 74px; }
 .path-svg { position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none; }
 /* El desplazamiento horizontal de cada fila ya viene calculado en JS
    (onda seno, ver AMPLITUD/PERIODO en pathMap.js) como margin-left en
@@ -715,45 +715,68 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 .path-wrap.no-line .path-row { margin-bottom: 34px; }
 .path-node-col { position: relative; flex: none; }
 .path-node {
-  /* Copiado directo de los mockups de referencia de la usuaria: círculo
-     de color PLANO (sin corte de dos tonos ni degradado), solo una sombra
-     suave hacia el borde inferior para dar volumen, más una sombra normal
-     de "elevación" por debajo — nada de un bloque de color aparte. */
+  /* Medidas y colores sacados por muestreo de píxel directo de los 3
+     mockups que envió la usuaria (no inventados): círculo perfecto, color
+     PLANO por estado sin ningún corte de dos tonos, sombra normal de
+     "elevación" por debajo — nada de degradado en la cara. */
   width: 68px; height: 68px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
   display: flex; align-items: center; justify-content: center;
   border: none; color: #fff;
   --face: #4FC3F7;
   background: var(--face);
-  box-shadow: inset 0 3px 0 rgba(255,255,255,0.35), inset 0 -10px 14px rgba(0,0,0,0.16), 0 3px 6px rgba(35,56,51,0.18);
+  box-shadow: 0 3px 6px rgba(35,56,51,0.18);
   transition: transform .12s ease; padding: 0;
 }
-.path-node:active { transform: translateY(2px); box-shadow: inset 0 3px 0 rgba(255,255,255,0.35), inset 0 -10px 14px rgba(0,0,0,0.16), 0 1px 2px rgba(35,56,51,0.14); }
+.path-node:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(35,56,51,0.14); }
 .path-node.done { --face: var(--primary); color: #fff; }
 .path-node.now { --face: var(--accent); color: #fff; transform: scale(1.15); }
 .path-node.now:active { transform: scale(1.15) translateY(2px); }
 .path-node.locked { --face: #E4ECEA; opacity: 1; cursor: default; color: #A8BDB7; }
-/* La placa oscura propia del ícono (el "platito" dentro del botón) — el
-   mismo tono neutro en los 4 estados, como en la referencia (el color de
-   fondo cambia, la placa del ícono no). */
+/* La placa oscura propia del ícono (el "platito" dentro del botón) — mismo
+   tono morado oscuro en los 3 mockups sin importar el color de la cara
+   (#4C3759 medido de píxel), 52% del diámetro del círculo (217/419px). */
 .path-node-badge {
-  width: 62%; height: 62%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem; background: #3B3350;
+  width: 52%; height: 52%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 1.35rem; background: #4C3759;
   box-shadow: inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -3px 5px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
 }
 .path-node.locked .path-node-badge { background: #8A97A3; }
-/* Aro circular centrado alrededor del nodo activo — un elemento propio
-   (no box-shadow con spread) porque el nodo es ovalado, no un círculo:
-   un spread uniforme sobre una elipse queda torcido/descentrado. Sin
-   animación de latido — solo la hojita de arriba (.path-mascot) sigue
-   animada. Gris claro, como el aro de la referencia sobre fondo claro. */
+.path-node-icon-img { width: 70%; height: 70%; object-fit: contain; }
+/* Aro alrededor del nodo activo — un elemento propio (no box-shadow con
+   spread) para quedar perfectamente centrado. Color y proporciones son los
+   medidos de los mockups (banda a 11.5% del diámetro del círculo desde el
+   borde, ancho de banda 14.1% del diámetro): rgb(53,64,73), igual en los
+   3 mockups sin importar el color de la cara. Sin animación de latido —
+   solo la hojita de arriba (.path-mascot) sigue animada. */
 .path-node-col:has(.path-node.now)::before {
   content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 96px; height: 96px; border-radius: 50%;
-  background: #E7EAEC;
+  width: 103px; height: 103px; border-radius: 50%;
+  background: #35404A;
   pointer-events: none;
 }
+/* Burbuja con el título del nodo activo, apuntando hacia el círculo con un
+   triángulo — presente en los 3 mockups de referencia y ausente hasta esta
+   versión. Fondo blanco de tarjeta (no el fondo casi negro de los mockups,
+   que eran solo el lienzo de demo sobre fondo oscuro) para mantener buen
+   contraste de texto sobre la app, que es de tema claro; borde del mismo
+   tono del aro. */
+.path-bubble {
+  position: absolute; left: 50%; bottom: calc(100% + 14px); transform: translateX(-50%);
+  background: var(--card); border: 1.5px solid #35404A; border-radius: 10px;
+  padding: 5px 12px; font-size: 0.72rem; font-weight: 800; letter-spacing: .02em;
+  text-transform: uppercase; color: var(--ink); white-space: nowrap; max-width: 140px;
+  overflow: hidden; text-overflow: ellipsis; z-index: 3; pointer-events: none;
+}
+.path-bubble::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 6px solid transparent; border-top-color: #35404A;
+}
+.path-bubble::before {
+  content: ''; position: absolute; top: calc(100% - 1.5px); left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: var(--card); z-index: 1;
+}
 .path-mascot {
-  position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 1.7rem;
+  position: absolute; top: -68px; left: 50%; transform: translateX(-50%); font-size: 1.7rem;
   animation: path-bob 2.4s ease-in-out infinite; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.15));
   z-index: 2;
 }

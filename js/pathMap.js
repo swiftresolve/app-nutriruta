@@ -26,17 +26,29 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
 const AMPLITUD = 17;
 const PERIODO = 4.2;
 
+// Íconos con arte real de la usuaria (recortada exacta de sus mockups de
+// referencia, no un emoji ni un dibujo inventado) — solo cubre lo que ella
+// envió. Todo lo demás sigue usando el emoji tal cual como antes.
+const ICON_ASSETS = {
+  '🍳': './assets/path-icons/desayuno.png',
+};
+
 export function renderPathMap(container, items, opts = {}) {
   const showLine = opts.showLine === true;
   const rowsHtml = items.map((it, i) => {
     const offset = AMPLITUD * Math.sin((i / PERIODO) * Math.PI * 2);
     const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
-    const icon = it.done ? '✓' : (it.locked ? '🔒' : esc(it.icon));
+    const asset = !it.done && !it.locked ? ICON_ASSETS[it.icon] : null;
+    const icon = it.done ? '✓' : (it.locked ? '🔒' : (asset ? `<img src="${asset}" alt="" class="path-node-icon-img">` : esc(it.icon)));
     const tag = it.now ? `<span class="path-tag path-tag-now">${esc(it.nowLabel || 'Actual')}</span>` : '';
     const mascot = it.now ? '<div class="path-mascot">🌿</div>' : '';
+    // Burbuja con el título, apuntando hacia el círculo — solo en el nodo
+    // "now", igual que en los mockups de referencia (los demás no la llevan).
+    const bubble = it.now ? `<div class="path-bubble">${esc(it.title)}</div>` : '';
     return `<div class="path-row" data-row-idx="${i}" style="margin-left:${(22 + offset).toFixed(1)}%">
         <div class="path-node-col">
           ${mascot}
+          ${bubble}
           <button type="button" class="path-node ${stateClass}" data-idx="${i}" aria-label="${esc(it.title)}"><span class="path-node-badge">${icon}</span></button>
         </div>
         <div class="path-label">
