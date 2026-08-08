@@ -971,5 +971,359 @@ export const RECIPES = [
     apto: ['colesterol', 'higado_graso', 'prediabetes', 'resistencia_insulina', 'estrenimiento'],
     moderar: ['colon_irritable', 'gases'],
     etiquetas: ['fibra_soluble', 'proteina_vegetal']
+  },
+
+  // ================= DESAYUNOS (lote 3) =================
+  {
+    id: 'huevos_pochados_espinaca', comida: 'desayuno', emoji: '🥚',
+    nombre: 'Huevos pochados sobre espinaca salteada',
+    descripcion: 'Sin aceite extra en la cocción del huevo: proteína limpia para arrancar.',
+    tituloSub: { huevo: { nombre: 'Tofu revuelto sobre espinaca salteada', emoji: '🌱' } },
+    ingredientes: [
+      { n: '2 huevos pochados', grupo: 'huevo', sub: 'media taza de tofu firme revuelto' },
+      { n: '1 taza de espinaca salteada con ajo' },
+      { n: '1 rebanada de pan integral', grupo: 'gluten', sub: '3 cdas de avena sin gluten cocida' }
+    ],
+    pasos: [
+      'Pochar los huevos en agua con un chorrito de vinagre.',
+      'Saltear la espinaca con un diente de ajo.',
+      'Servir los huevos sobre la espinaca, con el pan al lado.'
+    ],
+    apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'colesterol', 'migranas'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['alto_proteina', 'bajo_azucar']
+  },
+  {
+    id: 'bowl_avena_manzana_horno', comida: 'desayuno', emoji: '🍎',
+    nombre: 'Bowl de avena horneada con manzana y canela',
+    descripcion: 'Desayuno tibio y reconfortante, sin azúcar añadida.',
+    ingredientes: [
+      { n: '½ taza de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '1 manzana rallada' },
+      { n: 'Canela y una pizca de nuez moscada' },
+      { n: '¾ taza de bebida vegetal sin azúcar' }
+    ],
+    pasos: [
+      'Mezclar todos los ingredientes en un molde apto para horno.',
+      'Hornear a 180°C por 20 minutos hasta dorar.'
+    ],
+    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'colon_irritable', 'estrenimiento'],
+    moderar: ['candidiasis'],
+    etiquetas: ['alto_fibra', 'fibra_soluble']
+  },
+  {
+    id: 'wrap_integral_pavo', comida: 'desayuno', emoji: '🌯',
+    nombre: 'Wrap integral de pavo y aguacate',
+    descripcion: 'Desayuno salado para llevar, con proteína magra.',
+    tituloSub: { gluten: { nombre: 'Bowl de pavo y aguacate sobre lechuga', emoji: '🥬' } },
+    ingredientes: [
+      { n: '1 tortilla integral', grupo: 'gluten', sub: '2 hojas grandes de lechuga' },
+      { n: '3 lonjas de pechuga de pavo' },
+      { n: '¼ de aguacate' },
+      { n: 'Tomate y lechuga' }
+    ],
+    pasos: [
+      'Untar el aguacate sobre la tortilla.',
+      'Agregar el pavo, el tomate y la lechuga, y enrollar.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'higado_graso', 'colesterol'],
+    moderar: ['gases'],
+    etiquetas: ['alto_proteina', 'rapido']
+  },
+  {
+    id: 'chia_pudding_cacao', comida: 'desayuno', emoji: '🍫',
+    nombre: 'Pudín de chía con cacao puro',
+    descripcion: 'Antojo de chocolate resuelto sin azúcar, con fibra soluble.',
+    tituloSub: { lacteos: { nombre: 'Pudín de chía con cacao y bebida de almendra', emoji: '🍫' } },
+    ingredientes: [
+      { n: '3 cdas de semillas de chía' },
+      { n: '1 taza de leche o yogur bebible sin azúcar', grupo: 'lacteos', sub: 'bebida de almendra sin azúcar' },
+      { n: '1 cdta de cacao puro en polvo sin azúcar' },
+      { n: 'Canela al gusto' }
+    ],
+    pasos: [
+      'Mezclar todos los ingredientes en un frasco.',
+      'Refrigerar mínimo 3 horas o toda la noche hasta que espese.'
+    ],
+    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'estrenimiento', 'migranas'],
+    moderar: ['candidiasis'],
+    etiquetas: ['fibra_soluble', 'antojo_dulce_saludable']
+  },
+
+  // ================= MEDIA MAÑANA (lote 3) =================
+  {
+    id: 'agua_pepino_menta', comida: 'media_manana', emoji: '🥒',
+    nombre: 'Agua de pepino y menta con almendras',
+    descripcion: 'Hidratación con sabor natural, sin azúcar, más grasa buena.',
+    ingredientes: [
+      { n: '1 vaso de agua con pepino en rodajas y hojas de menta' },
+      { n: '8–10 almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
+    ],
+    pasos: [
+      'Dejar reposar el pepino y la menta en agua fría al menos 15 minutos.',
+      'Acompañar con las almendras.'
+    ],
+    apto: ['migranas', 'colon_irritable', 'gases', 'higado_graso', 'colesterol'],
+    etiquetas: ['hidratante', 'grasa_saludable']
+  },
+  {
+    id: 'mandarina_semillas_calabaza', comida: 'media_manana', emoji: '🍊',
+    nombre: 'Mandarina con semillas de calabaza',
+    descripcion: 'Vitamina C + zinc, snack rápido sin preparación.',
+    ingredientes: [
+      { n: '2 mandarinas' },
+      { n: '2 cdas de semillas de calabaza' }
+    ],
+    pasos: [
+      'Pelar las mandarinas y comer junto con las semillas.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colon_irritable', 'estrenimiento'],
+    moderar: ['gases'],
+    etiquetas: ['rapido', 'alto_fibra']
+  },
+  {
+    id: 'crackers_avena_hummus', comida: 'media_manana', emoji: '🍘',
+    nombre: 'Crackers de avena con hummus',
+    descripcion: 'Snack crocante casero, sin harinas refinadas ni ultraprocesados.',
+    tituloSub: { legumbres: { nombre: 'Crackers de avena con guacamole', emoji: '🥑' } },
+    ingredientes: [
+      { n: '4 crackers de avena integral', grupo: 'gluten', sub: 'crackers de arroz inflado' },
+      { n: '3 cdas de hummus', grupo: 'legumbres', sub: '3 cdas de guacamole' }
+    ],
+    pasos: [
+      'Untar el hummus sobre las crackers y servir.'
+    ],
+    apto: ['colesterol', 'higado_graso', 'resistencia_insulina', 'prediabetes', 'estrenimiento'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['proteina_vegetal', 'reemplaza_paquetes']
+  },
+  {
+    id: 'yogur_natural_canela', comida: 'media_manana', emoji: '🥣',
+    nombre: 'Yogur natural con canela y nuez moscada',
+    descripcion: 'Snack antiansiedad simple: la canela ayuda a estabilizar el ánimo dulce sin azúcar.',
+    tituloSub: { lacteos: { nombre: 'Yogur de coco con canela y nuez moscada', emoji: '🥥' } },
+    ingredientes: [
+      { n: '1 taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
+      { n: 'Canela y nuez moscada al gusto' }
+    ],
+    pasos: [
+      'Servir el yogur y espolvorear las especias.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'candidiasis'],
+    moderar: ['colon_irritable'],
+    etiquetas: ['snack_antiansiedad', 'rapido']
+  },
+
+  // ================= ALMUERZOS (lote 3) =================
+  {
+    id: 'pavo_horno_ensalada_quinoa', comida: 'almuerzo', emoji: '🦃',
+    nombre: 'Pavo al horno con ensalada de quinoa',
+    descripcion: 'Proteína muy magra, ideal si se busca cuidar el hígado y el colesterol.',
+    ingredientes: [
+      { n: '150 g de pechuga de pavo al horno' },
+      { n: '½ taza de quinoa cocida con verduras picadas' },
+      { n: 'Aceite de oliva y limón' }
+    ],
+    pasos: [
+      'Hornear el pavo con especias a 180°C por 25 minutos.',
+      'Mezclar la quinoa con verduras crudas picadas.',
+      'Servir juntos y aliñar con aceite de oliva y limón.'
+    ],
+    apto: ['higado_graso', 'colesterol', 'resistencia_insulina', 'prediabetes'],
+    etiquetas: ['alto_proteina', 'plato_modelo']
+  },
+  {
+    id: 'arroz_integral_camarones', comida: 'almuerzo', emoji: '🍤',
+    nombre: 'Arroz integral con camarones salteados y vegetales',
+    descripcion: 'Proteína ligera de mar, alta en zinc, con carbohidrato integral.',
+    tituloSub: { mariscos: { nombre: 'Arroz integral con pollo salteado y vegetales', emoji: '🍗' } },
+    ingredientes: [
+      { n: '150 g de camarones', grupo: 'mariscos', sub: 'pechuga de pollo en cubos' },
+      { n: '½ taza de arroz integral' },
+      { n: 'Pimentón, cebolla y arvejas salteadas' },
+      { n: 'Ajo y aceite de oliva' }
+    ],
+    pasos: [
+      'Saltear los camarones con ajo y aceite de oliva.',
+      'Agregar los vegetales y saltear 3–4 minutos más.',
+      'Servir sobre el arroz integral.'
+    ],
+    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'higado_graso'],
+    moderar: ['gases'],
+    etiquetas: ['bajo_ig', 'plato_modelo']
+  },
+  {
+    id: 'berenjena_rellena_carne', comida: 'almuerzo', emoji: '🍆',
+    nombre: 'Berenjena rellena de carne magra y vegetales',
+    descripcion: 'Plato completo horneado, sin frituras.',
+    ingredientes: [
+      { n: '1 berenjena grande' },
+      { n: '100 g de carne molida magra' },
+      { n: 'Tomate, cebolla y pimentón picados' },
+      { n: 'Especias al gusto' }
+    ],
+    pasos: [
+      'Ahuecar la berenjena y reservar la pulpa.',
+      'Cocinar la carne con la pulpa de berenjena y los vegetales.',
+      'Rellenar la berenjena y hornear 20 minutos a 180°C.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol'],
+    moderar: ['higado_graso', 'gases', 'colon_irritable'],
+    etiquetas: ['plato_modelo', 'bajo_ig']
+  },
+  {
+    id: 'bowl_atun_papa_arvejas', comida: 'almuerzo', emoji: '🥣',
+    nombre: 'Bowl de atún, papa cocida y arvejas',
+    descripcion: 'Almuerzo suave y económico, fácil de digerir.',
+    tituloSub: { pescado: { nombre: 'Bowl de pollo, papa cocida y arvejas', emoji: '🍗' } },
+    ingredientes: [
+      { n: '1 lata de atún en agua', grupo: 'pescado', sub: '100 g de pollo desmechado' },
+      { n: '1 papa mediana cocida en cubos' },
+      { n: '½ taza de arvejas cocidas' },
+      { n: 'Aceite de oliva y limón' }
+    ],
+    pasos: [
+      'Mezclar el atún escurrido con la papa y las arvejas.',
+      'Aliñar con aceite de oliva y limón.'
+    ],
+    apto: ['colon_irritable', 'higado_graso', 'colesterol', 'prediabetes', 'resistencia_insulina'],
+    moderar: ['gases'],
+    etiquetas: ['economico', 'suave']
+  },
+
+  // ================= MEDIA TARDE (lote 3) =================
+  {
+    id: 'infusion_manzanilla_galletas_avena', comida: 'media_tarde', emoji: '🍵',
+    nombre: 'Infusión de manzanilla con galletas de avena caseras',
+    descripcion: 'Calma digestiva por la tarde, sin harinas refinadas.',
+    ingredientes: [
+      { n: '1 taza de infusión de manzanilla' },
+      { n: '2 galletas de avena caseras sin azúcar añadida', grupo: 'gluten', sub: '2 galletas de arroz' }
+    ],
+    pasos: [
+      'Preparar la infusión de manzanilla.',
+      'Acompañar con las galletas de avena.'
+    ],
+    apto: ['colon_irritable', 'gases', 'migranas', 'resistencia_insulina', 'prediabetes'],
+    etiquetas: ['suave', 'antojo_dulce_saludable']
+  },
+  {
+    id: 'palomitas_caseras_aceite_oliva', comida: 'media_tarde', emoji: '🍿',
+    nombre: 'Palomitas de maíz caseras con aceite de oliva',
+    descripcion: 'Reemplaza el paquete de snacks salados por fibra de grano entero.',
+    ingredientes: [
+      { n: '¼ taza de maíz pira' },
+      { n: '1 cdta de aceite de oliva' },
+      { n: 'Sal al gusto (con moderación)' }
+    ],
+    pasos: [
+      'Reventar el maíz en olla con el aceite de oliva y tapa.',
+      'Sazonar apenas con sal.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'higado_graso', 'estrenimiento'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['reemplaza_paquetes', 'alto_fibra']
+  },
+  {
+    id: 'kiwi_yogur_snack', comida: 'media_tarde', emoji: '🥝',
+    nombre: 'Kiwi con yogur natural',
+    descripcion: 'Fruta con enzimas digestivas + probióticos: combo suave y efectivo.',
+    tituloSub: { lacteos: { nombre: 'Kiwi con yogur de coco', emoji: '🥥' } },
+    ingredientes: [
+      { n: '2 kiwis en trozos' },
+      { n: '½ taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' }
+    ],
+    pasos: [
+      'Mezclar el kiwi con el yogur y servir.'
+    ],
+    apto: ['estrenimiento', 'colon_irritable', 'candidiasis', 'resistencia_insulina', 'prediabetes'],
+    etiquetas: ['fibra_soluble', 'fermentado']
+  },
+  {
+    id: 'te_jengibre_limon', comida: 'media_tarde', emoji: '🍋',
+    nombre: 'Té de jengibre con limón',
+    descripcion: 'Bebida caliente sin azúcar para media tarde, sin alcohol ni cafeína extra.',
+    ingredientes: [
+      { n: '1 taza de agua caliente con jengibre fresco' },
+      { n: 'Jugo de ½ limón' }
+    ],
+    pasos: [
+      'Hervir el jengibre en agua 5 minutos.',
+      'Agregar el limón y servir caliente.'
+    ],
+    apto: ['migranas', 'colon_irritable', 'gases', 'higado_graso'],
+    etiquetas: ['reemplaza_alcohol', 'hidratante']
+  },
+
+  // ================= CENAS (lote 3) =================
+  {
+    id: 'calabacines_rellenos_quinoa', comida: 'cena', emoji: '🥒',
+    nombre: 'Calabacines rellenos de quinoa y vegetales',
+    descripcion: 'Cena vegetariana ligera y colorida, horneada sin frituras.',
+    ingredientes: [
+      { n: '2 calabacines medianos' },
+      { n: '½ taza de quinoa cocida' },
+      { n: 'Tomate, cebolla y pimentón picados' },
+      { n: 'Aceite de oliva y orégano' }
+    ],
+    pasos: [
+      'Ahuecar los calabacines y mezclar la pulpa con la quinoa y los vegetales.',
+      'Rellenar y hornear 20 minutos a 180°C.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'higado_graso', 'estrenimiento'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['proteina_vegetal', 'ligero']
+  },
+  {
+    id: 'pechuga_limon_romero_arroz', comida: 'cena', emoji: '🍋',
+    nombre: 'Pechuga al limón y romero con arroz blanco',
+    descripcion: 'Cena suave con carbohidrato de fácil digestión para noches sensibles.',
+    ingredientes: [
+      { n: '1 pechuga de pollo delgada' },
+      { n: 'Limón, romero fresco y aceite de oliva' },
+      { n: '½ taza de arroz blanco' }
+    ],
+    pasos: [
+      'Marinar la pechuga con limón y romero.',
+      'Cocinar a la plancha 4–5 minutos por lado.',
+      'Servir con el arroz.'
+    ],
+    apto: ['colon_irritable', 'candidiasis', 'migranas', 'gases'],
+    moderar: ['resistencia_insulina', 'prediabetes'],
+    etiquetas: ['suave', 'colon_friendly']
+  },
+  {
+    id: 'salmon_papillote_espinaca', comida: 'cena', emoji: '🐟',
+    nombre: 'Salmón en papillote con espinaca y limón',
+    descripcion: 'Omega 3 + cocción sin grasa añadida, ideal para colesterol.',
+    tituloSub: { pescado: { nombre: 'Pechuga en papillote con espinaca y limón', emoji: '🍗' } },
+    ingredientes: [
+      { n: '1 filete de salmón', grupo: 'pescado', sub: 'pechuga de pollo delgada' },
+      { n: '1 taza de espinaca fresca' },
+      { n: 'Limón y eneldo' }
+    ],
+    pasos: [
+      'Envolver el salmón con la espinaca, limón y eneldo en papel para hornear.',
+      'Hornear a 180°C por 15 minutos.'
+    ],
+    apto: ['colesterol', 'higado_graso', 'resistencia_insulina', 'prediabetes', 'migranas'],
+    etiquetas: ['omega3', 'ligero']
+  },
+  {
+    id: 'sopa_pollo_verduras_jengibre', comida: 'cena', emoji: '🍲',
+    nombre: 'Sopa de pollo con verduras y jengibre',
+    descripcion: 'Cena caliente antiinflamatoria, hidratante y suave.',
+    ingredientes: [
+      { n: 'Caldo natural de pollo (sin cubos industriales)' },
+      { n: '1 taza de pollo desmechado' },
+      { n: 'Zanahoria, calabacín y apio' },
+      { n: 'Jengibre fresco rallado' }
+    ],
+    pasos: [
+      'Cocinar las verduras en el caldo con el jengibre hasta ablandar.',
+      'Agregar el pollo desmechado al final.'
+    ],
+    apto: ['colon_irritable', 'migranas', 'candidiasis', 'gases', 'higado_graso', 'colesterol'],
+    etiquetas: ['suave', 'hidratante', 'colon_friendly']
   }
 ];
