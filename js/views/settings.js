@@ -73,6 +73,18 @@ export function renderSettings(container) {
     toast('Sesión cerrada. ¡Vuelve pronto! 🌿');
   });
   account.appendChild(outBtn);
+  // Enlace discreto: el servidor decide quién entra (admin_dashboard), no
+  // esta pantalla — mostrarlo a todas es inofensivo, no revela nada. Vive
+  // aquí, junto a la cuenta, en vez de hasta el final de Ajustes (ahí
+  // costaba encontrarlo, tras una lista larga de tarjetas).
+  const adminLink = document.createElement('button');
+  adminLink.className = 'link-btn small center';
+  adminLink.style.display = 'block';
+  adminLink.style.width = '100%';
+  adminLink.style.marginTop = '10px';
+  adminLink.textContent = 'Panel de administración';
+  adminLink.addEventListener('click', () => navigate('admin'));
+  account.appendChild(adminLink);
   container.appendChild(account);
 
   // Calificación (visible en vivo en nutriruta.com — vista pública, nunca
@@ -387,17 +399,6 @@ export function renderSettings(container) {
   ver.className = 'muted small center mt';
   ver.textContent = 'NutriRuta v2.1 · Hecha con 💚 para tu bienestar';
   container.appendChild(ver);
-
-  // Enlace discreto: el servidor decide quién entra (admin_dashboard), no
-  // esta pantalla — mostrarlo a todas es inofensivo, no revela nada.
-  const adminLink = document.createElement('button');
-  adminLink.className = 'link-btn small center';
-  adminLink.style.display = 'block';
-  adminLink.style.width = '100%';
-  adminLink.style.marginTop = '18px';
-  adminLink.textContent = 'Panel de administración';
-  adminLink.addEventListener('click', () => navigate('admin'));
-  container.appendChild(adminLink);
 }
 
 const TERMS = `

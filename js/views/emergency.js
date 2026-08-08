@@ -108,7 +108,7 @@ function showVuelveManana(dia) {
   overlay.innerHTML = `
     <div class="ring"></div>
     <div class="flame-big">🌙</div>
-    <div class="label wrap">Ya diste tu paso de hoy — vuelve mañana para el Día ${dia.n}</div>`;
+    <div class="label wrap">Ya diste tu paso de hoy — vuelve mañana después de medianoche para el Día ${dia.n}</div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click', () => overlay.remove());
   setTimeout(() => {

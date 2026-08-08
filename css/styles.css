@@ -520,10 +520,14 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 .path-row.right { flex-direction: row-reverse; text-align: right; margin-left: auto; }
 .path-node-col { position: relative; flex: none; }
 .path-node {
-  width: 58px; height: 58px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
-  display: flex; align-items: center; justify-content: center; font-size: 1.35rem;
-  border: none; background: var(--card); color: var(--ink-soft);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.6), inset 0 -5px 6px rgba(35,56,51,0.08), 0 4px 0 var(--primary-soft), 0 6px 10px rgba(35,56,51,0.1);
+  width: 64px; height: 64px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
+  display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+  border: none; color: #fff;
+  /* Estado por defecto (ej. comidas del día, que no tienen concepto de
+     "bloqueada"): un gema celeste con relieve, como los nodos disponibles
+     de Duolingo — antes esto caía en blanco/gris plano. */
+  background: linear-gradient(160deg, #8ED4F0, var(--secondary));
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(20,50,80,0.15), 0 4px 0 #4E86B8, 0 6px 10px rgba(35,56,51,0.14);
   transition: transform .12s ease; padding: 0;
 }
 /* Brillo superior (look "botón de caramelo" 3D) — se oculta en nodos bloqueados. */
@@ -531,7 +535,7 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   content: ''; position: absolute; top: 7px; left: 11px; width: 36%; height: 28%;
   border-radius: 50%; background: rgba(255,255,255,0.45); pointer-events: none;
 }
-.path-node:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.6), inset 0 -5px 6px rgba(35,56,51,0.08), 0 1px 0 var(--primary-soft); }
+.path-node:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(20,50,80,0.15), 0 1px 0 #4E86B8; }
 .path-node.done {
   background: var(--primary); color: #fff;
   box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -5px 6px rgba(0,0,0,0.12), 0 4px 0 var(--primary-dark), 0 6px 10px rgba(35,56,51,0.14);
