@@ -2,7 +2,7 @@
 // Termina con un CTA hacia la Misión 12 semanas (Premium).
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
-import { getState, setState, checkAchievements, today, esc, guardarReflexionDia, responderInvitacionTestimonioPlan, otorgarGemas, GEMAS_POR_DIA, sumarEnergiaRuta } from '../store.js';
+import { getState, setState, checkAchievements, today, esc, guardarReflexionDia, responderInvitacionTestimonioPlan, otorgarGemas, GEMAS_POR_DIA, sumarEnergiaRuta, esTextoReal } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
 import { renderPathMap } from '../pathMap.js';
 import { celebrateMilestone } from '../streakAnim.js';
@@ -171,20 +171,6 @@ function openDia(dia, done, onChange) {
   });
 }
 
-// Valida que sea una reflexión real, no relleno para pasar el mínimo:
-// suficientes letras (no solo símbolos/números), variedad de caracteres
-// (no "aaaaaaaa..." ni "jajajaja...") y al menos un espacio (una reflexión
-// real casi siempre tiene más de una palabra).
-function esTextoReal(texto) {
-  const t = (texto || '').trim();
-  if (t.length < 40) return false;
-  const letras = t.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ]/g, '');
-  if (letras.length < 25) return false;
-  const unicas = new Set(letras.toLowerCase()).size;
-  if (unicas < 8) return false;
-  if (!/\s/.test(t)) return false;
-  return true;
-}
 
 // Invitación cálida a compartir las reflexiones de la semana como
 // testimonio — se pregunta UNA sola vez, justo al completar el día 7,

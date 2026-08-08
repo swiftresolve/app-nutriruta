@@ -749,9 +749,8 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    latido — solo la hojita de arriba (.path-mascot) sigue animada. */
 .path-node-col:has(.path-node.now)::before {
   content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 90px; height: 74px; border-radius: 50%;
-  border: 3px solid rgba(255,138,107,0.55);
-  box-shadow: 0 0 0 5px var(--bg);
+  width: 94px; height: 78px; border-radius: 50%;
+  background: var(--bg);
   pointer-events: none;
 }
 .path-node.locked {

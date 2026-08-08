@@ -287,6 +287,26 @@ export function dayCompleted() {
   return Object.values(checks).filter(Boolean).length >= 3;
 }
 
+// Valida que sea una reflexión real escrita por la persona, no relleno
+// para pasar el mínimo: suficientes letras (no solo símbolos/números),
+// variedad de caracteres (no "aaaaaaaa..." ni "jajajaja..."), al menos un
+// espacio (una reflexión real casi siempre tiene más de una palabra). El
+// mínimo de largo es ajustable: el Plan de 7 días pide algo más elaborado
+// (40) que el check-in diario de hábitos (12, solo para frenar marcar los
+// 3 de un tirón sin haberlos hecho, sin volverse una tarea pesada).
+export function esTextoReal(texto, minLen = 40) {
+  const t = (texto || '').trim();
+  if (t.length < minLen) return false;
+  const letras = t.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ]/g, '');
+  // Mismas proporciones que ya validó el Plan de 7 días (25 letras y 8
+  // únicas sobre un mínimo de 40) escaladas al mínimo que se pida.
+  if (letras.length < Math.round(minLen * 0.625)) return false;
+  const unicas = new Set(letras.toLowerCase()).size;
+  if (unicas < Math.max(5, Math.round(minLen * 0.2))) return false;
+  if (!/\s/.test(t)) return false;
+  return true;
+}
+
 // --- Pausas de Ruta (antes "escudos"): acompañan cuando se falla
 // exactamente un día. Se ganan 1 cada 7 Días en Ruta. Tope 2 en el plan
 // gratuito, 4 en Premium (mismo espíritu que el "streak freeze" de
