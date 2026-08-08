@@ -715,65 +715,43 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 .path-wrap.no-line .path-row { margin-bottom: 34px; }
 .path-node-col { position: relative; flex: none; }
 .path-node {
-  /* Achatado (ovalado), no un círculo perfecto — como los tokens 3D de
-     Duolingo: más ancho que alto, con el "canto" inferior a la vista. */
-  width: 66px; height: 54px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
-  display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+  /* Copiado directo de los mockups de referencia de la usuaria: círculo
+     de color PLANO (sin corte de dos tonos ni degradado), solo una sombra
+     suave hacia el borde inferior para dar volumen, más una sombra normal
+     de "elevación" por debajo — nada de un bloque de color aparte. */
+  width: 68px; height: 68px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
+  display: flex; align-items: center; justify-content: center;
   border: none; color: #fff;
-  /* Copiado directo de la referencia: cara plana y brillante arriba
-     (~60%), canto claramente más oscuro abajo con corte definido (no
-     degradado largo), y un trazo oscuro fino en el borde para separar el
-     botón del aro que lo rodea. */
-  --face: #29B6F6; --rim: #0277BD;
-  background: linear-gradient(to bottom, var(--face) 0%, var(--face) 60%, var(--rim) 62%, var(--rim) 100%);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 0 0 1.5px rgba(15,40,65,0.3), 0 6px 0 var(--rim), 0 8px 10px rgba(35,56,51,0.14);
+  --face: #4FC3F7;
+  background: var(--face);
+  box-shadow: inset 0 3px 0 rgba(255,255,255,0.35), inset 0 -10px 14px rgba(0,0,0,0.16), 0 3px 6px rgba(35,56,51,0.18);
   transition: transform .12s ease; padding: 0;
 }
-/* Brillo superior (look "botón de caramelo" 3D) — se oculta en nodos bloqueados. */
-.path-node::after {
-  content: ''; position: absolute; top: 6px; left: 11px; width: 34%; height: 24%;
-  border-radius: 50%; background: rgba(255,255,255,0.5); pointer-events: none;
+.path-node:active { transform: translateY(2px); box-shadow: inset 0 3px 0 rgba(255,255,255,0.35), inset 0 -10px 14px rgba(0,0,0,0.16), 0 1px 2px rgba(35,56,51,0.14); }
+.path-node.done { --face: var(--primary); color: #fff; }
+.path-node.now { --face: var(--accent); color: #fff; transform: scale(1.15); }
+.path-node.now:active { transform: scale(1.15) translateY(2px); }
+.path-node.locked { --face: #E4ECEA; opacity: 1; cursor: default; color: #A8BDB7; }
+/* La placa oscura propia del ícono (el "platito" dentro del botón) — el
+   mismo tono neutro en los 4 estados, como en la referencia (el color de
+   fondo cambia, la placa del ícono no). */
+.path-node-badge {
+  width: 62%; height: 62%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; background: #3B3350;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -3px 5px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
 }
-.path-node:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 0 0 1.5px rgba(15,40,65,0.3), 0 1px 0 #4E86B8; }
-.path-node.done {
-  --face: var(--primary); --rim: var(--primary-dark); color: #fff;
-  background: linear-gradient(to bottom, var(--face) 0%, var(--face) 60%, var(--rim) 62%, var(--rim) 100%);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), 0 0 0 1.5px rgba(15,40,65,0.25), 0 6px 0 var(--primary-dark), 0 8px 10px rgba(35,56,51,0.14);
-}
-.path-node.done:active { box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), 0 0 0 1.5px rgba(15,40,65,0.25), 0 1px 0 var(--primary-dark); }
-.path-node.now {
-  --face: var(--accent); --rim: #D96B4F; color: #fff; transform: scale(1.15);
-  background: linear-gradient(to bottom, var(--face) 0%, var(--face) 60%, var(--rim) 62%, var(--rim) 100%);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 0 0 1.5px rgba(120,40,20,0.25), 0 6px 0 #D96B4F, 0 8px 10px rgba(255,138,107,0.25);
-}
-.path-node.now:active { transform: scale(1.15) translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 0 0 1.5px rgba(120,40,20,0.25), 0 1px 0 #D96B4F; }
+.path-node.locked .path-node-badge { background: #8A97A3; }
 /* Aro circular centrado alrededor del nodo activo — un elemento propio
    (no box-shadow con spread) porque el nodo es ovalado, no un círculo:
-   un spread uniforme sobre una elipse queda torcido/descentrado. Este
-   sí escala en las mismas proporciones que el nodo. Sin animación de
-   latido — solo la hojita de arriba (.path-mascot) sigue animada. */
+   un spread uniforme sobre una elipse queda torcido/descentrado. Sin
+   animación de latido — solo la hojita de arriba (.path-mascot) sigue
+   animada. Gris claro, como el aro de la referencia sobre fondo claro. */
 .path-node-col:has(.path-node.now)::before {
   content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  /* Tamaño calculado sobre el nodo YA escalado (scale 1.15, ~76x62) más un
-     margen parejo de 8px por lado — antes el cálculo era sobre el tamaño
-     sin escalar, dejando el hueco desigual. */
-  width: 92px; height: 78px; border-radius: 50%;
-  /* Gris neutro, como la referencia (ahí es un gris oscuro sobre fondo
-     casi negro; aquí, su equivalente sobre tarjeta blanca) — var(--bg)
-     quedaba invisible, y un tinte de color no es lo que muestra la
-     referencia: es gris, no coral. */
-  background: #D8DEDC;
+  width: 96px; height: 96px; border-radius: 50%;
+  background: #E7EAEC;
   pointer-events: none;
 }
-.path-node.locked {
-  /* Mismo corte de dos tonos que los nodos activos, solo que en gris —
-     antes quedaba plano (sombra baja de 2px, sin el canto), muy distinto
-     en textura al resto del camino. */
-  --face: #E4ECEA; --rim: #B9C7C2;
-  opacity: 1; cursor: default; color: #A8BDB7;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 6px 0 #B9C7C2, 0 8px 10px rgba(35,56,51,0.1);
-}
-.path-node.locked:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 1px 0 #B9C7C2; }
 .path-mascot {
   position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 1.7rem;
   animation: path-bob 2.4s ease-in-out infinite; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.15));

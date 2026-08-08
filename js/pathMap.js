@@ -37,7 +37,7 @@ export function renderPathMap(container, items, opts = {}) {
     return `<div class="path-row" data-row-idx="${i}" style="margin-left:${(22 + offset).toFixed(1)}%">
         <div class="path-node-col">
           ${mascot}
-          <button type="button" class="path-node ${stateClass}" data-idx="${i}" aria-label="${esc(it.title)}">${icon}</button>
+          <button type="button" class="path-node ${stateClass}" data-idx="${i}" aria-label="${esc(it.title)}"><span class="path-node-badge">${icon}</span></button>
         </div>
         <div class="path-label">
           <div class="path-t">${esc(it.title)}</div>
