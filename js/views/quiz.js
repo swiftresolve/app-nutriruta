@@ -54,7 +54,9 @@ export function renderQuiz(container) {
   const known = getState().user;
   const answers = {
     nombre: known.nombre || '', objetivos: [], condiciones: [], exclusiones: [], exclusionesOtroTexto: '',
-    habitosDificiles: [], actividad: 'medio', azucarFreq: 'a_veces', alcoholFreq: 'nunca',
+    // Sin valor por defecto: ninguna opción debe verse preseleccionada,
+    // la usuaria elige de verdad cada respuesta.
+    habitosDificiles: [], actividad: '', azucarFreq: '', alcoholFreq: '',
     pesoKg: known.pesoKg || ''
   };
   let step = 0;
@@ -103,12 +105,12 @@ export function renderQuiz(container) {
     {
       title: '¿Con cuáles de estos retos te identificas?',
       sub: 'Marca lo que te pasa hoy en día. Sin culpa: nos ayuda a acompañarte mejor.',
-      render: (el) => chips(el, HARD_HABITS, answers.habitosDificiles, true)
+      render: (el) => chips(el, HARD_HABITS, answers.habitosDificiles, true, undefined, true)
     },
     {
       title: '¿Tu nivel de actividad física?',
       sub: '',
-      render: (el) => chips(el, ACTIVITY, answers, false, 'actividad')
+      render: (el) => chips(el, ACTIVITY, answers, false, 'actividad', true)
     },
     {
       title: '¿Cuál es tu peso? (opcional)',
@@ -138,9 +140,9 @@ export function renderQuiz(container) {
     }
   ];
 
-  function chips(el, options, target, multi, prop) {
+  function chips(el, options, target, multi, prop, oneCol) {
     const wrap = document.createElement('div');
-    wrap.className = 'chips';
+    wrap.className = 'chips' + (oneCol ? ' chips-1col' : '');
     for (const opt of options) {
       const b = document.createElement('button');
       b.className = 'chip';

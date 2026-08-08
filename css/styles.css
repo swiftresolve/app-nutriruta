@@ -215,17 +215,25 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .quiz-step .chips {
   margin-top: 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
 }
+.quiz-step .chips.chips-1col { grid-template-columns: 1fr; }
 .quiz-step .chips .chip {
-  width: 100%; box-sizing: border-box; text-align: left; justify-content: flex-start;
+  width: 100%; box-sizing: border-box; text-align: left;
   white-space: normal; line-height: 1.25;
   /* Como ahora son tarjetas anchas (no etiquetas cortas), el radio de
      píldora (999px) se veía como un óvalo raro — mismo radio que .card. */
   border-radius: 16px;
+  /* Sin esto el botón no es flex y el texto queda pegado arriba en vez de
+     centrado verticalmente — se notaba al quedar más alto que su pareja
+     de fila. min-height fija un piso común para todas las opciones. */
+  display: flex; align-items: center; justify-content: flex-start; min-height: 58px;
 }
 /* Si el total de opciones es impar, la última queda sola en la columna
    izquierda con un hueco vacío a la derecha — que ocupe las dos columnas
-   en vez de dejar ese espacio en blanco. */
-.quiz-step .chips .chip:last-child:nth-child(odd) { grid-column: 1 / -1; }
+   en vez de dejar ese espacio en blanco, con el texto centrado (ya no es
+   una fila más: es el cierre de la grilla). */
+.quiz-step .chips:not(.chips-1col) .chip:last-child:nth-child(odd) {
+  grid-column: 1 / -1; justify-content: center; text-align: center;
+}
 /* Cada pregunta entra deslizándose, como el quiz de Duolingo — como
    draw() crea un .quiz-step nuevo en cada paso, la animación se repite
    sola en cada pregunta sin necesitar JS extra. */

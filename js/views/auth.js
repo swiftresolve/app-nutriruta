@@ -26,7 +26,7 @@ export function renderAuth(container) {
         <p>Tu ruta hacia hábitos saludables, paso a paso.</p>
       </div>
       <div class="card">
-        <h2>${mode === 'login' ? 'Inicia sesión' : 'Crea tu cuenta'}</h2>
+        <h2 class="center" style="justify-content:center">${mode === 'login' ? 'Inicia sesión' : 'Crea tu cuenta'}</h2>
         <form novalidate>
           ${mode === 'signup' ? `
           <label class="muted small" for="a-nombre">Nombre o alias (opcional)</label>
