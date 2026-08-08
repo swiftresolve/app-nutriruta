@@ -32,6 +32,16 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
+// Enlace de "olvidé mi contraseña": reutiliza el mismo marcador "?invite=1"
+// que ya usa el enlace de invitación de Hotmart, así app.js lo detecta y
+// lleva directo a resetPassword.js sin necesitar una ruta nueva ni tocar
+// la lógica de arranque.
+export async function requestPasswordReset(email) {
+  return supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/?invite=1`
+  });
+}
+
 // --- Perfil remoto (fila propia en public.profiles, RLS: solo el dueño) ---
 
 export async function fetchProfile() {

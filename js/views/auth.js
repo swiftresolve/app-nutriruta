@@ -1,5 +1,5 @@
 // Inicio de sesión y registro (Supabase Auth: JWT + refresh token rotativo).
-import { signIn, signUp } from '../supabase-client.js';
+import { signIn, signUp, requestPasswordReset } from '../supabase-client.js';
 import { initCloud, getState, resetState } from '../store.js';
 import { navigate, toast, setAuthed } from '../app.js';
 
@@ -37,7 +37,9 @@ export function renderAuth(container) {
           <input id="a-pass" type="password" required minlength="${MIN_PASSWORD}"
             autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}" class="auth-input">
           ${mode === 'signup' ? '<p class="small muted">Mínimo 8 caracteres, con letras y números.</p>' : ''}
+          ${mode === 'login' ? '<p class="small" style="margin:-6px 0 6px"><button type="button" class="link-btn small" id="a-forgot">¿Olvidaste tu contraseña?</button></p>' : ''}
           <p class="small" id="a-error" style="color:var(--red);min-height:1.2em" role="alert"></p>
+          <p class="small" id="a-info" style="color:var(--primary-dark);min-height:1.2em"></p>
           <button class="btn full" type="submit">${mode === 'login' ? 'Entrar' : 'Registrarme'}</button>
         </form>
         <p class="center mt small">
@@ -58,6 +60,24 @@ export function renderAuth(container) {
     view.querySelector('#a-toggle').addEventListener('click', () => {
       mode = mode === 'login' ? 'signup' : 'login';
       draw();
+    });
+
+    view.querySelector('#a-forgot')?.addEventListener('click', async () => {
+      const errEl = view.querySelector('#a-error');
+      const infoEl = view.querySelector('#a-info');
+      const email = view.querySelector('#a-email').value.trim().toLowerCase();
+      errEl.textContent = ''; infoEl.textContent = '';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errEl.textContent = 'Escribe primero tu correo arriba, para saber a dónde enviarte el enlace.';
+        return;
+      }
+      const link = view.querySelector('#a-forgot');
+      link.disabled = true;
+      try {
+        await requestPasswordReset(email);
+      } catch { /* nunca revelamos si el correo existe o no */ }
+      infoEl.textContent = `Si ${email} tiene una cuenta, te enviamos un enlace para crear una contraseña nueva. Revisa tu correo (y spam).`;
+      link.disabled = false;
     });
 
     view.querySelector('form').addEventListener('submit', async (e) => {

@@ -15,6 +15,7 @@ import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } 
 import { renderPathMap } from '../pathMap.js';
 import { renderPrimerosPasos, primerosPasosVisible } from './primerosPasos.js';
 import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
+import { renderNotifPrompt, notifPromptVisible } from './notifPrompt.js';
 
 const DAILY_HABITS = [
   { id: 'agua', nombre: 'Tomé suficiente agua 💧' },
@@ -50,6 +51,12 @@ export function renderDashboard(container) {
   // --- Check-in: tarjeta descartable, nunca modal automático ---
   if (checkinBannerVisible()) {
     renderCheckinBanner(container, () => renderDashboard(clearAndGet(container)));
+  }
+
+  // --- Notificaciones: se piden aquí, cuando ya hay una racha que
+  // proteger, no enterrado en Ajustes. También descartable. ---
+  if (notifPromptVisible()) {
+    renderNotifPrompt(container, () => renderDashboard(clearAndGet(container)));
   }
 
   // --- Tu paso de hoy: la tarjeta principal del día, con Sana como voz ---
