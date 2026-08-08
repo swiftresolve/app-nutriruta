@@ -66,11 +66,15 @@ export function renderLearn(container) {
     const locked = !premium && i >= FREE_LESSONS;
     const item = document.createElement('button');
     item.className = 'recipe-item lesson-item';
-    if (locked) item.style.opacity = '0.5';
+    // Vista previa borrosa del contenido real en vez de un candado seco:
+    // se ve que hay algo valioso ahí, no solo que está bloqueado.
     item.innerHTML = `
-      <span class="recipe-emoji">${locked ? '🔒' : l.emoji}</span>
-      <span class="info"><strong>${l.titulo}</strong><br><span class="muted small">${locked ? 'Disponible en el plan Premium' : l.resumen}</span></span>
-      <span>›</span>`;
+      <span class="recipe-emoji">${l.emoji}</span>
+      <span class="info">
+        <strong>${l.titulo}</strong><br>
+        <span class="muted small${locked ? ' lesson-blur' : ''}">${l.resumen}</span>
+      </span>
+      <span>${locked ? '🔒' : '›'}</span>`;
     item.addEventListener('click', () => {
       if (locked) { navigate('plans'); return; }
       openModal((modal) => {

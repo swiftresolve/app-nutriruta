@@ -65,14 +65,13 @@ export function renderPlanner(container, params = {}) {
       const shown = displayRecipe(r, user.exclusiones);
       const item = document.createElement('button');
       item.className = 'recipe-item';
-      if (locked) item.style.opacity = '0.5';
       item.innerHTML = `
-        <span class="recipe-emoji">${locked ? '🔒' : shown.emoji}</span>
+        <span class="recipe-emoji">${shown.emoji}</span>
         <span class="info">
           <strong>${shown.nombre}</strong><br>
-          <span class="muted small">${locked ? 'Disponible en el plan Premium' : r.descripcion}</span>
+          <span class="muted small${locked ? ' lesson-blur' : ''}">${r.descripcion}</span>
         </span>
-        ${locked ? '' : `<span class="dot ${light}" title="Semáforo: ${light}"></span>`}`;
+        ${locked ? '<span>🔒</span>' : `<span class="dot ${light}" title="Semáforo: ${light}"></span>`}`;
       item.addEventListener('click', () => locked ? navigate('plans') : openRecipe(r));
       card.appendChild(item);
     });

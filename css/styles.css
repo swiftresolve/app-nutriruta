@@ -312,6 +312,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .recipe-item:last-child { border-bottom: none; }
 .recipe-item .info { flex: 1; }
 .recipe-emoji { font-size: 1.6rem; flex: none; }
+/* Vista previa borrosa de contenido Premium — se intuye que hay algo
+   valioso ahí en vez de solo un candado seco. */
+.lesson-blur { filter: blur(3.5px); user-select: none; -webkit-user-select: none; }
 
 .ingredient { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed #EFF5F3; font-size: 0.94rem; }
 .ingredient:last-child { border-bottom: none; }
