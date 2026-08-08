@@ -246,6 +246,22 @@ export function renderSettings(container) {
   });
   container.appendChild(sonido);
 
+  // Ruti: modo minimalista, sin la mascota — la app sigue funcionando
+  // igual, solo deja de mostrarla donde aparece.
+  const rutiCard = document.createElement('div');
+  rutiCard.className = 'card';
+  rutiCard.innerHTML = `
+    <div class="spread"><h2>🦦 Ruti</h2></div>
+    <label class="habit" style="border-bottom:none">
+      <input type="checkbox" id="ruti-oculto-toggle" ${getState().rutiOculto ? 'checked' : ''}>
+      <span>Ocultar a Ruti (modo minimalista)</span>
+    </label>`;
+  rutiCard.querySelector('#ruti-oculto-toggle').addEventListener('change', (e) => {
+    setState({ rutiOculto: e.target.checked });
+    toast(e.target.checked ? 'Ruti ya no aparecerá en la app' : '¡Ruti está de vuelta! 🦦');
+  });
+  container.appendChild(rutiCard);
+
   // Perfiles activos — lista de una sola columna (antes eran chips que se
   // amontonaban sin orden claro al haber varios activos a la vez).
   const perf = document.createElement('div');

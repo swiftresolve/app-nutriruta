@@ -1,10 +1,10 @@
 // Mi progreso: rachas, logros, gráficas, historial de antojos y diario de síntomas.
-import { getState, ACHIEVEMENTS, logSintoma, sintomaPattern, esc, today, getWaterGoal, isPremium, MAX_ESCUDOS } from '../store.js';
+import { getState, ACHIEVEMENTS, logSintoma, sintomaPattern, esc, today, getWaterGoal, isPremium, maxEscudos } from '../store.js';
 import { SYMPTOM_TYPES, SYMPTOM_CAUSES } from '../data/profiles.js';
 import { header, openModal, toast, navigate } from '../app.js';
 import { barChart, lineChart } from '../charts.js';
 import { broteStage, broteBadge } from '../ruti.js';
-import { rutiMascot } from '../mascot.js';
+import { frozenFlameIcon } from '../streakAnim.js';
 
 const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -13,8 +13,9 @@ let rangoActivo = 'semana';
 
 // Tira de los últimos 7 días (terminando hoy), un cuadrito por día — a
 // simple vista de un vistazo, no solo el número de racha.
-function weekStrip(diasCumplidos) {
+function weekStrip(diasCumplidos, diasCongelados = []) {
   const set = new Set(diasCumplidos);
+  const congelados = new Set(diasCongelados);
   const hoyISO = new Date().toISOString().slice(0, 10);
   const celdas = [];
   for (let i = 6; i >= 0; i--) {
@@ -22,11 +23,12 @@ function weekStrip(diasCumplidos) {
     d.setDate(d.getDate() - i);
     const iso = d.toISOString().slice(0, 10);
     const cumplido = set.has(iso);
+    const congelado = congelados.has(iso);
     const esHoy = iso === hoyISO;
     celdas.push(`
-      <div class="week-cell${cumplido ? ' done' : ''}${esHoy ? ' today' : ''}">
+      <div class="week-cell${cumplido ? ' done' : ''}${congelado ? ' frozen' : ''}${esHoy ? ' today' : ''}">
         <span class="week-day">${DIAS_CORTOS[d.getDay()]}</span>
-        <span class="week-dot">${cumplido ? '✓' : ''}</span>
+        <span class="week-dot">${congelado ? frozenFlameIcon(18) : cumplido ? '✓' : ''}</span>
       </div>`);
   }
   return celdas.join('');
@@ -34,7 +36,7 @@ function weekStrip(diasCumplidos) {
 
 export function renderProgress(container) {
   header(container);
-  const { racha, diasCumplidos, logros, antojos, sintomas, checkins, user, escudos } = getState();
+  const { racha, diasCumplidos, diasCongelados, logros, antojos, sintomas, checkins, user, escudos, energiaRuta, kmRuta } = getState();
 
   // Brote de Ruta (la planta) + Ruti (la nutria), lado a lado — se cuidan
   // juntos el mismo jardín, no son el mismo personaje.
@@ -54,18 +56,18 @@ export function renderProgress(container) {
   const streak = document.createElement('div');
   streak.className = 'card streak-hero';
   streak.innerHTML = `
-    <div class="row" style="gap:6px; align-items:center; justify-content:center">
-      ${rutiMascot(racha.actual > 0 ? 'feliz' : 'curiosa', { size: 56 })}
-      ${broteBadge(etapa, { size: 56, premium: isPremium() })}
-      <div class="num" style="margin:0 0 0 6px">${racha.actual} <span class="streak-flame ${racha.actual > 0 ? 'lit' : 'out'}">🔥</span></div>
+    <div class="row" style="gap:12px; align-items:center; justify-content:center">
+      ${broteBadge(etapa, { size: 64, premium: isPremium() })}
+      <div class="num" style="margin:0">${racha.actual} <span class="streak-flame ${racha.actual > 0 ? 'lit' : 'out'}">🔥</span></div>
     </div>
     <p class="mt"><strong>Días en Ruta</strong></p>
     <p class="small mt">Tu Brote de Ruta está creciendo con cada paso.</p>
     <p class="small mt"><strong>${etapa.label}</strong> — Ruti está orgullosa de tu constancia.</p>
-    <div class="week-strip mt">${weekStrip(diasCumplidos)}</div>
+    <div class="week-strip mt">${weekStrip(diasCumplidos, diasCongelados)}</div>
     ${compromisoHtml}
     <p class="small muted mt">Mejor Ruta: ${racha.mejor} días · Días en Ruta este mes: ${diasEsteMes}</p>
-    <p class="small muted mt">🛡️ Pausas de Ruta: ${escudos}/${MAX_ESCUDOS} — te acompañan cuando necesitas descansar. Se gana 1 cada 7 Días en Ruta.</p>`;
+    <p class="small muted mt">🛡️ Pausas de Ruta: ${escudos}/${maxEscudos()} — te acompañan cuando necesitas descansar. Se gana 1 cada 7 Días en Ruta.</p>
+    <p class="small muted mt">🧭 Energía de Ruta: ${energiaRuta || 0} · ${kmRuta || 0} km recorridos — se suma con cada hábito que cuidas, nunca baja sola.</p>`;
   container.appendChild(streak);
 
   // --- Gráficas de progreso ---

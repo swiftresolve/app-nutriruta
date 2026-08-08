@@ -2,7 +2,7 @@
 // Termina con un CTA hacia la Misión 12 semanas (Premium).
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
-import { getState, setState, checkAchievements, today, esc, guardarReflexionDia, responderInvitacionTestimonioPlan, otorgarGemas, GEMAS_POR_DIA } from '../store.js';
+import { getState, setState, checkAchievements, today, esc, guardarReflexionDia, responderInvitacionTestimonioPlan, otorgarGemas, GEMAS_POR_DIA, sumarEnergiaRuta } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
 import { renderPathMap } from '../pathMap.js';
 import { celebrateMilestone } from '../streakAnim.js';
@@ -156,6 +156,7 @@ function openDia(dia, done, onChange) {
       close();
       if (completando) {
         otorgarGemas(GEMAS_POR_DIA);
+        sumarEnergiaRuta(2, 1); // equivalente a "completar microacción"
         playCelebrateSound();
         celebrateMilestone(`¡Día ${dia.n} completado!`, `${dia.titulo} · +${GEMAS_POR_DIA} 💎`);
       }

@@ -4,6 +4,12 @@ import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
 import { navigate } from '../app.js';
 import { rutiMascot } from '../mascot.js';
 
+// Respeta el modo minimalista ("Ocultar Ruti" en Ajustes) — la app sigue
+// funcionando igual, solo deja de dibujarla.
+function rutiSiVisible(mood, opts) {
+  return getState().rutiOculto ? '' : rutiMascot(mood, opts);
+}
+
 const CONDITIONS = [
   { id: 'higado_graso', nombre: 'Hígado graso', emoji: '🫀' },
   { id: 'resistencia_insulina', nombre: 'Resistencia a la insulina', emoji: '🩸' },
@@ -67,7 +73,7 @@ export function renderQuiz(container) {
       sub: 'Vamos a conocerte un poco para personalizar tu experiencia. Esto no reemplaza una consulta médica, pero nos ayuda a darte mejores recomendaciones.',
       render(el) {
         el.innerHTML = `
-          <div class="center mb">${rutiMascot('saludo', { size: 64 })}</div>
+          <div class="center mb">${rutiSiVisible('saludo', { size: 64 })}</div>
           <p class="center small" style="font-weight:600">Hola, soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>
           <label class="muted mt" for="q-nombre" style="display:block">${answers.nombre ? `Te llamaremos <strong>${esc(answers.nombre)}</strong>. Puedes cambiarlo si quieres:` : '¿Cómo te llamas? (opcional)'}</label>
           <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60"
@@ -327,7 +333,7 @@ export function renderQuiz(container) {
     view.innerHTML = `
       <div class="quiz-progress"><div style="width:100%"></div></div>
       <div class="card center">
-        ${rutiMascot('saludo', { size: 72 })}
+        ${rutiSiVisible('saludo', { size: 72 })}
         <h2 class="mt">${answers.nombre ? `${esc(answers.nombre)}, tu` : 'Tu'} plan está listo</h2>
         <p class="small mt">Perfil principal: <strong>${PROFILES[main].nombre}</strong></p>
         ${rest.length ? `<p class="mt">También te conviene seguir: <strong>${rest.map((p) => PROFILES[p].nombre).join(', ')}</strong></p>` : ''}

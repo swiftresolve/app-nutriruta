@@ -11,6 +11,23 @@ import { broteStage, broteBadge } from './ruti.js';
 
 const CONFETI = ['#2BB5A0', '#FF8A6B', '#6FA8DC', '#FFD86B'];
 
+// Llamita de hielo (racha "congelada" por una Pausa de Ruta) — mismo
+// espíritu visual que el streak freeze de Duolingo: cristal celeste con
+// una gota más oscura al centro y dos destellos, en vez de la llama
+// naranja normal, para el día que quedó cubierto en vez de roto.
+export function frozenFlameIcon(size = 20) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 32 36" aria-hidden="true">
+    <path d="M16 2 C22 8 27 14 27 21 C27 28.5 22 33 16 33 C10 33 5 28.5 5 21 C5 14 10 8 16 2 Z"
+      fill="#8FD3F4"/>
+    <path d="M16 2 C22 8 27 14 27 21 C27 28.5 22 33 16 33 L16 2 Z" fill="#4FB3E8"/>
+    <path d="M16 12 C19.5 16 21.5 19 21.5 22.5 C21.5 26.5 19 29 16 29 C13 29 10.5 26.5 10.5 22.5 C10.5 19 12.5 16 16 12 Z" fill="#2E9BDB"/>
+    <rect x="9" y="15" width="4.4" height="4.4" fill="#fff" opacity="0.9" transform="rotate(45 11.2 17.2)"/>
+    <rect x="19.5" y="21" width="3.2" height="3.2" fill="#fff" opacity="0.85" transform="rotate(45 21.1 22.6)"/>
+    <path d="M11 31 Q11 34.5 13.2 34.5 Q13.2 32 11 31 Z" fill="#4FB3E8"/>
+    <path d="M20 31.5 Q20 34.5 21.8 34.5 Q21.8 32.3 20 31.5 Z" fill="#4FB3E8"/>
+  </svg>`;
+}
+
 export function celebrateStreak(n, stats) {
   if (document.querySelector('.streak-celebrate')) return; // ya hay una en curso
   vibrate([30, 40, 30]);

@@ -36,10 +36,14 @@ const DEFAULT_STATE = {
   compras: {},                 // { itemId: true } marcados en lista de compras
   notifPrefs: { plan: true, comidas: true, agua: true }, // qué tipos de aviso push recibir
   pasoHechos: [],               // fechas ISO en que se marcó "Tu paso de hoy" como hecho
-  escudos: 0,                   // escudos disponibles para proteger la racha (máx MAX_ESCUDOS)
+  escudos: 0,                   // Pausas de Ruta disponibles (máx maxEscudos())
   gemas: 0,                     // moneda simple: se gana al completar el día/semana, se gasta en escudos extra
+  energiaRuta: 0,                // acumulado histórico: constancia y cuidado de hábitos, no calorías ni peso
+  kmRuta: 0,                     // acompaña a energiaRuta, mismo espíritu ("cuánto ha recorrido tu Ruta")
   primerosPasos: { cerrado: false, minimizado: false }, // checklist de onboarding, solo cuentas nuevas
-  sonidoActivado: true          // chime al completar una micro-acción; silenciable en Ajustes
+  sonidoActivado: true,         // chime al completar una micro-acción; silenciable en Ajustes
+  rutiOculto: false,            // modo minimalista: oculta la ilustración de Ruti donde aparece
+  diasCongelados: []            // fechas ISO cubiertas por una Pausa de Ruta (racha "congelada", no rota)
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
@@ -192,8 +196,21 @@ export function getWater() {
 }
 
 export function setWater(vasos) {
+  const antes = state.agua.fecha === today() ? state.agua.vasos : 0;
   setState({ agua: { fecha: today(), vasos } });
+  if (vasos > antes) sumarEnergiaRuta((vasos - antes) * 1, 0);
   checkAchievements();
+}
+
+// --- Energía de Ruta: constancia y cuidado de hábitos, nunca calorías,
+// peso ni "comer perfecto" — acumulado histórico simple, sin caer nunca
+// por inactividad (ver memoria "solo info comprobada": no inventamos una
+// barra de hambre ni urgencia artificial).
+export function sumarEnergiaRuta(energia, km) {
+  setState({
+    energiaRuta: (state.energiaRuta || 0) + energia,
+    kmRuta: (state.kmRuta || 0) + km
+  });
 }
 
 // --- Peso (opcional, apagado por defecto) ---
@@ -257,12 +274,14 @@ export function dayCompleted() {
   return Object.values(checks).filter(Boolean).length >= 3;
 }
 
-// --- Escudos: protegen la racha si se falla exactamente un día. Se ganan
-// 1 cada 7 días de racha, con un máximo de 2 guardados a la vez (mismo
-// límite que usa Duolingo con su "streak freeze" — evita que el sistema
-// todo-o-nada sea la razón de abandonar, que es la causa #1 documentada
-// de dejar un hábito nuevo).
-export const MAX_ESCUDOS = 2;
+// --- Pausas de Ruta (antes "escudos"): acompañan cuando se falla
+// exactamente un día. Se ganan 1 cada 7 Días en Ruta. Tope 2 en el plan
+// gratuito, 4 en Premium (mismo espíritu que el "streak freeze" de
+// Duolingo — evita que el sistema todo-o-nada sea la razón de abandonar,
+// que es la causa #1 documentada de dejar un hábito nuevo).
+export function maxEscudos() {
+  return isPremium() ? 4 : 2;
+}
 
 // --- Gemas: moneda simple, sin economía compleja. Se ganan solo en los
 // mismos hitos que ya celebran la app (día completo, día del plan de 7
@@ -273,7 +292,7 @@ export const GEMAS_POR_DIA = 5;
 export const COSTO_ESCUDO_GEMAS = 60;
 
 export function comprarEscudo() {
-  if (state.escudos >= MAX_ESCUDOS) return false;
+  if (state.escudos >= maxEscudos()) return false;
   if (state.gemas < COSTO_ESCUDO_GEMAS) return false;
   setState({ escudos: state.escudos + 1, gemas: state.gemas - COSTO_ESCUDO_GEMAS });
   return true;
@@ -295,6 +314,7 @@ function updateStreak() {
   let escudos = state.escudos;
   let actual;
   let escudoUsado = false;
+  let diasCongelados = state.diasCongelados || [];
 
   if (gap === 1 || gap === null) {
     actual = state.racha.actual + 1;
@@ -302,15 +322,20 @@ function updateStreak() {
     escudos -= 1;
     escudoUsado = true;
     actual = state.racha.actual + 1;
+    // El día saltado queda "congelado" (como el streak freeze de
+    // Duolingo), no roto: se marca con la llamita de hielo en el
+    // calendario en vez de quedar en blanco.
+    const diaSaltado = new Date(new Date(state.racha.ultimoDia).getTime() + 86400000).toISOString().slice(0, 10);
+    diasCongelados = [...diasCongelados, diaSaltado].slice(-90);
   } else {
     actual = 1;
   }
 
-  if (actual > 0 && actual % 7 === 0 && escudos < MAX_ESCUDOS) escudos += 1;
+  if (actual > 0 && actual % 7 === 0 && escudos < maxEscudos()) escudos += 1;
 
   const mejor = Math.max(actual, state.racha.mejor);
   const gemas = (state.gemas || 0) + GEMAS_POR_DIA;
-  setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t }, escudos, gemas });
+  setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t }, escudos, gemas, diasCongelados });
   return escudoUsado;
 }
 
@@ -323,6 +348,7 @@ export function logCraving(tipo, resultado) {
     tipo, resultado
   }];
   setState({ antojos });
+  if (resultado === 'alternativa') sumarEnergiaRuta(2, 1); // "Completar SOS Antojo"
   checkAchievements();
 }
 
@@ -471,6 +497,7 @@ export function marcarPasoHecho() {
   if (pasoHechoHoy()) return pasoRacha();
   const pasoHechos = [...state.pasoHechos, today()].slice(-180);
   setState({ pasoHechos });
+  sumarEnergiaRuta(2, 1); // "Completar microacción" en la tabla de Energía de Ruta
   return pasoRacha();
 }
 

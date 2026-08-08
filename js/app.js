@@ -1,5 +1,5 @@
 // Router mínimo + arranque con puerta de autenticación.
-import { getState, initCloud, resetState, isPremium, MAX_ESCUDOS, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo } from './store.js';
+import { getState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo } from './store.js';
 import { getSession, supabase } from './supabase-client.js';
 import { broteStage, broteBadge } from './ruti.js';
 import { renderAuth } from './views/auth.js';
@@ -148,10 +148,11 @@ export function header(container) {
       const st = getState();
       const e = st.escudos || 0;
       const g = st.gemas || 0;
+      const max = maxEscudos();
       return `
-        <strong>🛡️ ${e}/${MAX_ESCUDOS} Pausas de Ruta</strong>
-        <p class="small muted mt" style="margin-top:4px">Te acompañan cuando necesitas descansar — tu Ruta sigue en pie. Se gana 1 cada 7 Días en Ruta.</p>
-        ${e < MAX_ESCUDOS ? `<button class="btn ghost sm mt" id="tt-comprar-escudo" ${g < COSTO_ESCUDO_GEMAS ? 'disabled' : ''}>Comprar por ${COSTO_ESCUDO_GEMAS} 💎</button>` : ''}
+        <strong>🛡️ ${e}/${max} Pausas de Ruta</strong>
+        <p class="small muted mt" style="margin-top:4px">Te acompañan cuando necesitas descansar — tu Ruta sigue en pie. Se gana 1 cada 7 Días en Ruta.${isPremium() ? '' : ' Con Premium, hasta 4.'}</p>
+        ${e < max ? `<button class="btn ghost sm mt" id="tt-comprar-escudo" ${g < COSTO_ESCUDO_GEMAS ? 'disabled' : ''}>Comprar por ${COSTO_ESCUDO_GEMAS} 💎</button>` : ''}
       `;
     }, {
       duracion: 6000,
