@@ -8,8 +8,21 @@
 // chips de colores (inspirado en la pantalla de fin de lección de
 // Duolingo: EXP / precisión / ritmo, cada una en su propia caja).
 import { broteStage, broteBadge } from './ruti.js';
+import { rutiMascot } from './mascot.js';
+import { getState } from './store.js';
 
 const CONFETI = ['#2BB5A0', '#FF8A6B', '#6FA8DC', '#FFD86B'];
+const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+
+// Ráfaga tipo fuego artificial (líneas que irradian desde un punto), para
+// la celebración de página completa — no son solo confeti cayendo.
+function fireworkBurst(color) {
+  const rayos = Array.from({ length: 8 }, (_, i) => {
+    const ang = (360 / 8) * i;
+    return `<line x1="0" y1="0" x2="0" y2="-14" transform="rotate(${ang})" stroke="${color}" stroke-width="2.6" stroke-linecap="round"/>`;
+  }).join('');
+  return `<svg viewBox="-16 -16 32 32" width="30" height="30"><g>${rayos}</g></svg>`;
+}
 
 // Llamita de hielo (racha "congelada" por una Pausa de Ruta) — mismo
 // espíritu visual que el streak freeze de Duolingo: cristal celeste con
@@ -28,11 +41,35 @@ export function frozenFlameIcon(size = 20) {
   </svg>`;
 }
 
+// Tira de los próximos días desde hoy — a diferencia de la de Progreso
+// (que mira hacia atrás), esta mira hacia adelante: hoy queda primera,
+// recién marcada, y a su lado los días que siguen, todavía vacíos. Es la
+// misma idea que "mover el día de racha al frente" de la referencia.
+function celebrateWeekStrip() {
+  const hoy = new Date();
+  const celdas = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(hoy);
+    d.setDate(d.getDate() + i);
+    const esHoy = i === 0;
+    celdas.push(`
+      <div class="cw-cell${esHoy ? ' hoy' : ''}" style="animation-delay:${esHoy ? '0.9s' : `${1.05 + i * 0.06}s`}">
+        <span class="cw-day">${DIAS_CORTOS[d.getDay()]}</span>
+        <span class="cw-dot">${esHoy ? '<span class="cw-check">✓</span>' : ''}</span>
+      </div>`);
+  }
+  return celdas.join('');
+}
+
+// Celebración de página completa, no una tarjeta sobrepuesta — dos actos:
+// primero el estallido (fuegos artificiales + Brote de Ruta), después la
+// racha en sí, con el día de hoy "llegando" al frente de la semana. Sigue
+// sin ser un modal: se cierra sola, tocar en cualquier momento adelanta.
 export function celebrateStreak(n, stats) {
   if (document.querySelector('.streak-celebrate')) return; // ya hay una en curso
   vibrate([30, 40, 30]);
   const el = document.createElement('div');
-  el.className = 'streak-celebrate';
+  el.className = 'streak-celebrate streak-celebrate-full';
   el.setAttribute('aria-live', 'polite');
   const etapa = broteStage(n);
   const resumen = stats
@@ -42,25 +79,37 @@ export function celebrateStreak(n, stats) {
         <span class="streak-chip chip-c">🔥 ${n}<em>en Ruta</em></span>
       </div>`
     : '';
-  const confeti = stats
-    ? Array.from({ length: 14 }, (_, i) => {
-        const left = 8 + Math.random() * 84;
-        const delay = (Math.random() * 0.25).toFixed(2);
-        const color = CONFETI[i % CONFETI.length];
-        return `<span class="confeti-bit" style="left:${left}%; background:${color}; animation-delay:${delay}s"></span>`;
-      }).join('')
-    : '';
+  const fuegos = Array.from({ length: 10 }, (_, i) => {
+    const left = 8 + Math.random() * 84;
+    const top = 6 + Math.random() * 60;
+    const delay = (Math.random() * 0.5).toFixed(2);
+    const color = CONFETI[i % CONFETI.length];
+    return `<span class="firework" style="left:${left}%; top:${top}%; animation-delay:${delay}s">${fireworkBurst(color)}</span>`;
+  }).join('');
+
   el.innerHTML = `
-    <div class="ring"></div>
-    ${confeti}
-    <div class="flame-big">${broteBadge(etapa, { size: 72 })}</div>
-    <div class="label${stats ? ' wrap' : ''}">¡${n} día${n === 1 ? '' : 's'} seguido${n === 1 ? '' : 's'}!${resumen}</div>`;
+    <div class="streak-act streak-act-1">
+      ${fuegos}
+      <div class="flame-big">${broteBadge(etapa, { size: 88, premium: false })}</div>
+      <div class="streak-title">¡Un día más en tu Ruta!</div>
+      ${resumen}
+    </div>
+    <div class="streak-act streak-act-2">
+      <div class="streak-title-sm">🔥 ¡Racha de ${n} día${n === 1 ? '' : 's'}!</div>
+      ${rutiMascot('feliz', { size: 84, animated: false })}
+      <div class="cw-strip">${celebrateWeekStrip()}</div>
+      <p class="small streak-tip">Vuelve mañana para sumar otro día — sin presión, a tu ritmo.</p>
+    </div>`;
   document.body.appendChild(el);
-  const duracion = stats ? 2600 : 1400;
-  setTimeout(() => {
-    el.style.animation = 'streak-fade-out 0.3s ease forwards';
+
+  const cerrar = () => {
+    el.style.animation = 'streak-page-fade-out 0.3s ease forwards';
     setTimeout(() => el.remove(), 320);
-  }, duracion);
+  };
+  el.addEventListener('click', cerrar, { once: true });
+  const duracion = stats ? 4600 : 3800;
+  const t = setTimeout(cerrar, duracion);
+  el.addEventListener('click', () => clearTimeout(t), { once: true });
 }
 
 // Checkpoint de la Misión 12 semanas / Plan de 7 días: mismo confeti que

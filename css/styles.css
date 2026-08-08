@@ -570,6 +570,49 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @media (prefers-reduced-motion: reduce) {
   .streak-celebrate .flame-big, .confeti-bit { animation: none; }
 }
+
+/* ===== Celebración de racha: página completa, no tarjeta sobrepuesta =====
+   Dos actos dentro del mismo overlay: el estallido (fuegos artificiales)
+   y luego la racha con la semana. Sigue sin ser un modal — se cierra
+   sola y se puede tocar en cualquier momento para adelantar. */
+.streak-celebrate-full {
+  background: linear-gradient(160deg, var(--primary-dark), #16332C);
+  pointer-events: auto; flex-direction: column; overflow: hidden; cursor: pointer;
+}
+.streak-act { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; }
+.streak-act-1 { opacity: 1; animation: streak-act1-out 0.4s ease 1.5s forwards; }
+.streak-act-2 { opacity: 0; animation: streak-act2-in 0.5s ease 1.7s forwards; }
+@keyframes streak-act1-out { to { opacity: 0; transform: scale(0.94); pointer-events: none; } }
+@keyframes streak-act2-in { to { opacity: 1; } }
+.streak-title { color: #fff; font-size: 1.5rem; font-weight: 800; margin-top: 6px; }
+.streak-title-sm { color: #fff; font-size: 1.2rem; font-weight: 800; }
+.streak-tip { color: rgba(255,255,255,0.75); max-width: 280px; margin-top: 4px; }
+.streak-celebrate-full .streak-resumen { margin-top: 6px; }
+/* Ráfagas tipo fuego artificial, esparcidas por la pantalla. */
+.firework { position: absolute; animation: firework-burst 1.1s ease-out forwards; transform-origin: center; }
+@keyframes firework-burst {
+  0% { transform: scale(0.2) rotate(0deg); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: scale(1.6) rotate(25deg); opacity: 0; }
+}
+/* Tira de días "hacia adelante": hoy llega primero, con el check
+   apareciendo con un poco de rebote — el resto de la semana, en espera. */
+.cw-strip { display: flex; gap: 10px; margin-top: 4px; }
+.cw-cell { display: flex; flex-direction: column; align-items: center; gap: 5px; opacity: 0; animation: cw-cell-in 0.4s cubic-bezier(.34,1.56,.64,1) forwards; }
+.cw-day { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: rgba(255,255,255,0.6); }
+.cw-dot { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.14); display: flex; align-items: center; justify-content: center; }
+.cw-cell.hoy .cw-day { color: var(--accent); }
+.cw-cell.hoy .cw-dot { background: var(--accent); box-shadow: 0 0 0 4px rgba(255,138,107,0.25); }
+.cw-check { color: #fff; font-weight: 800; font-size: 0.9rem; transform: scale(0); animation: cw-check-pop 0.3s ease 0.25s forwards; }
+@keyframes cw-cell-in { from { opacity: 0; transform: translateY(6px) scale(0.8); } to { opacity: 1; transform: none; } }
+@keyframes cw-check-pop { to { transform: scale(1); } }
+@keyframes streak-page-fade-out { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .streak-act, .firework, .cw-cell, .cw-check { animation-duration: 0.01s; animation-delay: 0s; }
+  .streak-act-1 { display: none; }
+  .streak-act-2 { opacity: 1; }
+}
+
 .milestone-badge {
   width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-size: 36px; background: linear-gradient(160deg, #FFE9A8, #FFB84D);
