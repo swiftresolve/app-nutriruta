@@ -168,13 +168,19 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* ===== Chips / options ===== */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
-  border: 1.5px solid #D8E6E2; background: var(--card);
+  border: none; background: var(--card);
   border-radius: 999px; padding: 9px 15px; font-size: 0.92rem;
-  color: var(--ink); transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), background 0.12s, border-color 0.12s, color 0.12s;
+  color: var(--ink); box-shadow: 0 2px 0 #D8E6E2, 0 3px 6px rgba(35,56,51,0.06);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s, color 0.12s;
 }
-.chip:active { transform: scale(0.93); }
-.chip.selected { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; animation: chip-pop 0.28s cubic-bezier(.34,1.56,.64,1); }
-.chip.small { padding: 5px 11px; font-size: 0.8rem; }
+.chip:active { transform: translateY(2px) scale(0.97); box-shadow: 0 0 0 #D8E6E2; }
+.chip.selected {
+  background: var(--primary); color: #fff; font-weight: 600;
+  box-shadow: 0 2px 0 var(--primary-dark), 0 3px 8px rgba(43,181,160,0.25);
+  animation: chip-pop 0.28s cubic-bezier(.34,1.56,.64,1);
+}
+.chip.selected:active { box-shadow: 0 0 0 var(--primary-dark); }
+.chip.small { padding: 5px 11px; font-size: 0.8rem; box-shadow: 0 2px 0 #D8E6E2, 0 2px 4px rgba(35,56,51,0.05); }
 @keyframes chip-pop { 0% { transform: scale(0.9); } 55% { transform: scale(1.06); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) {
   .chip.selected { animation: none; }
