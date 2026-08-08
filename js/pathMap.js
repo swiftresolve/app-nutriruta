@@ -13,12 +13,13 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
 // extraHtml: HTML adicional dentro de la etiqueta (ej. un botón de acción
 // secundaria) — quien llama a renderPathMap puede engancharle sus propios
 // listeners después, buscando `[data-idx="N"]` dentro del contenedor.
-// opts.showLine (default true): el menú del día lo pasa en false — ahí los
-// círculos van sueltos, con más aire entre sí, sin línea que los conecte
-// (igual que el camino real de Duolingo, sin la línea punteada que se
-// pensó al principio).
+// opts.showLine (default false): el camino real de Duolingo no tiene una
+// línea que una los círculos — la sensación de "recorrido curvo" la da
+// solo el zigzag de .path-row/.right, no un trazo dibujado. Se dejó la
+// opción por si alguna pantalla futura sí la necesita, pero Plan de 7
+// días, Misión y menú del día van todos sin línea.
 export function renderPathMap(container, items, opts = {}) {
-  const showLine = opts.showLine !== false;
+  const showLine = opts.showLine === true;
   const rowsHtml = items.map((it, i) => {
     const isLeft = i % 2 === 0;
     const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
