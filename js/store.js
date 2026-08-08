@@ -22,6 +22,7 @@ const DEFAULT_STATE = {
     trackearPeso: false     // opcional y apagado por defecto: registro de peso en el tiempo
   },
   agua: { fecha: '', vasos: 0 },
+  comidasSeguidas: { fecha: '', ids: [] }, // recetas del menú real de hoy que se abrieron — para auto-marcar "seguí el menú"
   habitos: { fecha: '', checks: {} },
   racha: { actual: 0, mejor: 0, ultimoDia: '' },
   diasCumplidos: [],           // fechas ISO en que se completó el día
@@ -43,7 +44,8 @@ const DEFAULT_STATE = {
   primerosPasos: { cerrado: false, minimizado: false }, // checklist de onboarding, solo cuentas nuevas
   sonidoActivado: true,         // chime al completar una micro-acción; silenciable en Ajustes
   rutiOculto: false,            // modo minimalista: oculta la ilustración de Ruti donde aparece
-  diasCongelados: []            // fechas ISO cubiertas por una Pausa de Ruta (racha "congelada", no rota)
+  diasCongelados: [],           // fechas ISO cubiertas por una Pausa de Ruta (racha "congelada", no rota)
+  reflexionesHabitos: {}         // { fecha: texto } — la frase real que se pide al completar el 3er hábito del día
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
@@ -208,11 +210,19 @@ export function getWater() {
   return { ...state.agua, meta: getWaterGoal() };
 }
 
+// Devuelve además si el hábito "agua" cambió de estado (y si se usó una
+// Pausa de Ruta al recalcular la racha), para que quien llama pueda
+// celebrar sin tener que reconsultar el estado por su cuenta.
 export function setWater(vasos) {
   const antes = state.agua.fecha === today() ? state.agua.vasos : 0;
   setState({ agua: { fecha: today(), vasos } });
   if (vasos > antes) sumarEnergiaRuta((vasos - antes) * 1, 0);
   checkAchievements();
+  // El hábito de agua ya no se marca a mano: se deriva de los vasos
+  // reales que se llenaron, para que la racha refleje algo que de verdad
+  // pasó (ver memoria de anti-trampa) — se marca solo al llegar a la meta.
+  const escudoUsado = setHabitAuto('agua', vasos >= getWaterGoal());
+  return { escudoUsado };
 }
 
 // --- Energía de Ruta: constancia y cuidado de hábitos, nunca calorías,
@@ -279,6 +289,41 @@ export function toggleHabit(id) {
   const escudoUsado = updateStreak();
   checkAchievements();
   return escudoUsado;
+}
+
+// Igual que toggleHabit, pero fija el valor en vez de invertirlo — para
+// los hábitos que ya no se marcan a mano sino que se derivan de una
+// acción real (agua, menú). No se expone en la UI como checkbox.
+function setHabitAuto(id, value) {
+  const actual = getHabits()[id];
+  if (actual === value) return null; // sin cambio real, no re-evaluar racha
+  const checks = { ...getHabits(), [id]: value };
+  setState({ habitos: { fecha: today(), checks } });
+  const escudoUsado = updateStreak();
+  checkAchievements();
+  return escudoUsado;
+}
+
+// --- Comidas seguidas hoy (para auto-marcar "seguí el menú") ---
+function getComidasSeguidas() {
+  if (state.comidasSeguidas.fecha !== today()) {
+    setState({ comidasSeguidas: { fecha: today(), ids: [] } });
+  }
+  return state.comidasSeguidas.ids;
+}
+
+// Se llama solo al abrir una receta que de verdad es parte del menú real
+// de hoy — esa decisión la toma quien llama (dashboard.js, que ya arma
+// dailyMenu()), no cualquier receta del recetario cuenta: así es una
+// señal real de "seguí mi menú", no de "abrí 2 recetas al azar" (ver
+// memoria de anti-trampa). Con 2 comidas del día abiertas, se marca solo.
+export function registrarComidaSeguida(id) {
+  const ids = getComidasSeguidas();
+  if (ids.includes(id)) return null;
+  const nuevos = [...ids, id];
+  setState({ comidasSeguidas: { fecha: today(), ids: nuevos } });
+  const escudoUsado = setHabitAuto('menu', nuevos.length >= 2);
+  return { escudoUsado };
 }
 
 // --- Racha: un día cuenta si se marcan al menos 3 hábitos ---
@@ -477,6 +522,16 @@ export function guardarReflexionDia(diaN, texto) {
   if (!emergencia) return;
   const reflexiones = { ...(emergencia.reflexiones || {}), [diaN]: (texto || '').trim().slice(0, 500) };
   setState({ emergencia: { ...emergencia, reflexiones } });
+}
+
+// Reflexión breve al completar el día (3+ hábitos) — no es una tarea
+// extra, es lo que impide marcar los 3 de un tirón sin haberlos hecho de
+// verdad: pedir una frase real (esTextoReal) es más fácil de cumplir
+// honestamente que de inventar en frío.
+export function guardarReflexionHabitos(texto) {
+  const fecha = today();
+  const reflexionesHabitos = { ...(state.reflexionesHabitos || {}), [fecha]: (texto || '').trim().slice(0, 300) };
+  setState({ reflexionesHabitos });
 }
 
 // La invitación a compartir las reflexiones como testimonio se pregunta UNA

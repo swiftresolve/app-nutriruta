@@ -362,6 +362,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   color: #fff; font-size: 15px; font-weight: 800; line-height: 1;
 }
 .habit input[type="checkbox"]:active { transform: scale(0.88); }
+/* Hábitos que ya no se marcan a mano (agua, menú) — mismo look que el
+   checkbox pero de solo lectura, para que se note que no es tocable. */
+.habit-auto-dot {
+  width: 25px; height: 25px; flex: none; border-radius: 8px; background: var(--primary-soft);
+  color: var(--primary-dark); display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800;
+}
+.habit.done .habit-auto-dot { background: var(--primary); color: #fff; }
 
 /* ===== Meals / recipes ===== */
 .meal { border-left: 4px solid var(--primary-soft); padding: 8px 12px; margin-bottom: 10px; border-radius: 6px; background: #FBFDFC; }

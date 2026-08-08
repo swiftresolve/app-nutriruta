@@ -4,7 +4,7 @@
 // que se construyeron): arriba lo que se usa gratis todos los días (paso del
 // día, hábitos, agua, menú, SOS, plan de 7 días); Sana y la Misión —lo
 // Premium— van después, cuando ya sentiste valor real, no antes.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, sanaApertura } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, sanaApertura, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida } from '../store.js';
 import { MISSION } from '../data/mission.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
@@ -24,6 +24,12 @@ const DAILY_HABITS = [
   { id: 'menu', nombre: 'Seguí el menú del día 🍽️' },
   { id: 'sueno', nombre: 'Dormí 7+ horas 😴' }
 ];
+// "agua" y "menu" ya no se marcan a mano: se derivan de una acción real
+// (vasos llenados de verdad / al menos 2 comidas del día abiertas) — para
+// que no sean solo un tap sin haberlo hecho. Los otros 3 siguen siendo
+// auto-reporte (no hay forma de verificarlos sin un wearable), pero piden
+// una reflexión real al cruzar el umbral de racha (ver pedirReflexionHabitos).
+const AUTO_HABITS = new Set(['agua', 'menu']);
 
 export function renderDashboard(container) {
   header(container);
@@ -95,33 +101,43 @@ export function renderDashboard(container) {
   const checks = getHabits();
   const habitCard = document.createElement('div');
   habitCard.className = 'card';
-  habitCard.innerHTML = '<h2>✅ Hábitos de hoy</h2><p class="small">Marca al menos 3 para sumar a tu Ruta.</p>';
+  habitCard.innerHTML = '<h2>✅ Hábitos de hoy</h2><p class="small">Marca al menos 3 para sumar a tu Ruta. Agua y menú se marcan solos.</p>';
   for (const h of DAILY_HABITS) {
     const row = document.createElement('div');
-    row.className = 'habit' + (checks[h.id] ? ' done' : '');
+    const auto = AUTO_HABITS.has(h.id);
+    row.className = 'habit' + (checks[h.id] ? ' done' : '') + (auto ? ' habit-auto' : '');
+    if (auto) {
+      row.innerHTML = `
+        <span class="habit-auto-dot" aria-hidden="true">${checks[h.id] ? '✓' : ''}</span>
+        <label>${h.nombre} <span class="muted small">· automático</span></label>`;
+      habitCard.appendChild(row);
+      continue;
+    }
     row.innerHTML = `
       <input type="checkbox" id="h-${h.id}" ${checks[h.id] ? 'checked' : ''}>
       <label for="h-${h.id}">${h.nombre}</label>`;
-    row.querySelector('input').addEventListener('change', (e) => {
-      if (e.target.checked) {
-        const rect = row.getBoundingClientRect();
-        habitCheckPop(rect.left + 16, rect.top + rect.height / 2);
-        playCheckSound();
+    const input = row.querySelector('input');
+    input.addEventListener('change', (e) => {
+      const marcando = e.target.checked;
+      const completadosAntes = Object.values(checks).filter(Boolean).length;
+      const cruzaUmbral = marcando && completadosAntes < 3 && completadosAntes + 1 >= 3;
+      const confirmar = () => {
+        if (marcando) {
+          const rect = row.getBoundingClientRect();
+          habitCheckPop(rect.left + 16, rect.top + rect.height / 2);
+          playCheckSound();
+        }
+        const rachaAntes = getState().racha.actual;
+        const escudoUsado = toggleHabit(h.id);
+        celebrarSiSubioRacha(rachaAntes, escudoUsado);
+        renderDashboard(clearAndGet(container));
+      };
+      if (cruzaUmbral) {
+        e.target.checked = false; // se revierte visualmente hasta confirmar la reflexión
+        pedirReflexionHabitos(confirmar);
+      } else {
+        confirmar();
       }
-      const rachaAntes = getState().racha.actual;
-      const escudoUsado = toggleHabit(h.id);
-      const rachaDespues = getState().racha.actual;
-      const nuevos = checkAchievements();
-      if (escudoUsado) toast('🛡️ Usamos una Pausa de Ruta — tu Ruta sigue en pie');
-      if (rachaDespues > rachaAntes) {
-        const checksAhora = getHabits();
-        const completados = Object.values(checksAhora).filter(Boolean).length;
-        const aguaAhora = getWater();
-        playCelebrateSound();
-        celebrateStreak(rachaDespues, { habitos: completados, totalHabitos: DAILY_HABITS.length, vasos: aguaAhora.vasos, meta: aguaAhora.meta });
-      }
-      if (nuevos.length) toast('🏆 ¡Nuevo logro desbloqueado! Míralo en Progreso.');
-      renderDashboard(clearAndGet(container));
     });
     habitCard.appendChild(row);
   }
@@ -150,8 +166,10 @@ export function renderDashboard(container) {
         habitCheckPop(rect.left + rect.width / 2, rect.top + rect.height / 2);
         playWaterSound();
       }
-      setWater(nuevo);
+      const rachaAntes = getState().racha.actual;
+      const { escudoUsado } = setWater(nuevo);
       if (nuevo >= agua.meta) toast('¡Meta de agua cumplida! 💧🎉');
+      celebrarSiSubioRacha(rachaAntes, escudoUsado);
       renderDashboard(clearAndGet(container));
     });
     glassesEl.appendChild(g);
@@ -201,7 +219,14 @@ export function renderDashboard(container) {
     const shown = displayRecipe(recipe, exclusiones);
     return {
       icon: meal.emoji, title: meal.nombre, subtitle: shown.nombre, now: esAhora, nowLabel: 'Ahora',
-      onClick: () => openRecipe(recipe),
+      onClick: () => {
+        // Abrir una comida real del menú de hoy es la señal de "seguí el
+        // menú" — con 2 comidas abiertas se marca sola (ver store.js).
+        const rachaAntes = getState().racha.actual;
+        const { escudoUsado } = registrarComidaSeguida(recipe.id) || {};
+        celebrarSiSubioRacha(rachaAntes, escudoUsado);
+        openRecipe(recipe);
+      },
       extraHtml: `<div class="row mt" style="gap:8px"><span class="dot ${light}"></span><button type="button" class="icon-btn swap-btn" title="Cambiar receta" aria-label="Cambiar receta">🔄</button></div>`
     };
   });
@@ -305,6 +330,50 @@ function sanaMood(state) {
 function clearAndGet(container) {
   container.innerHTML = '';
   return container;
+}
+
+// Compartido entre el toggle de hábitos, el agua y el abrir una comida del
+// menú — cualquiera de los tres puede ser lo que complete el día.
+function celebrarSiSubioRacha(rachaAntes, escudoUsado) {
+  const rachaDespues = getState().racha.actual;
+  const nuevos = checkAchievements();
+  if (escudoUsado) toast('🛡️ Usamos una Pausa de Ruta — tu Ruta sigue en pie');
+  if (rachaDespues > rachaAntes) {
+    const checksAhora = getHabits();
+    const completados = Object.values(checksAhora).filter(Boolean).length;
+    const aguaAhora = getWater();
+    playCelebrateSound();
+    celebrateStreak(rachaDespues, { habitos: completados, totalHabitos: DAILY_HABITS.length, vasos: aguaAhora.vasos, meta: aguaAhora.meta });
+  }
+  if (nuevos.length) toast('🏆 ¡Nuevo logro desbloqueado! Míralo en Progreso.');
+}
+
+// Reflexión breve (anti-trampa, ver memoria) justo al cruzar el umbral de
+// 3 hábitos: pedir una frase real de qué se hizo es más fácil de cumplir
+// honestamente que de inventar en frío. Solo aplica a los 3 hábitos que
+// siguen siendo auto-reporte (movimiento, azúcar, sueño) — agua y menú ya
+// se derivan de una acción real y no pasan por aquí.
+function pedirReflexionHabitos(onConfirm) {
+  openModal((modal, close) => {
+    modal.insertAdjacentHTML('beforeend', `
+      <div style="font-size:2rem">✍️</div>
+      <h2>Antes de sumar hoy…</h2>
+      <p class="small mt">En una frase, ¿qué hiciste hoy para esto? Nos ayuda a que tu Ruta refleje algo real, no solo un toque.</p>
+      <textarea id="reflexion-habitos" maxlength="300" rows="3" placeholder="Ej: Caminé 30 minutos después de almorzar..."
+        style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:8px;resize:vertical"></textarea>`);
+    const textarea = modal.querySelector('#reflexion-habitos');
+    const btn = document.createElement('button');
+    btn.className = 'btn full mt';
+    btn.textContent = 'Sumar a mi Ruta ✓';
+    btn.disabled = true;
+    textarea.addEventListener('input', () => { btn.disabled = !esTextoReal(textarea.value, 12); });
+    btn.addEventListener('click', () => {
+      guardarReflexionHabitos(textarea.value);
+      close();
+      onConfirm();
+    });
+    modal.appendChild(btn);
+  });
 }
 
 // Detalle de receta en modal (compartido conceptualmente con planner).
