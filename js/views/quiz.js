@@ -174,12 +174,10 @@ export function renderQuiz(container) {
     const pct = Math.round(((step + 1) / (steps.length + 1)) * 100);
     const view = document.createElement('div');
     view.className = 'quiz-step';
-    const puedeCerrar = getState().onboarded; // solo si está re-tomando el quiz desde Ajustes
     view.innerHTML = `
       <div class="quiz-topbar">
         <button class="icon-btn quiz-topbar-back" aria-label="Atrás" ${step === 0 ? 'style="visibility:hidden"' : ''}>‹</button>
         <div class="quiz-progress"><div style="width:${pct}%"></div></div>
-        <button class="icon-btn quiz-topbar-close" aria-label="Cerrar" ${puedeCerrar ? '' : 'style="visibility:hidden"'}>✕</button>
       </div>
       <h2>${s.title}</h2>
       ${s.sub ? `<p>${s.sub}</p>` : ''}
@@ -187,7 +185,6 @@ export function renderQuiz(container) {
       <div class="quiz-nav"></div>`;
     s.render(view.querySelector('.step-body'));
     view.querySelector('.quiz-topbar-back').addEventListener('click', () => { if (step > 0) { step--; draw(); } });
-    if (puedeCerrar) view.querySelector('.quiz-topbar-close').addEventListener('click', () => navigate('dashboard'));
 
     const navEl = view.querySelector('.quiz-nav');
     if (step > 0) {
