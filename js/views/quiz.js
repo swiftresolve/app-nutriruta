@@ -110,7 +110,8 @@ export function renderQuiz(container) {
     {
       title: '¿Tu nivel de actividad física?',
       sub: '',
-      render: (el) => chips(el, ACTIVITY, answers, false, 'actividad', true)
+      sinBoton: true,
+      render: (el) => chips(el, ACTIVITY, answers, false, 'actividad', true, avanzarAuto)
     },
     {
       title: '¿Cuál es tu peso? (opcional)',
@@ -131,7 +132,8 @@ export function renderQuiz(container) {
     {
       title: '¿Con qué frecuencia consumes azúcar?',
       sub: 'Gaseosas, jugos industriales, postres, dulces, panadería…',
-      render: (el) => chips(el, FREQ_OPTIONS, answers, false, 'azucarFreq', true)
+      sinBoton: true,
+      render: (el) => chips(el, FREQ_OPTIONS, answers, false, 'azucarFreq', true, avanzarAuto)
     },
     {
       title: '¿Con qué frecuencia consumes alcohol?',
@@ -140,7 +142,10 @@ export function renderQuiz(container) {
     }
   ];
 
-  function chips(el, options, target, multi, prop, oneCol) {
+  // onElegir (solo en preguntas de una sola respuesta): se llama después de
+  // marcar la selección, para avanzar sola al siguiente paso — como en
+  // Duolingo, sin esperar un botón "Siguiente" aparte.
+  function chips(el, options, target, multi, prop, oneCol, onElegir) {
     const wrap = document.createElement('div');
     wrap.className = 'chips' + (oneCol ? ' chips-1col' : '');
     for (const opt of options) {
@@ -161,11 +166,19 @@ export function renderQuiz(container) {
         } else {
           target[prop] = opt.id;
           wrap.querySelectorAll('.chip').forEach((c, k) => c.classList.toggle('selected', options[k].id === target[prop]));
+          if (onElegir) onElegir();
         }
       });
       wrap.appendChild(b);
     }
     el.appendChild(wrap);
+  }
+
+  // Avanza sola tras un instante (para que se alcance a ver la selección
+  // resaltada antes de pasar) — solo se usa en preguntas de una sola
+  // respuesta que no son la última del quiz.
+  function avanzarAuto() {
+    setTimeout(() => { step++; draw(); }, 220);
   }
 
   function draw() {
@@ -186,19 +199,19 @@ export function renderQuiz(container) {
     s.render(view.querySelector('.step-body'));
     view.querySelector('.quiz-topbar-back').addEventListener('click', () => { if (step > 0) { step--; draw(); } });
 
-    const navEl = view.querySelector('.quiz-nav');
-    if (step > 0) {
-      const back = document.createElement('button');
-      back.className = 'btn ghost'; back.textContent = 'Atrás';
-      back.addEventListener('click', () => { step--; draw(); });
-      navEl.appendChild(back);
+    // La flecha de arriba ya cubre "Atrás" — abajo solo queda un botón
+    // (Siguiente / Ver mi resultado), y solo si el paso lo necesita: las
+    // preguntas de una sola respuesta avanzan solas al elegir (avanzarAuto)
+    // y no muestran ningún botón.
+    if (!s.sinBoton) {
+      const navEl = view.querySelector('.quiz-nav');
+      const next = document.createElement('button');
+      next.className = 'btn full'; next.textContent = step === steps.length - 1 ? 'Ver mi resultado ✨' : 'Siguiente';
+      next.addEventListener('click', () => {
+        if (step === steps.length - 1) result(); else { step++; draw(); }
+      });
+      navEl.appendChild(next);
     }
-    const next = document.createElement('button');
-    next.className = 'btn'; next.textContent = step === steps.length - 1 ? 'Ver mi resultado ✨' : 'Siguiente';
-    next.addEventListener('click', () => {
-      if (step === steps.length - 1) result(); else { step++; draw(); }
-    });
-    navEl.appendChild(next);
     container.appendChild(view);
   }
 
