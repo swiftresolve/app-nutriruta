@@ -176,7 +176,7 @@ export function renderQuiz(container) {
     view.className = 'quiz-step';
     view.innerHTML = `
       <div class="quiz-topbar">
-        <button class="icon-btn quiz-topbar-back" aria-label="Atrás" ${step === 0 ? 'style="visibility:hidden"' : ''}>‹</button>
+        <button class="quiz-topbar-back" aria-label="Atrás" ${step === 0 ? 'style="visibility:hidden"' : ''}>‹</button>
         <div class="quiz-progress"><div style="width:${pct}%"></div></div>
       </div>
       <h2>${s.title}</h2>

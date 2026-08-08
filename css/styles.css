@@ -216,7 +216,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    primera vez no hay a dónde volver todavía). */
 .quiz-topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
 .quiz-topbar .quiz-progress { flex: 1; margin: 0; }
-.quiz-topbar .icon-btn { width: 34px; height: 34px; font-size: 1.1rem; }
+/* Flecha simple, sin el círculo blanco de .icon-btn — como en la
+   referencia de la usuaria (Duolingo tampoco lo usa ahí). */
+.quiz-topbar-back {
+  width: 30px; height: 34px; font-size: 1.6rem; background: none; box-shadow: none;
+  color: var(--ink-soft); flex: none; display: flex; align-items: center; justify-content: center;
+}
+.quiz-topbar-back:active { transform: translateX(-2px); box-shadow: none; }
 .quiz-step h2 { font-size: 1.3rem; margin-bottom: 4px; }
 /* Las opciones del quiz van en grilla de 2 columnas, alineadas entre sí
    (ancho y alto parejo) — no en fila libre tipo etiquetas, que se veía
