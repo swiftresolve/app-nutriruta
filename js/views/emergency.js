@@ -40,11 +40,17 @@ export function renderEmergency(container) {
   // El día activo es el siguiente sin completar, nunca más de uno a la vez
   // — si se salta un día, ese día se queda como "activo" hasta que se
   // complete, en vez de desbloquear de golpe todos los días que pasaron
-  // en el calendario (eso permitía completar varios días de corrido en
-  // una sola sesión, que es justo lo que no debe pasar).
+  // en el calendario.
   const siguientePendiente = EMERGENCY_PLAN.dias.find((d) => !completados.includes(d.n))?.n ?? 8;
   const diaDesbloqueadoPorCalendario = Math.min(7, diasDesde(emergencia.inicio, today()) + 1);
-  const diaDesbloqueado = Math.min(siguientePendiente, diaDesbloqueadoPorCalendario);
+  let diaDesbloqueado = Math.min(siguientePendiente, diaDesbloqueadoPorCalendario);
+  // Tope real: nunca más de UN día completado por día calendario, aunque
+  // el calendario ya habilite varios de corrido (ej. si no abriste la app
+  // en varios días, el catch-up dejaba completar el día siguiente apenas
+  // terminabas el anterior, todo en la misma sesión). Si ya completaste un
+  // día hoy, ningún otro día queda activo hasta mañana.
+  const yaCompletoHoy = emergencia.ultimaCompletadaFecha === today();
+  if (yaCompletoHoy && !completados.includes(diaDesbloqueado)) diaDesbloqueado = 0;
 
   // Plan completado: cierre + CTA a la Misión
   if (completados.length >= 7) {
@@ -140,7 +146,12 @@ function openDia(dia, done, onChange) {
       const completados = new Set(emergencia.completados || []);
       const completando = !done;
       done ? completados.delete(dia.n) : completados.add(dia.n);
-      setState({ emergencia: { ...emergencia, completados: [...completados] } });
+      setState({
+        emergencia: {
+          ...emergencia, completados: [...completados],
+          ultimaCompletadaFecha: completando ? today() : emergencia.ultimaCompletadaFecha
+        }
+      });
       const nuevos = checkAchievements();
       close();
       if (completando) {
