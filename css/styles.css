@@ -737,15 +737,23 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 var(--primary-dark), 0 8px 10px rgba(35,56,51,0.14);
 }
 .path-node.done:active { box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -5px 6px rgba(0,0,0,0.12), 0 1px 0 var(--primary-dark); }
-/* Aro circular alrededor del nodo activo (el que sigue) — separado por un
-   anillo del color de fondo, como el "EMPEZAR" resaltado de Duolingo, no
-   solo el nodo agrandado. */
 .path-node.now {
   background: var(--accent); color: #fff; transform: scale(1.15);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 #D96B4F, 0 8px 10px rgba(255,138,107,0.25), 0 0 0 5px var(--bg), 0 0 0 8px rgba(255,138,107,0.5);
-  animation: path-pulse 2s infinite;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 #D96B4F, 0 8px 10px rgba(255,138,107,0.25);
 }
-.path-node.now:active { transform: scale(1.15) translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 1px 0 #D96B4F, 0 0 0 5px var(--bg), 0 0 0 8px rgba(255,138,107,0.5); }
+.path-node.now:active { transform: scale(1.15) translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 1px 0 #D96B4F; }
+/* Aro circular centrado alrededor del nodo activo — un elemento propio
+   (no box-shadow con spread) porque el nodo es ovalado, no un círculo:
+   un spread uniforme sobre una elipse queda torcido/descentrado. Este
+   sí escala en las mismas proporciones que el nodo. Sin animación de
+   latido — solo la hojita de arriba (.path-mascot) sigue animada. */
+.path-node-col:has(.path-node.now)::before {
+  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 90px; height: 74px; border-radius: 50%;
+  border: 3px solid rgba(255,138,107,0.55);
+  box-shadow: 0 0 0 5px var(--bg);
+  pointer-events: none;
+}
 .path-node.locked {
   /* Mismo relieve 3D + canto inferior que los nodos activos, solo que en
      gris — antes quedaba plano (sombra baja de 2px, sin brillo), muy
@@ -754,11 +762,6 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(35,56,51,0.08), 0 6px 0 #B9C7C2, 0 8px 10px rgba(35,56,51,0.1);
 }
 .path-node.locked:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(35,56,51,0.08), 0 1px 0 #B9C7C2; }
-@keyframes path-pulse {
-  0% { box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 #D96B4F, 0 0 0 5px var(--bg), 0 0 0 8px rgba(255,138,107,0.5); }
-  70% { box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 #D96B4F, 0 0 0 5px var(--bg), 0 0 0 16px rgba(255,138,107,0); }
-  100% { box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 #D96B4F, 0 0 0 5px var(--bg), 0 0 0 8px rgba(255,138,107,0.5); }
-}
 .path-mascot {
   position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 1.7rem;
   animation: path-bob 2.4s ease-in-out infinite; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.15));
