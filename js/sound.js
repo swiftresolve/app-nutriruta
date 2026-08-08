@@ -97,7 +97,12 @@ export function playSparkleSound() {
 // mueve en tono, no un chime — imita el sonido del aire, no un logro.
 // Inhala sube de tono, exhala baja; misma duración que cada fase del
 // ejercicio en sos.js para que el sonido y el círculo vayan sincronizados.
-function soplo(audioCtx, { desde, hasta, dur, peak = 0.1 }) {
+// Aire pasando por nariz/garganta, no viento ni olas: la versión anterior
+// usaba un pasa-banda con resonancia (Q 0.9) barriendo tres octavas, lo que
+// suena a silbido de viento/oleaje. Un pasa-bajos sin resonancia, barriendo
+// un rango más angosto, y con un segundo filtro pasa-altos suave que quita
+// los graves retumbantes, da un "shhh" más parecido a aire real.
+function soplo(audioCtx, { desde, hasta, dur, peak = 0.11 }) {
   const start = audioCtx.currentTime;
   const bufferSize = Math.floor(audioCtx.sampleRate * dur);
   const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -105,26 +110,31 @@ function soplo(audioCtx, { desde, hasta, dur, peak = 0.1 }) {
   for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
   const noise = audioCtx.createBufferSource();
   noise.buffer = buffer;
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.Q.value = 0.9;
-  filter.frequency.setValueAtTime(desde, start);
-  filter.frequency.linearRampToValueAtTime(hasta, start + dur);
+  const lowpass = audioCtx.createBiquadFilter();
+  lowpass.type = 'lowpass';
+  lowpass.Q.value = 0.25;
+  lowpass.frequency.setValueAtTime(desde, start);
+  lowpass.frequency.linearRampToValueAtTime(hasta, start + dur);
+  const highpass = audioCtx.createBiquadFilter();
+  highpass.type = 'highpass';
+  highpass.Q.value = 0.2;
+  highpass.frequency.value = 180;
   const gain = audioCtx.createGain();
   gain.gain.setValueAtTime(0, start);
-  gain.gain.linearRampToValueAtTime(peak, start + dur * 0.3);
+  gain.gain.linearRampToValueAtTime(peak, start + dur * 0.25);
+  gain.gain.setValueAtTime(peak, start + dur * 0.7);
   gain.gain.linearRampToValueAtTime(0, start + dur);
-  noise.connect(filter).connect(gain).connect(audioCtx.destination);
+  noise.connect(lowpass).connect(highpass).connect(gain).connect(audioCtx.destination);
   noise.start(start);
   noise.stop(start + dur + 0.05);
 }
 
 export function playInhaleSound(dur = 3.3) {
-  conAudio((audioCtx) => soplo(audioCtx, { desde: 300, hasta: 1100, dur }));
+  conAudio((audioCtx) => soplo(audioCtx, { desde: 500, hasta: 1300, dur, peak: 0.1 }));
 }
 
 export function playExhaleSound(dur = 3.3) {
-  conAudio((audioCtx) => soplo(audioCtx, { desde: 1100, hasta: 250, dur }));
+  conAudio((audioCtx) => soplo(audioCtx, { desde: 1400, hasta: 400, dur, peak: 0.13 }));
 }
 
 // Día completo (nueva racha): fanfarria corta — arpegio que sube y cierra

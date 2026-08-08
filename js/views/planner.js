@@ -100,31 +100,54 @@ export function renderPlanner(container, params = {}) {
       empty.innerHTML = `<p>${busqueda ? `No encontramos recetas con "${busqueda}".` : 'No hay recetas disponibles con tus exclusiones actuales en esta categoría.'}</p>`;
       body.appendChild(empty);
     }
-    const grid = document.createElement('div');
-    grid.className = 'recipe-grid';
     const premium = isPremium();
     const meal = MEALS.reduce((m, x) => (m[x.id] = x, m), {});
-    list.forEach((r, i) => {
-      const locked = !premium && i >= FREE_RECIPE_LIMIT;
-      const light = trafficLight(r, user.perfiles);
-      const shown = displayRecipe(r, user.exclusiones);
-      const tags = (r.etiquetas || []).slice(0, 2).map((t) => `<span class="recipe-tag">${TAG_LABELS[t] || t}</span>`).join('');
-      const item = document.createElement('button');
-      item.className = 'recipe-card' + (locked ? ' locked' : '');
-      item.innerHTML = `
-        <div class="recipe-plate">
-          ${HOT_MEALS.has(r.comida) ? '<span class="steam"><span></span><span></span><span></span></span>' : ''}
-          ${shown.emoji}
-          <span class="garnish">${meal[r.comida]?.emoji || ''}</span>
-          ${locked ? '' : `<span class="semaforo-ring ${light}" title="Semáforo: ${light}"></span>`}
-        </div>
-        <div class="recipe-title">${shown.nombre}</div>
-        <div class="recipe-desc${locked ? ' lesson-blur' : ''}">${r.descripcion}</div>
-        ${locked ? '<div class="recipe-lock">🔒 Premium</div>' : `<div class="recipe-tags">${tags}</div>`}`;
-      item.addEventListener('click', () => locked ? navigate('plans') : openRecipe(r));
-      grid.appendChild(item);
-    });
-    body.appendChild(grid);
+
+    // Separa visualmente lo que de verdad está pensado para tu diagnóstico
+    // (aparece en el "apto" de alguno de tus perfiles activos) de lo demás
+    // — el orden ya viene priorizado por rankRecipes, aquí solo se traza la
+    // línea entre un grupo y otro. El índice de bloqueo (FREE_RECIPE_LIMIT)
+    // sigue contando de corrido sobre toda la lista combinada.
+    const recomendadas = list.filter((r) => r.apto.some((p) => user.perfiles.includes(p)));
+    const otras = list.filter((r) => !r.apto.some((p) => user.perfiles.includes(p)));
+    let globalIndex = 0;
+
+    function renderGroup(items, label) {
+      if (!items.length) return;
+      if (label) {
+        const divider = document.createElement('div');
+        divider.className = 'recipe-section-divider';
+        divider.innerHTML = `<span>${label}</span>`;
+        body.appendChild(divider);
+      }
+      const grid = document.createElement('div');
+      grid.className = 'recipe-grid';
+      for (const r of items) {
+        const i = globalIndex++;
+        const locked = !premium && i >= FREE_RECIPE_LIMIT;
+        const light = trafficLight(r, user.perfiles);
+        const shown = displayRecipe(r, user.exclusiones);
+        const tags = (r.etiquetas || []).slice(0, 2).map((t) => `<span class="recipe-tag">${TAG_LABELS[t] || t}</span>`).join('');
+        const item = document.createElement('button');
+        item.className = 'recipe-card' + (locked ? ' locked' : '');
+        item.innerHTML = `
+          <div class="recipe-plate">
+            ${HOT_MEALS.has(r.comida) ? '<span class="steam"><span></span><span></span><span></span></span>' : ''}
+            ${shown.emoji}
+            <span class="garnish">${meal[r.comida]?.emoji || ''}</span>
+            ${locked ? '' : `<span class="semaforo-ring ${light}" title="Semáforo: ${light}"></span>`}
+          </div>
+          <div class="recipe-title">${shown.nombre}</div>
+          <div class="recipe-desc${locked ? ' lesson-blur' : ''}">${r.descripcion}</div>
+          ${locked ? '<div class="recipe-lock">🔒 Premium</div>' : `<div class="recipe-tags">${tags}</div>`}`;
+        item.addEventListener('click', () => locked ? navigate('plans') : openRecipe(r));
+        grid.appendChild(item);
+      }
+      body.appendChild(grid);
+    }
+
+    renderGroup(recomendadas, recomendadas.length && otras.length ? '🌿 Recomendadas para tu perfil' : null);
+    renderGroup(otras, recomendadas.length && otras.length ? 'Otras recetas' : null);
 
     const note = document.createElement('p');
     note.className = 'muted small center mt';

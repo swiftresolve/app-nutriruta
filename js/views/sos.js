@@ -47,7 +47,7 @@ export function renderSOS(container) {
   step2.innerHTML = `
     <h3>2. La pausa de 1 minuto</h3>
     <p class="small">Antes de decidir, toma un vaso de agua y respira conmigo 5 veces.</p>
-    <div class="breath-circle" id="breath">Presiona<br>para empezar</div>
+    <div class="breath-wrap"><div class="breath-circle" id="breath">Presiona<br>para empezar</div></div>
     <p class="small muted" id="breath-label"></p>`;
   container.appendChild(step2);
 
@@ -61,18 +61,18 @@ export function renderSOS(container) {
     const doCycle = () => {
       if (cycle >= 5) {
         circle.classList.remove('in');
-        circle.innerHTML = '¡Bien hecho! 🌿';
+        circle.innerHTML = '<span class="breath-done"><span class="breath-done-emoji">🌿</span>¡Bien hecho!</span>';
         label.textContent = '¿Cómo te sientes ahora?';
         breathing = false;
         return;
       }
       cycle++;
       circle.classList.add('in');
-      circle.textContent = 'Inhala…';
+      circle.textContent = 'Inhala';
       playInhaleSound();
       setTimeout(() => {
         circle.classList.remove('in');
-        circle.textContent = 'Exhala…';
+        circle.textContent = 'Exhala';
         label.textContent = `Respiración ${cycle} de 5`;
         playExhaleSound();
         setTimeout(doCycle, 3500);
@@ -90,21 +90,27 @@ export function renderSOS(container) {
     Hambre emocional: llegó de golpe y pide algo muy específico.</p>`;
   container.appendChild(step3);
 
-  // Paso 4: alternativas
+  // Paso 4: alternativas — mismo "plato" 3D del Recetario, no la lista
+  // plana de antes (ese estilo .recipe-item ya no existe: se reemplazó por
+  // las tarjetas al rediseñar el Recetario).
   const step4 = document.createElement('div');
   step4.className = 'card';
   step4.innerHTML = '<h3>4. Elige tu alternativa saludable</h3><p class="small mb">Aptas para tus perfiles y exclusiones:</p>';
   const { exclusiones } = getState().user;
-  for (const r of sosSnacks().slice(0, 5)) {
+  const altGrid = document.createElement('div');
+  altGrid.className = 'recipe-grid';
+  for (const r of sosSnacks().slice(0, 6)) {
     const shown = displayRecipe(r, exclusiones);
     const item = document.createElement('button');
-    item.className = 'recipe-item';
+    item.className = 'recipe-card';
     item.innerHTML = `
-      <span class="recipe-emoji">${shown.emoji}</span>
-      <span class="info"><strong>${shown.nombre}</strong><br><span class="muted small">${r.descripcion}</span></span>`;
+      <div class="recipe-plate">${shown.emoji}</div>
+      <div class="recipe-title">${shown.nombre}</div>
+      <div class="recipe-desc">${r.descripcion}</div>`;
     item.addEventListener('click', () => openRecipe(r));
-    step4.appendChild(item);
+    altGrid.appendChild(item);
   }
+  step4.appendChild(altGrid);
   container.appendChild(step4);
 
   // Paso 5: registrar resultado

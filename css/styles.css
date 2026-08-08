@@ -313,6 +313,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .lesson-blur { filter: blur(3.5px); user-select: none; -webkit-user-select: none; }
 
 /* ===== Recetario: grilla de tarjetas con "plato" 3D ===== */
+.recipe-section-divider {
+  display: flex; align-items: center; gap: 10px; margin: 18px 2px 10px;
+  font-size: 0.78rem; font-weight: 800; letter-spacing: 0.02em; color: var(--primary-dark);
+  text-transform: uppercase;
+}
+.recipe-section-divider::before, .recipe-section-divider::after { content: ''; flex: 1; height: 1.5px; background: #DCEAE6; }
+.recipe-section-divider span { white-space: nowrap; }
 .recipe-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media (max-width: 380px) { .recipe-grid { grid-template-columns: 1fr; } }
 .recipe-card {
@@ -420,15 +427,16 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* ===== Modal ===== */
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(20, 34, 30, 0.45);
-  display: flex; align-items: flex-end; justify-content: center; z-index: 60;
+  display: flex; align-items: center; justify-content: center; z-index: 60;
+  padding: 20px;
 }
 .modal {
-  background: var(--card); border-radius: 20px 20px 0 0;
+  background: var(--card); border-radius: 20px;
   width: 100%; max-width: 560px; max-height: 86vh; overflow-y: auto;
   padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
-  animation: slide-up 0.22s ease;
+  animation: modal-pop-in 0.22s cubic-bezier(.34,1.2,.64,1);
 }
-@keyframes slide-up { from { transform: translateY(40px); opacity: 0.5; } to { transform: none; opacity: 1; } }
+@keyframes modal-pop-in { from { transform: translateY(16px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
 .modal-close { position: sticky; top: 0; float: right; font-size: 1.3rem; color: var(--ink-soft); }
 
 /* ===== Progress ===== */
@@ -551,14 +559,20 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .tramo-banner.done .tramo-badge { background: transparent; box-shadow: none; font-size: 1.3rem; }
 .tramo-label { font-weight: 800; color: var(--primary-dark); font-size: 0.85rem; }
 .tramo-banner.done .tramo-label { color: #8A5A00; }
+/* Espacio reservado arriba/abajo igual al crecimiento máximo del círculo
+   (scale 1.35 sobre 130px = ~23px de más por lado) para que, al inhalar,
+   no quede sobrepuesto contra el título de la tarjeta. */
+.breath-wrap { display: flex; align-items: center; justify-content: center; padding: 26px 0; }
 .breath-circle {
-  width: 130px; height: 130px; margin: 18px auto; border-radius: 50%;
+  width: 130px; height: 130px; margin: 0 auto; border-radius: 50%;
   background: var(--primary-soft); border: 3px solid var(--primary);
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; color: var(--primary-dark); text-align: center; font-size: 0.9rem;
   transition: transform 3.5s ease-in-out;
 }
 .breath-circle.in { transform: scale(1.35); }
+.breath-done { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.breath-done-emoji { font-size: 1.5rem; line-height: 1; }
 
 /* ===== Lessons ===== */
 .lesson-item { width: 100%; text-align: left; }
