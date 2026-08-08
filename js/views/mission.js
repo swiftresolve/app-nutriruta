@@ -116,8 +116,16 @@ export function renderMission(container) {
 
   // Misión en curso
   const inicio = new Date(mision.inicio + 'T00:00:00');
-  const semanaActual = Math.min(12, Math.floor((Date.now() - inicio.getTime()) / (7 * 86400000)) + 1);
+  let semanaActual = Math.min(12, Math.floor((Date.now() - inicio.getTime()) / (7 * 86400000)) + 1);
   const completadas = mision.completadas || [];
+  // Mismo tope que el Plan de 7 días: la semana activa nunca es más
+  // adelantada que la siguiente pendiente real (aunque el calendario ya
+  // habilite varias de corrido, ej. si no abriste la app en varias
+  // semanas), y nunca más de una semana completada por día real.
+  const semanaSiguientePendiente = Array.from({ length: 12 }, (_, i) => i + 1).find((n) => !completadas.includes(n)) ?? 13;
+  semanaActual = Math.min(semanaActual, semanaSiguientePendiente);
+  const yaCompletoHoy = mision.ultimaCompletadaFecha === today();
+  if (yaCompletoHoy && !completadas.includes(semanaActual)) semanaActual = 0;
 
   const prog = document.createElement('div');
   prog.className = 'card';
@@ -209,7 +217,12 @@ function openWeek(week, canComplete, done = false, onChange) {
         const completadas = new Set(mision.completadas || []);
         const completando = !done;
         done ? completadas.delete(week.n) : completadas.add(week.n);
-        setState({ mision: { ...mision, completadas: [...completadas] } });
+        setState({
+          mision: {
+            ...mision, completadas: [...completadas],
+            ultimaCompletadaFecha: completando ? today() : mision.ultimaCompletadaFecha
+          }
+        });
         close();
         if (completando) {
           playCelebrateSound();
