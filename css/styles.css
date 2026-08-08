@@ -652,12 +652,16 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 /* ===== Camino (Misión, Plan de 7 días) ===== */
 .path-wrap { position: relative; margin: 4px auto 0; width: 100%; max-width: 340px; }
 .path-svg { position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none; }
-.path-row { position: relative; z-index: 1; display: flex; align-items: flex-start; gap: 14px; width: 78%; margin-bottom: 24px; }
+/* Ancho más angosto + margen fijo (no "auto" hasta el borde) para que el
+   vaivén izquierda/derecha quede suave y cercano al centro, como el
+   camino real de Duolingo — antes los círculos llegaban hasta el borde
+   mismo del contenedor (0% / 100%), una curva demasiado marcada. */
+.path-row { position: relative; z-index: 1; display: flex; align-items: flex-start; gap: 14px; width: 54%; margin-bottom: 24px; }
 .path-row:last-child { margin-bottom: 0; }
 /* Sin línea (menú del día): círculos sueltos, con más aire entre sí. */
 .path-wrap.no-line .path-row { margin-bottom: 34px; }
-.path-row:not(.right) { margin-right: auto; }
-.path-row.right { flex-direction: row-reverse; text-align: right; margin-left: auto; }
+.path-row:not(.right) { margin-left: 12%; }
+.path-row.right { flex-direction: row-reverse; text-align: right; margin-right: 12%; }
 .path-node-col { position: relative; flex: none; }
 .path-node {
   width: 64px; height: 64px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
