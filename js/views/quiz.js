@@ -81,16 +81,19 @@ export function renderQuiz(container) {
     {
       title: '¿Qué quieres lograr?',
       sub: 'Elige todo lo que aplique.',
+      botonDiferido: true,
       render: (el) => chips(el, GOALS, answers.objetivos, true)
     },
     {
       title: '¿Tienes alguna condición conocida?',
       sub: 'Solo si te la han mencionado en un chequeo. Puedes elegir varias.',
+      botonDiferido: true,
       render: (el) => chips(el, CONDITIONS, answers.condiciones, true)
     },
     {
       title: '¿Qué alimentos no consumes?',
       sub: 'Alergias, intolerancias o preferencias. Adaptaremos recetas y sustituciones.',
+      botonDiferido: true,
       render(el) {
         chips(el, EXCLUSIONS, answers.exclusiones, true);
         el.insertAdjacentHTML('beforeend', `
@@ -163,6 +166,11 @@ export function renderQuiz(container) {
             j >= 0 ? target.splice(j, 1) : target.push(opt.id);
           }
           wrap.querySelectorAll('.chip').forEach((c, k) => c.classList.toggle('selected', target.includes(options[k].id)));
+          // En preguntas de varias respuestas no se puede avanzar sola al
+          // primer toque (no se podría marcar una segunda opción) — en vez
+          // de eso, aparece el botón de continuar recién con la primera
+          // elección, para no mostrar un botón vacío desde el principio.
+          wrap.dispatchEvent(new CustomEvent('quiz-multi-select', { bubbles: true }));
         } else {
           target[prop] = opt.id;
           wrap.querySelectorAll('.chip').forEach((c, k) => c.classList.toggle('selected', options[k].id === target[prop]));
@@ -210,6 +218,18 @@ export function renderQuiz(container) {
       next.addEventListener('click', () => {
         if (step === steps.length - 1) result(); else { step++; draw(); }
       });
+      if (s.botonDiferido) {
+        // Preguntas de varias respuestas: el botón aparece recién con la
+        // primera elección (evento 'quiz-multi-select' desde chips()), no
+        // desde el principio. Si nadie elige nada (es válido: "ninguna"
+        // también es una respuesta), aparece solo tras una pausa — para
+        // que jamás quede sin forma de continuar.
+        next.style.display = 'none';
+        const revelar = () => { next.style.display = ''; };
+        view.addEventListener('quiz-multi-select', revelar, { once: true });
+        const espera = setTimeout(revelar, 1400);
+        next.addEventListener('click', () => clearTimeout(espera), { once: true });
+      }
       navEl.appendChild(next);
     }
     container.appendChild(view);
