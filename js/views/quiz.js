@@ -53,7 +53,7 @@ export function renderQuiz(container) {
   // Prellenar con lo ya conocido (p. ej. el nombre dado al registrarse).
   const known = getState().user;
   const answers = {
-    nombre: known.nombre || '', objetivos: [], condiciones: [], exclusiones: [],
+    nombre: known.nombre || '', objetivos: [], condiciones: [], exclusiones: [], exclusionesOtroTexto: '',
     habitosDificiles: [], actividad: 'medio', azucarFreq: 'a_veces', alcoholFreq: 'nunca',
     pesoKg: known.pesoKg || ''
   };
@@ -87,7 +87,16 @@ export function renderQuiz(container) {
     {
       title: '¿Qué alimentos no consumes?',
       sub: 'Alergias, intolerancias o preferencias. Adaptaremos recetas y sustituciones.',
-      render: (el) => chips(el, EXCLUSIONS, answers.exclusiones, true)
+      render(el) {
+        chips(el, EXCLUSIONS, answers.exclusiones, true);
+        el.insertAdjacentHTML('beforeend', `
+          <label class="muted small mt" for="q-excl-otro" style="display:block">¿Algo más que no comas? (opcional, separa varios con coma)</label>
+          <input id="q-excl-otro" type="text" placeholder="Ej: cilantro, champiñones" maxlength="200"
+            style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:6px">`);
+        const input = el.querySelector('#q-excl-otro');
+        input.value = answers.exclusionesOtroTexto;
+        input.addEventListener('input', (e) => { answers.exclusionesOtroTexto = e.target.value; });
+      }
     },
     {
       title: '¿Con cuáles de estos retos te identificas?',
@@ -188,6 +197,8 @@ export function renderQuiz(container) {
   function result() {
     const perfiles = deriveProfiles(answers);
     const pesoValido = Number(answers.pesoKg);
+    const exclusionesOtro = answers.exclusionesOtroTexto
+      .split(',').map((t) => t.trim()).filter(Boolean).slice(0, 10);
     setState({
       onboarded: true,
       user: {
@@ -195,6 +206,7 @@ export function renderQuiz(container) {
         objetivos: answers.objetivos,
         perfiles,
         exclusiones: answers.exclusiones,
+        exclusionesOtro,
         habitosDificiles: answers.habitosDificiles,
         actividad: answers.actividad,
         azucarFreq: answers.azucarFreq,
@@ -281,9 +293,9 @@ export function renderQuiz(container) {
     let elegido = 7;
     view.innerHTML = `
       <div class="quiz-progress"><div style="width:100%"></div></div>
-      <h2>Antes de empezar: un compromiso contigo</h2>
-      <p>Los hábitos que sostienes hoy son los que te van a sostener mañana. No hace falta esperar a que algo se sienta grave para empezar — hoy es un buen día para tomar la primera acción.</p>
-      <p class="mt" style="font-weight:600">¿Con cuántos días quieres comprometerte a empezar tu ruta?</p>
+      <h2>Antes de empezar: un compromiso contigo 💛</h2>
+      <p>Sé que a veces el día a día no deja espacio para pensar en ti. Pero tu cuerpo lleva la cuenta, incluso cuando tú no la llevas. Comprometerte hoy — aunque sea con un paso chiquito — no es una exigencia más: es una forma real de decirte a ti misma que mereces cuidarte con constancia.</p>
+      <p class="mt" style="font-weight:600">¿Con cuántos días quieres empezar este compromiso?</p>
       <div class="chips mt" id="compromiso-chips"></div>
       <button class="btn full accent mt">Ver mi menú personalizado 🍽️</button>`;
     const chipWrap = view.querySelector('#compromiso-chips');

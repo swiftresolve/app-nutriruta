@@ -15,8 +15,25 @@ function blockingGroups(recipe, exclusiones) {
   return groups;
 }
 
-export function isRecipeAvailable(recipe, exclusiones) {
-  return blockingGroups(recipe, exclusiones).length === 0;
+// Sin tildes ni mayúsculas, para que "champiñones" excluya aunque quien
+// escribió el texto libre haya puesto "champinones".
+const normaliza = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+// Exclusiones de texto libre (ej. "cilantro", "champiñones"): a diferencia
+// de los grupos predefinidos, no tienen sustitución — si el nombre del
+// ingrediente contiene el término, la receta queda fuera del menú.
+function tieneExclusionLibre(recipe, exclusionesOtro) {
+  if (!exclusionesOtro || !exclusionesOtro.length) return false;
+  const terminos = exclusionesOtro.map(normaliza).filter(Boolean);
+  if (!terminos.length) return false;
+  return recipe.ingredientes.some((ing) => {
+    const nombre = normaliza(ing.n);
+    return terminos.some((t) => nombre.includes(t));
+  });
+}
+
+export function isRecipeAvailable(recipe, exclusiones, exclusionesOtro) {
+  return blockingGroups(recipe, exclusiones).length === 0 && !tieneExclusionLibre(recipe, exclusionesOtro);
 }
 
 // Semáforo de la receta según los perfiles activos del usuario.
@@ -37,7 +54,7 @@ function score(recipe, perfiles) {
 export function candidatesFor(mealId) {
   const { user } = getState();
   return RECIPES
-    .filter((r) => r.comida === mealId && isRecipeAvailable(r, user.exclusiones))
+    .filter((r) => r.comida === mealId && isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
     .filter((r) => trafficLight(r, user.perfiles) !== 'rojo')
     .sort((a, b) => score(b, user.perfiles) - score(a, user.perfiles));
 }
@@ -151,7 +168,7 @@ export function sosSnacks() {
   const { user } = getState();
   return RECIPES
     .filter((r) => (r.etiquetas || []).includes('snack_antiansiedad'))
-    .filter((r) => isRecipeAvailable(r, user.exclusiones))
+    .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
     .filter((r) => trafficLight(r, user.perfiles) !== 'rojo')
     .sort((a, b) => score(b, user.perfiles) - score(a, user.perfiles));
 }

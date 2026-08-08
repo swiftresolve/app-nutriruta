@@ -53,7 +53,7 @@ export function renderPlanner(container, params = {}) {
     card.className = 'card';
     const list = RECIPES
       .filter((r) => mealFilter === 'todas' || r.comida === mealFilter)
-      .filter((r) => isRecipeAvailable(r, user.exclusiones));
+      .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro));
 
     if (!list.length) {
       card.innerHTML = '<p>No hay recetas disponibles con tus exclusiones actuales en esta categoría.</p>';

@@ -343,6 +343,17 @@ export function renderSettings(container) {
     });
     exclChips.appendChild(b);
   }
+  excl.insertAdjacentHTML('beforeend', `
+    <label class="muted small mt" for="excl-otro" style="display:block">¿Algo más que no comas? (separa varios con coma)</label>
+    <input id="excl-otro" type="text" placeholder="Ej: cilantro, champiñones" maxlength="200"
+      style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:6px">`);
+  const exclOtroInput = excl.querySelector('#excl-otro');
+  exclOtroInput.value = (user.exclusionesOtro || []).join(', ');
+  exclOtroInput.addEventListener('change', (e) => {
+    const exclusionesOtro = e.target.value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 10);
+    setState({ user: { ...getState().user, exclusionesOtro } });
+    toast('Guardado 🌿');
+  });
   container.appendChild(excl);
 
   // Acciones

@@ -12,6 +12,7 @@ const DEFAULT_STATE = {
     objetivos: [],
     perfiles: [],
     exclusiones: [],
+    exclusionesOtro: [],   // alimentos que no consume, escritos a mano (ej. "cilantro")
     habitosDificiles: [],
     actividad: 'medio',
     azucarFreq: 'a_veces',
