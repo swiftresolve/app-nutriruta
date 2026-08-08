@@ -37,6 +37,17 @@ export function renderProgress(container) {
 
   // Racha
   const etapa = growthStage(racha.actual);
+  const compromisoHtml = user.compromisoDias ? `
+    <div class="mt">
+      <div class="spread small" style="font-weight:700">
+        <span>Tu compromiso: ${user.compromisoDias} días</span>
+        <span>${Math.min(racha.actual, user.compromisoDias)}/${user.compromisoDias}</span>
+      </div>
+      <div class="quiz-progress" style="margin:6px 0 0">
+        <div style="width:${Math.min(100, Math.round((racha.actual / user.compromisoDias) * 100))}%"></div>
+      </div>
+      ${racha.actual >= user.compromisoDias ? '<p class="small mt" style="color:var(--primary-dark);font-weight:700">¡Cumpliste tu compromiso! 🎉 Sigue cuando quieras.</p>' : ''}
+    </div>` : '';
   const streak = document.createElement('div');
   streak.className = 'card streak-hero';
   streak.innerHTML = `
@@ -47,6 +58,7 @@ export function renderProgress(container) {
     <p class="mt"><strong>días seguidos</strong> cumpliendo tus hábitos</p>
     <p class="small mt"><strong>${etapa.label}</strong> — Ruti crece con tu constancia.</p>
     <div class="week-strip mt">${weekStrip(diasCumplidos)}</div>
+    ${compromisoHtml}
     <p class="small muted mt">Mejor racha: ${racha.mejor} días · Total de días cumplidos: ${diasCumplidos.length}</p>
     <p class="small muted mt">🛡️ Escudos: ${escudos}/${MAX_ESCUDOS} — protegen tu racha si fallas un solo día. Se gana 1 cada 7 días de racha.</p>`;
   container.appendChild(streak);

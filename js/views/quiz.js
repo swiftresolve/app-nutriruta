@@ -1,5 +1,5 @@
 // Quiz inicial de personalización (onboarding).
-import { getState, setState, esc } from '../store.js';
+import { getState, setState, esc, today } from '../store.js';
 import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
 import { navigate } from '../app.js';
 import { rutiBadge } from '../ruti.js';
@@ -259,8 +259,49 @@ export function renderQuiz(container) {
         <ul class="steps check mt">${prioridades.map((p) => `<li>${p}</li>`).join('')}</ul>
       </div>
       <div class="legal-note">La información que diste nos ayuda a personalizar tu experiencia. Esta app es una guía de autoayuda y no reemplaza la atención de un profesional de salud.</div>
-      <button class="btn full accent">Ver mi menú personalizado 🍽️</button>`;
-    view.querySelector('.btn').addEventListener('click', () => navigate('dashboard'));
+      <button class="btn full accent">Siguiente →</button>`;
+    view.querySelector('.btn').addEventListener('click', () => mostrarCompromiso());
+    container.appendChild(view);
+  }
+
+  // Pantalla de compromiso: elegir con cuántos días empezar, justo después
+  // de ver el resultado — comprometerse activamente antes de la primera
+  // acción real aumenta la motivación (mismo principio que usa Duolingo
+  // con su meta de racha). Las opciones son los mismos umbrales que ya
+  // usan los logros racha_3/7/30 — no un número nuevo sin respaldo.
+  function mostrarCompromiso() {
+    container.innerHTML = '';
+    const view = document.createElement('div');
+    view.className = 'quiz-step';
+    const opciones = [
+      { dias: 3, label: '3 días', sub: 'Para probar tu primer paso' },
+      { dias: 7, label: '7 días', sub: 'Una semana completa' },
+      { dias: 30, label: '30 días', sub: 'Cambiar de verdad' }
+    ];
+    let elegido = 7;
+    view.innerHTML = `
+      <div class="quiz-progress"><div style="width:100%"></div></div>
+      <h2>Antes de empezar: un compromiso contigo</h2>
+      <p>Los hábitos que sostienes hoy son los que te van a sostener mañana. No hace falta esperar a que algo se sienta grave para empezar — hoy es un buen día para tomar la primera acción.</p>
+      <p class="mt" style="font-weight:600">¿Con cuántos días quieres comprometerte a empezar tu ruta?</p>
+      <div class="chips mt" id="compromiso-chips"></div>
+      <button class="btn full accent mt">Ver mi menú personalizado 🍽️</button>`;
+    const chipWrap = view.querySelector('#compromiso-chips');
+    for (const o of opciones) {
+      const b = document.createElement('button');
+      b.className = 'chip' + (o.dias === elegido ? ' selected' : '');
+      b.innerHTML = `${o.label}<br><span class="small" style="font-weight:400">${o.sub}</span>`;
+      b.addEventListener('click', () => {
+        elegido = o.dias;
+        chipWrap.querySelectorAll('.chip').forEach((c, i) => c.classList.toggle('selected', opciones[i].dias === elegido));
+      });
+      chipWrap.appendChild(b);
+    }
+    view.querySelector('.btn').addEventListener('click', () => {
+      const cur = getState().user;
+      setState({ user: { ...cur, compromisoDias: elegido, compromisoDesde: today() } });
+      navigate('dashboard');
+    });
     container.appendChild(view);
   }
 
