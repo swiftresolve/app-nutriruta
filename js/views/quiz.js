@@ -131,12 +131,12 @@ export function renderQuiz(container) {
     {
       title: '¿Con qué frecuencia consumes azúcar?',
       sub: 'Gaseosas, jugos industriales, postres, dulces, panadería…',
-      render: (el) => chips(el, FREQ_OPTIONS, answers, false, 'azucarFreq')
+      render: (el) => chips(el, FREQ_OPTIONS, answers, false, 'azucarFreq', true)
     },
     {
       title: '¿Con qué frecuencia consumes alcohol?',
       sub: 'Cerveza, vino, licores… Si no tomas, elige "Nunca".',
-      render: (el) => chips(el, FREQ_OPTIONS, answers, false, 'alcoholFreq')
+      render: (el) => chips(el, FREQ_OPTIONS, answers, false, 'alcoholFreq', true)
     }
   ];
 
@@ -174,13 +174,20 @@ export function renderQuiz(container) {
     const pct = Math.round(((step + 1) / (steps.length + 1)) * 100);
     const view = document.createElement('div');
     view.className = 'quiz-step';
+    const puedeCerrar = getState().onboarded; // solo si está re-tomando el quiz desde Ajustes
     view.innerHTML = `
-      <div class="quiz-progress"><div style="width:${pct}%"></div></div>
+      <div class="quiz-topbar">
+        <button class="icon-btn quiz-topbar-back" aria-label="Atrás" ${step === 0 ? 'style="visibility:hidden"' : ''}>‹</button>
+        <div class="quiz-progress"><div style="width:${pct}%"></div></div>
+        <button class="icon-btn quiz-topbar-close" aria-label="Cerrar" ${puedeCerrar ? '' : 'style="visibility:hidden"'}>✕</button>
+      </div>
       <h2>${s.title}</h2>
       ${s.sub ? `<p>${s.sub}</p>` : ''}
       <div class="step-body"></div>
       <div class="quiz-nav"></div>`;
     s.render(view.querySelector('.step-body'));
+    view.querySelector('.quiz-topbar-back').addEventListener('click', () => { if (step > 0) { step--; draw(); } });
+    if (puedeCerrar) view.querySelector('.quiz-topbar-close').addEventListener('click', () => navigate('dashboard'));
 
     const navEl = view.querySelector('.quiz-nav');
     if (step > 0) {
@@ -245,17 +252,43 @@ export function renderQuiz(container) {
       `Primer paso: ${esc(prioridades[0] || 'Progreso, no perfección')}`,
       'Menú del día personalizado'
     ];
+    const total = 380 + items.length * 420 + 300;
+    const RADIO = 42, CIRC = 2 * Math.PI * 42;
     view.innerHTML = `
       <h2 class="mt">Armando tu plan${nombreTxt}…</h2>
+      <div class="armando-ring mt">
+        <svg viewBox="0 0 96 96">
+          <circle class="armando-ring-track" cx="48" cy="48" r="${RADIO}"/>
+          <circle class="armando-ring-fill" cx="48" cy="48" r="${RADIO}"
+            stroke-dasharray="${CIRC.toFixed(1)}" stroke-dashoffset="${CIRC.toFixed(1)}"/>
+        </svg>
+        <span class="armando-ring-pct" id="ap-pct">0%</span>
+      </div>
+      <div class="quiz-progress mt" style="max-width:280px;margin-left:auto;margin-right:auto"><div id="ap-bar" style="width:0%"></div></div>
       <div class="armando-list mt">${items.map((t, i) => `<div class="armando-item" id="ap-${i}"><span class="armando-check">⏳</span><span>${t}</span></div>`).join('')}</div>`;
     container.appendChild(view);
+
+    // Anillo + barra reflejan el mismo avance real que el checklist de
+    // abajo (mismo `total`), no una animación aparte desincronizada.
+    const ringFill = view.querySelector('.armando-ring-fill');
+    const pctLabel = view.querySelector('#ap-pct');
+    const bar = view.querySelector('#ap-bar');
+    const startedAt = Date.now();
+    const tick = setInterval(() => {
+      const pct = Math.min(100, Math.round(((Date.now() - startedAt) / total) * 100));
+      ringFill.style.strokeDashoffset = (CIRC * (1 - pct / 100)).toFixed(1);
+      pctLabel.textContent = `${pct}%`;
+      bar.style.width = `${pct}%`;
+      if (pct >= 100) clearInterval(tick);
+    }, 60);
+
     items.forEach((_, i) => {
       setTimeout(() => {
         const el = view.querySelector(`#ap-${i}`);
         if (el) { el.classList.add('done'); el.querySelector('.armando-check').textContent = '✓'; }
       }, 380 + i * 420);
     });
-    setTimeout(onDone, 380 + items.length * 420 + 300);
+    setTimeout(onDone, total);
   }
 
   function mostrarResultado(main, rest, prioridades) {
@@ -293,26 +326,29 @@ export function renderQuiz(container) {
       { dias: 7, label: '7 días', sub: 'Una semana completa' },
       { dias: 30, label: '30 días', sub: 'Cambiar de verdad' }
     ];
-    let elegido = 7;
+    // Sin preseleccionar: es un compromiso, tiene que elegirse de verdad.
+    let elegido = null;
     view.innerHTML = `
       <div class="quiz-progress"><div style="width:100%"></div></div>
       <h2>Antes de empezar: un compromiso contigo 💛</h2>
       <p>Sé que a veces el día a día no deja espacio para pensar en ti. Pero tu cuerpo lleva la cuenta, incluso cuando tú no la llevas. Comprometerte hoy — aunque sea con un paso chiquito — no es una exigencia más: es una forma real de decirte a ti misma que mereces cuidarte con constancia.</p>
       <p class="mt" style="font-weight:600">¿Con cuántos días quieres empezar este compromiso?</p>
-      <div class="chips mt" id="compromiso-chips"></div>
-      <button class="btn full accent mt">Ver mi menú personalizado 🍽️</button>`;
+      <div class="chips chips-1col mt" id="compromiso-chips"></div>
+      <button class="btn full accent mt" disabled>Ver mi menú personalizado 🍽️</button>`;
     const chipWrap = view.querySelector('#compromiso-chips');
+    const continuarBtn = view.querySelector('.btn');
     for (const o of opciones) {
       const b = document.createElement('button');
-      b.className = 'chip' + (o.dias === elegido ? ' selected' : '');
-      b.innerHTML = `${o.label}<br><span class="small" style="font-weight:400">${o.sub}</span>`;
+      b.className = 'chip';
+      b.innerHTML = `<span>${o.label}<br><span class="small" style="font-weight:400">${o.sub}</span></span>`;
       b.addEventListener('click', () => {
         elegido = o.dias;
+        continuarBtn.disabled = false;
         chipWrap.querySelectorAll('.chip').forEach((c, i) => c.classList.toggle('selected', opciones[i].dias === elegido));
       });
       chipWrap.appendChild(b);
     }
-    view.querySelector('.btn').addEventListener('click', () => {
+    continuarBtn.addEventListener('click', () => {
       const cur = getState().user;
       setState({ user: { ...cur, compromisoDias: elegido, compromisoDesde: today() } });
       navigate('dashboard');
