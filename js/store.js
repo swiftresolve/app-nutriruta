@@ -37,6 +37,7 @@ const DEFAULT_STATE = {
   notifPrefs: { plan: true, comidas: true, agua: true }, // qué tipos de aviso push recibir
   pasoHechos: [],               // fechas ISO en que se marcó "Tu paso de hoy" como hecho
   escudos: 0,                   // escudos disponibles para proteger la racha (máx MAX_ESCUDOS)
+  gemas: 0,                     // moneda simple: se gana al completar el día/semana, se gasta en escudos extra
   primerosPasos: { cerrado: false, minimizado: false }, // checklist de onboarding, solo cuentas nuevas
   sonidoActivado: true          // chime al completar una micro-acción; silenciable en Ajustes
 };
@@ -263,6 +264,27 @@ export function dayCompleted() {
 // de dejar un hábito nuevo).
 export const MAX_ESCUDOS = 2;
 
+// --- Gemas: moneda simple, sin economía compleja. Se ganan solo en los
+// mismos hitos que ya celebran la app (día completo, día del plan de 7
+// días, semana de la misión) — no hay una fuente nueva de "grindeo". Se
+// gastan en un único destino con sentido real: comprar un escudo extra
+// cuando ya se llegó al tope de los que se ganan gratis.
+export const GEMAS_POR_DIA = 5;
+export const COSTO_ESCUDO_GEMAS = 60;
+
+export function comprarEscudo() {
+  if (state.escudos >= MAX_ESCUDOS) return false;
+  if (state.gemas < COSTO_ESCUDO_GEMAS) return false;
+  setState({ escudos: state.escudos + 1, gemas: state.gemas - COSTO_ESCUDO_GEMAS });
+  return true;
+}
+
+// Para hitos que no pasan por updateStreak() (día del Plan de 7 días,
+// semana de la Misión) — mismos hitos que ya celebran confeti, ninguno nuevo.
+export function otorgarGemas(n) {
+  setState({ gemas: (state.gemas || 0) + n });
+}
+
 function updateStreak() {
   const t = today();
   if (!dayCompleted()) return;
@@ -287,7 +309,8 @@ function updateStreak() {
   if (actual > 0 && actual % 7 === 0 && escudos < MAX_ESCUDOS) escudos += 1;
 
   const mejor = Math.max(actual, state.racha.mejor);
-  setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t }, escudos });
+  const gemas = (state.gemas || 0) + GEMAS_POR_DIA;
+  setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t }, escudos, gemas });
   return escudoUsado;
 }
 

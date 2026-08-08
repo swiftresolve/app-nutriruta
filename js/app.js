@@ -1,5 +1,5 @@
 // Router mínimo + arranque con puerta de autenticación.
-import { getState, initCloud, resetState, isPremium, MAX_ESCUDOS } from './store.js';
+import { getState, initCloud, resetState, isPremium, MAX_ESCUDOS, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo } from './store.js';
 import { getSession, supabase } from './supabase-client.js';
 import { growthStage, rutiBadge } from './ruti.js';
 import { renderAuth } from './views/auth.js';
@@ -83,7 +83,11 @@ export function susanaName() {
 
 // Abre/cierra un tooltip anclado al botón, se cierra solo a los pocos
 // segundos o al tocar fuera. Un solo tooltip abierto a la vez.
-function attachStatTooltip(btn, html) {
+// html puede ser un string fijo o una función que lo genere en el momento
+// del clic — necesario para el de escudos, cuyo botón de "comprar" depende
+// de un saldo que puede cambiar sin recargar la vista (compra hecha y
+// vuelta a abrir el mismo tooltip en la misma sesión).
+function attachStatTooltip(btn, html, { onRender, duracion = 3500 } = {}) {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     const yaAbierto = btn.querySelector('.header-tooltip');
@@ -91,12 +95,13 @@ function attachStatTooltip(btn, html) {
     if (yaAbierto) return;
     const tip = document.createElement('div');
     tip.className = 'header-tooltip';
-    tip.innerHTML = html;
+    tip.innerHTML = typeof html === 'function' ? html() : html;
     btn.appendChild(tip);
     const cerrar = () => { tip.remove(); document.removeEventListener('click', fuera); };
-    const timer = setTimeout(cerrar, 3500);
+    const timer = setTimeout(cerrar, duracion);
     const fuera = (ev) => { if (!btn.contains(ev.target)) { clearTimeout(timer); cerrar(); } };
     setTimeout(() => document.addEventListener('click', fuera), 0);
+    if (onRender) onRender(tip, cerrar);
   });
 }
 
@@ -110,6 +115,7 @@ export function header(container) {
   const mostrarStats = state.onboarded;
   const racha = state.racha?.actual || 0;
   const escudos = state.escudos || 0;
+  const gemas = state.gemas || 0;
 
   h.innerHTML = `
     <span class="brand"><svg viewBox="0 0 512 512"><defs><linearGradient id="nrleaf" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#7CC96A"/><stop offset="1" stop-color="#3E9E52"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="#2BB5A0"/><g fill="none" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="13"><ellipse cx="256" cy="396" rx="148" ry="36"/><ellipse cx="256" cy="396" rx="86" ry="21"/></g><path d="M256 68 C168 68 100 136 100 222 C100 316 202 398 256 434 C310 398 412 316 412 222 C412 136 344 68 256 68 Z" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linejoin="round"/><g transform="translate(252 210) scale(0.55) translate(-256 -288)"><path d="M256 416c-72-48-136-102-136-176 0-45 34-80 78-80 28 0 48 13 58 32 10-19 30-32 58-32 44 0 78 35 78 80 0 74-64 128-136 176z" fill="#FFFFFF"/></g><g transform="translate(288 210) rotate(35)"><path d="M0 -40 C26 -24 28 10 0 40 C-28 10 -26 -24 0 -40 Z" fill="url(#nrleaf)"/><path d="M0 36 L-9 60" stroke="#3E9E52" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M0 -30 L0 32 M0 -16 L13 -25 M0 -16 L-13 -25 M0 2 L15 -7 M0 2 L-15 -7 M0 18 L12 9 M0 18 L-12 9" stroke="#FFFFFF" stroke-width="3.5" fill="none" stroke-linecap="round"/></g></svg>NutriRuta</span>
@@ -117,6 +123,7 @@ export function header(container) {
       ${mostrarStats ? `
         <div class="header-stats">
           <button class="header-stat" id="hs-racha" aria-label="Tu racha"><span class="icon streak-flame ${racha > 0 ? 'lit' : 'out'}">🔥</span>${racha}</button>
+          <button class="header-stat" id="hs-gemas" aria-label="Tus gemas"><span class="icon">💎</span>${gemas}</button>
           <button class="header-stat" id="hs-escudos" aria-label="Tus escudos"><span class="icon">🛡️</span>${escudos}</button>
         </div>` : ''}
       <button class="icon-btn" data-go="settings" aria-label="Ajustes">⚙️</button>
@@ -133,9 +140,39 @@ export function header(container) {
       </div>
       <p class="small muted mt" style="margin-top:4px">${etapa.label} — así se ve Ruti con tu constancia.</p>
       <p class="small muted" style="margin-top:2px">Mejor racha: ${mejor} día${mejor === 1 ? '' : 's'}</p>`);
-    attachStatTooltip(h.querySelector('#hs-escudos'), `
-      <strong>🛡️ ${escudos}/${MAX_ESCUDOS} escudos</strong>
-      <p class="small muted mt" style="margin-top:4px">Protegen tu racha si fallas un solo día. Se gana 1 cada 7 días de racha.</p>`);
+    attachStatTooltip(h.querySelector('#hs-gemas'), `
+      <strong>💎 ${gemas} gemas</strong>
+      <p class="small muted mt" style="margin-top:4px">Ganas ${GEMAS_POR_DIA} 💎 cada día que completas, y más al terminar un día del Plan de 7 días o una semana de la Misión.</p>
+      <p class="small muted" style="margin-top:2px">Se usan para comprar escudos extra — mira el 🛡️.</p>`);
+    attachStatTooltip(h.querySelector('#hs-escudos'), () => {
+      const st = getState();
+      const e = st.escudos || 0;
+      const g = st.gemas || 0;
+      return `
+        <strong>🛡️ ${e}/${MAX_ESCUDOS} escudos</strong>
+        <p class="small muted mt" style="margin-top:4px">Protegen tu racha si fallas un solo día. Se gana 1 cada 7 días de racha.</p>
+        ${e < MAX_ESCUDOS ? `<button class="btn ghost sm mt" id="tt-comprar-escudo" ${g < COSTO_ESCUDO_GEMAS ? 'disabled' : ''}>Comprar por ${COSTO_ESCUDO_GEMAS} 💎</button>` : ''}
+      `;
+    }, {
+      duracion: 6000,
+      onRender: (tip, cerrar) => {
+        const btn = tip.querySelector('#tt-comprar-escudo');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+          if (!comprarEscudo()) return;
+          cerrar();
+          toast('🛡️ ¡Escudo comprado!');
+          // Actualiza los botones del header en el sitio — header() los
+          // vuelve a pintar por completo en cada vista de todas formas, esto
+          // solo evita esperar a la próxima navegación para verlo reflejado.
+          const st = getState();
+          const escudosBtn = document.querySelector('#hs-escudos');
+          const gemasBtn = document.querySelector('#hs-gemas');
+          if (escudosBtn) escudosBtn.innerHTML = `<span class="icon">🛡️</span>${st.escudos || 0}`;
+          if (gemasBtn) gemasBtn.innerHTML = `<span class="icon">💎</span>${st.gemas || 0}`;
+        });
+      }
+    });
   }
 
   container.appendChild(h);

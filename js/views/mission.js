@@ -3,7 +3,7 @@
 // plan del usuario permite (semana 1 gratis; 2–12 con Premium vigente).
 import { MISSION } from '../data/mission.js';
 import { fetchMissionWeeks, fetchMissionIndex } from '../supabase-client.js';
-import { getState, setState, isPremium, planExpired, today } from '../store.js';
+import { getState, setState, isPremium, planExpired, today, otorgarGemas, GEMAS_POR_DIA } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
 import { renderPathMap } from '../pathMap.js';
 import { celebrateMilestone } from '../streakAnim.js';
@@ -225,8 +225,10 @@ function openWeek(week, canComplete, done = false, onChange) {
         });
         close();
         if (completando) {
+          const gemasSemana = GEMAS_POR_DIA * 3;
+          otorgarGemas(gemasSemana);
           playCelebrateSound();
-          celebrateMilestone(`¡Semana ${week.n} completada!`, week.titulo);
+          celebrateMilestone(`¡Semana ${week.n} completada!`, `${week.titulo} · +${gemasSemana} 💎`);
         }
         if (onChange) onChange();
       });
