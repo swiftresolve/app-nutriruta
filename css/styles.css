@@ -720,15 +720,13 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   width: 66px; height: 54px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
   display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
   border: none; color: #fff;
-  /* Corte de DOS TONOS SÓLIDOS, no un degradado suave ni una capa
-     semitransparente encima — analizando la referencia de cerca, la cara
-     es un color plano y el canto es OTRO color plano, con una transición
-     de un par de puntos porcentuales entre los dos (no un fundido largo).
-     --face/--rim los define cada estado (done/now/locked); el corte
-     (62%/64%) es el mismo para todos. */
-  --face: #4FC3F7; --rim: #1671A8;
-  background: linear-gradient(to bottom, var(--face) 0%, var(--face) 62%, var(--rim) 64%, var(--rim) 100%);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 6px 0 #4E86B8, 0 8px 10px rgba(35,56,51,0.14);
+  /* Copiado directo de la referencia: cara plana y brillante arriba
+     (~60%), canto claramente más oscuro abajo con corte definido (no
+     degradado largo), y un trazo oscuro fino en el borde para separar el
+     botón del aro que lo rodea. */
+  --face: #29B6F6; --rim: #0277BD;
+  background: linear-gradient(to bottom, var(--face) 0%, var(--face) 60%, var(--rim) 62%, var(--rim) 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 0 0 1.5px rgba(15,40,65,0.3), 0 6px 0 var(--rim), 0 8px 10px rgba(35,56,51,0.14);
   transition: transform .12s ease; padding: 0;
 }
 /* Brillo superior (look "botón de caramelo" 3D) — se oculta en nodos bloqueados. */
@@ -736,17 +734,19 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   content: ''; position: absolute; top: 6px; left: 11px; width: 34%; height: 24%;
   border-radius: 50%; background: rgba(255,255,255,0.5); pointer-events: none;
 }
-.path-node:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 1px 0 #4E86B8; }
+.path-node:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 0 0 1.5px rgba(15,40,65,0.3), 0 1px 0 #4E86B8; }
 .path-node.done {
   --face: var(--primary); --rim: var(--primary-dark); color: #fff;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), 0 6px 0 var(--primary-dark), 0 8px 10px rgba(35,56,51,0.14);
+  background: linear-gradient(to bottom, var(--face) 0%, var(--face) 60%, var(--rim) 62%, var(--rim) 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), 0 0 0 1.5px rgba(15,40,65,0.25), 0 6px 0 var(--primary-dark), 0 8px 10px rgba(35,56,51,0.14);
 }
-.path-node.done:active { box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), 0 1px 0 var(--primary-dark); }
+.path-node.done:active { box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), 0 0 0 1.5px rgba(15,40,65,0.25), 0 1px 0 var(--primary-dark); }
 .path-node.now {
   --face: var(--accent); --rim: #D96B4F; color: #fff; transform: scale(1.15);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 6px 0 #D96B4F, 0 8px 10px rgba(255,138,107,0.25);
+  background: linear-gradient(to bottom, var(--face) 0%, var(--face) 60%, var(--rim) 62%, var(--rim) 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 0 0 1.5px rgba(120,40,20,0.25), 0 6px 0 #D96B4F, 0 8px 10px rgba(255,138,107,0.25);
 }
-.path-node.now:active { transform: scale(1.15) translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 1px 0 #D96B4F; }
+.path-node.now:active { transform: scale(1.15) translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 0 0 1.5px rgba(120,40,20,0.25), 0 1px 0 #D96B4F; }
 /* Aro circular centrado alrededor del nodo activo — un elemento propio
    (no box-shadow con spread) porque el nodo es ovalado, no un círculo:
    un spread uniforme sobre una elipse queda torcido/descentrado. Este
@@ -758,9 +758,11 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
      margen parejo de 8px por lado — antes el cálculo era sobre el tamaño
      sin escalar, dejando el hueco desigual. */
   width: 92px; height: 78px; border-radius: 50%;
-  /* var(--bg) quedaba casi igual al blanco de la tarjeta, invisible. Un
-     tinte del color de acento sí se distingue sin ser un aro sólido. */
-  background: var(--accent-soft);
+  /* Gris neutro, como la referencia (ahí es un gris oscuro sobre fondo
+     casi negro; aquí, su equivalente sobre tarjeta blanca) — var(--bg)
+     quedaba invisible, y un tinte de color no es lo que muestra la
+     referencia: es gris, no coral. */
+  background: #D8DEDC;
   pointer-events: none;
 }
 .path-node.locked {
