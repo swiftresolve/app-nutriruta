@@ -8,6 +8,21 @@ import { openRecipe } from './dashboard.js';
 // Recetas visibles en el plan gratuito (el resto se muestra bloqueado).
 const FREE_RECIPE_LIMIT = 12;
 
+// Traducción de las etiquetas reales de cada receta (data/recipes.js) a un
+// chip corto y amigable — no inventa datos, solo los presenta mejor.
+const TAG_LABELS = {
+  alto_proteina: '💪 Proteína', bajo_azucar: '🚫🍬 Bajo azúcar', alto_fibra: '🌾 Alta fibra',
+  fibra_soluble: '🌾 Fibra soluble', grasa_saludable: '🥑 Grasa buena', rapido: '⚡ Rápido',
+  sin_gluten: '🌾✕ Sin gluten', local: '📍 Local', fermentado: '🫙 Fermentado',
+  microbiota: '🦠 Microbiota', antojo_dulce_saludable: '🍯 Antojo sano', snack_antiansiedad: '🧘 Antiansiedad',
+  proteina_vegetal: '🌱 Prot. vegetal', omega3: '🐟 Omega 3', plato_modelo: '🍽️ Plato modelo',
+  economico: '💰 Económico', bajo_ig: '📉 Bajo IG', mediterraneo: '🫒 Mediterráneo',
+  suave: '🍃 Suave', colon_friendly: '💚 Colon feliz', vegano: '🌱 Vegano', hidratante: '💧 Hidratante',
+  reemplaza_paquetes: '🚫🍪 Sin paquete', reemplaza_alcohol: '🚫🍷 Sin alcohol', ligero: '🪶 Ligero',
+  antojo_salado_saludable: '🧂 Antojo sano'
+};
+const HOT_MEALS = new Set(['desayuno', 'almuerzo', 'cena']);
+
 export function renderPlanner(container, params = {}) {
   header(container);
   let tab = params.tab || 'recetas';
@@ -49,33 +64,41 @@ export function renderPlanner(container, params = {}) {
     }
     body.appendChild(filters);
 
-    const card = document.createElement('div');
-    card.className = 'card';
     const list = RECIPES
       .filter((r) => mealFilter === 'todas' || r.comida === mealFilter)
       .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro));
 
     if (!list.length) {
-      card.innerHTML = '<p>No hay recetas disponibles con tus exclusiones actuales en esta categoría.</p>';
+      const empty = document.createElement('div');
+      empty.className = 'card';
+      empty.innerHTML = '<p>No hay recetas disponibles con tus exclusiones actuales en esta categoría.</p>';
+      body.appendChild(empty);
     }
+    const grid = document.createElement('div');
+    grid.className = 'recipe-grid';
     const premium = isPremium();
+    const meal = MEALS.reduce((m, x) => (m[x.id] = x, m), {});
     list.forEach((r, i) => {
       const locked = !premium && i >= FREE_RECIPE_LIMIT;
       const light = trafficLight(r, user.perfiles);
       const shown = displayRecipe(r, user.exclusiones);
+      const tags = (r.etiquetas || []).slice(0, 2).map((t) => `<span class="recipe-tag">${TAG_LABELS[t] || t}</span>`).join('');
       const item = document.createElement('button');
-      item.className = 'recipe-item';
+      item.className = 'recipe-card' + (locked ? ' locked' : '');
       item.innerHTML = `
-        <span class="recipe-emoji">${shown.emoji}</span>
-        <span class="info">
-          <strong>${shown.nombre}</strong><br>
-          <span class="muted small${locked ? ' lesson-blur' : ''}">${r.descripcion}</span>
-        </span>
-        ${locked ? '<span>🔒</span>' : `<span class="dot ${light}" title="Semáforo: ${light}"></span>`}`;
+        <div class="recipe-plate">
+          ${HOT_MEALS.has(r.comida) ? '<span class="steam"><span></span><span></span><span></span></span>' : ''}
+          ${shown.emoji}
+          <span class="garnish">${meal[r.comida]?.emoji || ''}</span>
+          ${locked ? '' : `<span class="semaforo-ring ${light}" title="Semáforo: ${light}"></span>`}
+        </div>
+        <div class="recipe-title">${shown.nombre}</div>
+        <div class="recipe-desc${locked ? ' lesson-blur' : ''}">${r.descripcion}</div>
+        ${locked ? '<div class="recipe-lock">🔒 Premium</div>' : `<div class="recipe-tags">${tags}</div>`}`;
       item.addEventListener('click', () => locked ? navigate('plans') : openRecipe(r));
-      card.appendChild(item);
+      grid.appendChild(item);
     });
-    body.appendChild(card);
+    body.appendChild(grid);
 
     const note = document.createElement('p');
     note.className = 'muted small center mt';
