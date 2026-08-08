@@ -1325,5 +1325,469 @@ export const RECIPES = [
     ],
     apto: ['colon_irritable', 'migranas', 'candidiasis', 'gases', 'higado_graso', 'colesterol'],
     etiquetas: ['suave', 'hidratante', 'colon_friendly']
+  },
+
+  // ================= DESAYUNOS (lote 4) =================
+  {
+    id: 'shakshuka_ligera', comida: 'desayuno', emoji: '🍅',
+    nombre: 'Shakshuka ligera de tomate y pimentón',
+    descripcion: 'Huevos pochados en salsa de tomate especiada, sin harinas.',
+    tituloSub: { huevo: { nombre: 'Tofu revuelto en salsa de tomate especiada', emoji: '🌱' } },
+    ingredientes: [
+      { n: '2 huevos', grupo: 'huevo', sub: 'media taza de tofu firme en cubos' },
+      { n: '1 taza de salsa de tomate natural con pimentón y comino' },
+      { n: '1 cdta de aceite de oliva' }
+    ],
+    pasos: [
+      'Sofreír el pimentón en la salsa de tomate con las especias 5 minutos.',
+      'Hacer huecos en la salsa y cascar los huevos dentro.',
+      'Tapar y cocinar a fuego bajo hasta que cuajen.'
+    ],
+    apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'colesterol'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['alto_proteina', 'mediterraneo']
+  },
+  {
+    id: 'bowl_requeson_frutos_rojos', comida: 'desayuno', emoji: '🍓',
+    nombre: 'Bowl de requesón con frutos rojos',
+    descripcion: 'Proteína de absorción lenta, ideal para sostener saciedad toda la mañana.',
+    tituloSub: { lacteos: { nombre: 'Bowl de tofu batido con frutos rojos', emoji: '🌱' } },
+    ingredientes: [
+      { n: '¾ taza de requesón o queso cottage bajo en sodio', grupo: 'lacteos', sub: 'media taza de tofu sedoso batido' },
+      { n: '½ taza de fresas y arándanos' },
+      { n: '1 cda de semillas de chía' }
+    ],
+    pasos: [
+      'Servir el requesón en un bowl.',
+      'Agregar los frutos rojos y las semillas de chía por encima.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'candidiasis'],
+    etiquetas: ['alto_proteina', 'bajo_azucar']
+  },
+  {
+    id: 'sandwich_pavo_integral', comida: 'desayuno', emoji: '🥪',
+    nombre: 'Sándwich integral de pavo y queso fresco',
+    descripcion: 'Clásico rápido con proteína magra y carbohidrato integral.',
+    tituloSub: { gluten: { nombre: 'Roll-up de lechuga con pavo y queso fresco', emoji: '🥬' } },
+    ingredientes: [
+      { n: '2 rebanadas de pan integral', grupo: 'gluten', sub: '2 hojas grandes de lechuga' },
+      { n: '3 lonjas de pechuga de pavo' },
+      { n: '1 lonja de queso fresco bajo en sodio', grupo: 'lacteos', sub: '2 cdas de hummus' },
+      { n: 'Tomate y lechuga' }
+    ],
+    pasos: [
+      'Armar el sándwich con el pavo, el queso, el tomate y la lechuga.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'higado_graso'],
+    moderar: ['colesterol', 'gases'],
+    etiquetas: ['rapido', 'alto_proteina']
+  },
+  {
+    id: 'granola_casera_yogur', comida: 'desayuno', emoji: '🥜',
+    nombre: 'Granola casera sin azúcar con yogur',
+    descripcion: 'Crocante horneado con avena, semillas y frutos secos — sin miel ni panela.',
+    tituloSub: { lacteos: { nombre: 'Granola casera con yogur de coco', emoji: '🥥' } },
+    ingredientes: [
+      { n: '½ taza de avena en hojuelas horneada con canela', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '1 cda de nueces y semillas de girasol', grupo: 'frutos_secos', sub: '2 cdas extra de semillas de girasol' },
+      { n: '¾ taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' }
+    ],
+    pasos: [
+      'Hornear la avena con canela a 160°C por 15 minutos, revolviendo a mitad de cocción.',
+      'Mezclar con las nueces y semillas.',
+      'Servir sobre el yogur.'
+    ],
+    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'estrenimiento'],
+    moderar: ['candidiasis'],
+    etiquetas: ['alto_fibra', 'grasa_saludable']
+  },
+  {
+    id: 'tortilla_avena_platano', comida: 'desayuno', emoji: '🥞',
+    nombre: 'Tortitas de avena y plátano (2 ingredientes)',
+    descripcion: 'Dulce natural del plátano, sin azúcar ni harina añadida.',
+    ingredientes: [
+      { n: '1 plátano maduro machacado' },
+      { n: '½ taza de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '1 huevo', grupo: 'huevo', sub: '¼ taza de puré de manzana sin azúcar' },
+      { n: 'Canela al gusto' }
+    ],
+    pasos: [
+      'Mezclar todos los ingredientes hasta formar una masa espesa.',
+      'Cocinar pequeñas porciones en sartén antiadherente a fuego medio, 2–3 minutos por lado.'
+    ],
+    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'estrenimiento'],
+    moderar: ['candidiasis'],
+    etiquetas: ['antojo_dulce_saludable', 'alto_fibra']
+  },
+
+  // ================= MEDIA MAÑANA (lote 4) =================
+  {
+    id: 'edamames_sal_marina', comida: 'media_manana', emoji: '🫛',
+    nombre: 'Edamames al vapor con sal marina',
+    descripcion: 'Proteína vegetal completa, snack entretenido de "pelar y comer".',
+    tituloSub: { soya: { nombre: 'Garbanzos tostados con sal marina', emoji: '🫘' } },
+    ingredientes: [
+      { n: '1 taza de edamames con cáscara', grupo: 'soya', sub: '½ taza de garbanzos tostados' },
+      { n: 'Sal marina al gusto' }
+    ],
+    pasos: [
+      'Cocinar los edamames al vapor 5 minutos.',
+      'Sazonar con sal marina y servir tibios.'
+    ],
+    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'higado_graso', 'estrenimiento'],
+    moderar: ['gases'],
+    etiquetas: ['proteina_vegetal', 'snack_antiansiedad']
+  },
+  {
+    id: 'batido_proteina_avena', comida: 'media_manana', emoji: '🥤',
+    nombre: 'Batido de avena, canela y proteína',
+    descripcion: 'Snack líquido rápido, sostiene energía sin picos de glucosa.',
+    tituloSub: { lacteos: { nombre: 'Batido de avena con bebida de almendra', emoji: '🥤' } },
+    ingredientes: [
+      { n: '3 cdas de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '1 taza de leche o yogur bebible sin azúcar', grupo: 'lacteos', sub: 'bebida de almendra sin azúcar' },
+      { n: 'Canela al gusto' }
+    ],
+    pasos: [
+      'Licuar todos los ingredientes hasta que quede cremoso.',
+      'Servir de inmediato.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'estrenimiento'],
+    etiquetas: ['rapido', 'alto_fibra']
+  },
+  {
+    id: 'pepinillos_hummus', comida: 'media_manana', emoji: '🥒',
+    nombre: 'Rodajas de pepino con hummus y pimentón',
+    descripcion: 'Crocante fresco, fibra y proteína vegetal sin cocción.',
+    tituloSub: { legumbres: { nombre: 'Rodajas de pepino con guacamole', emoji: '🥑' } },
+    ingredientes: [
+      { n: '1 pepino en rodajas' },
+      { n: '3 cdas de hummus', grupo: 'legumbres', sub: '3 cdas de guacamole' },
+      { n: 'Pimentón dulce al gusto' }
+    ],
+    pasos: [
+      'Untar cada rodaja de pepino con hummus.',
+      'Espolvorear pimentón dulce.'
+    ],
+    apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'colesterol', 'estrenimiento'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['proteina_vegetal', 'hidratante']
+  },
+  {
+    id: 'ciruelas_pasas_nueces', comida: 'media_manana', emoji: '🍑',
+    nombre: 'Ciruelas pasas con nueces',
+    descripcion: 'El clásico snack para el tránsito intestinal, con grasa buena.',
+    ingredientes: [
+      { n: '4–5 ciruelas pasas' },
+      { n: '6–8 nueces', grupo: 'frutos_secos', sub: '2 cdas de semillas de calabaza' }
+    ],
+    pasos: [
+      'Servir las ciruelas pasas junto con las nueces.'
+    ],
+    apto: ['estrenimiento', 'colesterol', 'resistencia_insulina'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['alto_fibra', 'grasa_saludable']
+  },
+  {
+    id: 'agua_coco_natural', comida: 'media_manana', emoji: '🥥',
+    nombre: 'Agua de coco natural con un puñado de almendras',
+    descripcion: 'Hidratación con electrolitos naturales, sin azúcar añadida.',
+    ingredientes: [
+      { n: '1 vaso de agua de coco natural (sin azúcar añadida)' },
+      { n: '8–10 almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
+    ],
+    pasos: [
+      'Servir el agua de coco bien fría.',
+      'Acompañar con las almendras.'
+    ],
+    apto: ['migranas', 'estrenimiento', 'colon_irritable', 'higado_graso'],
+    moderar: ['resistencia_insulina', 'prediabetes'],
+    etiquetas: ['hidratante', 'grasa_saludable']
+  },
+
+  // ================= ALMUERZOS (lote 4) =================
+  {
+    id: 'pechuga_pesto_tomates', comida: 'almuerzo', emoji: '🌿',
+    nombre: 'Pechuga con pesto de albahaca y tomates asados',
+    descripcion: 'Grasa buena del aceite de oliva y frutos secos, sabor intenso sin crema.',
+    tituloSub: { frutos_secos: { nombre: 'Pechuga con pesto de albahaca y semillas de girasol', emoji: '🌿' } },
+    ingredientes: [
+      { n: '1 pechuga de pollo a la plancha' },
+      { n: 'Pesto casero: albahaca, aceite de oliva, ajo y piñones', grupo: 'frutos_secos', sub: 'pesto con semillas de girasol en vez de piñones' },
+      { n: 'Tomates cherry asados' }
+    ],
+    pasos: [
+      'Cocinar la pechuga a la plancha.',
+      'Licuar la albahaca con aceite de oliva, ajo y los frutos secos para el pesto.',
+      'Servir la pechuga bañada en pesto con los tomates asados.'
+    ],
+    apto: ['colesterol', 'higado_graso', 'resistencia_insulina', 'prediabetes'],
+    etiquetas: ['mediterraneo', 'grasa_saludable']
+  },
+  {
+    id: 'arroz_coliflor_pollo', comida: 'almuerzo', emoji: '🥦',
+    nombre: 'Arroz de coliflor con pollo salteado',
+    descripcion: 'Carbohidrato ligero de bajo índice glucémico, alto en fibra.',
+    ingredientes: [
+      { n: '2 tazas de coliflor rallada (arroz de coliflor)' },
+      { n: '150 g de pechuga de pollo en cubos' },
+      { n: 'Zanahoria y arvejas' },
+      { n: 'Ajo y aceite de oliva' }
+    ],
+    pasos: [
+      'Saltear el pollo con ajo y aceite de oliva hasta dorar.',
+      'Agregar la coliflor rallada y las verduras, saltear 5 minutos.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'higado_graso'],
+    moderar: ['gases'],
+    etiquetas: ['bajo_ig', 'ligero']
+  },
+  {
+    id: 'trucha_almendras_espinaca', comida: 'almuerzo', emoji: '🐟',
+    nombre: 'Trucha con costra de almendras y espinaca salteada',
+    descripcion: 'Omega 3 + grasa buena, plato de fin de semana.',
+    tituloSub: { pescado: { nombre: 'Pechuga con costra de almendras y espinaca salteada', emoji: '🍗' }, frutos_secos: { nombre: 'Trucha con costra de ajonjolí y espinaca salteada', emoji: '🐟' } },
+    ingredientes: [
+      { n: '1 filete de trucha', grupo: 'pescado', sub: 'pechuga de pollo delgada' },
+      { n: 'Almendras trituradas', grupo: 'frutos_secos', sub: 'ajonjolí' },
+      { n: '1 taza de espinaca salteada con ajo' }
+    ],
+    pasos: [
+      'Cubrir la trucha con las almendras trituradas.',
+      'Hornear a 190°C por 12–15 minutos.',
+      'Servir sobre la espinaca salteada.'
+    ],
+    apto: ['colesterol', 'higado_graso', 'resistencia_insulina', 'prediabetes', 'migranas'],
+    etiquetas: ['omega3', 'grasa_saludable']
+  },
+  {
+    id: 'chili_lentejas_vegetal', comida: 'almuerzo', emoji: '🌶️',
+    nombre: 'Chili de lentejas y vegetales',
+    descripcion: 'Plato único con proteína vegetal, fibra y especias reconfortantes.',
+    tituloSub: { legumbres: { nombre: 'Chili de pollo desmechado y vegetales', emoji: '🍗' } },
+    ingredientes: [
+      { n: '1 taza de lentejas cocidas', grupo: 'legumbres', sub: '100 g de pollo desmechado' },
+      { n: 'Tomate, pimentón y cebolla' },
+      { n: 'Comino y pimentón ahumado (sin exceso de picante si hay sensibilidad digestiva)' }
+    ],
+    pasos: [
+      'Sofreír la cebolla y el pimentón con las especias.',
+      'Agregar el tomate y las lentejas, cocinar 15 minutos a fuego bajo.'
+    ],
+    apto: ['colesterol', 'higado_graso', 'prediabetes', 'resistencia_insulina', 'estrenimiento'],
+    moderar: ['colon_irritable', 'gases'],
+    etiquetas: ['proteina_vegetal', 'fibra_soluble']
+  },
+  {
+    id: 'pollo_curry_leche_coco', comida: 'almuerzo', emoji: '🍛',
+    nombre: 'Pollo al curry suave con leche de coco y arroz integral',
+    descripcion: 'Especiado sin picante fuerte, con grasa buena de la leche de coco.',
+    ingredientes: [
+      { n: '150 g de pechuga de pollo en cubos' },
+      { n: '½ taza de leche de coco (light si se prefiere)' },
+      { n: 'Curry suave, jengibre y cúrcuma' },
+      { n: '½ taza de arroz integral' }
+    ],
+    pasos: [
+      'Sofreír el pollo con jengibre y las especias.',
+      'Agregar la leche de coco y cocinar a fuego bajo 10 minutos.',
+      'Servir con el arroz integral.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'migranas'],
+    moderar: ['colesterol', 'higado_graso', 'gases'],
+    etiquetas: ['bajo_ig', 'plato_modelo']
+  },
+  {
+    id: 'ensalada_quinoa_pollo_arandanos', comida: 'almuerzo', emoji: '🥗',
+    nombre: 'Ensalada de quinoa, pollo y arándanos',
+    descripcion: 'Combo dulce-salado con antioxidantes y proteína magra.',
+    ingredientes: [
+      { n: '½ taza de quinoa cocida' },
+      { n: '100 g de pechuga de pollo desmechada' },
+      { n: '¼ taza de arándanos secos sin azúcar añadida' },
+      { n: 'Espinaca, aceite de oliva y limón' }
+    ],
+    pasos: [
+      'Mezclar la quinoa, el pollo y la espinaca.',
+      'Agregar los arándanos y aliñar con aceite de oliva y limón.'
+    ],
+    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'higado_graso'],
+    etiquetas: ['plato_modelo', 'antojo_dulce_saludable']
+  },
+
+  // ================= MEDIA TARDE (lote 4) =================
+  {
+    id: 'smoothie_bowl_bajo_azucar', comida: 'media_tarde', emoji: '🍇',
+    nombre: 'Smoothie bowl de frutos rojos bajo en azúcar',
+    descripcion: 'Espeso y con cuchara, no un jugo: la fibra entera se mantiene.',
+    tituloSub: { lacteos: { nombre: 'Smoothie bowl de frutos rojos con yogur de coco', emoji: '🥥' } },
+    ingredientes: [
+      { n: '½ taza de fresas y moras congeladas' },
+      { n: '½ taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
+      { n: '1 cda de semillas de chía por encima' }
+    ],
+    pasos: [
+      'Licuar las frutas congeladas con el yogur hasta espesar.',
+      'Servir en un bowl y decorar con las semillas de chía.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'candidiasis'],
+    etiquetas: ['bajo_azucar', 'alto_fibra']
+  },
+  {
+    id: 'aceitunas_queso_fresco', comida: 'media_tarde', emoji: '🫒',
+    nombre: 'Aceitunas con queso fresco y tomates cherry',
+    descripcion: 'Snack estilo mediterráneo, salado y con grasa buena.',
+    tituloSub: { lacteos: { nombre: 'Aceitunas con hummus y tomates cherry', emoji: '🫘' } },
+    ingredientes: [
+      { n: '8–10 aceitunas' },
+      { n: '40 g de queso fresco bajo en sodio', grupo: 'lacteos', sub: '3 cdas de hummus' },
+      { n: 'Tomates cherry' }
+    ],
+    pasos: [
+      'Servir todo junto en un plato pequeño.'
+    ],
+    apto: ['colesterol', 'higado_graso', 'resistencia_insulina', 'prediabetes'],
+    etiquetas: ['mediterraneo', 'antojo_salado_saludable']
+  },
+  {
+    id: 'infusion_hinojo_snack', comida: 'media_tarde', emoji: '🌿',
+    nombre: 'Infusión de hinojo con manzana',
+    descripcion: 'Clásica para desinflamar y calmar gases por la tarde.',
+    ingredientes: [
+      { n: '1 taza de infusión de hinojo' },
+      { n: '1 manzana pequeña en trozos' }
+    ],
+    pasos: [
+      'Preparar la infusión de semillas de hinojo.',
+      'Acompañar con la manzana.'
+    ],
+    apto: ['gases', 'colon_irritable', 'migranas', 'estrenimiento'],
+    etiquetas: ['suave', 'hidratante']
+  },
+  {
+    id: 'barrita_casera_avena_dátil', comida: 'media_tarde', emoji: '🍪',
+    nombre: 'Barrita casera de avena y dátil',
+    descripcion: 'Reemplaza la barrita comercial: solo dos ingredientes reales, sin azúcar añadida.',
+    ingredientes: [
+      { n: '1 taza de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '6 dátiles sin semilla remojados' },
+      { n: '2 cdas de semillas de chía o linaza' }
+    ],
+    pasos: [
+      'Licuar los dátiles remojados hasta formar una pasta.',
+      'Mezclar con la avena y las semillas, presionar en un molde.',
+      'Refrigerar 1 hora y cortar en barritas.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'estrenimiento'],
+    moderar: ['candidiasis'],
+    etiquetas: ['reemplaza_paquetes', 'alto_fibra']
+  },
+  {
+    id: 'pepino_limon_chile_snack', comida: 'media_tarde', emoji: '🥒',
+    nombre: 'Pepino con limón y un toque de chile piquín',
+    descripcion: 'Snack fresco, casi sin calorías, hidratante.',
+    ingredientes: [
+      { n: '1 pepino grande en bastones' },
+      { n: 'Jugo de 1 limón' },
+      { n: 'Chile piquín al gusto (opcional, con moderación)' }
+    ],
+    pasos: [
+      'Cortar el pepino en bastones.',
+      'Rociar con limón y una pizca de chile piquín si se tolera.'
+    ],
+    apto: ['migranas', 'higado_graso', 'colesterol', 'resistencia_insulina', 'estrenimiento'],
+    moderar: ['colon_irritable', 'gases'],
+    etiquetas: ['hidratante', 'ligero']
+  },
+
+  // ================= CENAS (lote 4) =================
+  {
+    id: 'coliflor_horno_curry', comida: 'cena', emoji: '🥦',
+    nombre: 'Coliflor al horno con curry suave',
+    descripcion: 'Cena vegetal simple, alta en fibra y baja en calorías.',
+    ingredientes: [
+      { n: '1 coliflor pequeña en floretes' },
+      { n: '1 cdta de aceite de oliva' },
+      { n: 'Curry suave y cúrcuma' }
+    ],
+    pasos: [
+      'Mezclar la coliflor con el aceite y las especias.',
+      'Hornear a 200°C por 25 minutos hasta dorar.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'higado_graso', 'estrenimiento'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['ligero', 'bajo_ig']
+  },
+  {
+    id: 'tacos_pescado_col_morada', comida: 'cena', emoji: '🌮',
+    nombre: 'Tacos de pescado con col morada',
+    descripcion: 'Cena ligera con proteína de mar y fibra crocante, sin frituras.',
+    tituloSub: { pescado: { nombre: 'Tacos de pollo desmechado con col morada', emoji: '🍗' } },
+    ingredientes: [
+      { n: '2 tortillas de maíz pequeñas' },
+      { n: '1 filete de pescado blanco desmenuzado', grupo: 'pescado', sub: '100 g de pollo desmechado' },
+      { n: 'Col morada picada y limón' }
+    ],
+    pasos: [
+      'Cocinar el pescado a la plancha con especias y desmenuzar.',
+      'Calentar las tortillas y armar los tacos con el pescado y la col morada.',
+      'Rociar con limón.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'higado_graso'],
+    moderar: ['gases'],
+    etiquetas: ['sin_gluten', 'ligero']
+  },
+  {
+    id: 'crema_brocoli_almendras', comida: 'cena', emoji: '🥣',
+    nombre: 'Crema de brócoli con almendras (sin lácteos)',
+    descripcion: 'Cena caliente cremosa sin usar crema de leche.',
+    ingredientes: [
+      { n: '2 tazas de brócoli' },
+      { n: '¼ taza de almendras remojadas', grupo: 'frutos_secos', sub: '¼ taza de semillas de girasol remojadas' },
+      { n: 'Caldo de verduras natural' }
+    ],
+    pasos: [
+      'Cocinar el brócoli en el caldo hasta ablandar.',
+      'Licuar con las almendras remojadas hasta cremar.'
+    ],
+    apto: ['colesterol', 'resistencia_insulina', 'prediabetes', 'higado_graso', 'estrenimiento'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['grasa_saludable', 'ligero']
+  },
+  {
+    id: 'pollo_teriyaki_casero', comida: 'cena', emoji: '🍗',
+    nombre: 'Pollo teriyaki casero con vegetales al vapor',
+    descripcion: 'Salsa casera sin azúcar refinada, mucho más ligera que la comercial.',
+    ingredientes: [
+      { n: '150 g de pechuga de pollo en cubos' },
+      { n: 'Salsa de soya baja en sodio, jengibre y un toque de miel', grupo: 'soya', sub: 'salsa de coco (coconut aminos)' },
+      { n: 'Brócoli y zanahoria al vapor' }
+    ],
+    pasos: [
+      'Saltear el pollo hasta dorar.',
+      'Agregar la salsa casera y cocinar 5 minutos más.',
+      'Servir con las verduras al vapor.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'higado_graso'],
+    moderar: ['colesterol', 'gases'],
+    etiquetas: ['bajo_ig', 'ligero']
+  },
+  {
+    id: 'omelette_calabacin_queso', comida: 'cena', emoji: '🧀',
+    nombre: 'Omelette de calabacín con queso fresco',
+    descripcion: 'Cena rápida, ligera y alta en proteína.',
+    tituloSub: { huevo: { nombre: 'Revuelto de tofu, calabacín y queso fresco', emoji: '🌱' }, lacteos: { nombre: 'Omelette de calabacín sin queso', emoji: '🍳' } },
+    ingredientes: [
+      { n: '2 huevos', grupo: 'huevo', sub: 'media taza de tofu firme revuelto' },
+      { n: '½ calabacín rallado' },
+      { n: '30 g de queso fresco bajo en sodio', grupo: 'lacteos', sub: 'omitir el queso' }
+    ],
+    pasos: [
+      'Batir los huevos con el calabacín rallado.',
+      'Cocinar en sartén a fuego medio, agregando el queso antes de doblar la tortilla.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'higado_graso', 'colesterol'],
+    moderar: ['candidiasis', 'gases'],
+    etiquetas: ['alto_proteina', 'rapido']
   }
 ];
