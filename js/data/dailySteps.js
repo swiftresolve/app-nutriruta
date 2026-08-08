@@ -124,7 +124,7 @@ export const DAILY_STEPS = [
     id: 'general_constancia_no_resultado',
     contexto: 'general',
     obstaculo: "Cuesta mantener la constancia cuando no ves resultados rápido.",
-    accion: "Si sientes que 'no está pasando nada', entonces hoy revisa tu racha de días, no tu peso.",
+    accion: "Si sientes que 'no está pasando nada', entonces hoy revisa tus Días en Ruta, no tu peso.",
     porque: 'Los cambios metabólicos reales toman semanas; los hábitos sostenidos son el mejor predictor de resultados a largo plazo.'
   },
   {

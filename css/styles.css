@@ -157,6 +157,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -4px 6px rgba(35,56,51,0.1),
     0 0 0 3px #FFF, 0 0 0 6px #FFD86B, 0 3px 10px rgba(255, 184, 0, 0.35);
 }
+/* ===== Ruti (nutria exploradora) — distinta del Brote de Ruta ===== */
+.ruti-mascot { border-radius: 50%; flex: none; display: inline-block; transform-origin: 50% 85%; }
+.ruti-mascot svg { width: 100%; height: 100%; display: block; }
+.ruti-mascot.animated { animation: ruti-sway 3.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .ruti-mascot.animated { animation: none; } }
+
 @keyframes ruti-sway {
   0%, 100% { transform: rotate(-4deg); }
   50% { transform: rotate(4deg); }
@@ -203,7 +209,19 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .quiz-progress { height: 8px; background: #E2EEEB; border-radius: 999px; overflow: hidden; margin: 14px 0 22px; }
 .quiz-progress > div { height: 100%; background: var(--primary); border-radius: 999px; transition: width 0.35s cubic-bezier(.34,1.2,.64,1); }
 .quiz-step h2 { font-size: 1.3rem; margin-bottom: 4px; }
-.quiz-step .chips { margin-top: 16px; }
+/* Las opciones del quiz van en grilla de 2 columnas, alineadas entre sí
+   (ancho y alto parejo) — no en fila libre tipo etiquetas, que se veía
+   despareja porque cada chip mide lo que mide su propio texto. */
+.quiz-step .chips {
+  margin-top: 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+}
+.quiz-step .chips .chip {
+  width: 100%; box-sizing: border-box; text-align: left; justify-content: flex-start;
+  white-space: normal; line-height: 1.25;
+  /* Como ahora son tarjetas anchas (no etiquetas cortas), el radio de
+     píldora (999px) se veía como un óvalo raro — mismo radio que .card. */
+  border-radius: 16px;
+}
 /* Cada pregunta entra deslizándose, como el quiz de Duolingo — como
    draw() crea un .quiz-step nuevo en cada paso, la animación se repite
    sola en cada pregunta sin necesitar JS extra. */

@@ -1,7 +1,7 @@
 // Router mínimo + arranque con puerta de autenticación.
 import { getState, initCloud, resetState, isPremium, MAX_ESCUDOS, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo } from './store.js';
 import { getSession, supabase } from './supabase-client.js';
-import { growthStage, rutiBadge } from './ruti.js';
+import { broteStage, broteBadge } from './ruti.js';
 import { renderAuth } from './views/auth.js';
 import { renderQuiz } from './views/quiz.js';
 import { renderDashboard } from './views/dashboard.js';
@@ -122,35 +122,35 @@ export function header(container) {
     <div class="row" style="gap:2px">
       ${mostrarStats ? `
         <div class="header-stats">
-          <button class="header-stat" id="hs-racha" aria-label="Tu racha"><span class="icon streak-flame ${racha > 0 ? 'lit' : 'out'}">🔥</span>${racha}</button>
+          <button class="header-stat" id="hs-racha" aria-label="Tus Días en Ruta"><span class="icon streak-flame ${racha > 0 ? 'lit' : 'out'}">🔥</span>${racha}</button>
           <button class="header-stat" id="hs-gemas" aria-label="Tus gemas"><span class="icon">💎</span>${gemas}</button>
-          <button class="header-stat" id="hs-escudos" aria-label="Tus escudos"><span class="icon">🛡️</span>${escudos}</button>
+          <button class="header-stat" id="hs-escudos" aria-label="Tus Pausas de Ruta"><span class="icon">🛡️</span>${escudos}</button>
         </div>` : ''}
       <button class="icon-btn" data-go="settings" aria-label="Ajustes">⚙️</button>
     </div>`;
   h.querySelector('[data-go]').addEventListener('click', () => navigate('settings'));
 
   if (mostrarStats) {
-    const etapa = growthStage(racha);
+    const etapa = broteStage(racha);
     const mejor = state.racha?.mejor || 0;
     attachStatTooltip(h.querySelector('#hs-racha'), `
       <div class="row" style="gap:8px; align-items:center">
-        ${rutiBadge(etapa, { size: 34, premium: isPremium() })}
-        <strong>🔥 ${racha} día${racha === 1 ? '' : 's'} seguido${racha === 1 ? '' : 's'}</strong>
+        ${broteBadge(etapa, { size: 34, premium: isPremium() })}
+        <strong>🔥 ${racha} Día${racha === 1 ? '' : 's'} en Ruta</strong>
       </div>
-      <p class="small muted mt" style="margin-top:4px">${etapa.label} — así se ve Ruti con tu constancia.</p>
-      <p class="small muted" style="margin-top:2px">Mejor racha: ${mejor} día${mejor === 1 ? '' : 's'}</p>`);
+      <p class="small muted mt" style="margin-top:4px">${etapa.label} — tu Brote de Ruta crece con tu constancia.</p>
+      <p class="small muted" style="margin-top:2px">Mejor Ruta: ${mejor} día${mejor === 1 ? '' : 's'}</p>`);
     attachStatTooltip(h.querySelector('#hs-gemas'), `
       <strong>💎 ${gemas} gemas</strong>
       <p class="small muted mt" style="margin-top:4px">Ganas ${GEMAS_POR_DIA} 💎 cada día que completas, y más al terminar un día del Plan de 7 días o una semana de la Misión.</p>
-      <p class="small muted" style="margin-top:2px">Se usan para comprar escudos extra — mira el 🛡️.</p>`);
+      <p class="small muted" style="margin-top:2px">Se usan para comprar Pausas de Ruta extra — mira el 🛡️.</p>`);
     attachStatTooltip(h.querySelector('#hs-escudos'), () => {
       const st = getState();
       const e = st.escudos || 0;
       const g = st.gemas || 0;
       return `
-        <strong>🛡️ ${e}/${MAX_ESCUDOS} escudos</strong>
-        <p class="small muted mt" style="margin-top:4px">Protegen tu racha si fallas un solo día. Se gana 1 cada 7 días de racha.</p>
+        <strong>🛡️ ${e}/${MAX_ESCUDOS} Pausas de Ruta</strong>
+        <p class="small muted mt" style="margin-top:4px">Te acompañan cuando necesitas descansar — tu Ruta sigue en pie. Se gana 1 cada 7 Días en Ruta.</p>
         ${e < MAX_ESCUDOS ? `<button class="btn ghost sm mt" id="tt-comprar-escudo" ${g < COSTO_ESCUDO_GEMAS ? 'disabled' : ''}>Comprar por ${COSTO_ESCUDO_GEMAS} 💎</button>` : ''}
       `;
     }, {
@@ -161,7 +161,7 @@ export function header(container) {
         btn.addEventListener('click', () => {
           if (!comprarEscudo()) return;
           cerrar();
-          toast('🛡️ ¡Escudo comprado!');
+          toast('🛡️ ¡Nueva Pausa de Ruta lista!');
           // Actualiza los botones del header en el sitio — header() los
           // vuelve a pintar por completo en cada vista de todas formas, esto
           // solo evita esperar a la próxima navegación para verlo reflejado.

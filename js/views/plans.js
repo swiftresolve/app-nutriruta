@@ -20,7 +20,7 @@ const PLANS = [
 const FREE_FEATURES = [
   '📋 Quiz y perfiles de salud personalizados',
   '🍽️ Menú diario adaptado a ti',
-  '💧 Seguimiento de agua, hábitos y rachas',
+  '💧 Seguimiento de agua, hábitos y tu Ruta',
   '💚 Botón SOS antojo con respiración guiada',
   '📚 2 micro-lecciones',
   '🎯 Semana 1 de la Misión (prueba)'

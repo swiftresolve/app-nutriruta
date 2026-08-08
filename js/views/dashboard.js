@@ -75,7 +75,7 @@ export function renderDashboard(container) {
         <p class="small mt" style="font-weight:600">${esc(paso.obstaculo)}</p>
         <p class="mt">${esc(paso.accion)}</p>
         <p class="small muted mt">${esc(paso.porque)}</p>
-        ${pasoRachaActual >= 2 ? `<p class="small mt">🔥 ${pasoRachaActual} días seguidos dando tu paso</p>` : ''}
+        ${pasoRachaActual >= 2 ? `<p class="small mt">🔥 ${pasoRachaActual} Días en Ruta dando tu paso</p>` : ''}
         <button class="btn ${pasoHecho ? 'ghost' : 'accent'} full mt" id="paso-btn" ${pasoHecho ? 'disabled' : ''}>${pasoHecho ? 'Completado por hoy 🌿' : 'Ya lo hice ✓'}</button>
       </div>
     </div>`;
@@ -95,7 +95,7 @@ export function renderDashboard(container) {
   const checks = getHabits();
   const habitCard = document.createElement('div');
   habitCard.className = 'card';
-  habitCard.innerHTML = '<h2>✅ Hábitos de hoy</h2><p class="small">Marca al menos 3 para sumar a tu racha.</p>';
+  habitCard.innerHTML = '<h2>✅ Hábitos de hoy</h2><p class="small">Marca al menos 3 para sumar a tu Ruta.</p>';
   for (const h of DAILY_HABITS) {
     const row = document.createElement('div');
     row.className = 'habit' + (checks[h.id] ? ' done' : '');
@@ -112,7 +112,7 @@ export function renderDashboard(container) {
       const escudoUsado = toggleHabit(h.id);
       const rachaDespues = getState().racha.actual;
       const nuevos = checkAchievements();
-      if (escudoUsado) toast('🛡️ Usamos un escudo para proteger tu racha');
+      if (escudoUsado) toast('🛡️ Usamos una Pausa de Ruta — tu Ruta sigue en pie');
       if (rachaDespues > rachaAntes) {
         const checksAhora = getHabits();
         const completados = Object.values(checksAhora).filter(Boolean).length;

@@ -163,7 +163,7 @@ export function renderSettings(container) {
       <button class="btn full mt" id="notif-btn" disabled>Cargando…</button>
       <div id="notif-prefs" style="display:none">
         <p class="small mt" style="font-weight:600">Qué avisos quieres recibir:</p>
-        <label class="habit"><input type="checkbox" data-pref="plan"><span>🏁 Tu plan y tu racha <span class="muted small">(día nuevo, check-in, racha en riesgo)</span></span></label>
+        <label class="habit"><input type="checkbox" data-pref="plan"><span>🏁 Tu plan y tu Ruta <span class="muted small">(día nuevo, check-in, recordatorio suave)</span></span></label>
         <label class="habit"><input type="checkbox" data-pref="comidas"><span>🍽️ Horas de tus comidas <span class="muted small">(a la hora sugerida de cada una)</span></span></label>
         <label class="habit"><input type="checkbox" data-pref="agua"><span>💧 Recordatorios de agua <span class="muted small">(según tu meta personalizada)</span></span></label>
         <button class="btn ghost sm mt" id="notif-test">🔔 Enviar notificación de prueba</button>
@@ -372,7 +372,7 @@ export function renderSettings(container) {
   wipeBtn.addEventListener('click', () => openModal((modal, close) => {
     modal.insertAdjacentHTML('beforeend', `
       <h2>¿Borrar todo?</h2>
-      <p class="mt">Se eliminarán tu perfil, progreso, rachas y registros de este dispositivo. Esta acción no se puede deshacer.</p>`);
+      <p class="mt">Se eliminarán tu perfil, progreso, Días en Ruta y registros de este dispositivo. Esta acción no se puede deshacer.</p>`);
     const yes = document.createElement('button');
     yes.className = 'btn danger full mt';
     yes.textContent = 'Sí, borrar todo';

@@ -494,7 +494,7 @@ export function sanaApertura() {
     return linea.replace('{franja}', patron);
   }
   if (state.racha.actual === 0 && state.diasCumplidos.length > 0) {
-    return elegirDeLista(SANA_OPENERS.racha_rota);
+    return elegirDeLista(SANA_OPENERS.ruta_pausada);
   }
   return elegirDeLista(SANA_OPENERS.general);
 }

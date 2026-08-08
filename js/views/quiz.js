@@ -2,7 +2,7 @@
 import { getState, setState, esc, today } from '../store.js';
 import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
 import { navigate } from '../app.js';
-import { rutiBadge } from '../ruti.js';
+import { rutiMascot } from '../mascot.js';
 
 const CONDITIONS = [
   { id: 'higado_graso', nombre: 'Hígado graso', emoji: '🫀' },
@@ -65,7 +65,9 @@ export function renderQuiz(container) {
       sub: 'Vamos a conocerte un poco para personalizar tu experiencia. Esto no reemplaza una consulta médica, pero nos ayuda a darte mejores recomendaciones.',
       render(el) {
         el.innerHTML = `
-          <label class="muted" for="q-nombre">${answers.nombre ? `Te llamaremos <strong>${esc(answers.nombre)}</strong>. Puedes cambiarlo si quieres:` : '¿Cómo te llamas? (opcional)'}</label>
+          <div class="center mb">${rutiMascot('saludo', { size: 64 })}</div>
+          <p class="center small" style="font-weight:600">Hola, soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>
+          <label class="muted mt" for="q-nombre" style="display:block">${answers.nombre ? `Te llamaremos <strong>${esc(answers.nombre)}</strong>. Puedes cambiarlo si quieres:` : '¿Cómo te llamas? (opcional)'}</label>
           <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60"
             style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:8px">
           <div class="legal-note">🔒 Tus datos se guardan en tu cuenta protegida y solo tú puedes verlos. NutriRuta es una herramienta de autoayuda: no diagnostica ni reemplaza a tu médico o nutricionista.</div>`;
@@ -257,11 +259,10 @@ export function renderQuiz(container) {
   function mostrarResultado(main, rest, prioridades) {
     container.innerHTML = '';
     const view = document.createElement('div');
-    const etapa = { key: 'semilla', emoji: PROFILES[main].emoji, label: PROFILES[main].nombre };
     view.innerHTML = `
       <div class="quiz-progress"><div style="width:100%"></div></div>
       <div class="card center">
-        ${rutiBadge(etapa, { size: 72 })}
+        ${rutiMascot('saludo', { size: 72 })}
         <h2 class="mt">${answers.nombre ? `${esc(answers.nombre)}, tu` : 'Tu'} plan está listo</h2>
         <p class="small mt">Perfil principal: <strong>${PROFILES[main].nombre}</strong></p>
         ${rest.length ? `<p class="mt">También te conviene seguir: <strong>${rest.map((p) => PROFILES[p].nombre).join(', ')}</strong></p>` : ''}

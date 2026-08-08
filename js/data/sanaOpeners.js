@@ -13,9 +13,9 @@ export const SANA_OPENERS = {
     'He notado que tus antojos suelen aparecer en la {franja}. ¿Armamos juntas un plan para ese momento?',
     'Tu franja más difícil parece ser la {franja}. ¿Quieres que preparemos algo concreto para esos momentos?'
   ],
-  racha_rota: [
-    'Vi que se cortó tu racha. No pasa nada — ¿retomamos desde hoy?',
-    'Un día se perdió, y está bien. ¿Qué necesitas hoy para volver a empezar?'
+  ruta_pausada: [
+    'Tu Ruta sigue disponible. Retomar también es avanzar — ¿empezamos hoy con algo pequeño?',
+    'No necesitas hacerlo perfecto. ¿Qué necesitas hoy para volver a tu Ruta?'
   ],
   general: [
     '¿Cómo vas hoy con tu alimentación?',

@@ -123,6 +123,8 @@ export const EXCLUSIONS = [
 ];
 
 export const GOALS = [
+  { id: 'habitos_generales', nombre: 'Comer más saludable, sin un diagnóstico puntual', emoji: '🥗' },
+  { id: 'prevencion', nombre: 'Prevenir problemas a futuro', emoji: '🛡️' },
   { id: 'energia', nombre: 'Mejorar energía', emoji: '⚡' },
   { id: 'peso', nombre: 'Bajar de peso', emoji: '⚖️' },
   { id: 'azucar', nombre: 'Reducir azúcar', emoji: '🍬' },

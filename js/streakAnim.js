@@ -7,7 +7,7 @@
 // pasa, la celebración se convierte en un pequeño "recibo" del día en
 // chips de colores (inspirado en la pantalla de fin de lección de
 // Duolingo: EXP / precisión / ritmo, cada una en su propia caja).
-import { growthStage, rutiBadge } from './ruti.js';
+import { broteStage, broteBadge } from './ruti.js';
 
 const CONFETI = ['#2BB5A0', '#FF8A6B', '#6FA8DC', '#FFD86B'];
 
@@ -17,12 +17,12 @@ export function celebrateStreak(n, stats) {
   const el = document.createElement('div');
   el.className = 'streak-celebrate';
   el.setAttribute('aria-live', 'polite');
-  const etapa = growthStage(n);
+  const etapa = broteStage(n);
   const resumen = stats
     ? `<div class="streak-resumen">
         <span class="streak-chip chip-a">✅ ${stats.habitos}/${stats.totalHabitos}<em>hábitos</em></span>
         <span class="streak-chip chip-b">💧 ${stats.vasos}/${stats.meta}<em>vasos</em></span>
-        <span class="streak-chip chip-c">🔥 ${n}<em>racha</em></span>
+        <span class="streak-chip chip-c">🔥 ${n}<em>en Ruta</em></span>
       </div>`
     : '';
   const confeti = stats
@@ -36,7 +36,7 @@ export function celebrateStreak(n, stats) {
   el.innerHTML = `
     <div class="ring"></div>
     ${confeti}
-    <div class="flame-big">${rutiBadge(etapa, { size: 72 })}</div>
+    <div class="flame-big">${broteBadge(etapa, { size: 72 })}</div>
     <div class="label${stats ? ' wrap' : ''}">¡${n} día${n === 1 ? '' : 's'} seguido${n === 1 ? '' : 's'}!${resumen}</div>`;
   document.body.appendChild(el);
   const duracion = stats ? 2600 : 1400;

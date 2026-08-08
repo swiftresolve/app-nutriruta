@@ -25,10 +25,10 @@ export function renderNotifPrompt(container, onChange) {
   card.style.borderLeft = '4px solid var(--accent)';
   card.innerHTML = `
     <div class="spread">
-      <span class="small" style="font-weight:700">🔔 ¿Te avisamos antes de perder tu racha?</span>
+      <span class="small" style="font-weight:700">🔔 ¿Te avisamos para seguir tu Ruta cada día?</span>
       <button class="icon-btn" id="np-cerrar" aria-label="Cerrar">✕</button>
     </div>
-    <p class="small mt">${user.nombre ? esc(user.nombre) + ', un' : 'Un'} aviso a tiempo puede ser la diferencia entre seguir o volver a empezar desde cero.</p>
+    <p class="small mt">${user.nombre ? esc(user.nombre) + ', un' : 'Un'} aviso a tiempo te ayuda a no dejar pasar el momento — sin presión, a tu ritmo.</p>
     <button class="btn accent sm mt" id="np-activar">🔔 Sí, avísame</button>`;
   container.appendChild(card);
 

@@ -3,7 +3,8 @@ import { getState, ACHIEVEMENTS, logSintoma, sintomaPattern, esc, today, getWate
 import { SYMPTOM_TYPES, SYMPTOM_CAUSES } from '../data/profiles.js';
 import { header, openModal, toast, navigate } from '../app.js';
 import { barChart, lineChart } from '../charts.js';
-import { growthStage, rutiBadge } from '../ruti.js';
+import { broteStage, broteBadge } from '../ruti.js';
+import { rutiMascot } from '../mascot.js';
 
 const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -35,8 +36,10 @@ export function renderProgress(container) {
   header(container);
   const { racha, diasCumplidos, logros, antojos, sintomas, checkins, user, escudos } = getState();
 
-  // Racha
-  const etapa = growthStage(racha.actual);
+  // Brote de Ruta (la planta) + Ruti (la nutria), lado a lado — se cuidan
+  // juntos el mismo jardín, no son el mismo personaje.
+  const etapa = broteStage(racha.actual);
+  const diasEsteMes = diasCumplidos.filter((d) => d.slice(0, 7) === today().slice(0, 7)).length;
   const compromisoHtml = user.compromisoDias ? `
     <div class="mt">
       <div class="spread small" style="font-weight:700">
@@ -51,16 +54,18 @@ export function renderProgress(container) {
   const streak = document.createElement('div');
   streak.className = 'card streak-hero';
   streak.innerHTML = `
-    <div class="row" style="gap:12px; align-items:center; justify-content:center">
-      ${rutiBadge(etapa, { size: 64, premium: isPremium() })}
-      <div class="num" style="margin:0">${racha.actual} <span class="streak-flame ${racha.actual > 0 ? 'lit' : 'out'}">🔥</span></div>
+    <div class="row" style="gap:6px; align-items:center; justify-content:center">
+      ${rutiMascot(racha.actual > 0 ? 'feliz' : 'curiosa', { size: 56 })}
+      ${broteBadge(etapa, { size: 56, premium: isPremium() })}
+      <div class="num" style="margin:0 0 0 6px">${racha.actual} <span class="streak-flame ${racha.actual > 0 ? 'lit' : 'out'}">🔥</span></div>
     </div>
-    <p class="mt"><strong>días seguidos</strong> cumpliendo tus hábitos</p>
-    <p class="small mt"><strong>${etapa.label}</strong> — Ruti crece con tu constancia.</p>
+    <p class="mt"><strong>Días en Ruta</strong></p>
+    <p class="small mt">Tu Brote de Ruta está creciendo con cada paso.</p>
+    <p class="small mt"><strong>${etapa.label}</strong> — Ruti está orgullosa de tu constancia.</p>
     <div class="week-strip mt">${weekStrip(diasCumplidos)}</div>
     ${compromisoHtml}
-    <p class="small muted mt">Mejor racha: ${racha.mejor} días · Total de días cumplidos: ${diasCumplidos.length}</p>
-    <p class="small muted mt">🛡️ Escudos: ${escudos}/${MAX_ESCUDOS} — protegen tu racha si fallas un solo día. Se gana 1 cada 7 días de racha.</p>`;
+    <p class="small muted mt">Mejor Ruta: ${racha.mejor} días · Días en Ruta este mes: ${diasEsteMes}</p>
+    <p class="small muted mt">🛡️ Pausas de Ruta: ${escudos}/${MAX_ESCUDOS} — te acompañan cuando necesitas descansar. Se gana 1 cada 7 Días en Ruta.</p>`;
   container.appendChild(streak);
 
   // --- Gráficas de progreso ---
