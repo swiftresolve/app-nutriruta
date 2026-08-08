@@ -39,7 +39,10 @@ const ROUTES = {
   admin: renderAdmin
 };
 
-const PUBLIC_ROUTES = ['auth', 'resetPassword'];
+// 'quiz' es público: ahora se responde ANTES de crear cuenta (ver spec de
+// "login después del quiz") — las respuestas se guardan localmente y se
+// migran a la cuenta recién creada en initCloud() (ver store.js).
+const PUBLIC_ROUTES = ['auth', 'resetPassword', 'quiz'];
 let authed = false;
 
 export function setAuthed(v) { authed = v; }
@@ -229,7 +232,15 @@ if ('serviceWorker' in navigator) {
     navigate('resetPassword');
   } else {
     if (session) await initCloud();
-    navigate(!authed ? 'auth' : getState().onboarded ? 'dashboard' : 'quiz');
+    // El quiz ya no vive detrás del login: se responde primero (invitada,
+    // sin cuenta) y la cuenta se crea al final para guardarlo. Por eso el
+    // primer chequeo es "¿ya lo completó?", no "¿tiene sesión?":
+    // - onboarded=true y sin sesión: acaba de terminar el quiz como
+    //   invitada → a crear la cuenta que lo va a guardar (auth).
+    // - onboarded=true y con sesión: usuaria normal que vuelve → dashboard.
+    // - onboarded=false: nunca lo completó en este dispositivo (sea porque
+    //   es nueva o porque tiene sesión pero no lo ha hecho) → quiz.
+    navigate(getState().onboarded ? (authed ? 'dashboard' : 'auth') : 'quiz');
   }
 
   supabase.auth.onAuthStateChange((event) => {

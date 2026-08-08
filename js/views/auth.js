@@ -103,7 +103,12 @@ export function renderAuth(container) {
           // Una cuenta nueva nunca debe heredar progreso de una sesión anterior
           // en este mismo navegador (racha, misión, plan de 7 días, onboarded…).
           // Sin esto, initCloud() podría subir ese estado viejo al perfil nuevo.
-          resetState();
+          // EXCEPCIÓN: si onboarded ya es true sin haber sesión todavía, es el
+          // quiz que se acaba de responder como invitada, justo antes de este
+          // registro — no es una sesión anterior ajena, es lo que este mismo
+          // registro debe guardar. Se conserva; initCloud() lo migra a la
+          // cuenta nueva (ver store.js).
+          if (!getState().onboarded) resetState();
           if (!data.session) {
             container.innerHTML = `
               <div class="card center" style="margin-top:20vh">

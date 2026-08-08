@@ -125,6 +125,10 @@ export async function initCloud() {
     const profile = await fetchProfile();
     if (!profile) return;
     plan = { tipo: profile.plan || 'free', periodo: profile.plan_periodo || null, desde: profile.plan_desde || null };
+    // El quiz ahora se responde ANTES de crear cuenta (invitada, sin
+    // sesión) — lo que hay en la llave genérica en este momento puede ser
+    // justo ese perfil recién armado, todavía no migrado a ninguna cuenta.
+    const preAuthState = state;
     // A partir de aquí, todo lo que se lea o suba a la nube es exclusivo de
     // esta cuenta — nunca el caché que pudo dejar otra cuenta en este navegador.
     activeKey = keyFor(profile.id);
@@ -135,6 +139,15 @@ export async function initCloud() {
       localStorage.setItem(activeKey, JSON.stringify(state));
     } else if (state.onboarded) {
       await pushProfileState(state, state.user.nombre);
+    } else if (preAuthState.onboarded) {
+      // Cuenta recién creada (nada en la nube todavía) y el quiz ya estaba
+      // respondido como invitada justo antes de este registro: es lo que
+      // hay que guardar, no perderlo recargando el estado vacío de la
+      // cuenta nueva.
+      state = preAuthState;
+      localStorage.setItem(activeKey, JSON.stringify(state));
+      await pushProfileState(state, state.user.nombre);
+      localStorage.removeItem(KEY); // no dejarlo en la llave genérica para la próxima invitada en este dispositivo
     }
     if (profile.nombre && !state.user.nombre) {
       state = { ...state, user: { ...state.user, nombre: profile.nombre } };

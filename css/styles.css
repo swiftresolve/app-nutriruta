@@ -701,10 +701,13 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 }
 .path-node.now:active { transform: scale(1.15) translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 1px 0 #D96B4F; }
 .path-node.locked {
-  opacity: 1; cursor: default; background: #E4ECEA; color: #A8BDB7;
-  box-shadow: inset 0 -3px 4px rgba(35,56,51,0.06), 0 2px 0 #CFDCD8;
+  /* Mismo relieve 3D + canto inferior que los nodos activos, solo que en
+     gris — antes quedaba plano (sombra baja de 2px, sin brillo), muy
+     distinto en textura al resto del camino. */
+  opacity: 1; cursor: default; background: linear-gradient(160deg, #EEF3F1, #D3DEDA); color: #A8BDB7;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(35,56,51,0.08), 0 6px 0 #B9C7C2, 0 8px 10px rgba(35,56,51,0.1);
 }
-.path-node.locked::after { display: none; }
+.path-node.locked:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(35,56,51,0.08), 0 1px 0 #B9C7C2; }
 @keyframes path-pulse {
   0% { box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 4px 0 #D96B4F, 0 0 0 0 rgba(255,138,107,0.35); }
   70% { box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 4px 0 #D96B4F, 0 0 0 14px rgba(255,138,107,0); }
