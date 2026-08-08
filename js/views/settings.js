@@ -57,7 +57,9 @@ export function renderSettings(container) {
       avatarEstado.textContent = '¡Foto actualizada! 🌿';
       setTimeout(() => { if (avatarEstado.textContent === '¡Foto actualizada! 🌿') avatarEstado.textContent = ''; }, 2500);
     } catch (err) {
-      avatarEstado.textContent = 'No se pudo subir la foto. Intenta de nuevo.';
+      avatarEstado.textContent = err.message && err.message.includes('demasiado grande')
+        ? err.message
+        : 'No se pudo subir la foto. Intenta de nuevo.';
     }
   });
   const plansBtn = document.createElement('button');

@@ -201,9 +201,20 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 
 /* ===== Quiz ===== */
 .quiz-progress { height: 8px; background: #E2EEEB; border-radius: 999px; overflow: hidden; margin: 14px 0 22px; }
-.quiz-progress > div { height: 100%; background: var(--primary); border-radius: 999px; transition: width 0.25s ease; }
+.quiz-progress > div { height: 100%; background: var(--primary); border-radius: 999px; transition: width 0.35s cubic-bezier(.34,1.2,.64,1); }
 .quiz-step h2 { font-size: 1.3rem; margin-bottom: 4px; }
 .quiz-step .chips { margin-top: 16px; }
+/* Cada pregunta entra deslizándose, como el quiz de Duolingo — como
+   draw() crea un .quiz-step nuevo en cada paso, la animación se repite
+   sola en cada pregunta sin necesitar JS extra. */
+.quiz-step { animation: quiz-step-in 0.35s cubic-bezier(.22,1,.36,1); }
+@keyframes quiz-step-in {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiz-step { animation: none; }
+}
 .quiz-nav { display: flex; gap: 10px; margin-top: 26px; }
 .quiz-nav .btn { flex: 1; }
 

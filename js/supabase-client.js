@@ -79,9 +79,12 @@ export async function submitResena(calificacion, texto, nombreMostrado) {
 // necesitar guardar nada más en profiles. El archivo se recorta/comprime en
 // el cliente antes de subir para no depender de límites de tamaño del lado
 // del servidor ni gastar espacio de más.
+const AVATAR_MAX_BYTES = 15 * 1024 * 1024; // 15 MB: una foto de cámara normal, no un archivo cualquiera
+
 export async function uploadAvatar(file) {
   const session = await getSession();
   if (!session) throw new Error('No autenticado');
+  if (file.size > AVATAR_MAX_BYTES) throw new Error('La imagen es demasiado grande (máximo 15 MB).');
   const blob = await toSquareJpeg(file, 320);
   const path = `${session.user.id}.jpg`;
   const { error } = await supabase.storage.from('avatars').upload(path, blob, {
