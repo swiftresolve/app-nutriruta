@@ -1,7 +1,7 @@
 // Recetario + lista de compras.
 import { getState, setState, isPremium } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
-import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe } from '../menu.js';
+import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch } from '../menu.js';
 import { header, navigate } from '../app.js';
 import { openRecipe } from './dashboard.js';
 
@@ -28,6 +28,7 @@ export function renderPlanner(container, params = {}) {
   let tab = params.tab || 'recetas';
   let mealFilter = 'todas';
   let rango = 'hoy';
+  let busqueda = '';
 
   const tabs = document.createElement('div');
   tabs.className = 'chips mb';
@@ -49,8 +50,28 @@ export function renderPlanner(container, params = {}) {
     tab === 'recetas' ? drawRecipes() : drawShopping();
   }
 
+  // Redibujar en cada tecla borra y recrea el input — sin esto el cursor
+  // "salta" al inicio y se pierde el foco en cada letra escrita.
+  function searchAfterDraw() {
+    const input = body.querySelector('#recetas-buscar');
+    if (!input) return;
+    input.focus();
+    const pos = input.value.length;
+    input.setSelectionRange(pos, pos);
+  }
+
   function drawRecipes() {
     const { user } = getState();
+
+    const search = document.createElement('div');
+    search.className = 'mb';
+    search.innerHTML = `
+      <input id="recetas-buscar" type="search" inputmode="search" placeholder="🔍 Buscar por nombre o ingrediente (ej: pollo, avena)"
+        style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid #D8E6E2;font:inherit;box-sizing:border-box">`;
+    const searchInput = search.querySelector('#recetas-buscar');
+    searchInput.value = busqueda;
+    searchInput.addEventListener('input', (e) => { busqueda = e.target.value; drawBody(); searchAfterDraw(); });
+    body.appendChild(search);
 
     const filters = document.createElement('div');
     filters.className = 'chips mb';
@@ -64,14 +85,19 @@ export function renderPlanner(container, params = {}) {
     }
     body.appendChild(filters);
 
-    const list = RECIPES
+    let list = RECIPES
       .filter((r) => mealFilter === 'todas' || r.comida === mealFilter)
-      .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro));
+      .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
+      .filter((r) => matchesSearch(r, busqueda));
+    // Primero lo más afín a tu diagnóstico (mismo criterio que arma el menú
+    // del día) — así lo gratis y lo que aparece primero al explorar es lo
+    // más relevante para ti, no un orden fijo del archivo.
+    list = rankRecipes(list, user.perfiles);
 
     if (!list.length) {
       const empty = document.createElement('div');
       empty.className = 'card';
-      empty.innerHTML = '<p>No hay recetas disponibles con tus exclusiones actuales en esta categoría.</p>';
+      empty.innerHTML = `<p>${busqueda ? `No encontramos recetas con "${busqueda}".` : 'No hay recetas disponibles con tus exclusiones actuales en esta categoría.'}</p>`;
       body.appendChild(empty);
     }
     const grid = document.createElement('div');

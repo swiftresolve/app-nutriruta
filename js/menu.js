@@ -50,6 +50,23 @@ function score(recipe, perfiles) {
   return aptos + (light === 'verde' ? 2 : light === 'amarillo' ? 0 : -10);
 }
 
+// Ordena cualquier lista de recetas por afinidad al diagnóstico del usuario
+// (mismo criterio que usa el menú del día) — para que el Recetario, tanto en
+// lo gratis como en lo Premium, muestre primero lo más relevante para cada
+// quien en vez del orden fijo en que están escritas en el archivo.
+export function rankRecipes(list, perfiles) {
+  return [...list].sort((a, b) => score(b, perfiles) - score(a, perfiles));
+}
+
+// Coincidencia de búsqueda por nombre o por ingrediente (sin tildes ni
+// mayúsculas), para encontrar qué se puede preparar con lo que hay en casa.
+export function matchesSearch(recipe, query) {
+  const q = normaliza(query).trim();
+  if (!q) return true;
+  if (normaliza(recipe.nombre).includes(q)) return true;
+  return recipe.ingredientes.some((ing) => normaliza(ing.n).includes(q));
+}
+
 // Recetas disponibles para una comida, ordenadas por afinidad al usuario.
 export function candidatesFor(mealId) {
   const { user } = getState();
