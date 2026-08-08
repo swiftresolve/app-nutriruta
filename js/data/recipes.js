@@ -608,5 +608,368 @@ export const RECIPES = [
     apto: ['resistencia_insulina', 'prediabetes', 'higado_graso', 'colesterol', 'migranas'],
     moderar: ['candidiasis', 'colon_irritable', 'gases'],
     etiquetas: ['rapido', 'ligero']
+  },
+
+  // ================= DESAYUNOS (lote 2) =================
+  {
+    id: 'yogur_griego_semillas', comida: 'desayuno', emoji: '🥣',
+    nombre: 'Yogur griego con semillas y arándanos',
+    descripcion: 'Proteína completa + antioxidantes, sin picos de glucosa.',
+    tituloSub: { lacteos: { nombre: 'Yogur de coco con semillas y arándanos', emoji: '🥥' } },
+    ingredientes: [
+      { n: '1 taza de yogur griego natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
+      { n: '1 cda de semillas de chía o linaza molida' },
+      { n: '½ taza de arándanos o fresas' },
+      { n: 'Canela al gusto' }
+    ],
+    pasos: [
+      'Servir el yogur en un bowl.',
+      'Agregar las semillas y las frutas por encima.',
+      'Espolvorear canela.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'candidiasis', 'estrenimiento'],
+    moderar: ['colon_irritable'],
+    etiquetas: ['alto_proteina', 'fibra_soluble']
+  },
+  {
+    id: 'huevos_revueltos_aguacate_tomate', comida: 'desayuno', emoji: '🥑',
+    nombre: 'Huevos revueltos con aguacate y pico de gallo',
+    descripcion: 'Desayuno salado clásico, proteína y grasa buena desde temprano.',
+    tituloSub: { huevo: { nombre: 'Revuelto de tofu con aguacate y pico de gallo', emoji: '🌱' } },
+    ingredientes: [
+      { n: '2 huevos revueltos', grupo: 'huevo', sub: 'tofu firme revuelto (media taza)' },
+      { n: '½ aguacate en láminas' },
+      { n: 'Tomate y cebolla picados finamente (pico de gallo)' },
+      { n: '1 cdta de aceite de oliva' }
+    ],
+    pasos: [
+      'Revolver los huevos a fuego bajo con el aceite de oliva.',
+      'Servir con el aguacate y el pico de gallo al lado.'
+    ],
+    apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'colesterol', 'candidiasis'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['alto_proteina', 'grasa_saludable']
+  },
+  {
+    id: 'batido_verde_desayuno', comida: 'desayuno', emoji: '🥤',
+    nombre: 'Batido verde de espinaca, banano y mantequilla de maní',
+    descripcion: 'Desayuno líquido pero completo: fibra, proteína y grasa buena juntas.',
+    tituloSub: { frutos_secos: { nombre: 'Batido verde de espinaca, banano y semillas de girasol', emoji: '🥤' } },
+    ingredientes: [
+      { n: '1 taza de espinaca fresca' },
+      { n: '½ banano' },
+      { n: '1 cda de mantequilla de maní natural sin azúcar', grupo: 'frutos_secos', sub: 'crema de semillas de girasol' },
+      { n: '1 taza de bebida vegetal sin azúcar o agua' },
+      { n: 'Hielo al gusto' }
+    ],
+    pasos: [
+      'Licuar todos los ingredientes hasta obtener una mezcla homogénea.',
+      'Servir de inmediato.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'estrenimiento', 'migranas'],
+    moderar: ['colon_irritable', 'gases'],
+    etiquetas: ['rapido', 'alto_fibra']
+  },
+  {
+    id: 'arepa_queso_bajo_sodio', comida: 'desayuno', emoji: '🫓',
+    nombre: 'Arepa de maíz con queso fresco y aguacate',
+    descripcion: 'Clásico sin gluten, equilibrado con proteína y grasa buena.',
+    tituloSub: { lacteos: { nombre: 'Arepa de maíz con hummus y aguacate', emoji: '🫓' } },
+    ingredientes: [
+      { n: '1 arepa de maíz mediana' },
+      { n: '30 g de queso fresco bajo en sodio', grupo: 'lacteos', sub: '2 cdas de hummus' },
+      { n: '½ aguacate' }
+    ],
+    pasos: [
+      'Asar la arepa hasta que esté dorada por ambos lados.',
+      'Rellenar o acompañar con el queso y el aguacate.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colon_irritable', 'candidiasis'],
+    moderar: ['colesterol', 'higado_graso'],
+    etiquetas: ['sin_gluten', 'local']
+  },
+
+  // ================= MEDIA MAÑANA (lote 2) =================
+  {
+    id: 'palitos_vegetales_guacamole', comida: 'media_manana', emoji: '🥒',
+    nombre: 'Palitos de zanahoria y apio con guacamole',
+    descripcion: 'Snack crocante, fibra y grasa buena, sin azúcar.',
+    ingredientes: [
+      { n: '1 zanahoria en palitos' },
+      { n: '1 tallo de apio en palitos' },
+      { n: '½ aguacate machacado con limón y sal' }
+    ],
+    pasos: [
+      'Cortar la zanahoria y el apio en palitos.',
+      'Machacar el aguacate con limón y una pizca de sal.',
+      'Untar y comer.'
+    ],
+    apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'colesterol', 'estrenimiento'],
+    moderar: ['gases', 'colon_irritable'],
+    etiquetas: ['snack_antiansiedad', 'grasa_saludable']
+  },
+  {
+    id: 'queso_fresco_uvas', comida: 'media_manana', emoji: '🧀',
+    nombre: 'Queso fresco con uvas',
+    descripcion: 'Combo dulce-salado que evita el pico de azúcar de la fruta sola.',
+    tituloSub: { lacteos: { nombre: 'Hummus con uvas', emoji: '🍇' } },
+    ingredientes: [
+      { n: '40 g de queso fresco bajo en sodio', grupo: 'lacteos', sub: '2 cdas de hummus' },
+      { n: '10 uvas' }
+    ],
+    pasos: [
+      'Servir el queso en cubos junto con las uvas.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'candidiasis'],
+    moderar: ['colesterol', 'higado_graso'],
+    etiquetas: ['rapido', 'antojo_dulce_saludable']
+  },
+  {
+    id: 'te_verde_nueces', comida: 'media_manana', emoji: '🍵',
+    nombre: 'Té verde con un puñado de nueces',
+    descripcion: 'Antioxidantes + grasa buena, ideal para sostener energía sin azúcar.',
+    ingredientes: [
+      { n: '1 taza de té verde sin azúcar' },
+      { n: '8–10 nueces o almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
+    ],
+    pasos: [
+      'Preparar el té verde.',
+      'Acompañar con las nueces o almendras.'
+    ],
+    apto: ['colesterol', 'higado_graso', 'resistencia_insulina', 'prediabetes', 'migranas'],
+    etiquetas: ['grasa_saludable', 'rapido']
+  },
+  {
+    id: 'gelatina_sin_azucar_fruta', comida: 'media_manana', emoji: '🍓',
+    nombre: 'Gelatina sin azúcar con fruta fresca',
+    descripcion: 'Antojo dulce ligero, sin azúcar añadida ni harinas.',
+    ingredientes: [
+      { n: '1 taza de gelatina sin azúcar preparada' },
+      { n: '½ taza de fresas o durazno en trozos' }
+    ],
+    pasos: [
+      'Preparar la gelatina siguiendo las instrucciones del empaque.',
+      'Agregar la fruta antes de que cuaje del todo y refrigerar.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colon_irritable', 'candidiasis'],
+    etiquetas: ['antojo_dulce_saludable', 'ligero']
+  },
+
+  // ================= ALMUERZOS (lote 2) =================
+  {
+    id: 'carne_magra_arroz_ensalada', comida: 'almuerzo', emoji: '🥩',
+    nombre: 'Carne magra a la plancha con arroz integral y ensalada',
+    descripcion: 'Plato modelo con proteína de fácil digestión y carbohidrato integral.',
+    ingredientes: [
+      { n: '120 g de carne magra (lomo o falda) a la plancha' },
+      { n: '½ taza de arroz integral' },
+      { n: 'Ensalada de lechuga, tomate y pepino' },
+      { n: '1 cdta de aceite de oliva' }
+    ],
+    pasos: [
+      'Cocinar la carne a la plancha con especias, sin exceso de sal.',
+      'Servir con el arroz y la ensalada aliñada con aceite de oliva.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colon_irritable', 'candidiasis'],
+    moderar: ['colesterol', 'higado_graso'],
+    etiquetas: ['alto_proteina', 'plato_modelo']
+  },
+  {
+    id: 'pasta_integral_pollo_vegetales', comida: 'almuerzo', emoji: '🍝',
+    nombre: 'Pasta integral con pollo y vegetales salteados',
+    descripcion: 'Carbohidrato de absorción más lenta que la pasta blanca, con proteína y fibra.',
+    tituloSub: { gluten: { nombre: 'Arroz integral con pollo y vegetales salteados', emoji: '🍚' } },
+    ingredientes: [
+      { n: '¾ taza de pasta integral cocida', grupo: 'gluten', sub: '¾ taza de arroz integral' },
+      { n: '120 g de pechuga de pollo en tiras' },
+      { n: 'Calabacín, pimentón y champiñones salteados' },
+      { n: '1 cdta de aceite de oliva y ajo' }
+    ],
+    pasos: [
+      'Cocinar la pasta al dente y reservar.',
+      'Saltear el pollo con los vegetales, ajo y aceite de oliva.',
+      'Mezclar todo antes de servir.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'colesterol'],
+    moderar: ['higado_graso', 'gases', 'colon_irritable'],
+    etiquetas: ['bajo_ig', 'plato_modelo']
+  },
+  {
+    id: 'bowl_quinoa_garbanzo_verduras', comida: 'almuerzo', emoji: '🥗',
+    nombre: 'Bowl de quinoa, garbanzos y verduras asadas',
+    descripcion: 'Proteína vegetal completa (quinoa + legumbre) con fibra de sobra.',
+    tituloSub: { legumbres: { nombre: 'Bowl de quinoa, pollo y verduras asadas', emoji: '🥗' } },
+    ingredientes: [
+      { n: '½ taza de quinoa cocida' },
+      { n: '½ taza de garbanzos cocidos', grupo: 'legumbres', sub: '100 g de pollo desmechado' },
+      { n: 'Calabacín, berenjena y pimentón asados' },
+      { n: 'Aceite de oliva y limón' }
+    ],
+    pasos: [
+      'Asar los vegetales con un poco de aceite de oliva.',
+      'Mezclar con la quinoa y los garbanzos.',
+      'Aliñar con aceite de oliva y limón.'
+    ],
+    apto: ['colesterol', 'higado_graso', 'resistencia_insulina', 'prediabetes', 'estrenimiento'],
+    moderar: ['colon_irritable', 'gases'],
+    etiquetas: ['proteina_vegetal', 'alto_fibra']
+  },
+  {
+    id: 'pechuga_champinones_pure_ahuyama', comida: 'almuerzo', emoji: '🍗',
+    nombre: 'Pechuga en salsa de champiñones con puré de ahuyama',
+    descripcion: 'Carbohidrato suave para digestiones sensibles, sin crema ni harinas.',
+    ingredientes: [
+      { n: '1 pechuga de pollo a la plancha' },
+      { n: 'Salsa de champiñones salteados con caldo natural (sin crema)' },
+      { n: '1 taza de puré de ahuyama (sin mantequilla, con un chorrito de aceite de oliva)' }
+    ],
+    pasos: [
+      'Cocinar la pechuga a la plancha.',
+      'Saltear los champiñones en un poco de caldo hasta reducir.',
+      'Servir sobre el puré de ahuyama.'
+    ],
+    apto: ['colon_irritable', 'candidiasis', 'higado_graso', 'colesterol', 'migranas', 'prediabetes'],
+    etiquetas: ['suave', 'colon_friendly']
+  },
+
+  // ================= MEDIA TARDE (lote 2) =================
+  {
+    id: 'tostadas_arroz_aguacate', comida: 'media_tarde', emoji: '🍚',
+    nombre: 'Tostadas de arroz con aguacate y semillas',
+    descripcion: 'Alternativa sin gluten a las galletas de paquete, con grasa buena.',
+    ingredientes: [
+      { n: '2 tostadas de arroz inflado' },
+      { n: '½ aguacate machacado' },
+      { n: '1 cdta de semillas de ajonjolí o chía' }
+    ],
+    pasos: [
+      'Machacar el aguacate con sal y limón.',
+      'Untar sobre las tostadas y espolvorear las semillas.'
+    ],
+    apto: ['higado_graso', 'resistencia_insulina', 'prediabetes', 'colesterol'],
+    moderar: ['gases'],
+    etiquetas: ['sin_gluten', 'reemplaza_paquetes']
+  },
+  {
+    id: 'compota_manzana_canela', comida: 'media_tarde', emoji: '🍏',
+    nombre: 'Compota de manzana con canela (sin azúcar)',
+    descripcion: 'Dulce natural y suave, fácil de digerir.',
+    ingredientes: [
+      { n: '2 manzanas peladas y en cubos' },
+      { n: 'Canela al gusto' },
+      { n: 'Un chorrito de agua' }
+    ],
+    pasos: [
+      'Cocinar las manzanas a fuego bajo con el agua hasta ablandar.',
+      'Machacar y espolvorear canela.'
+    ],
+    apto: ['colon_irritable', 'colesterol', 'estrenimiento', 'candidiasis', 'gases'],
+    etiquetas: ['suave', 'colon_friendly']
+  },
+  {
+    id: 'infusion_jengibre_snack', comida: 'media_tarde', emoji: '🫚',
+    nombre: 'Infusión de jengibre con un puñado de almendras',
+    descripcion: 'Calma la digestión y sostiene energía sin azúcar.',
+    ingredientes: [
+      { n: '1 taza de infusión de jengibre' },
+      { n: '8–10 almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de calabaza' }
+    ],
+    pasos: [
+      'Preparar la infusión con jengibre fresco.',
+      'Acompañar con las almendras.'
+    ],
+    apto: ['colon_irritable', 'gases', 'migranas', 'colesterol', 'higado_graso'],
+    etiquetas: ['snack_antiansiedad', 'grasa_saludable']
+  },
+  {
+    id: 'chips_batata_horno', comida: 'media_tarde', emoji: '🍠',
+    nombre: 'Chips de batata al horno',
+    descripcion: 'Reemplaza las papas fritas de paquete sin freír y con más fibra.',
+    ingredientes: [
+      { n: '1 batata mediana en láminas finas' },
+      { n: '1 cdta de aceite de oliva' },
+      { n: 'Sal y especias al gusto' }
+    ],
+    pasos: [
+      'Hornear las láminas de batata con aceite de oliva a 200°C hasta dorar, 20–25 minutos.',
+      'Sazonar y servir.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'higado_graso', 'colesterol', 'estrenimiento'],
+    etiquetas: ['reemplaza_paquetes', 'bajo_ig']
+  },
+
+  // ================= CENAS (lote 2) =================
+  {
+    id: 'crema_calabacin_ligera', comida: 'cena', emoji: '🥣',
+    nombre: 'Crema de calabacín ligera (sin crema de leche)',
+    descripcion: 'Cena suave e hidratante, sin lácteos ni harinas espesantes.',
+    ingredientes: [
+      { n: '3 calabacines en trozos' },
+      { n: '1 papa pequeña' },
+      { n: 'Caldo natural de verduras' },
+      { n: '1 cdta de aceite de oliva' }
+    ],
+    pasos: [
+      'Cocinar el calabacín y la papa en el caldo hasta ablandar.',
+      'Licuar hasta obtener una crema homogénea.',
+      'Servir con un hilo de aceite de oliva.'
+    ],
+    apto: ['colon_irritable', 'migranas', 'candidiasis', 'higado_graso', 'colesterol', 'resistencia_insulina', 'gases'],
+    etiquetas: ['suave', 'colon_friendly', 'hidratante']
+  },
+  {
+    id: 'tortilla_espinaca_horno', comida: 'cena', emoji: '🍳',
+    nombre: 'Tortilla de espinaca al horno',
+    descripcion: 'Ligera, alta en proteína, ideal para una cena que no pese.',
+    tituloSub: { huevo: { nombre: 'Tortilla de tofu y espinaca al horno', emoji: '🌱' } },
+    ingredientes: [
+      { n: '3 huevos', grupo: 'huevo', sub: 'media taza de tofu firme licuado con especias' },
+      { n: '2 tazas de espinaca fresca' },
+      { n: 'Cebolla picada y especias al gusto' }
+    ],
+    pasos: [
+      'Batir los huevos con la espinaca y la cebolla.',
+      'Hornear en molde a 180°C por 20 minutos hasta cuajar.'
+    ],
+    apto: ['resistencia_insulina', 'prediabetes', 'higado_graso', 'colesterol', 'migranas'],
+    moderar: ['candidiasis', 'gases'],
+    etiquetas: ['alto_proteina', 'ligero']
+  },
+  {
+    id: 'pescado_papillote_limon', comida: 'cena', emoji: '🐟',
+    nombre: 'Pescado blanco en papillote con limón y hierbas',
+    descripcion: 'Cocción al vapor en su propio jugo: ligero y fácil de digerir.',
+    tituloSub: { pescado: { nombre: 'Pechuga de pollo en papillote con limón y hierbas', emoji: '🍗' } },
+    ingredientes: [
+      { n: '1 filete de pescado blanco', grupo: 'pescado', sub: 'pechuga de pollo delgada' },
+      { n: 'Limón en rodajas, eneldo y perejil' },
+      { n: 'Zanahoria y calabacín en juliana' }
+    ],
+    pasos: [
+      'Envolver el pescado con las verduras, limón y hierbas en papel para hornear.',
+      'Hornear a 180°C por 15–18 minutos.'
+    ],
+    apto: ['colon_irritable', 'higado_graso', 'colesterol', 'migranas', 'candidiasis', 'prediabetes', 'resistencia_insulina'],
+    etiquetas: ['suave', 'omega3', 'ligero']
+  },
+  {
+    id: 'ensalada_tibia_lentejas_cena', comida: 'cena', emoji: '🫘',
+    nombre: 'Ensalada tibia de lentejas con espinaca',
+    descripcion: 'Cena vegetal completa: fibra soluble y proteína vegetal.',
+    tituloSub: { legumbres: { nombre: 'Ensalada tibia de pollo con espinaca', emoji: '🍗' } },
+    ingredientes: [
+      { n: '¾ taza de lentejas cocidas', grupo: 'legumbres', sub: '100 g de pollo desmechado' },
+      { n: '1 taza de espinaca salteada' },
+      { n: 'Tomates cherry y aceite de oliva' },
+      { n: 'Limón al gusto' }
+    ],
+    pasos: [
+      'Saltear la espinaca ligeramente.',
+      'Mezclar con las lentejas y los tomates cherry.',
+      'Aliñar con aceite de oliva y limón.'
+    ],
+    apto: ['colesterol', 'higado_graso', 'prediabetes', 'resistencia_insulina', 'estrenimiento'],
+    moderar: ['colon_irritable', 'gases'],
+    etiquetas: ['fibra_soluble', 'proteina_vegetal']
   }
 ];
