@@ -176,7 +176,7 @@ export function renderQuiz(container) {
     view.className = 'quiz-step';
     view.innerHTML = `
       <div class="quiz-topbar">
-        <button class="quiz-topbar-back" aria-label="Atrás" ${step === 0 ? 'style="visibility:hidden"' : ''}>‹</button>
+        <button class="quiz-topbar-back" aria-label="Atrás" ${step === 0 ? 'style="visibility:hidden"' : ''}><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div class="quiz-progress"><div style="width:${pct}%"></div></div>
       </div>
       <h2>${s.title}</h2>

@@ -215,11 +215,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    al centro, X para cerrar (solo al retomar el quiz desde Ajustes — la
    primera vez no hay a dónde volver todavía). */
 .quiz-topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
-.quiz-topbar .quiz-progress { flex: 1; margin: 0; }
+/* La flecha (30px) + el espacio (10px) empujan la barra desde la
+   izquierda; sin nada a la derecha (ya no hay X) quedaba descentrada —
+   se reserva el mismo espacio a la derecha para que quede pareja. */
+.quiz-topbar .quiz-progress { flex: 1; margin: 0 40px 0 0; }
 /* Flecha simple, sin el círculo blanco de .icon-btn — como en la
    referencia de la usuaria (Duolingo tampoco lo usa ahí). */
 .quiz-topbar-back {
-  width: 30px; height: 34px; font-size: 1.6rem; background: none; box-shadow: none;
+  width: 30px; height: 30px; background: none; box-shadow: none; padding: 0;
   color: var(--ink-soft); flex: none; display: flex; align-items: center; justify-content: center;
 }
 .quiz-topbar-back:active { transform: translateX(-2px); box-shadow: none; }
