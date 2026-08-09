@@ -741,14 +741,25 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   box-shadow: inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -3px 5px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
 }
 .path-node.locked .path-node-badge { background: #8A97A3; }
-.path-node-icon-img { width: 70%; height: 70%; object-fit: contain; }
-/* Aro alrededor del nodo activo — un elemento propio (no box-shadow con
-   spread) para quedar perfectamente centrado. Color y proporciones son los
-   medidos de los mockups (banda a 11.5% del diámetro del círculo desde el
-   borde, ancho de banda 14.1% del diámetro): rgb(53,64,73), igual en los
-   3 mockups sin importar el color de la cara. Sin animación de latido —
-   solo la hojita de arriba (.path-mascot) sigue animada. */
-.path-node-col:has(.path-node.now)::before {
+/* Botón completo como una sola imagen (círculo+aro+placa+ícono ya
+   incluidos en el archivo, recortados directo de sus 3 mockups) — nada de
+   fondo/sombra propios del botón, la imagen ya trae los suyos. Se agranda
+   más allá de los 68px normales porque la imagen incluye el aro, que en
+   los mockups mide bastante más que el círculo solo. */
+.path-node.path-node-full {
+  width: 100px; height: 100px; background: none; box-shadow: none;
+}
+.path-node.path-node-full:active { box-shadow: none; }
+.path-node-full-img { width: 100%; height: 100%; object-fit: contain; }
+/* Aro alrededor del nodo activo cuando NO hay botón por imagen (el ícono
+   no tiene arte de la usuaria, se arma con CSS + emoji) — un elemento
+   propio (no box-shadow con spread) para quedar perfectamente centrado.
+   Color y proporciones son los medidos de los mockups (banda a 11.5% del
+   diámetro del círculo desde el borde, ancho de banda 14.1%): rgb(53,64,73),
+   igual en los 3 mockups sin importar el color de la cara. Cuando SÍ hay
+   botón por imagen no se dibuja este aro aparte -- la imagen ya trae el
+   suyo, dibujarlo aquí también lo duplicaría. */
+.path-node-col:has(.path-node.now:not(.path-node-full))::before {
   content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: 103px; height: 103px; border-radius: 50%;
   background: #35404A;

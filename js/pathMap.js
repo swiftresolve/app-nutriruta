@@ -26,11 +26,18 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
 const AMPLITUD = 17;
 const PERIODO = 4.2;
 
-// Íconos con arte real de la usuaria (recortada exacta de sus mockups de
-// referencia, no un emoji ni un dibujo inventado) — solo cubre lo que ella
-// envió. Todo lo demás sigue usando el emoji tal cual como antes.
-const ICON_ASSETS = {
-  '🍳': './assets/path-icons/desayuno.png',
+// Botón completo (círculo + aro + placa + ícono, en un solo archivo) —
+// recortado directo de los 3 mockups que la usuaria generó y guardó ella
+// misma, sin ningún cálculo ni color inventado de por medio. Solo existe
+// para desayuno (🍳), que es el único ícono del que ella mandó arte; el
+// resto de comidas sigue con el círculo armado en CSS + su emoji normal,
+// porque no hay mockup suyo del que recortar esos otros íconos.
+const FULL_BUTTON_ASSETS = {
+  '🍳': {
+    now: './assets/path-icons/node_now.png',
+    done: './assets/path-icons/node_done.png',
+    locked: './assets/path-icons/node_locked.png',
+  },
 };
 
 export function renderPathMap(container, items, opts = {}) {
@@ -38,18 +45,23 @@ export function renderPathMap(container, items, opts = {}) {
   const rowsHtml = items.map((it, i) => {
     const offset = AMPLITUD * Math.sin((i / PERIODO) * Math.PI * 2);
     const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
-    const asset = !it.done && !it.locked ? ICON_ASSETS[it.icon] : null;
-    const icon = it.done ? '✓' : (it.locked ? '🔒' : (asset ? `<img src="${asset}" alt="" class="path-node-icon-img">` : esc(it.icon)));
+    const fullAsset = FULL_BUTTON_ASSETS[it.icon]?.[stateClass];
+    const icon = it.done ? '✓' : (it.locked ? '🔒' : esc(it.icon));
     const tag = it.now ? `<span class="path-tag path-tag-now">${esc(it.nowLabel || 'Actual')}</span>` : '';
     const mascot = it.now ? '<div class="path-mascot">🌿</div>' : '';
     // Burbuja con el título, apuntando hacia el círculo — solo en el nodo
     // "now", igual que en los mockups de referencia (los demás no la llevan).
-    const bubble = it.now ? `<div class="path-bubble">${esc(it.title)}</div>` : '';
+    // No se usa cuando hay botón completo por imagen: esa imagen ya trae su
+    // propia flecha apuntando hacia arriba, duplicarla se vería mal.
+    const bubble = it.now && !fullAsset ? `<div class="path-bubble">${esc(it.title)}</div>` : '';
+    const nodeInner = fullAsset
+      ? `<img src="${fullAsset}" alt="" class="path-node-full-img">`
+      : `<span class="path-node-badge">${icon}</span>`;
     return `<div class="path-row" data-row-idx="${i}" style="margin-left:${(22 + offset).toFixed(1)}%">
         <div class="path-node-col">
           ${mascot}
           ${bubble}
-          <button type="button" class="path-node ${stateClass}" data-idx="${i}" aria-label="${esc(it.title)}"><span class="path-node-badge">${icon}</span></button>
+          <button type="button" class="path-node ${stateClass}${fullAsset ? ' path-node-full' : ''}" data-idx="${i}" aria-label="${esc(it.title)}">${nodeInner}</button>
         </div>
         <div class="path-label">
           <div class="path-t">${esc(it.title)}</div>
