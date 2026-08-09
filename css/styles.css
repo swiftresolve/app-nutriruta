@@ -722,19 +722,17 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   border: none; color: #fff;
   /* Estado por defecto (ej. comidas del día, que no tienen concepto de
      "bloqueada"): un gema celeste con relieve, como los nodos disponibles
-     de Duolingo — antes esto caía en blanco/gris plano. Cara casi plana
-     y brillante (no un degradado que la oscurece); el contraste 3D lo da
-     el canto de abajo, no la cara — al revés de como estaba antes. */
-  background: #4FC3F7;
+     de Duolingo — antes esto caía en blanco/gris plano. */
+  background: linear-gradient(160deg, #8ED4F0, var(--secondary));
   box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(20,50,80,0.15), 0 6px 0 #4E86B8, 0 8px 10px rgba(35,56,51,0.14);
   transition: transform .12s ease; padding: 0;
 }
-/* Aro inferior (el "canto" del token, siguiendo la curva ovalada) — corte
-   más definido, no un degradado largo y suave: la cara queda pareja y
-   brillante, y el canto queda claramente más oscuro, como la referencia. */
+/* Aro inferior (el "canto" del token, siguiendo la curva ovalada) — más
+   alto y con transición más marcada, para que se lea como el borde
+   grueso de un token 3D y no solo una sombra suave. */
 .path-node::before {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(to top, rgba(15,70,110,0.65) 0%, rgba(15,70,110,0.65) 26%, rgba(15,70,110,0.35) 30%, transparent 34%);
+  background: linear-gradient(to top, rgba(20,50,90,0.4) 0%, rgba(20,50,90,0.4) 30%, rgba(20,50,90,0.2) 42%, transparent 62%);
 }
 /* Brillo superior (look "botón de caramelo" 3D) — se oculta en nodos bloqueados. */
 .path-node::after {
