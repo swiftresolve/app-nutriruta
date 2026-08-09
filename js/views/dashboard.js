@@ -256,26 +256,34 @@ export function renderDashboard(container) {
   container.appendChild(sosBtn);
 
   // --- Plan de 7 días (gratis, respuesta inmediata) ---
+  // Antes esta tarjeta desaparecía del todo al llegar a 7/7 -- y como es el
+  // ÚNICO punto de entrada a la vista 'emergency' en toda la app (no hay
+  // link en Progreso, Ajustes ni la nav), completar el plan lo dejaba
+  // inaccesible para siempre, aunque la vista sí tiene un cierre armado
+  // para ese estado. Ahora se queda, con su propia variante de completado.
   const { emergencia } = getState();
   const diasCompletados = (emergencia?.completados || []).length;
-  if (diasCompletados < 7) {
-    const emergCard = document.createElement('div');
-    emergCard.className = 'card';
-    emergCard.style.borderLeft = '4px solid var(--accent)';
-    if (emergencia?.inicio) {
-      emergCard.innerHTML = `
-        <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag verde">${diasCompletados}/7</span></div>
-        <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((diasCompletados / 7) * 100)}%"></div></div>
-        <button class="link-btn small">Continuar mi plan →</button>`;
-    } else {
-      emergCard.innerHTML = `
-        <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag info">Gratis</span></div>
-        <p class="small">${EMERGENCY_PLAN.descripcion}</p>
-        <button class="link-btn small">Empezar hoy mismo →</button>`;
-    }
-    emergCard.querySelector('.link-btn').addEventListener('click', () => navigate('emergency'));
-    container.appendChild(emergCard);
+  const emergCard = document.createElement('div');
+  emergCard.className = 'card';
+  emergCard.style.borderLeft = '4px solid var(--accent)';
+  if (diasCompletados >= 7) {
+    emergCard.innerHTML = `
+      <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag verde">Completado</span></div>
+      <p class="small">Diste el primer paso — revisa tu semana cuando quieras.</p>
+      <button class="link-btn small">Ver mi plan →</button>`;
+  } else if (emergencia?.inicio) {
+    emergCard.innerHTML = `
+      <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag verde">${diasCompletados}/7</span></div>
+      <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((diasCompletados / 7) * 100)}%"></div></div>
+      <button class="link-btn small">Continuar mi plan →</button>`;
+  } else {
+    emergCard.innerHTML = `
+      <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag info">Gratis</span></div>
+      <p class="small">${EMERGENCY_PLAN.descripcion}</p>
+      <button class="link-btn small">Empezar hoy mismo →</button>`;
   }
+  emergCard.querySelector('.link-btn').addEventListener('click', () => navigate('emergency'));
+  container.appendChild(emergCard);
 
   // --- Lo Premium va al final: ya viviste el valor gratis, ahora la invitación ---
 
