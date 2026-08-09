@@ -701,7 +701,7 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 }
 
 /* ===== Camino (Misión, Plan de 7 días) ===== */
-.path-wrap { position: relative; margin: 4px auto 0; width: 100%; max-width: 340px; padding-top: 74px; }
+.path-wrap { position: relative; margin: 4px auto 0; width: 100%; max-width: 340px; }
 .path-svg { position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none; }
 /* El desplazamiento horizontal de cada fila ya viene calculado en JS
    (onda seno, ver AMPLITUD/PERIODO en pathMap.js) como margin-left en
@@ -715,79 +715,69 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 .path-wrap.no-line .path-row { margin-bottom: 34px; }
 .path-node-col { position: relative; flex: none; }
 .path-node {
-  /* Medidas y colores sacados por muestreo de píxel directo de los 3
-     mockups que envió la usuaria (no inventados): círculo perfecto, color
-     PLANO por estado sin ningún corte de dos tonos, sombra normal de
-     "elevación" por debajo — nada de degradado en la cara. */
-  width: 68px; height: 68px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
-  display: flex; align-items: center; justify-content: center;
+  /* Achatado (ovalado), no un círculo perfecto — como los tokens 3D de
+     Duolingo: más ancho que alto, con el "canto" inferior a la vista. */
+  width: 66px; height: 54px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
+  display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
   border: none; color: #fff;
-  --face: #4FC3F7;
-  background: var(--face);
-  box-shadow: 0 3px 6px rgba(35,56,51,0.18);
+  /* Estado por defecto (ej. comidas del día, que no tienen concepto de
+     "bloqueada"): un gema celeste con relieve, como los nodos disponibles
+     de Duolingo — antes esto caía en blanco/gris plano. Cara casi plana
+     y brillante (no un degradado que la oscurece); el contraste 3D lo da
+     el canto de abajo, no la cara — al revés de como estaba antes. */
+  background: #4FC3F7;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(20,50,80,0.15), 0 6px 0 #4E86B8, 0 8px 10px rgba(35,56,51,0.14);
   transition: transform .12s ease; padding: 0;
 }
-.path-node:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(35,56,51,0.14); }
-.path-node.done { --face: var(--primary); color: #fff; }
-.path-node.now { --face: var(--accent); color: #fff; transform: scale(1.15); }
-.path-node.now:active { transform: scale(1.15) translateY(2px); }
-.path-node.locked { --face: #E4ECEA; opacity: 1; cursor: default; color: #A8BDB7; }
-/* La placa oscura propia del ícono (el "platito" dentro del botón) — mismo
-   tono morado oscuro en los 3 mockups sin importar el color de la cara
-   (#4C3759 medido de píxel), 52% del diámetro del círculo (217/419px). */
-.path-node-badge {
-  width: 52%; height: 52%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 1.35rem; background: #4C3759;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.12), inset 0 -3px 5px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+/* Aro inferior (el "canto" del token, siguiendo la curva ovalada) — corte
+   más definido, no un degradado largo y suave: la cara queda pareja y
+   brillante, y el canto queda claramente más oscuro, como la referencia. */
+.path-node::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(to top, rgba(15,70,110,0.65) 0%, rgba(15,70,110,0.65) 26%, rgba(15,70,110,0.35) 30%, transparent 34%);
 }
-.path-node.locked .path-node-badge { background: #8A97A3; }
-/* Botón completo como una sola imagen (círculo+aro+placa+ícono ya
-   incluidos en el archivo, recortados directo de sus 3 mockups) — nada de
-   fondo/sombra propios del botón, la imagen ya trae los suyos. Se agranda
-   más allá de los 68px normales porque la imagen incluye el aro, que en
-   los mockups mide bastante más que el círculo solo. */
-.path-node.path-node-full {
-  width: 100px; height: 100px; background: none; box-shadow: none;
+/* Brillo superior (look "botón de caramelo" 3D) — se oculta en nodos bloqueados. */
+.path-node::after {
+  content: ''; position: absolute; top: 6px; left: 11px; width: 34%; height: 24%;
+  border-radius: 50%; background: rgba(255,255,255,0.5); pointer-events: none;
 }
-.path-node.path-node-full:active { box-shadow: none; }
-.path-node-full-img { width: 100%; height: 100%; object-fit: contain; }
-/* Aro alrededor del nodo activo cuando NO hay botón por imagen (el ícono
-   no tiene arte de la usuaria, se arma con CSS + emoji) — un elemento
-   propio (no box-shadow con spread) para quedar perfectamente centrado.
-   Color y proporciones son los medidos de los mockups (banda a 11.5% del
-   diámetro del círculo desde el borde, ancho de banda 14.1%): rgb(53,64,73),
-   igual en los 3 mockups sin importar el color de la cara. Cuando SÍ hay
-   botón por imagen no se dibuja este aro aparte -- la imagen ya trae el
-   suyo, dibujarlo aquí también lo duplicaría. */
-.path-node-col:has(.path-node.now:not(.path-node-full))::before {
+.path-node:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(20,50,80,0.15), 0 1px 0 #4E86B8; }
+.path-node.done {
+  background: var(--primary); color: #fff;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 var(--primary-dark), 0 8px 10px rgba(35,56,51,0.14);
+}
+.path-node.done:active { box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -5px 6px rgba(0,0,0,0.12), 0 1px 0 var(--primary-dark); }
+.path-node.now {
+  background: var(--accent); color: #fff; transform: scale(1.15);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 #D96B4F, 0 8px 10px rgba(255,138,107,0.25);
+}
+.path-node.now:active { transform: scale(1.15) translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 1px 0 #D96B4F; }
+/* Aro circular centrado alrededor del nodo activo — un elemento propio
+   (no box-shadow con spread) porque el nodo es ovalado, no un círculo:
+   un spread uniforme sobre una elipse queda torcido/descentrado. Este
+   sí escala en las mismas proporciones que el nodo. Sin animación de
+   latido — solo la hojita de arriba (.path-mascot) sigue animada. */
+.path-node-col:has(.path-node.now)::before {
   content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 103px; height: 103px; border-radius: 50%;
-  background: #35404A;
+  /* Tamaño calculado sobre el nodo YA escalado (scale 1.15, ~76x62) más un
+     margen parejo de 8px por lado — antes el cálculo era sobre el tamaño
+     sin escalar, dejando el hueco desigual. */
+  width: 92px; height: 78px; border-radius: 50%;
+  /* var(--bg) quedaba casi igual al blanco de la tarjeta, invisible. Un
+     tinte del color de acento sí se distingue sin ser un aro sólido. */
+  background: var(--accent-soft);
   pointer-events: none;
 }
-/* Burbuja con el título del nodo activo, apuntando hacia el círculo con un
-   triángulo — presente en los 3 mockups de referencia y ausente hasta esta
-   versión. Fondo blanco de tarjeta (no el fondo casi negro de los mockups,
-   que eran solo el lienzo de demo sobre fondo oscuro) para mantener buen
-   contraste de texto sobre la app, que es de tema claro; borde del mismo
-   tono del aro. */
-.path-bubble {
-  position: absolute; left: 50%; bottom: calc(100% + 14px); transform: translateX(-50%);
-  background: var(--card); border: 1.5px solid #35404A; border-radius: 10px;
-  padding: 5px 12px; font-size: 0.72rem; font-weight: 800; letter-spacing: .02em;
-  text-transform: uppercase; color: var(--ink); white-space: nowrap; max-width: 140px;
-  overflow: hidden; text-overflow: ellipsis; z-index: 3; pointer-events: none;
+.path-node.locked {
+  /* Mismo relieve 3D + canto inferior que los nodos activos, solo que en
+     gris — antes quedaba plano (sombra baja de 2px, sin brillo), muy
+     distinto en textura al resto del camino. */
+  opacity: 1; cursor: default; background: linear-gradient(160deg, #EEF3F1, #D3DEDA); color: #A8BDB7;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(35,56,51,0.08), 0 6px 0 #B9C7C2, 0 8px 10px rgba(35,56,51,0.1);
 }
-.path-bubble::after {
-  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-  border: 6px solid transparent; border-top-color: #35404A;
-}
-.path-bubble::before {
-  content: ''; position: absolute; top: calc(100% - 1.5px); left: 50%; transform: translateX(-50%);
-  border: 5px solid transparent; border-top-color: var(--card); z-index: 1;
-}
+.path-node.locked:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(35,56,51,0.08), 0 1px 0 #B9C7C2; }
 .path-mascot {
-  position: absolute; top: -68px; left: 50%; transform: translateX(-50%); font-size: 1.7rem;
+  position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 1.7rem;
   animation: path-bob 2.4s ease-in-out infinite; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.15));
   z-index: 2;
 }
