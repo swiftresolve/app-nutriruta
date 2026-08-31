@@ -1,7 +1,7 @@
 // Ajustes: cuenta, perfiles, exclusiones, quiz, datos y sección legal.
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
-import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor } from '../supabase-client.js';
+import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin } from '../supabase-client.js';
 import { navigate, header, openModal, toast } from '../app.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
@@ -75,18 +75,22 @@ export function renderSettings(container) {
     toast('Sesión cerrada. ¡Vuelve pronto! 🌿');
   });
   account.appendChild(outBtn);
-  // Enlace discreto: el servidor decide quién entra (admin_dashboard), no
-  // esta pantalla — mostrarlo a todas es inofensivo, no revela nada. Vive
-  // aquí, junto a la cuenta, en vez de hasta el final de Ajustes (ahí
-  // costaba encontrarlo, tras una lista larga de tarjetas).
-  const adminLink = document.createElement('button');
-  adminLink.className = 'link-btn small center';
-  adminLink.style.display = 'block';
-  adminLink.style.width = '100%';
-  adminLink.style.marginTop = '10px';
-  adminLink.textContent = 'Panel de administración';
-  adminLink.addEventListener('click', () => navigate('admin'));
-  account.appendChild(adminLink);
+  // El servidor sigue siendo quien de verdad decide (admin_dashboard
+  // rechaza a cualquiera fuera de admin_emails al pedir los datos) -- pero
+  // mostrarle el botón a TODAS las usuarias no tenía sentido: confundía,
+  // invitaba a curiosear una pantalla que de todos modos les va a negar el
+  // acceso. checkIsAdmin() es solo para decidir si se muestra o no.
+  checkIsAdmin().then((esAdmin) => {
+    if (!esAdmin) return;
+    const adminLink = document.createElement('button');
+    adminLink.className = 'link-btn small center';
+    adminLink.style.display = 'block';
+    adminLink.style.width = '100%';
+    adminLink.style.marginTop = '10px';
+    adminLink.textContent = 'Panel de administración';
+    adminLink.addEventListener('click', () => navigate('admin'));
+    account.appendChild(adminLink);
+  });
   container.appendChild(account);
 
   // Calificación (visible en vivo en nutriruta.com — vista pública, nunca

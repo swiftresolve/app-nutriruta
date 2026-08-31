@@ -76,7 +76,7 @@ export async function submitResena(calificacion, texto, nombreMostrado) {
     user_id: session.user.id,
     calificacion,
     texto: texto ? String(texto).slice(0, 300) : null,
-    nombre_mostrado: (nombreMostrado || 'Usuaria de NutriRuta').slice(0, 60)
+    nombre_mostrado: (nombreMostrado || 'Usuario de NutriRuta').slice(0, 60)
   };
   const { error } = await supabase.from('resenas').upsert(row, { onConflict: 'user_id' });
   if (error) throw error;
@@ -198,6 +198,16 @@ export async function fetchAdminDashboard() {
   const { data, error } = await supabase.rpc('admin_dashboard');
   if (error) throw error;
   return data;
+}
+
+// Chequeo liviano para decidir si mostrar el link al panel de admin en
+// Ajustes (antes se mostraba a cualquier usuaria, aunque el panel en sí
+// ya rechazaba a quien no fuera admin al pedir los datos). No reemplaza
+// ese chequeo real -- es solo para no exhibir el botón de más.
+export async function checkIsAdmin() {
+  const { data, error } = await supabase.rpc('is_admin');
+  if (error) return false;
+  return data === true;
 }
 
 export async function askGuide(message) {

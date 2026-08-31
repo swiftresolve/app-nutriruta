@@ -4,6 +4,7 @@
 // servidor los niega.
 import { fetchAdminDashboard } from '../supabase-client.js';
 import { header } from '../app.js';
+import { esc } from '../store.js';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
@@ -92,13 +93,34 @@ function pintarPanel(container, d) {
   const usuarias = document.createElement('div');
   usuarias.className = 'card';
   usuarias.innerHTML = `
-    <h2>👥 Usuarias</h2>
+    <h2>👥 Usuarios</h2>
     <div class="chips mt">
       <span class="tag info">${u.total} total</span>
       <span class="tag verde">${u.premium} Premium</span>
       <span class="tag">${u.gratis} gratis</span>
       <span class="tag">${u.nuevas_mes} nuevas este mes</span>
     </div>`;
+  if (u.detalle?.length) {
+    const fecha = (iso) => iso ? new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+    usuarias.insertAdjacentHTML('beforeend', `
+      <p class="small mt" style="font-weight:600">Detalle:</p>
+      <div class="mt" style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:0.82rem;white-space:nowrap">
+          <thead><tr style="text-align:left;color:var(--ink-soft)">
+            <th style="padding:4px 8px 4px 0">Correo</th><th style="padding:4px 8px">Plan</th>
+            <th style="padding:4px 8px">Vence</th><th style="padding:4px 8px">Creada</th><th style="padding:4px 0">Último acceso</th>
+          </tr></thead>
+          <tbody>${u.detalle.map((r) => `
+            <tr style="border-top:1px solid #EFF5F3">
+              <td style="padding:5px 8px 5px 0">${esc(r.email)}${r.nombre ? ` <span class="muted">(${esc(r.nombre)})</span>` : ''}</td>
+              <td style="padding:5px 8px">${r.plan === 'premium' ? `✨ ${esc(r.plan_periodo || '')}` : 'gratis'}</td>
+              <td style="padding:5px 8px">${fecha(r.vence)}</td>
+              <td style="padding:5px 8px">${fecha(r.creada)}</td>
+              <td style="padding:5px 0">${fecha(r.ultimo_acceso)}</td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>`);
+  }
   container.appendChild(usuarias);
 
   // --- Uso de Sana ---
@@ -107,7 +129,7 @@ function pintarPanel(container, d) {
   sana.className = 'card';
   sana.innerHTML = `
     <h2>💬 Uso de Susana</h2>
-    <p class="small mt">${s.mensajes_mes} mensajes este mes, de ${s.usuarias_activas_mes} usuaria${s.usuarias_activas_mes === 1 ? '' : 's'} distinta${s.usuarias_activas_mes === 1 ? '' : 's'}.</p>`;
+    <p class="small mt">${s.mensajes_mes} mensajes este mes, de ${s.usuarias_activas_mes} usuario${s.usuarias_activas_mes === 1 ? '' : 's'} distinto${s.usuarias_activas_mes === 1 ? '' : 's'}.</p>`;
   container.appendChild(sana);
 
   // --- No medido todavía ---
@@ -115,7 +137,7 @@ function pintarPanel(container, d) {
   noMedido.className = 'card';
   noMedido.innerHTML = `
     <h2>📋 No medido todavía</h2>
-    <p class="small muted mt">Con pocas usuarias, estos números no dirían nada real todavía — se activan solos cuando haya más historia:</p>
+    <p class="small muted mt">Con pocos usuarios, estos números no dirían nada real todavía — se activan solos cuando haya más historia:</p>
     <ul class="steps small mt">${d.no_medido.map((m) => `<li>${m}</li>`).join('')}</ul>`;
   container.appendChild(noMedido);
 }
