@@ -108,6 +108,31 @@ function attachStatTooltip(btn, html, { onRender, duracion = 3500 } = {}) {
   });
 }
 
+// Ícono de ajustes: reemplaza el emoji ⚙️ (en la mayoría de fuentes se
+// dibuja en perspectiva/inclinado) por un engranaje propio, de frente, con
+// un poco de volumen (cara clara con un brillo suave arriba-izquierda,
+// diente y aro un tono más oscuro) — no un dibujo plano de una sola línea.
+const GEAR_ICON = `<svg viewBox="0 0 40 40" width="22" height="22" style="display:block">
+  <defs>
+    <radialGradient id="gear-face" cx="38%" cy="32%" r="75%">
+      <stop offset="0%" stop-color="#8CA39C"/>
+      <stop offset="100%" stop-color="#5C7570"/>
+    </radialGradient>
+  </defs>
+  <g fill="#41544F">
+    <rect x="17.5" y="1" width="5" height="8" rx="2"/>
+    <rect x="17.5" y="31" width="5" height="8" rx="2"/>
+    <rect x="1" y="17.5" width="8" height="5" rx="2"/>
+    <rect x="31" y="17.5" width="8" height="5" rx="2"/>
+    <rect x="17.5" y="1" width="5" height="8" rx="2" transform="rotate(45 20 20)"/>
+    <rect x="17.5" y="31" width="5" height="8" rx="2" transform="rotate(45 20 20)"/>
+    <rect x="1" y="17.5" width="8" height="5" rx="2" transform="rotate(45 20 20)"/>
+    <rect x="31" y="17.5" width="8" height="5" rx="2" transform="rotate(45 20 20)"/>
+  </g>
+  <circle cx="20" cy="20" r="12" fill="url(#gear-face)"/>
+  <circle cx="20" cy="20" r="5" fill="#233833"/>
+</svg>`;
+
 // Cabecera común de las vistas principales. Cuando ya hay cuenta activa,
 // muestra racha y escudos arriba a la derecha (persistentes, como el
 // marcador de racha de Duolingo) — tocar cualquiera abre el detalle.
@@ -129,7 +154,7 @@ export function header(container) {
           <button class="header-stat" id="hs-gemas" aria-label="Tus gemas"><span class="icon">💎</span>${gemas}</button>
           <button class="header-stat" id="hs-escudos" aria-label="Tus Pausas de Ruta"><span class="icon">🛡️</span>${escudos}</button>
         </div>` : ''}
-      <button class="icon-btn" data-go="settings" aria-label="Ajustes">⚙️</button>
+      <button class="icon-btn" data-go="settings" aria-label="Ajustes">${GEAR_ICON}</button>
     </div>`;
   h.querySelector('[data-go]').addEventListener('click', () => navigate('settings'));
 
