@@ -389,7 +389,13 @@ export function renderQuiz(container) {
     continuarBtn.addEventListener('click', () => {
       const cur = getState().user;
       setState({ user: { ...cur, compromisoDias: elegido, compromisoDesde: today() } });
-      navigate('dashboard');
+      // Todavía no hay cuenta en este punto (login-después-del-quiz): si
+      // navigate() redirige a 'auth' por no estar autenticada, debe abrir
+      // en modo registro, no en login -- confundía a quien recién terminó
+      // el quiz y se topaba con una pantalla de "Inicia sesión". Si ya
+      // hubiera sesión (ej. rehaciendo el quiz desde Ajustes), este mode
+      // simplemente no se usa y va directo al dashboard.
+      navigate('dashboard', { mode: 'signup' });
     });
     container.appendChild(view);
   }

@@ -40,8 +40,12 @@ export function attachPasswordToggle(input) {
   });
 }
 
-export function renderAuth(container) {
-  let mode = 'login';
+export function renderAuth(container, params = {}) {
+  // Por defecto entra en login (ej. si expira la sesión en cualquier otra
+  // pantalla) -- pero justo al terminar el quiz de onboarding todavía no
+  // existe ninguna cuenta, así que ese flujo pide explícitamente el modo
+  // registro (ver quiz.js) para no confundir a quien nunca inició sesión.
+  let mode = params.mode === 'signup' ? 'signup' : 'login';
 
   function draw() {
     container.innerHTML = '';
