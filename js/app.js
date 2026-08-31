@@ -269,7 +269,7 @@ if ('serviceWorker' in navigator) {
     // - onboarded=true y con sesión: usuaria normal que vuelve → dashboard.
     // - onboarded=false: nunca lo completó en este dispositivo (sea porque
     //   es nueva o porque tiene sesión pero no lo ha hecho) → quiz.
-    navigate(getState().onboarded ? (authed ? 'dashboard' : 'auth') : 'quiz');
+    navigate(getState().onboarded ? 'dashboard' : 'quiz', { mode: 'signup' });
   }
 
   supabase.auth.onAuthStateChange((event) => {
