@@ -2,8 +2,8 @@
 // en el servidor (admin_dashboard, ver migración). Esta vista no decide
 // nada de acceso — solo pide los datos y muestra "No autorizado" si el
 // servidor los niega.
-import { fetchAdminDashboard } from '../supabase-client.js';
-import { header } from '../app.js';
+import { fetchAdminDashboard, adminSetPlan } from '../supabase-client.js';
+import { header, toast } from '../app.js';
 import { esc } from '../store.js';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -13,6 +13,10 @@ function money(n) {
 }
 
 export function renderAdmin(container) {
+  cargarYPintar(container);
+}
+
+function cargarYPintar(container) {
   header(container);
 
   const loading = document.createElement('div');
@@ -34,6 +38,14 @@ export function renderAdmin(container) {
     container.appendChild(denegado);
     if (e?.message && e.message !== 'No autorizado') console.error('Error cargando el panel de admin:', e.message);
   });
+}
+
+// Tras activar/quitar Premium a mano, se vuelve a pedir todo el panel
+// (no solo la fila tocada) -- así ganancia, avisos y el resto de conteos
+// quedan consistentes con el cambio, no solo la tabla.
+function recargar(container) {
+  container.innerHTML = '';
+  cargarYPintar(container);
 }
 
 function pintarPanel(container, d) {
@@ -108,20 +120,69 @@ function pintarPanel(container, d) {
         <table style="width:100%;border-collapse:collapse;font-size:0.82rem;white-space:nowrap">
           <thead><tr style="text-align:left;color:var(--ink-soft)">
             <th style="padding:4px 8px 4px 0">Correo</th><th style="padding:4px 8px">Plan</th>
-            <th style="padding:4px 8px">Vence</th><th style="padding:4px 8px">Creada</th><th style="padding:4px 0">Último acceso</th>
+            <th style="padding:4px 8px">Pago</th>
+            <th style="padding:4px 8px">Vence</th><th style="padding:4px 8px">Creada</th><th style="padding:4px 8px">Último acceso</th>
+            <th style="padding:4px 0">Acción</th>
           </tr></thead>
           <tbody>${u.detalle.map((r) => `
-            <tr style="border-top:1px solid #EFF5F3">
+            <tr style="border-top:1px solid #EFF5F3" data-uid="${esc(r.user_id)}">
               <td style="padding:5px 8px 5px 0">${esc(r.email)}${r.nombre ? ` <span class="muted">(${esc(r.nombre)})</span>` : ''}</td>
               <td style="padding:5px 8px">${r.plan === 'premium' ? `✨ ${esc(r.plan_periodo || '')}` : 'gratis'}</td>
+              <td style="padding:5px 8px">${r.plan === 'premium' ? (r.tiene_pago_real ? '💳 real' : '<span style="color:var(--red)">⚠️ sin pago</span>') : '—'}</td>
               <td style="padding:5px 8px">${fecha(r.vence)}</td>
               <td style="padding:5px 8px">${fecha(r.creada)}</td>
-              <td style="padding:5px 0">${fecha(r.ultimo_acceso)}</td>
+              <td style="padding:5px 8px">${fecha(r.ultimo_acceso)}</td>
+              <td style="padding:5px 0">
+                <select class="admin-plan-sel" style="font-size:0.78rem;padding:2px 4px;border-radius:6px;border:1px solid #D8E6E2">
+                  <option value="">Cambiar…</option>
+                  <option value="premium:mensual">Premium mensual</option>
+                  <option value="premium:anual">Premium anual</option>
+                  <option value="free">Quitar Premium</option>
+                </select>
+              </td>
             </tr>`).join('')}</tbody>
         </table>
       </div>`);
+    usuarias.querySelectorAll('.admin-plan-sel').forEach((sel) => {
+      sel.addEventListener('change', async () => {
+        const val = sel.value;
+        if (!val) return;
+        const uid = sel.closest('tr').dataset.uid;
+        const [plan, periodo] = val.split(':');
+        sel.disabled = true;
+        try {
+          await adminSetPlan(uid, plan, periodo || null);
+          toast(plan === 'premium' ? `Premium ${periodo} activado.` : 'Premium quitado.');
+          recargar(container);
+        } catch (err) {
+          toast('No se pudo aplicar el cambio: ' + (err.message || 'error desconocido'));
+          sel.disabled = false;
+          sel.value = '';
+        }
+      });
+    });
   }
   container.appendChild(usuarias);
+
+  // --- Churn ---
+  const ch = d.churn;
+  const churn = document.createElement('div');
+  churn.className = 'card';
+  churn.innerHTML = `
+    <h2>📉 Churn — ${mesTexto}</h2>
+    <div class="chips mt">
+      <span class="tag">${ch.voluntario_mes} voluntario${ch.voluntario_mes === 1 ? '' : 's'} (canceló, sigue activo hasta que termine lo pagado)</span>
+      <span class="tag rojo">${ch.involuntario_mes} involuntario${ch.involuntario_mes === 1 ? '' : 's'} (reembolso, contracargo o pago vencido)</span>
+    </div>`;
+  if (ch.detalle_involuntario?.length) {
+    const fecha2 = (iso) => new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' });
+    churn.insertAdjacentHTML('beforeend', `
+      <p class="small mt" style="font-weight:600">Eventos de este mes:</p>
+      ${ch.detalle_involuntario.slice(0, 15).map((ev) => `<div class="habit"><label>${fecha2(ev.fecha)} · ${esc(ev.email)}</label><span class="small muted">${ev.evento}</span></div>`).join('')}`);
+  } else {
+    churn.insertAdjacentHTML('beforeend', '<p class="small muted mt">Sin eventos de churn este mes.</p>');
+  }
+  container.appendChild(churn);
 
   // --- Uso de Sana ---
   const s = d.uso_sana;

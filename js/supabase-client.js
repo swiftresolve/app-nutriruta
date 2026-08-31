@@ -210,6 +210,15 @@ export async function checkIsAdmin() {
   return data === true;
 }
 
+// Activar/quitar Premium a mano desde el panel de admin (ver
+// admin_set_plan en la migración: valida admin_emails ella misma y deja
+// registro con monto 0 en pagos para poder distinguir esto de un cobro
+// real de Hotmart en la auditoría de "premium sin pago").
+export async function adminSetPlan(userId, plan, periodo = null) {
+  const { error } = await supabase.rpc('admin_set_plan', { p_user_id: userId, p_plan: plan, p_periodo: periodo });
+  if (error) throw error;
+}
+
 export async function askGuide(message) {
   const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'send', message } });
   if (error) {
