@@ -13,6 +13,33 @@ export function passwordIssues(pw) {
   return issues;
 }
 
+const EYE_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a20.6 20.6 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a20.5 20.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+// El ojito para mostrar/ocultar la contraseña escrita — el input no lo
+// trae de fábrica en ningún navegador. Envuelve el <input type="password">
+// que ya está en el DOM (no rearma el HTML del formulario) y alterna su
+// type entre password/text al tocarlo.
+export function attachPasswordToggle(input) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pw-wrap';
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pw-toggle';
+  btn.setAttribute('aria-label', 'Mostrar contraseña');
+  btn.innerHTML = EYE_ICON;
+  wrap.appendChild(btn);
+  btn.addEventListener('click', () => {
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.innerHTML = show ? EYE_OFF_ICON : EYE_ICON;
+    btn.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    input.focus({ preventScroll: true });
+  });
+}
+
 export function renderAuth(container) {
   let mode = 'login';
 
@@ -53,9 +80,13 @@ export function renderAuth(container) {
     if (!document.getElementById('auth-style')) {
       const st = document.createElement('style');
       st.id = 'auth-style';
-      st.textContent = '.auth-input{width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin:6px 0 12px}';
+      st.textContent = '.auth-input{width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin:6px 0 12px}'
+        + '.pw-wrap{position:relative}.pw-wrap .auth-input{padding-right:44px}'
+        + '.pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(calc(-50% - 6px));background:none;border:none;padding:6px;color:var(--ink-soft);display:flex;cursor:pointer}';
       document.head.appendChild(st);
     }
+
+    attachPasswordToggle(view.querySelector('#a-pass'));
 
     view.querySelector('#a-toggle').addEventListener('click', () => {
       mode = mode === 'login' ? 'signup' : 'login';

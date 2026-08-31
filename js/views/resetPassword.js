@@ -6,7 +6,7 @@
 import { supabase } from '../supabase-client.js';
 import { initCloud, getState } from '../store.js';
 import { navigate, toast, setAuthed } from '../app.js';
-import { MIN_PASSWORD, passwordIssues } from './auth.js';
+import { MIN_PASSWORD, passwordIssues, attachPasswordToggle } from './auth.js';
 
 export function renderResetPassword(container) {
   // Puede ser la primera pantalla que se renderiza (llega directo desde el
@@ -15,7 +15,9 @@ export function renderResetPassword(container) {
   if (!document.getElementById('auth-style')) {
     const st = document.createElement('style');
     st.id = 'auth-style';
-    st.textContent = '.auth-input{width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin:6px 0 12px}';
+    st.textContent = '.auth-input{width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin:6px 0 12px}'
+      + '.pw-wrap{position:relative}.pw-wrap .auth-input{padding-right:44px}'
+      + '.pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(calc(-50% - 6px));background:none;border:none;padding:6px;color:var(--ink-soft);display:flex;cursor:pointer}';
     document.head.appendChild(st);
   }
 
@@ -37,6 +39,8 @@ export function renderResetPassword(container) {
       </form>
     </div>
     <div class="legal-note">Si este enlace ya expiró, entra con "¿Olvidaste tu contraseña?" desde la pantalla de inicio de sesión.</div>`;
+
+  attachPasswordToggle(container.querySelector('#rp-pass'));
 
   const form = container.querySelector('form');
   const errEl = container.querySelector('#rp-error');
