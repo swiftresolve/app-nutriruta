@@ -403,6 +403,27 @@ export function renderSettings(container) {
     });
     tonoChips.appendChild(chip);
   }
+  const CONTEXTO_MAX = 300;
+  const contextoWrap = document.createElement('div');
+  contextoWrap.className = 'mt';
+  contextoWrap.innerHTML = `
+    <label class="small" style="font-weight:600">Algo de contexto para SuSana (opcional)</label>
+    <p class="small muted" style="margin-top:2px">Ej. "no hago ejercicio hace meses" o "estoy en un momento de mucho estrés". Se suma a tu perfil de siempre, nunca lo reemplaza.</p>
+    <textarea id="ctx-susana" class="auth-input" rows="2" maxlength="${CONTEXTO_MAX}" placeholder="Escribe aquí…" style="margin-top:6px">${esc(user.contextoSusana || '')}</textarea>
+    <div class="row" style="justify-content:space-between;margin-top:6px">
+      <span class="small muted" id="ctx-susana-count"></span>
+      <button type="button" class="btn ghost sm" id="ctx-susana-guardar">Guardar</button>
+    </div>`;
+  tono.appendChild(contextoWrap);
+  const ctxInput = contextoWrap.querySelector('#ctx-susana');
+  const ctxCount = contextoWrap.querySelector('#ctx-susana-count');
+  const actualizarContador = () => { ctxCount.textContent = `${ctxInput.value.length}/${CONTEXTO_MAX}`; };
+  actualizarContador();
+  ctxInput.addEventListener('input', actualizarContador);
+  contextoWrap.querySelector('#ctx-susana-guardar').addEventListener('click', () => {
+    setState({ user: { ...getState().user, contextoSusana: ctxInput.value.trim() } });
+    toast('Guardado 🌿');
+  });
   container.appendChild(tono);
 
   // Colon irritable: síntoma predominante (solo si el perfil está activo)

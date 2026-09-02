@@ -233,6 +233,7 @@ function buildContext(state: Record<string, any>): string {
   lines.push(`- Perfiles de salud activos: ${perfiles.length ? perfiles.join(', ') : 'ninguno indicado'}.`);
   lines.push(`- Alimentos que no consume: ${exclusiones.length ? exclusiones.join(', ') : 'ninguno indicado'}.`);
   if (user.colonPredominante) lines.push(`- Colon irritable, síntoma predominante: ${user.colonPredominante}.`);
+  if (user.contextoSusana) lines.push(`- Contexto adicional que ella misma escribió sobre su situación: "${String(user.contextoSusana).slice(0, 300)}".`);
   if (sintomas.length) {
     lines.push(`- Últimos síntomas registrados: ${sintomas.map((s: any) => `${s.tipo}${s.disparador ? ` (posible disparador: ${s.disparador})` : ''}`).join('; ')}.`);
   }
