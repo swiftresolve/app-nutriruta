@@ -237,3 +237,25 @@ export async function askGuide(message) {
   }
   return data;
 }
+
+// Identifica alimentos en una foto o un texto libre (dictado por voz o
+// escrito) — no cuenta contra la cuota de Susana ni requiere Premium (ver
+// log-meal). Devuelve la lista cruda de nombres; quien llama la muestra
+// editable antes de guardarla, nunca se guarda sin confirmar.
+async function invokeLogMeal(body) {
+  const { data, error } = await supabase.functions.invoke('log-meal', { body });
+  if (error) {
+    let errBody = null;
+    try { errBody = await error.context.clone().json(); } catch { /* no era JSON */ }
+    throw new Error(errBody?.error || 'No pudimos analizar eso. Intenta de nuevo.');
+  }
+  return data.alimentos || [];
+}
+
+export async function detectarAlimentosFoto(imagenBase64, mediaType = 'image/jpeg') {
+  return invokeLogMeal({ modo: 'foto', imagenBase64, mediaType });
+}
+
+export async function detectarAlimentosTexto(texto) {
+  return invokeLogMeal({ modo: 'texto', texto });
+}

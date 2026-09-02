@@ -45,7 +45,8 @@ const DEFAULT_STATE = {
   sonidoActivado: true,         // chime al completar una micro-acción; silenciable en Ajustes
   rutiOculto: false,            // modo minimalista: oculta la ilustración de Ruti donde aparece
   diasCongelados: [],           // fechas ISO cubiertas por una Pausa de Ruta (racha "congelada", no rota)
-  reflexionesHabitos: {}         // { fecha: texto } — la frase real que se pide al completar el 3er hábito del día
+  reflexionesHabitos: {},        // { fecha: texto } — la frase real que se pide al completar el 3er hábito del día
+  comidasRegistradas: {}          // { 'fecha|mealId': { alimentos: [texto], fuente: 'foto'|'voz'|'texto', hora } } — lo que la usuaria dijo que REALMENTE comió, no la sugerencia del menú
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
@@ -324,6 +325,23 @@ export function registrarComidaSeguida(id) {
   setState({ comidasSeguidas: { fecha: today(), ids: nuevos } });
   const escudoUsado = setHabitAuto('menu', nuevos.length >= 2);
   return { escudoUsado };
+}
+
+// --- Lo que la usuaria REALMENTE comió (foto/voz/texto), estación por
+// estación de Tu Ruta de Hoy — distinto de comidasSeguidas (que solo marca
+// si abrió la receta sugerida). Esto es un registro real y editable, no
+// una suposición: guarda lo que confirmó, no lo que el menú sugería.
+function claveComida(mealId, dateStr = today()) { return `${dateStr}|${mealId}`; }
+
+export function comidaRegistrada(mealId, dateStr = today()) {
+  return state.comidasRegistradas[claveComida(mealId, dateStr)] || null;
+}
+
+export function guardarComidaRegistrada(mealId, alimentos, fuente, dateStr = today()) {
+  const clave = claveComida(mealId, dateStr);
+  const registro = { alimentos, fuente, hora: new Date().toISOString() };
+  setState({ comidasRegistradas: { ...state.comidasRegistradas, [clave]: registro } });
+  return registro;
 }
 
 // --- Racha: un día cuenta si se marcan al menos 3 hábitos ---

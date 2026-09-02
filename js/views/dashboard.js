@@ -4,7 +4,7 @@
 // que se construyeron): arriba lo que se usa gratis todos los días (paso del
 // día, hábitos, agua, menú, SOS, plan de 7 días); Sana y la Misión —lo
 // Premium— van después, cuando ya sentiste valor real, no antes.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, sanaApertura, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, sanaApertura, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada } from '../store.js';
 import { MISSION } from '../data/mission.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
@@ -16,6 +16,8 @@ import { renderPathMap } from '../pathMap.js';
 import { renderPrimerosPasos, primerosPasosVisible } from './primerosPasos.js';
 import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
 import { renderNotifPrompt, notifPromptVisible } from './notifPrompt.js';
+import { openMealLogModal } from './mealLogModal.js';
+import { openMealSwapModal } from './mealSwapModal.js';
 
 const DAILY_HABITS = [
   { id: 'agua', nombre: 'Tomé suficiente agua 💧' },
@@ -211,14 +213,20 @@ export function renderDashboard(container) {
     const horaInicio = HORAS_INICIO_COMIDA[i] ?? 0;
     const horaSiguiente = HORAS_INICIO_COMIDA[i + 1] ?? 24;
     const esAhora = horaActual >= horaInicio && horaActual < horaSiguiente;
+    // Completado de verdad = registró (foto/voz/texto) lo que comió en esa
+    // estación, no solo que abrió la receta sugerida (eso es comidasSeguidas,
+    // una señal distinta y más floja que ya existía).
+    const registro = comidaRegistrada(meal.id);
     if (!recipe) {
-      return { icon: meal.emoji, title: meal.nombre, subtitle: 'Sin opciones con tus exclusiones actuales', now: esAhora, nowLabel: 'Ahora' };
+      return { icon: meal.emoji, title: meal.nombre, subtitle: 'Sin opciones con tus exclusiones actuales', now: esAhora, nowLabel: 'Ahora', done: !!registro };
     }
     const { perfiles, exclusiones } = getState().user;
     const light = trafficLight(recipe, perfiles);
     const shown = displayRecipe(recipe, exclusiones);
     return {
-      icon: meal.emoji, title: meal.nombre, subtitle: shown.nombre, now: esAhora, nowLabel: 'Ahora',
+      icon: meal.emoji, title: meal.nombre,
+      subtitle: registro ? registro.alimentos.join(', ') : shown.nombre,
+      now: esAhora, nowLabel: 'Ahora', done: !!registro,
       onClick: () => {
         // Abrir una comida real del menú de hoy es la señal de "seguí el
         // menú" — con 2 comidas abiertas se marca sola (ver store.js).
@@ -227,17 +235,26 @@ export function renderDashboard(container) {
         celebrarSiSubioRacha(rachaAntes, escudoUsado);
         openRecipe(recipe);
       },
-      extraHtml: `<div class="row mt" style="gap:8px"><span class="dot ${light}"></span><button type="button" class="icon-btn swap-btn" title="Cambiar receta" aria-label="Cambiar receta">🔄</button></div>`
+      extraHtml: `<div class="row mt" style="gap:8px">
+        <span class="dot ${light}"></span>
+        <button type="button" class="icon-btn swap-btn" title="Cambiar receta" aria-label="Cambiar receta">🔄</button>
+        <button type="button" class="link-btn small log-btn">${registro ? '✏️ Editar lo que comí' : '¿Qué comiste realmente?'}</button>
+      </div>`
     };
   });
   renderPathMap(menuCard.querySelector('#menu-path'), menuItems, { showLine: false });
   menuHoy.forEach(({ meal, recipe }, i) => {
+    const logBtn = menuCard.querySelector(`[data-row-idx="${i}"] .log-btn`);
+    if (logBtn) logBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openMealLogModal(meal.id, meal.nombre, () => renderDashboard(clearAndGet(container)));
+    });
     if (!recipe) return;
     const btn = menuCard.querySelector(`[data-row-idx="${i}"] .swap-btn`);
     if (btn) btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      swapMeal(meal.id);
-      renderDashboard(clearAndGet(container));
+      const { exclusiones } = getState().user;
+      openMealSwapModal(meal.id, meal.nombre, exclusiones, () => renderDashboard(clearAndGet(container)));
     });
   });
 
