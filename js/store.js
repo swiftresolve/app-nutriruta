@@ -36,7 +36,8 @@ const DEFAULT_STATE = {
     tonoSusana: 'calida',   // 'calida' | 'motivadora' | 'directa' — cómo le habla SuSana, ver ai-assistant
     contextoSusana: '',     // texto libre opcional, ej. "no hago ejercicio hace meses" — contexto extra que SuSana suma al de siempre (perfiles/síntomas/racha), nunca lo reemplaza
     referidoPor: null,      // código de quien la invitó (capturado de "?ref=" en app.js), ver hotmart-webhook/referral-check
-    unidades: 'metrico'     // 'metrico' | 'imperial' — ver textoConCantidad en menu.js. idioma de interfaz/alimentos: pendiente, ver proyecto-nutriruta-fitia
+    unidades: 'metrico',    // 'metrico' | 'imperial' — ver textoConCantidad en menu.js
+    idiomaInterfaz: 'es'    // 'es' | 'en' — ver i18n.js (t()). Las recetas siguen solo en español por ahora.
   },
   agua: { fecha: '', vasos: 0 },
   comidasSeguidas: { fecha: '', ids: [] }, // recetas del menú real de hoy que se abrieron — para auto-marcar "seguí el menú"

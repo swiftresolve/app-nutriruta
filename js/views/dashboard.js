@@ -11,6 +11,7 @@ import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad } from '../menu.js';
 import { navigate, header, openModal, toast, susanaName } from '../app.js';
+import { t } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
 import { renderPathMap } from '../pathMap.js';
@@ -40,7 +41,7 @@ export function renderDashboard(container) {
   const state = getState();
   const { user } = state;
   const hora = new Date().getHours();
-  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const saludo = t(hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches');
   const mood = sanaMood(state);
 
   // --- Saludo, en una sola tarjeta condensada (racha/escudos ya viven
@@ -49,7 +50,7 @@ export function renderDashboard(container) {
   hero.className = 'card';
   hero.innerHTML = `
     <h2>${saludo}${user.nombre ? ', ' + esc(user.nombre) : ''} 🌿</h2>
-    <p class="small">Hoy es un buen día para cuidarte. Progreso, no perfección.</p>
+    <p class="small">${t('Hoy es un buen día para cuidarte. Progreso, no perfección.')}</p>
     <div class="chips mt">${user.perfiles.map((p) => `<span class="tag perfil">${PROFILES[p].emoji} ${PROFILES[p].nombre}</span>`).join(' ')}</div>`;
   container.appendChild(hero);
 
@@ -81,12 +82,12 @@ export function renderDashboard(container) {
     <div class="row" style="gap:12px;align-items:flex-start">
       <div class="sana-avatar">🌿${mood.badge ? `<span class="mood-badge">${mood.badge}</span>` : ''}</div>
       <div style="flex:1;min-width:0">
-        <div class="spread"><h3>Tu paso de hoy</h3>${pasoHecho ? '<span class="tag verde">Hecho ✓</span>' : ''}</div>
+        <div class="spread"><h3>${t('Tu paso de hoy')}</h3>${pasoHecho ? `<span class="tag verde">${t('Hecho ✓')}</span>` : ''}</div>
         <p class="small mt" style="font-weight:600">${esc(paso.obstaculo)}</p>
         <p class="mt">${esc(paso.accion)}</p>
         <p class="small muted mt">${esc(paso.porque)}</p>
-        ${pasoRachaActual >= 2 ? `<p class="small mt">🔥 ${pasoRachaActual} Días en Ruta dando tu paso</p>` : ''}
-        <button class="btn ${pasoHecho ? 'ghost' : 'accent'} full mt" id="paso-btn" ${pasoHecho ? 'disabled' : ''}>${pasoHecho ? 'Completado por hoy 🌿' : 'Ya lo hice ✓'}</button>
+        ${pasoRachaActual >= 2 ? `<p class="small mt">🔥 ${t('{n} Días en Ruta dando tu paso', { n: pasoRachaActual })}</p>` : ''}
+        <button class="btn ${pasoHecho ? 'ghost' : 'accent'} full mt" id="paso-btn" ${pasoHecho ? 'disabled' : ''}>${pasoHecho ? t('Completado por hoy 🌿') : t('Ya lo hice ✓')}</button>
       </div>
     </div>`;
   const pasoBtn = pasoCard.querySelector('#paso-btn');
@@ -105,7 +106,7 @@ export function renderDashboard(container) {
   const checks = getHabits();
   const habitCard = document.createElement('div');
   habitCard.className = 'card';
-  habitCard.innerHTML = '<h2>✅ Hábitos de hoy</h2><p class="small">Marca al menos 3 para sumar a tu Ruta. Agua y menú se marcan solos.</p>';
+  habitCard.innerHTML = `<h2>✅ ${t('Hábitos de hoy')}</h2><p class="small">${t('Marca al menos 3 para sumar a tu Ruta. Agua y menú se marcan solos.')}</p>`;
   for (const h of DAILY_HABITS) {
     const row = document.createElement('div');
     const auto = AUTO_HABITS.has(h.id);
@@ -113,13 +114,13 @@ export function renderDashboard(container) {
     if (auto) {
       row.innerHTML = `
         <span class="habit-auto-dot" aria-hidden="true">${checks[h.id] ? '✓' : ''}</span>
-        <label>${h.nombre} <span class="muted small">· automático</span></label>`;
+        <label>${t(h.nombre)} <span class="muted small">· ${t('automático')}</span></label>`;
       habitCard.appendChild(row);
       continue;
     }
     row.innerHTML = `
       <input type="checkbox" id="h-${h.id}" ${checks[h.id] ? 'checked' : ''}>
-      <label for="h-${h.id}">${h.nombre}</label>`;
+      <label for="h-${h.id}">${t(h.nombre)}</label>`;
     const input = row.querySelector('input');
     input.addEventListener('change', (e) => {
       const marcando = e.target.checked;
@@ -152,7 +153,7 @@ export function renderDashboard(container) {
   const waterCard = document.createElement('div');
   waterCard.className = 'card';
   waterCard.innerHTML = `
-    <div class="spread"><h2>💧 Agua</h2><span class="muted small">${agua.vasos}/${agua.meta} vasos</span></div>
+    <div class="spread"><h2>${t('💧 Agua')}</h2><span class="muted small">${agua.vasos}/${agua.meta} ${t('vasos')}</span></div>
     <div class="water-glasses"></div>`;
   const glassesEl = waterCard.querySelector('.water-glasses');
   for (let i = 0; i < agua.meta; i++) {
@@ -162,7 +163,7 @@ export function renderDashboard(container) {
     // propio color fijo (rojo/naranja en la mayoría), no se puede recolorear
     // por CSS. Con currentColor sí queda celeste, coherente con la paleta.
     g.innerHTML = '<svg viewBox="0 0 24 28" width="22" height="26"><path d="M4 2h16l-1.6 22.5a2 2 0 0 1-2 1.5H7.6a2 2 0 0 1-2-1.5L4 2z" fill="currentColor"/><path d="M4 8.5c2 1.4 4 1.4 6 0s4-1.4 6 0 4 1.4 6 0" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.4"/></svg>';
-    g.setAttribute('aria-label', `Vaso ${i + 1}`);
+    g.setAttribute('aria-label', t('Vaso {n}', { n: i + 1 }));
     g.addEventListener('click', () => {
       const nuevo = i < agua.vasos ? i : i + 1;
       if (nuevo > agua.vasos) {
@@ -172,7 +173,7 @@ export function renderDashboard(container) {
       }
       const rachaAntes = getState().racha.actual;
       const { escudoUsado } = setWater(nuevo);
-      if (nuevo >= agua.meta) toast('¡Meta de agua cumplida! 💧🎉');
+      if (nuevo >= agua.meta) toast(t('¡Meta de agua cumplida! 💧🎉'));
       celebrarSiSubioRacha(rachaAntes, escudoUsado);
       renderDashboard(clearAndGet(container));
     });
@@ -186,7 +187,7 @@ export function renderDashboard(container) {
     const tip = document.createElement('div');
     tip.className = 'card';
     tip.style.borderLeft = '4px solid var(--accent)';
-    tip.innerHTML = `<p class="small">💡 <strong>Hemos notado</strong> que tus antojos suelen aparecer en la <strong>${patron}</strong>. Prepara con anticipación un snack saludable para ese momento.</p>`;
+    tip.innerHTML = `<p class="small">💡 <strong>${t('Hemos notado')}</strong> ${t('que tus antojos suelen aparecer en la')} <strong>${patron}</strong>. ${t('Prepara con anticipación un snack saludable para ese momento.')}</p>`;
     container.appendChild(tip);
   }
 
@@ -195,14 +196,14 @@ export function renderDashboard(container) {
     const migTip = document.createElement('div');
     migTip.className = 'card';
     migTip.style.borderLeft = '4px solid var(--secondary)';
-    migTip.innerHTML = '<p class="small">🧠💧 Vas con poca agua hoy y en migrañas los horarios y la hidratación importan tanto como la comida. Toma un vaso y no dejes pasar mucho tiempo sin comer.</p>';
+    migTip.innerHTML = `<p class="small">🧠💧 ${t('Vas con poca agua hoy y en migrañas los horarios y la hidratación importan tanto como la comida. Toma un vaso y no dejes pasar mucho tiempo sin comer.')}</p>`;
     container.appendChild(migTip);
   }
 
   // --- Menú del día: la ruta de hoy ---
   const menuCard = document.createElement('div');
   menuCard.className = 'card';
-  menuCard.innerHTML = '<div class="spread"><h2>🍽️ Tu ruta de hoy</h2></div><div id="menu-path"></div>';
+  menuCard.innerHTML = `<div class="spread"><h2>${t('🍽️ Tu ruta de hoy')}</h2></div><div id="menu-path"></div>`;
   container.appendChild(menuCard);
 
   // Hora de inicio real (24h) de cada comida, en el mismo orden que MEALS
@@ -224,15 +225,15 @@ export function renderDashboard(container) {
     // una señal distinta y más floja que ya existía).
     const registro = comidaRegistrada(meal.id);
     if (!recipe) {
-      return { icon: meal.emoji, title: meal.nombre, subtitle: 'Sin opciones con tus exclusiones actuales', now: esAhora, nowLabel: 'Ahora', done: !!registro };
+      return { icon: meal.emoji, title: t(meal.nombre), subtitle: t('Sin opciones con tus exclusiones actuales'), now: esAhora, nowLabel: t('Ahora'), done: !!registro };
     }
     const { perfiles, exclusiones } = getState().user;
     const light = trafficLight(recipe, perfiles);
     const shown = displayRecipe(recipe, exclusiones);
     return {
-      icon: meal.emoji, title: meal.nombre,
+      icon: meal.emoji, title: t(meal.nombre),
       subtitle: registro ? registro.alimentos.join(', ') : shown.nombre,
-      now: esAhora, nowLabel: 'Ahora', done: !!registro,
+      now: esAhora, nowLabel: t('Ahora'), done: !!registro,
       onClick: () => {
         // Abrir una comida real del menú de hoy es la señal de "seguí el
         // menú" — con 2 comidas abiertas se marca sola (ver store.js).
@@ -243,8 +244,8 @@ export function renderDashboard(container) {
       },
       extraHtml: `<div class="row mt" style="gap:8px">
         <span class="dot ${light}"></span>
-        <button type="button" class="icon-btn swap-btn" title="Cambiar receta" aria-label="Cambiar receta">🔄</button>
-        <button type="button" class="icon-btn log-btn" title="${registro ? 'Editar lo que comiste' : '¿Qué comiste realmente?'}" aria-label="${registro ? 'Editar lo que comiste' : 'Registrar lo que comiste'}">${registro ? '✏️' : '📸'}</button>
+        <button type="button" class="icon-btn swap-btn" title="${t('Cambiar receta')}" aria-label="${t('Cambiar receta')}">🔄</button>
+        <button type="button" class="icon-btn log-btn" title="${registro ? t('Editar lo que comiste') : t('¿Qué comiste realmente?')}" aria-label="${registro ? t('Editar lo que comiste') : t('Registrar lo que comiste')}">${registro ? '✏️' : '📸'}</button>
       </div>`
     };
   });
@@ -269,22 +270,22 @@ export function renderDashboard(container) {
   menuActions.style.marginTop = '20px';
   const shopBtn = document.createElement('button');
   shopBtn.className = 'btn ghost sm';
-  shopBtn.textContent = '🛒 Ver lista de compras';
+  shopBtn.textContent = t('🛒 Ver lista de compras');
   shopBtn.addEventListener('click', () => navigate('planner', { tab: 'compras' }));
   menuActions.appendChild(shopBtn);
   const kitchenBtn = document.createElement('button');
   kitchenBtn.className = 'btn ghost sm';
-  kitchenBtn.textContent = '🔍 ¿Qué tienes en casa?';
+  kitchenBtn.textContent = t('🔍 ¿Qué tienes en casa?');
   kitchenBtn.addEventListener('click', () => openKitchenSearchModal((recipe) => openRecipe(recipe)));
   menuActions.appendChild(kitchenBtn);
   const weekBtn = document.createElement('button');
   weekBtn.className = 'btn ghost sm';
-  weekBtn.textContent = '📅 Ver la semana';
+  weekBtn.textContent = t('📅 Ver la semana');
   weekBtn.addEventListener('click', () => navigate('weekMenu'));
   menuActions.appendChild(weekBtn);
   const diaryBtn = document.createElement('button');
   diaryBtn.className = 'btn ghost sm';
-  diaryBtn.textContent = '📔 Mi Diario';
+  diaryBtn.textContent = t('📔 Mi Diario');
   diaryBtn.addEventListener('click', () => navigate('diary'));
   menuActions.appendChild(diaryBtn);
   menuCard.appendChild(menuActions);
@@ -292,7 +293,7 @@ export function renderDashboard(container) {
   // --- Botón SOS ---
   const sosBtn = document.createElement('button');
   sosBtn.className = 'btn accent full mb';
-  sosBtn.innerHTML = '💚 Tengo ansiedad / antojo';
+  sosBtn.innerHTML = t('💚 Tengo ansiedad / antojo');
   sosBtn.addEventListener('click', () => navigate('sos'));
   container.appendChild(sosBtn);
 
@@ -309,19 +310,19 @@ export function renderDashboard(container) {
   emergCard.style.borderLeft = '4px solid var(--accent)';
   if (diasCompletados >= 7) {
     emergCard.innerHTML = `
-      <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag verde">Completado</span></div>
-      <p class="small">Diste el primer paso — revisa tu semana cuando quieras.</p>
-      <button class="link-btn small">Ver mi plan →</button>`;
+      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${t('Completado')}</span></div>
+      <p class="small">${t('Diste el primer paso — revisa tu semana cuando quieras.')}</p>
+      <button class="link-btn small">${t('Ver mi plan →')}</button>`;
   } else if (emergencia?.inicio) {
     emergCard.innerHTML = `
-      <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag verde">${diasCompletados}/7</span></div>
+      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${diasCompletados}/7</span></div>
       <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((diasCompletados / 7) * 100)}%"></div></div>
-      <button class="link-btn small">Continuar mi plan →</button>`;
+      <button class="link-btn small">${t('Continuar mi plan →')}</button>`;
   } else {
     emergCard.innerHTML = `
-      <div class="spread"><h3>🏁 Plan de 7 días</h3><span class="tag info">Gratis</span></div>
+      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag info">${t('Gratis')}</span></div>
       <p class="small">${EMERGENCY_PLAN.descripcion}</p>
-      <button class="link-btn small">Empezar hoy mismo →</button>`;
+      <button class="link-btn small">${t('Empezar hoy mismo →')}</button>`;
   }
   emergCard.querySelector('.link-btn').addEventListener('click', () => navigate('emergency'));
   container.appendChild(emergCard);
@@ -333,11 +334,11 @@ export function renderDashboard(container) {
   guideCard.className = 'card';
   guideCard.style.background = 'linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))';
   guideCard.style.border = 'none';
-  const subtitulo = isPremium() ? esc(sanaApertura()) : 'Una duda puntual, ahora mismo, con el contexto de tu perfil.';
+  const subtitulo = isPremium() ? esc(sanaApertura()) : t('Una duda puntual, ahora mismo, con el contexto de tu perfil.');
   guideCard.innerHTML = `
-    <div class="spread"><h3>💬 ${susanaName()}, tu guía</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
+    <div class="spread"><h3>💬 ${susanaName()}${t(', tu guía')}</h3>${isPremium() ? '' : `<span class="tag info">${t('Premium')}</span>`}</div>
     <p class="small mt">${subtitulo}</p>
-    <button class="btn ghost sm mt">${isPremium() ? 'Abrir chat →' : 'Conocer más →'}</button>`;
+    <button class="btn ghost sm mt">${isPremium() ? t('Abrir chat →') : t('Conocer más →')}</button>`;
   guideCard.querySelector('.btn').addEventListener('click', () => navigate('assistant'));
   container.appendChild(guideCard);
 
@@ -350,14 +351,14 @@ export function renderDashboard(container) {
     const done = (mision.completadas || []).length;
     const activa = isPremium();
     misionCard.innerHTML = `
-      <div class="spread"><h3>🎯 Misión 12 semanas</h3><span class="tag ${activa ? 'verde' : 'rojo'}">${activa ? `${done}/12` : 'Pausada'}</span></div>
+      <div class="spread"><h3>${t('🎯 Misión 12 semanas')}</h3><span class="tag ${activa ? 'verde' : 'rojo'}">${activa ? `${done}/12` : t('Pausada')}</span></div>
       <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((done / 12) * 100)}%"></div></div>
-      <button class="link-btn small">${activa ? 'Continuar mi misión →' : 'Renovar Premium para continuar →'}</button>`;
+      <button class="link-btn small">${activa ? t('Continuar mi misión →') : t('Renovar Premium para continuar →')}</button>`;
   } else {
     misionCard.innerHTML = `
-      <div class="spread"><h3>🎯 Misión 12 semanas</h3>${isPremium() ? '' : '<span class="tag info">Premium</span>'}</div>
+      <div class="spread"><h3>${t('🎯 Misión 12 semanas')}</h3>${isPremium() ? '' : `<span class="tag info">${t('Premium')}</span>`}</div>
       <p class="small">${MISSION.descripcion}</p>
-      <button class="link-btn small">${isPremium() ? 'Empezar mi misión →' : 'Conocer la misión →'}</button>`;
+      <button class="link-btn small">${isPremium() ? t('Empezar mi misión →') : t('Conocer la misión →')}</button>`;
   }
   misionCard.querySelector('.link-btn').addEventListener('click', () => navigate('mission'));
   container.appendChild(misionCard);
@@ -434,16 +435,16 @@ export function openRecipe(recipe) {
     const ings = recipe.ingredientes.map((ing) => {
       const d = displayIngredient(ing, user.exclusiones);
       const texto = (d.cantidad != null && d.resto) ? textoConCantidad(d.cantidad, d.resto, user.unidades) : d.texto;
-      return `<div class="ingredient">• ${texto}${d.sustituido ? ` <span class="sub-note">(sustituto de ${d.original})</span>` : ''}</div>`;
+      return `<div class="ingredient">• ${texto}${d.sustituido ? ` <span class="sub-note">(${t('sustituto de')} ${d.original})</span>` : ''}</div>`;
     }).join('');
     modal.insertAdjacentHTML('beforeend', `
       <div style="font-size:2.4rem">${shown.emoji}</div>
       <h2>${shown.nombre}</h2>
       <p class="small">${recipe.descripcion}</p>
-      <p class="mt"><span class="tag ${light}">Semáforo: ${light}</span>
+      <p class="mt"><span class="tag ${light}">${t('Semáforo')}: ${light}</span>
         ${recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => `<span class="tag perfil">${PROFILES[p].nombre}</span>`).join(' ')}</p>
-      <h3 class="mt">Ingredientes</h3>${ings}
-      <h3 class="mt">Preparación</h3>
+      <h3 class="mt">${t('Ingredientes')}</h3>${ings}
+      <h3 class="mt">${t('Preparación')}</h3>
       <ol class="steps">${recipe.pasos.map((p) => `<li>${p}</li>`).join('')}</ol>`);
   });
 }

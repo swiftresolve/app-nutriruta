@@ -18,6 +18,8 @@
   --shadow: 0 6px 20px rgba(35, 56, 51, 0.1), 0 1.5px 4px rgba(35, 56, 51, 0.07);
   --nav-h: 64px;
   --nav-gap: 14px; /* separación de la nav flotante respecto al borde inferior */
+  --nav-bg: rgba(255, 255, 255, 0.94);
+  --nav-border: rgba(255, 255, 255, 0.7);
 }
 
 /* ===== Tema oscuro =====
@@ -42,6 +44,8 @@
     --ink: #EAF3EF;
     --ink-soft: #92A9A0;
     --shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.3);
+    --nav-bg: rgba(23, 40, 31, 0.88);
+    --nav-border: rgba(255, 255, 255, 0.08);
   }
 }
 :root[data-theme="dark"] {
@@ -53,6 +57,8 @@
   --ink: #EAF3EF;
   --ink-soft: #92A9A0;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.3);
+  --nav-bg: rgba(23, 40, 31, 0.88);
+  --nav-border: rgba(255, 255, 255, 0.08);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -232,6 +238,30 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @media (prefers-reduced-motion: reduce) {
   .chip.selected { animation: none; }
 }
+
+/* ===== Fila de ajuste (ícono + etiqueta + valor + flecha) =====
+   Reemplaza los chips grandes apilados para Tema/Idioma/Unidades en
+   Ajustes -- la usuaria pidió algo más compacto y "menos redondeado",
+   como una fila de lista de configuración normal, no varios botones
+   pastilla uno debajo del otro. Toca la fila, abre un selector chico
+   (ver abrirSelector en settings.js) en vez de mostrar todas las
+   opciones siempre expandidas. */
+.setting-row {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 11px 4px; border-bottom: 1px solid rgba(35,56,51,0.08); text-align: left;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-row-icon { font-size: 1.05rem; flex: none; width: 22px; text-align: center; }
+.setting-row-label { flex: 1; font-size: 0.92rem; color: var(--ink); }
+.setting-row-value { font-size: 0.85rem; color: var(--ink-soft); }
+.setting-row-chevron { color: var(--ink-soft); font-size: 1.1rem; flex: none; }
+.setting-row:active { background: var(--primary-soft); border-radius: 10px; }
+
+/* Opción dentro del selector modal -- fila simple con check a la derecha
+   cuando está elegida, mismo lenguaje visual que .habit pero sin checkbox. */
+.selector-opcion { cursor: pointer; }
+.selector-opcion.selected label { color: var(--primary-dark); font-weight: 700; }
+.selector-opcion span { color: var(--primary); font-weight: 700; }
 
 .tag { display: inline-block; border-radius: 999px; padding: 3px 10px; font-size: 0.75rem; font-weight: 600; }
 .tag.verde { background: #E3F5E9; color: #21753C; }
@@ -844,10 +874,10 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   position: fixed; left: 50%; bottom: calc(var(--nav-gap) + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   width: calc(100% - 32px); max-width: 460px; height: var(--nav-h);
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--nav-bg);
   backdrop-filter: blur(16px) saturate(1.5);
   -webkit-backdrop-filter: blur(16px) saturate(1.5);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--nav-border);
   border-radius: 22px;
   box-shadow: 0 12px 28px rgba(35, 56, 51, 0.16), 0 3px 8px rgba(35, 56, 51, 0.08);
   display: flex; justify-content: space-around; align-items: center;

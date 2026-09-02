@@ -1,5 +1,6 @@
 // Router mínimo + arranque con puerta de autenticación.
 import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo } from './store.js';
+import { t } from './i18n.js';
 import { getSession, supabase } from './supabase-client.js';
 import { broteStage, broteBadge } from './ruti.js';
 import { renderAuth } from './views/auth.js';
@@ -68,6 +69,7 @@ export function navigate(route, params = {}) {
   nav.querySelectorAll('.nav-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.route === route);
   });
+  nav.querySelectorAll('.nav-label').forEach((el) => { el.textContent = t(el.dataset.label); });
 }
 
 nav.addEventListener('click', (e) => {
@@ -162,7 +164,7 @@ export function header(container) {
           <button class="header-stat" id="hs-gemas" aria-label="Tus gemas"><span class="icon">💎</span>${gemas}</button>
           <button class="header-stat" id="hs-escudos" aria-label="Tus Pausas de Ruta"><span class="icon">🛡️</span>${escudos}</button>
         </div>` : ''}
-      <button class="icon-btn" data-go="settings" aria-label="Ajustes">${GEAR_ICON}</button>
+      <button class="icon-btn" data-go="settings" aria-label="${t('Ajustes')}">${GEAR_ICON}</button>
     </div>`;
   h.querySelector('[data-go]').addEventListener('click', () => navigate('settings'));
 

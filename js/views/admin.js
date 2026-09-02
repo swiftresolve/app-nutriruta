@@ -114,40 +114,43 @@ function pintarPanel(container, d) {
     </div>`;
   if (u.detalle?.length) {
     const fecha = (iso) => iso ? new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-    usuarias.insertAdjacentHTML('beforeend', `
-      <p class="small mt" style="font-weight:600">Detalle:</p>
-      <div class="mt" style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:0.82rem;white-space:nowrap">
-          <thead><tr style="text-align:left;color:var(--ink-soft)">
-            <th style="padding:4px 8px 4px 0">Correo</th><th style="padding:4px 8px">Plan</th>
-            <th style="padding:4px 8px">Pago</th>
-            <th style="padding:4px 8px">Vence</th><th style="padding:4px 8px">Creada</th><th style="padding:4px 8px">Último acceso</th>
-            <th style="padding:4px 0">Acción</th>
-          </tr></thead>
-          <tbody>${u.detalle.map((r) => `
-            <tr style="border-top:1px solid #EFF5F3" data-uid="${esc(r.user_id)}">
-              <td style="padding:5px 8px 5px 0">${esc(r.email)}${r.nombre ? ` <span class="muted">(${esc(r.nombre)})</span>` : ''}</td>
-              <td style="padding:5px 8px">${r.plan === 'premium' ? `✨ ${esc(r.plan_periodo || '')}` : 'gratis'}</td>
-              <td style="padding:5px 8px">${r.plan === 'premium' ? (r.tiene_pago_real ? '💳 real' : '<span style="color:var(--red)">⚠️ sin pago</span>') : '—'}</td>
-              <td style="padding:5px 8px">${fecha(r.vence)}</td>
-              <td style="padding:5px 8px">${fecha(r.creada)}</td>
-              <td style="padding:5px 8px">${fecha(r.ultimo_acceso)}</td>
-              <td style="padding:5px 0">
-                <select class="admin-plan-sel" style="font-size:0.78rem;padding:2px 4px;border-radius:6px;border:1px solid #D8E6E2">
-                  <option value="">Cambiar…</option>
-                  <option value="premium:mensual">Premium mensual</option>
-                  <option value="premium:anual">Premium anual</option>
-                  <option value="free">Quitar Premium</option>
-                </select>
-              </td>
-            </tr>`).join('')}</tbody>
-        </table>
-      </div>`);
+    // Tarjeta por usuaria en vez de una tabla ancha: en el celular una
+    // tabla de 7 columnas con scroll horizontal deja la columna de
+    // "Acción" (el selector para activar/quitar Premium) fuera de la
+    // pantalla sin ningún indicio de que hay que deslizar para verla --
+    // reportado como "no lo puedo hacer desde el panel" cuando la función
+    // sí existía, solo estaba inalcanzable en la práctica en móvil.
+    const listaEl = document.createElement('div');
+    listaEl.className = 'mt';
+    listaEl.innerHTML = '<p class="small" style="font-weight:600">Detalle:</p>';
+    for (const r of u.detalle) {
+      const row = document.createElement('div');
+      row.className = 'habit';
+      row.style.cssText = 'flex-direction:column;align-items:stretch;gap:6px';
+      row.dataset.uid = r.user_id;
+      row.innerHTML = `
+        <div class="spread">
+          <strong style="font-size:0.9rem">${esc(r.email)}${r.nombre ? ` <span class="muted small">(${esc(r.nombre)})</span>` : ''}</strong>
+          <span class="small">${r.plan === 'premium' ? `✨ ${esc(r.plan_periodo || '')}` : 'gratis'}</span>
+        </div>
+        <p class="small muted">
+          ${r.plan === 'premium' ? (r.tiene_pago_real ? '💳 pago real' : '<span style="color:var(--red)">⚠️ sin pago</span>') : 'sin plan pago'}
+          ${r.vence ? ` · vence ${fecha(r.vence)}` : ''} · creada ${fecha(r.creada)} · último acceso ${fecha(r.ultimo_acceso)}
+        </p>
+        <select class="admin-plan-sel auth-input" style="margin:0;font-size:0.85rem">
+          <option value="">Cambiar plan…</option>
+          <option value="premium:mensual">Activar Premium mensual</option>
+          <option value="premium:anual">Activar Premium anual</option>
+          <option value="free">Quitar Premium</option>
+        </select>`;
+      listaEl.appendChild(row);
+    }
+    usuarias.appendChild(listaEl);
     usuarias.querySelectorAll('.admin-plan-sel').forEach((sel) => {
       sel.addEventListener('change', async () => {
         const val = sel.value;
         if (!val) return;
-        const uid = sel.closest('tr').dataset.uid;
+        const uid = sel.closest('[data-uid]').dataset.uid;
         const [plan, periodo] = val.split(':');
         sel.disabled = true;
         try {

@@ -6,6 +6,40 @@ import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, upl
 import { navigate, header, openModal, toast } from '../app.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
+// Fila de ajuste (ícono + etiqueta + valor + flecha), estilo lista de
+// configuración compacta -- abre un selector chico al tocarla en vez de
+// mostrar todas las opciones expandidas como chips. Reutilizable para
+// cualquier preferencia de valor único (tema, idioma, unidades...).
+function filaAjuste(icono, etiqueta, valorTexto, onTap) {
+  const row = document.createElement('button');
+  row.type = 'button';
+  row.className = 'setting-row';
+  row.innerHTML = `
+    <span class="setting-row-icon">${icono}</span>
+    <span class="setting-row-label">${esc(etiqueta)}</span>
+    <span class="setting-row-value">${esc(valorTexto)}</span>
+    <span class="setting-row-chevron">›</span>`;
+  row.addEventListener('click', onTap);
+  return row;
+}
+
+// Selector de una sola opción dentro del modal ya existente en la app
+// (no una hoja nueva) -- la opción elegida se resalta con un check.
+function abrirSelector(titulo, opciones, valorActual, onElegir) {
+  openModal((modal, closeFn) => {
+    modal.insertAdjacentHTML('beforeend', `<h2>${esc(titulo)}</h2><div class="mt" id="selector-opciones"></div>`);
+    const cont = modal.querySelector('#selector-opciones');
+    for (const op of opciones) {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'habit selector-opcion' + (op.id === valorActual ? ' selected' : '');
+      row.innerHTML = `<label>${esc(op.label)}</label>${op.id === valorActual ? '<span>✓</span>' : ''}`;
+      row.addEventListener('click', () => { onElegir(op.id); closeFn(); });
+      cont.appendChild(row);
+    }
+  });
+}
+
 export function renderSettings(container) {
   header(container);
   const { user } = getState();
@@ -392,84 +426,52 @@ export function renderSettings(container) {
   });
   container.appendChild(horarios);
 
-  // Tema: claro/oscuro/sistema. Se aplica al instante (setTema toca
-  // document.documentElement), sin recargar la página.
-  const temaCard = document.createElement('div');
-  temaCard.className = 'card';
+  // Tema + Interfaz y Unidades — filas de lista compacta (ícono + valor +
+  // flecha) que abren un selector chico al tocarlas, en vez de chips
+  // grandes apiladas: mismo patrón que usan apps de referencia (Fitia) y
+  // consistente con las demás filas de la app (.habit). setTema/setState
+  // aplican el cambio al instante; navigate('settings') solo refresca la
+  // fila para mostrar el nuevo valor.
   const TEMAS = [
-    { id: 'sistema', label: '📱 Sistema', desc: 'Sigue el ajuste de tu celular.' },
-    { id: 'claro', label: '☀️ Claro', desc: 'Siempre fondo claro.' },
-    { id: 'oscuro', label: '🌙 Oscuro', desc: 'Siempre fondo oscuro.' }
+    { id: 'sistema', label: 'Sistema del dispositivo' },
+    { id: 'claro', label: 'Claro' },
+    { id: 'oscuro', label: 'Oscuro' }
   ];
-  temaCard.innerHTML = `<h2>🎨 Tema</h2><div class="chips mt"></div>`;
-  const temaChips = temaCard.querySelector('.chips');
-  const temaActual = getTema();
-  for (const t of TEMAS) {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'chip' + (temaActual === t.id ? ' selected' : '');
-    chip.innerHTML = `${esc(t.label)}<br><span class="small" style="font-weight:400">${esc(t.desc)}</span>`;
-    chip.addEventListener('click', () => {
-      setTema(t.id);
-      navigate('settings');
-    });
-    temaChips.appendChild(chip);
-  }
-  container.appendChild(temaCard);
-
-  // Interfaz y Unidades — misma estructura que la pantalla de Fitia
-  // (idioma de interfaz / idioma de alimentos / unidades por separado).
-  // Unidades funciona de verdad ahora (ver textoConCantidad en menu.js);
-  // los selectores de idioma están presentes pero solo tienen Español
-  // disponible por ahora — "English" avisa que viene después en vez de
-  // fingir que ya funciona (la traducción de las +100 recetas y toda la
-  // interfaz es un proyecto de contenido aparte, ver memoria del roadmap).
-  const idiomaUnidades = document.createElement('div');
-  idiomaUnidades.className = 'card';
-  idiomaUnidades.innerHTML = `
-    <h2>🌎 Interfaz y Unidades</h2>
-    <label class="small" style="font-weight:600;display:block;margin-top:10px">Idioma de interfaz</label>
-    <div class="chips mt" id="idioma-interfaz-chips"></div>
-    <label class="small" style="font-weight:600;display:block;margin-top:14px">Idioma de alimentos</label>
-    <div class="chips mt" id="idioma-alimentos-chips"></div>
-    <label class="small" style="font-weight:600;display:block;margin-top:14px">Unidades</label>
-    <div class="chips mt" id="unidades-chips"></div>`;
-
-  const IDIOMAS = [
-    { id: 'es', label: '🇪🇸 Español', disponible: true },
-    { id: 'en', label: '🇺🇸 English', disponible: false }
-  ];
-  for (const contenedorId of ['idioma-interfaz-chips', 'idioma-alimentos-chips']) {
-    const cont = idiomaUnidades.querySelector(`#${contenedorId}`);
-    for (const idi of IDIOMAS) {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'chip' + (idi.id === 'es' ? ' selected' : '') + (idi.disponible ? '' : ' locked');
-      chip.textContent = idi.label;
-      chip.addEventListener('click', () => {
-        if (!idi.disponible) toast('English llega pronto — por ahora la app y las recetas están solo en español.');
-      });
-      cont.appendChild(chip);
-    }
-  }
-
+  const IDIOMAS_INTERFAZ = [{ id: 'es', label: 'Español' }, { id: 'en', label: 'English' }];
   const UNIDADES = [
-    { id: 'metrico', label: '📏 Métrico', desc: 'Gramos, mililitros.' },
-    { id: 'imperial', label: '🥄 Imperial', desc: 'Onzas, libras, cups.' }
+    { id: 'metrico', label: 'Métrico (g, ml)' },
+    { id: 'imperial', label: 'Imperial (oz, lb, cups)' }
   ];
-  const unidadesChips = idiomaUnidades.querySelector('#unidades-chips');
-  for (const u of UNIDADES) {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'chip' + ((user.unidades || 'metrico') === u.id ? ' selected' : '');
-    chip.innerHTML = `${esc(u.label)}<br><span class="small" style="font-weight:400">${esc(u.desc)}</span>`;
-    chip.addEventListener('click', () => {
-      setState({ user: { ...getState().user, unidades: u.id } });
+
+  const prefsCard = document.createElement('div');
+  prefsCard.className = 'card';
+  prefsCard.innerHTML = '<h2>🌎 Interfaz y preferencias</h2>';
+
+  const temaActual = TEMAS.find((t) => t.id === getTema()) || TEMAS[0];
+  prefsCard.appendChild(filaAjuste('🎨', 'Tema', temaActual.label, () => {
+    abrirSelector('Tema', TEMAS, temaActual.id, (id) => { setTema(id); navigate('settings'); });
+  }));
+
+  const idiomaActual = IDIOMAS_INTERFAZ.find((i) => i.id === (user.idiomaInterfaz || 'es'));
+  prefsCard.appendChild(filaAjuste('🗣️', 'Idioma de interfaz', idiomaActual.label, () => {
+    abrirSelector('Idioma de interfaz', IDIOMAS_INTERFAZ, idiomaActual.id, (id) => {
+      setState({ user: { ...getState().user, idiomaInterfaz: id } });
       navigate('settings');
     });
-    unidadesChips.appendChild(chip);
-  }
-  container.appendChild(idiomaUnidades);
+  }));
+
+  prefsCard.appendChild(filaAjuste('🍽️', 'Idioma de alimentos', 'Español', () => {
+    toast('English para las recetas llega pronto — por ahora solo están en español.');
+  }));
+
+  const unidadActual = UNIDADES.find((u) => u.id === (user.unidades || 'metrico'));
+  prefsCard.appendChild(filaAjuste('📏', 'Unidades', unidadActual.label, () => {
+    abrirSelector('Unidades', UNIDADES, unidadActual.id, (id) => {
+      setState({ user: { ...getState().user, unidades: id } });
+      navigate('settings');
+    });
+  }));
+  container.appendChild(prefsCard);
 
   // Tono de SuSana: cómo te habla, no qué te dice — nunca rompe la regla
   // de no usar culpa (ver ai-assistant), solo cambia el estilo.
