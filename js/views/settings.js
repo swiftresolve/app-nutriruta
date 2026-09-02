@@ -2,7 +2,7 @@
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
-import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido } from '../supabase-client.js';
+import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
 import { navigate, header, openModal, toast } from '../app.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
@@ -128,16 +128,17 @@ export function renderSettings(container) {
   });
   container.appendChild(account);
 
-  // Referidos: compartir el código propio. El bono (30 días de Premium
-  // para cada quien) solo se otorga si la persona referida activa el plan
-  // ANUAL y no lo cancela/reembolsa en los primeros 7 días — ver
-  // hotmart-webhook (registra el referido "pendiente") y el cron
-  // referral-check (lo confirma y otorga pasados los 7 días).
+  // Referidos: compartir el código propio. El bono (30 días de Premium)
+  // solo se otorga a quien COMPARTE el código -- no a quien lo usa -- si
+  // la persona referida activa el plan ANUAL y no lo cancela/reembolsa en
+  // los primeros 7 días. Ver hotmart-webhook (registra el referido
+  // "pendiente") y el cron referral-check (lo confirma y otorga pasados
+  // los 7 días, solo al referente).
   const referidos = document.createElement('div');
   referidos.className = 'card';
   referidos.innerHTML = `
     <h2>🎁 Invita y gana Premium</h2>
-    <p class="small mb">Comparte tu código. Cuando alguien lo usa y activa el <strong>plan anual</strong> sin cancelarlo en los primeros 7 días, ambas ganan <strong>30 días de Premium</strong> gratis.</p>
+    <p class="small mb">Comparte tu código. Cuando alguien lo usa y activa el <strong>plan anual</strong> sin cancelarlo en los primeros 7 días, tú ganas <strong>30 días de Premium</strong> gratis.</p>
     <div class="row" style="gap:8px">
       <div id="ref-codigo" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em;flex:1">Cargando…</div>
       <button type="button" class="btn ghost sm" id="ref-copiar" disabled>Copiar</button>
@@ -156,7 +157,7 @@ export function renderSettings(container) {
       catch { toast('No se pudo copiar. Copia el código a mano: ' + codigo); }
     });
     refCompartirBtn.addEventListener('click', async () => {
-      const texto = `Estoy usando NutriRuta y quiero invitarte 🌿 Regístrate con mi código y cuando actives el plan anual ambas ganamos 30 días de Premium gratis: ${link}`;
+      const texto = `Estoy usando NutriRuta y quiero invitarte 🌿 Regístrate con mi código y si activas el plan anual yo gano 30 días de Premium gratis: ${link}`;
       if (navigator.share) {
         try { await navigator.share({ title: 'Te invito a NutriRuta', text: texto }); } catch { /* canceló, no es un error */ }
         return;
@@ -166,6 +167,57 @@ export function renderSettings(container) {
     });
   }).catch(() => { refCodigoEl.textContent = 'No se pudo cargar tu código.'; });
   container.appendChild(referidos);
+
+  // Canjear el código de un amigo: hasta ahora solo se capturaba de forma
+  // automática/silenciosa con "?ref=CODIGO" en el link compartido, ANTES
+  // de crear la cuenta -- quien ya tenía cuenta, o recibió el código de
+  // palabra (no por link), no tenía dónde escribirlo. validarCodigoReferido()
+  // solo confirma que el código exista y no sea el propio; el valor se
+  // guarda igual que la captura por URL (user.referidoPor), y la fila real
+  // en `referidos` se crea recién al activar el plan anual (hotmart-webhook).
+  const canjear = document.createElement('div');
+  canjear.className = 'card';
+  const yaGuardado = getState().user.referidoPor;
+  canjear.innerHTML = `
+    <h2>🎟️ ¿Tienes el código de un amigo?</h2>
+    <p class="small mb" id="canjear-desc"></p>
+    <div class="row" style="gap:8px">
+      <input type="text" id="canjear-input" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em;flex:1" maxlength="6" placeholder="CÓDIGO" value="${esc(yaGuardado || '')}">
+      <button type="button" class="btn sm" id="canjear-btn">Canjear</button>
+    </div>`;
+  const canjearDesc = canjear.querySelector('#canjear-desc');
+  const canjearInput = canjear.querySelector('#canjear-input');
+  const canjearBtn = canjear.querySelector('#canjear-btn');
+  function pintarCanjearDesc() {
+    canjearDesc.textContent = getState().user.referidoPor
+      ? `Código guardado: ${getState().user.referidoPor}. Actívalo comprando el plan anual.`
+      : 'Escribe el código y actívalo con el plan anual.';
+  }
+  pintarCanjearDesc();
+  canjearInput.addEventListener('input', () => {
+    canjearInput.value = canjearInput.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
+  });
+  canjearBtn.addEventListener('click', async () => {
+    const codigo = canjearInput.value.trim();
+    if (codigo.length < 6) { toast('Escribe el código completo (6 caracteres).'); return; }
+    canjearBtn.disabled = true;
+    canjearBtn.textContent = 'Verificando…';
+    try {
+      const valido = await validarCodigoReferido(codigo);
+      if (valido) {
+        setState({ user: { ...getState().user, referidoPor: codigo } });
+        toast('¡Código aplicado! 🎉 Actívalo con el plan anual.');
+        pintarCanjearDesc();
+      } else {
+        toast('Ese código no existe. Revísalo con tu amigo.');
+      }
+    } catch (e) {
+      toast(e.message && e.message.includes('propio') ? 'Ese es tu propio código 😉' : 'No se pudo verificar. Intenta de nuevo.');
+    }
+    canjearBtn.disabled = false;
+    canjearBtn.textContent = 'Canjear';
+  });
+  container.appendChild(canjear);
 
   // Calificación (visible en vivo en nutriruta.com — vista pública, nunca
   // expone correo ni datos de la cuenta, solo calificación + mini reseña).

@@ -234,6 +234,15 @@ export async function miCodigoReferido() {
   return data;
 }
 
+// Canjear el código de un amigo desde Ajustes (para quien ya tiene
+// cuenta y no llegó por un link "?ref="). Solo valida que exista y no
+// sea el propio -- ver validar_codigo_referido() en la migración.
+export async function validarCodigoReferido(codigo) {
+  const { data, error } = await supabase.rpc('validar_codigo_referido', { p_codigo: codigo });
+  if (error) throw error;
+  return data === true;
+}
+
 // Activar/quitar Premium a mano desde el panel de admin (ver
 // admin_set_plan en la migración: valida admin_emails ella misma y deja
 // registro con monto 0 en pagos para poder distinguir esto de un cobro

@@ -1,9 +1,21 @@
-// referral-check: otorga el bono de 30 días de Premium a quien comparte
-// (referente) y a quien usa el código (referido) — pero SOLO 7 días
-// después de que la referida activó el plan ANUAL, y solo si para
-// entonces sigue activo (no lo canceló ni pidió reembolso). Decisión
-// explícita de la usuaria: "solo aplica para personas que activen el plan
-// anual sin cancelarlo antes de 7 días".
+// ⚠️ HUÉRFANA desde 2026-09-02 — ya NO la llama nadie. El tool de deploy
+// de Edge Functions falló de forma persistente (ZodError, esquema del
+// tool sin parámetros) y no había forma de repararlo desde la sesión de
+// Claude Code, así que la corrección de negocio se movió a una función
+// SQL nativa (`public.referral_check_run()`, ver migración
+// `referral_check_to_sql_function`) que el cron `nutriruta-referral-check`
+// llama directamente (sin HTTP, sin este archivo). Se deja este archivo
+// sin borrar solo como referencia histórica -- no editar esperando que
+// tenga efecto real, y considerar borrarlo del todo cuando se retome.
+//
+// --- Contenido original, ya sin uso ---
+// referral-check: otorga el bono de 30 días de Premium SOLO a quien
+// comparte el código (referente) -- no a la persona referida -- pero
+// SOLO 7 días después de que la referida activó el plan ANUAL, y solo si
+// para entonces sigue activo (no lo canceló ni pidió reembolso).
+// Decisión explícita de la usuaria: primero "30 días para ambas" y
+// después corregido a "no deben ganar premium ambos, solo el dueño del
+// código compartido".
 //
 // Disparado por un cron diario (pg_cron + pg_net), mismo patrón que
 // push-notify: protegido por el secreto compartido x-cron-secret.
@@ -68,11 +80,14 @@ Deno.serve(async (req) => {
       continue;
     }
 
-    await otorgarBono(admin, ref.referido_id);
+    // Solo el referente (dueño del código compartido) gana el bono -- la
+    // referida ya recibió lo que pagó (su propio Premium anual), no un
+    // premio extra encima. Dar el bono a ambas abría la puerta a vivir de
+    // codigos compartidos sin que el negocio reciba nada a cambio.
     await otorgarBono(admin, ref.referente_id);
     await admin.from('referidos').update({ estado: 'otorgado', resuelto_en: new Date().toISOString() }).eq('id', ref.id);
     otorgados++;
-    console.log(`Referido ${ref.id}: bono de ${BONO_DIAS} días otorgado a ${ref.referente_id} y ${ref.referido_id}.`);
+    console.log(`Referido ${ref.id}: bono de ${BONO_DIAS} días otorgado solo a ${ref.referente_id} (referente).`);
   }
 
   return json({ procesados: pendientes.length, otorgados, cancelados });
