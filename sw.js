@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-c36c6f2ed2';
+const CACHE = 'nutriruta-9fc30301a5';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const ASSETS = [
   './css/styles.css',
   './js/app.js',
   './js/theme-init.js',
+  './js/i18n.js',
   './js/config.js',
   './js/supabase-client.js',
   './js/store.js',
