@@ -388,8 +388,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .recipe-section-divider::before, .recipe-section-divider::after { content: ''; flex: 1; height: 1.5px; background: #DCEAE6; }
 .recipe-section-divider span { white-space: nowrap; }
-.recipe-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-@media (max-width: 380px) { .recipe-grid { grid-template-columns: 1fr; } }
+/* auto-fit en vez de un breakpoint fijo: la tarjeta (plato de 92px +
+   padding) cabe cómoda en 2 columnas desde ~300px de ancho real, pero el
+   breakpoint fijo de 380px las colapsaba a 1 columna en la mayoría de
+   celulares reales (iPhone SE/mini 375px, muchos Android 360-375px) --
+   reportado por la usuaria: "las recetas antes se veian en 2 columnas y
+   ya no". Con minmax() ya no hay un número mágico que mantener. */
+.recipe-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; }
 .recipe-card {
   background: var(--card); border-radius: 18px; box-shadow: var(--shadow);
   padding: 14px 12px 12px; text-align: center; width: 100%;
