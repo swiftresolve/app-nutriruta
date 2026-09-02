@@ -131,7 +131,7 @@ function openDia(dia, done, onChange) {
       <p>${dia.reflexion}</p>
       <label class="muted small mt" for="dia-reflexion" style="display:block">Escribe tu respuesta (mínimo 40 caracteres) para poder marcar el día como completado</label>
       <textarea id="dia-reflexion" maxlength="500" rows="3" placeholder="Escribe lo que quieras..."
-        style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:8px;resize:vertical">${esc(reflexionGuardada)}</textarea>`);
+        class="auth-input" style="resize:vertical">${esc(reflexionGuardada)}</textarea>`);
     const textarea = modal.querySelector('#dia-reflexion');
     const btn = document.createElement('button');
     btn.className = done ? 'btn ghost full mt' : 'btn full mt';

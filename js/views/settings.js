@@ -176,7 +176,7 @@ export function renderSettings(container) {
     <p class="small mt">Tu calificación y reseña pueden mostrarse en nutriruta.com para ayudar a otras personas a decidir — nunca tu correo ni datos de tu cuenta.</p>
     <div class="row mt" id="resena-hojas" style="gap:4px"></div>
     <textarea id="resena-texto" maxlength="300" rows="3" placeholder="Cuéntanos brevemente qué te ha parecido (opcional)"
-      style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:10px;resize:vertical"></textarea>
+      class="auth-input" style="resize:vertical"></textarea>
     <button class="btn full mt" id="resena-guardar" disabled>Guardar calificación</button>
     <p class="small muted mt" id="resena-estado"></p>`;
   container.appendChild(resena);
@@ -371,7 +371,7 @@ export function renderSettings(container) {
     <p class="small mb">Solo lo usamos para calcular tu meta de agua personalizada (30–35 mL por kg, el rango estándar de nutrición clínica). Es privado: nadie más lo ve, y puedes borrarlo cuando quieras.</p>
     <div class="row">
       <input id="peso-input" type="number" min="30" max="300" step="0.1" placeholder="Ej: 65" value="${user.pesoKg ?? ''}"
-        style="width:100px;padding:10px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit">
+        class="auth-input" style="width:100px;margin:0">
       <span class="muted small">kg</span>
       <button class="btn ghost sm" id="peso-guardar">Guardar</button>
     </div>
@@ -478,26 +478,18 @@ export function renderSettings(container) {
   const tono = document.createElement('div');
   tono.className = 'card';
   const TONOS = [
-    { id: 'calida', label: '💛 Cálida', desc: 'Cercana y suave, el tono de siempre.' },
-    { id: 'motivadora', label: '🌟 Motivadora', desc: 'Más entusiasta, celebra cada avance.' },
-    { id: 'directa', label: '🎯 Directa', desc: 'Va al punto, menos rodeos.' }
+    { id: 'calida', label: '💛 Cálida — cercana y suave, el tono de siempre' },
+    { id: 'motivadora', label: '🌟 Motivadora — más entusiasta, celebra cada avance' },
+    { id: 'directa', label: '🎯 Directa — va al punto, menos rodeos' }
   ];
-  tono.innerHTML = `
-    <h2>💬 Cómo te habla SuSana</h2>
-    <p class="small mb">Nunca usa culpa ni regaños, solo cambia el estilo.</p>
-    <div class="chips mt"></div>`;
-  const tonoChips = tono.querySelector('.chips');
-  for (const t of TONOS) {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'chip' + ((user.tonoSusana || 'calida') === t.id ? ' selected' : '');
-    chip.innerHTML = `${esc(t.label)}<br><span class="small" style="font-weight:400">${esc(t.desc)}</span>`;
-    chip.addEventListener('click', () => {
-      setState({ user: { ...getState().user, tonoSusana: t.id } });
+  tono.innerHTML = '<h2>💬 Cómo te habla SuSana</h2><p class="small mb">Nunca usa culpa ni regaños, solo cambia el estilo.</p>';
+  const tonoActual = TONOS.find((t) => t.id === (user.tonoSusana || 'calida'));
+  tono.appendChild(filaAjuste('💬', 'Tono', tonoActual.label.split(' — ')[0].replace(/^\S+\s/, ''), () => {
+    abrirSelector('Cómo te habla SuSana', TONOS, tonoActual.id, (id) => {
+      setState({ user: { ...getState().user, tonoSusana: id } });
       navigate('settings');
     });
-    tonoChips.appendChild(chip);
-  }
+  }));
   const CONTEXTO_MAX = 300;
   const contextoWrap = document.createElement('div');
   contextoWrap.className = 'mt';

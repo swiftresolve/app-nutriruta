@@ -15,6 +15,15 @@
   --yellow: #E8A93C;
   --red: #E05B4B;
   --radius: 16px;
+  /* Estándar de botones: mismo alto y misma curvatura de esquina en toda
+     la app -- .btn y .chip ya no usan cada uno su propio radio (.chip
+     era una pastilla 999px totalmente redonda, mucho más curva que
+     .btn). El ancho sigue variando según el contenido, el alto y la
+     esquina no. */
+  --btn-h: 46px;
+  --btn-h-sm: 38px;
+  --btn-radius: 14px;
+  --btn-radius-sm: 10px;
   --shadow: 0 6px 20px rgba(35, 56, 51, 0.1), 0 1.5px 4px rgba(35, 56, 51, 0.07);
   --nav-h: 64px;
   --nav-gap: 14px; /* separación de la nav flotante respecto al borde inferior */
@@ -129,7 +138,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--primary); color: #fff;
-  border-radius: 14px; padding: 12px 20px;
+  border-radius: var(--btn-radius); height: var(--btn-h); padding: 0 20px;
   font-weight: 700; font-size: 1rem;
   transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s;
   box-shadow: 0 4px 0 var(--primary-dark), 0 6px 14px rgba(35, 56, 51, 0.12);
@@ -140,13 +149,29 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .btn.accent:active { box-shadow: 0 1px 0 #D96B4F, 0 2px 6px rgba(255, 138, 107, 0.16); }
 .btn.ghost { background: var(--card); color: var(--primary-dark); border: 1.5px solid var(--primary-soft); box-shadow: none; }
 .btn.ghost:active { box-shadow: none; }
-.btn.sm { padding: 8px 14px; font-size: 0.88rem; border-radius: 10px; }
+.btn.sm { height: var(--btn-h-sm); padding: 0 14px; font-size: 0.88rem; border-radius: var(--btn-radius-sm); }
 .btn.danger { background: var(--red); box-shadow: 0 4px 0 #A8382C, 0 6px 14px rgba(224, 91, 75, 0.2); }
 .btn.danger:active { box-shadow: 0 1px 0 #A8382C, 0 2px 6px rgba(224, 91, 75, 0.16); }
 .btn.quiet { background: var(--primary-soft); color: var(--primary-dark); box-shadow: none; }
 .btn:disabled { opacity: 0.45; cursor: default; transform: none; }
 
 .link-btn { color: var(--primary-dark); font-weight: 600; text-decoration: underline; }
+
+/* ===== Campo de texto estándar (login/registro y cualquier otra pantalla
+   que necesite un input/textarea con la misma cara) =====
+   Antes vivía SOLO como un <style> que auth.js/resetPassword.js inyectaban
+   sobre la marcha la primera vez que se dibujaban -- cualquier otra
+   pantalla que usara la misma clase (Ajustes, el modal de comida, el
+   buscador de cocina) sin que una de esas dos hubiera cargado antes en la
+   misma sesión se quedaba con el input sin estilo, del navegador tal
+   cual. Movido aquí para que sea de verdad global. */
+.auth-input { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #D8E6E2; font: inherit; margin: 6px 0 12px; background: var(--card); color: var(--ink); }
+.pw-wrap { position: relative; }
+.pw-wrap .auth-input { padding-right: 44px; }
+.pw-toggle {
+  position: absolute; right: 6px; top: 50%; transform: translateY(calc(-50% - 6px));
+  background: none; border: none; padding: 6px; color: var(--ink-soft); display: flex; cursor: pointer;
+}
 
 /* ===== Franja de estado (racha/planta/escudos) en el saludo ===== */
 .stat-strip { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
@@ -216,7 +241,10 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   border: 1.5px solid transparent; background: var(--card);
-  border-radius: 999px; padding: 9px 15px; font-size: 0.92rem;
+  /* Antes 999px (pastilla totalmente redonda) -- misma curvatura que
+     .btn ahora, para que no se vea "más redondo" que el resto de los
+     botones de la app. */
+  border-radius: var(--btn-radius-sm); padding: 9px 15px; font-size: 0.92rem;
   color: var(--ink); box-shadow: 0 2px 0 #D8E6E2, 0 3px 6px rgba(35,56,51,0.06);
   transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s, color 0.12s, border-color 0.12s;
 }
@@ -732,7 +760,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 
 .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
-.badge { text-align: center; padding: 12px 6px; border-radius: 14px; background: #FBFDFC; border: 1.5px solid #EFF5F3; }
+.badge { text-align: center; padding: 12px 6px; border-radius: 14px; background: var(--bg); border: 1.5px solid rgba(35,56,51,0.1); }
 .badge .emoji { font-size: 1.8rem; }
 .badge.locked { opacity: 0.35; filter: grayscale(1); }
 .badge .small { display: block; margin-top: 4px; }

@@ -80,16 +80,6 @@ export function renderAuth(container, params = {}) {
       </div>
       <div class="legal-note">NutriRuta es una guía de autoayuda: no reemplaza la atención de un profesional de salud.</div>`;
 
-    // Estilo de inputs (una vez)
-    if (!document.getElementById('auth-style')) {
-      const st = document.createElement('style');
-      st.id = 'auth-style';
-      st.textContent = '.auth-input{width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin:6px 0 12px}'
-        + '.pw-wrap{position:relative}.pw-wrap .auth-input{padding-right:44px}'
-        + '.pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(calc(-50% - 6px));background:none;border:none;padding:6px;color:var(--ink-soft);display:flex;cursor:pointer}';
-      document.head.appendChild(st);
-    }
-
     attachPasswordToggle(view.querySelector('#a-pass'));
 
     view.querySelector('#a-toggle').addEventListener('click', () => {

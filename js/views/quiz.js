@@ -76,8 +76,7 @@ export function renderQuiz(container) {
           <div class="center mb">${rutiSiVisible('saludo', { size: 64 })}</div>
           <p class="center small" style="font-weight:600">Hola, soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>
           <label class="muted mt" for="q-nombre" style="display:block">${answers.nombre ? `Te llamaremos <strong>${esc(answers.nombre)}</strong>. Puedes cambiarlo si quieres:` : '¿Cómo te llamas? (opcional)'}</label>
-          <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60"
-            style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:8px">
+          <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60" class="auth-input">
           <div class="legal-note">🔒 Tus datos se guardan en tu cuenta protegida y solo tú puedes verlos. NutriRuta es una herramienta de autoayuda: no diagnostica ni reemplaza a tu médico o nutricionista.</div>
           ${!getState().onboarded ? '<p class="center small mt">¿Ya tienes cuenta? <button type="button" class="link-btn" id="q-ya-tengo-cuenta">Inicia sesión</button></p>' : ''}`;
         el.querySelector('#q-ya-tengo-cuenta')?.addEventListener('click', () => navigate('auth'));
@@ -106,8 +105,7 @@ export function renderQuiz(container) {
         chips(el, EXCLUSIONS, answers.exclusiones, true);
         el.insertAdjacentHTML('beforeend', `
           <label class="muted small mt" for="q-excl-otro" style="display:block">¿Algo más que no comas? (opcional, separa varios con coma)</label>
-          <input id="q-excl-otro" type="text" placeholder="Ej: cilantro, champiñones" maxlength="200"
-            style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:6px">`);
+          <input id="q-excl-otro" type="text" placeholder="Ej: cilantro, champiñones" maxlength="200" class="auth-input">`);
         const input = el.querySelector('#q-excl-otro');
         input.value = answers.exclusionesOtroTexto;
         input.addEventListener('input', (e) => { answers.exclusionesOtroTexto = e.target.value; });
@@ -130,8 +128,7 @@ export function renderQuiz(container) {
       render(el) {
         el.innerHTML = `
           <div class="row" style="align-items:center;gap:10px">
-            <input id="q-peso" type="number" inputmode="numeric" min="30" max="300" placeholder="Ej: 65"
-              style="width:120px;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit">
+            <input id="q-peso" type="number" inputmode="numeric" min="30" max="300" placeholder="Ej: 65" class="auth-input" style="width:120px;margin:0">
             <span class="muted">kg</span>
           </div>
           <div class="legal-note">🔒 Es privado, nadie más lo ve, y puedes borrarlo cuando quieras desde Ajustes.</div>`;

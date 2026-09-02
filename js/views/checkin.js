@@ -84,7 +84,7 @@ function abrirCheckin(onChange) {
       <div class="chips mt" id="ci-menu"></div>
       <label class="muted small mt" for="ci-notas" style="display:block">¿Algo más que quieras contarnos? (opcional)</label>
       <textarea id="ci-notas" maxlength="300" rows="3" placeholder="Cuéntanos lo que quieras…"
-        style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:8px;resize:vertical"></textarea>
+        class="auth-input" style="resize:vertical"></textarea>
       <div class="row mt" style="gap:10px">
         <button class="btn ghost sm" id="ci-posponer">Ahora no</button>
         <button class="btn sm" id="ci-enviar" disabled style="flex:1">Enviar</button>

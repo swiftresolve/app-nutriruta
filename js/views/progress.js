@@ -390,8 +390,7 @@ function openSintomaModal(onSaved) {
       <div class="chips mt" id="sintoma-chips"></div>
       <p class="small mt" id="sintoma-causa" style="border-left:4px solid var(--secondary);padding-left:10px;display:none"></p>
       <label class="muted small mt" for="sintoma-disparador" style="display:block">¿Sospechas qué lo causó? (opcional)</label>
-      <input id="sintoma-disparador" type="text" maxlength="60" placeholder="Ej: cebolla, lácteos, estrés…"
-        style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:8px">
+      <input id="sintoma-disparador" type="text" maxlength="60" placeholder="Ej: cebolla, lácteos, estrés…" class="auth-input">
       <button class="btn full mt" id="sintoma-guardar" disabled>Guardar</button>`);
     const chipWrap = modal.querySelector('#sintoma-chips');
     const guardarBtn = modal.querySelector('#sintoma-guardar');

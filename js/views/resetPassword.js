@@ -9,18 +9,6 @@ import { navigate, toast, setAuthed } from '../app.js';
 import { MIN_PASSWORD, passwordIssues, attachPasswordToggle } from './auth.js';
 
 export function renderResetPassword(container) {
-  // Puede ser la primera pantalla que se renderiza (llega directo desde el
-  // enlace del correo, sin pasar nunca por auth.js), así que el estilo de
-  // los inputs no puede depender de que auth.js ya lo haya inyectado.
-  if (!document.getElementById('auth-style')) {
-    const st = document.createElement('style');
-    st.id = 'auth-style';
-    st.textContent = '.auth-input{width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin:6px 0 12px}'
-      + '.pw-wrap{position:relative}.pw-wrap .auth-input{padding-right:44px}'
-      + '.pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(calc(-50% - 6px));background:none;border:none;padding:6px;color:var(--ink-soft);display:flex;cursor:pointer}';
-    document.head.appendChild(st);
-  }
-
   container.innerHTML = `
     <div class="splash" style="min-height:22vh">
       <div class="splash-logo"><svg viewBox="0 0 512 512"><defs><linearGradient id="nrleaf" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#7CC96A"/><stop offset="1" stop-color="#3E9E52"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="#2BB5A0"/><g fill="none" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="13"><ellipse cx="256" cy="396" rx="148" ry="36"/><ellipse cx="256" cy="396" rx="86" ry="21"/></g><path d="M256 68 C168 68 100 136 100 222 C100 316 202 398 256 434 C310 398 412 316 412 222 C412 136 344 68 256 68 Z" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linejoin="round"/><g transform="translate(252 210) scale(0.55) translate(-256 -288)"><path d="M256 416c-72-48-136-102-136-176 0-45 34-80 78-80 28 0 48 13 58 32 10-19 30-32 58-32 44 0 78 35 78 80 0 74-64 128-136 176z" fill="#FFFFFF"/></g><g transform="translate(288 210) rotate(35)"><path d="M0 -40 C26 -24 28 10 0 40 C-28 10 -26 -24 0 -40 Z" fill="url(#nrleaf)"/><path d="M0 36 L-9 60" stroke="#3E9E52" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M0 -30 L0 32 M0 -16 L13 -25 M0 -16 L-13 -25 M0 2 L15 -7 M0 2 L-15 -7 M0 18 L12 9 M0 18 L-12 9" stroke="#FFFFFF" stroke-width="3.5" fill="none" stroke-linecap="round"/></g></svg></div>

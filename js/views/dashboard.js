@@ -348,7 +348,7 @@ function pedirReflexionHabitos(onConfirm) {
       <h2>Antes de sumar hoy…</h2>
       <p class="small mt">En una frase, ¿qué hiciste hoy para esto? Nos ayuda a que tu Ruta refleje algo real, no solo un toque.</p>
       <textarea id="reflexion-habitos" maxlength="300" rows="3" placeholder="Ej: Caminé 30 minutos después de almorzar..."
-        style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:8px;resize:vertical"></textarea>`);
+        class="auth-input" style="resize:vertical"></textarea>`);
     const textarea = modal.querySelector('#reflexion-habitos');
     const btn = document.createElement('button');
     btn.className = 'btn full mt';
