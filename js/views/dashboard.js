@@ -1,16 +1,15 @@
 // Dashboard diario: menú del día, agua, hábitos y acceso rápido al SOS.
 //
-// Orden pensado a propósito (no es solo la lista de features en el orden en
-// que se construyeron): arriba lo que se usa gratis todos los días (paso del
-// día, hábitos, agua, menú, SOS, plan de 7 días); Sana y la Misión —lo
-// Premium— van después, cuando ya sentiste valor real, no antes.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, sanaApertura, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS } from '../store.js';
-import { MISSION } from '../data/mission.js';
+// Solo lo que se usa gratis todos los días vive aquí (paso del día,
+// hábitos, agua, menú, SOS). Plan de 7 días, SuSana y la Misión tienen
+// su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
+// inferior) — la usuaria pidió que el dashboard diario no acumule
+// tarjetas grandes de cosas que no se usan todos los días.
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS } from '../store.js';
 import { MEALS } from '../data/recipes.js';
-import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad } from '../menu.js';
-import { navigate, header, openModal, toast, susanaName } from '../app.js';
+import { navigate, header, openModal, toast } from '../app.js';
 import { t } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
@@ -297,71 +296,10 @@ export function renderDashboard(container) {
   sosBtn.addEventListener('click', () => navigate('sos'));
   container.appendChild(sosBtn);
 
-  // --- Plan de 7 días (gratis, respuesta inmediata) ---
-  // Antes esta tarjeta desaparecía del todo al llegar a 7/7 -- y como es el
-  // ÚNICO punto de entrada a la vista 'emergency' en toda la app (no hay
-  // link en Progreso, Ajustes ni la nav), completar el plan lo dejaba
-  // inaccesible para siempre, aunque la vista sí tiene un cierre armado
-  // para ese estado. Ahora se queda, con su propia variante de completado.
-  const { emergencia } = getState();
-  const diasCompletados = (emergencia?.completados || []).length;
-  const emergCard = document.createElement('div');
-  emergCard.className = 'card';
-  emergCard.style.borderLeft = '4px solid var(--accent)';
-  if (diasCompletados >= 7) {
-    emergCard.innerHTML = `
-      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${t('Completado')}</span></div>
-      <p class="small">${t('Diste el primer paso — revisa tu semana cuando quieras.')}</p>
-      <button class="link-btn small">${t('Ver mi plan →')}</button>`;
-  } else if (emergencia?.inicio) {
-    emergCard.innerHTML = `
-      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${diasCompletados}/7</span></div>
-      <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((diasCompletados / 7) * 100)}%"></div></div>
-      <button class="link-btn small">${t('Continuar mi plan →')}</button>`;
-  } else {
-    emergCard.innerHTML = `
-      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag info">${t('Gratis')}</span></div>
-      <p class="small">${EMERGENCY_PLAN.descripcion}</p>
-      <button class="link-btn small">${t('Empezar hoy mismo →')}</button>`;
-  }
-  emergCard.querySelector('.link-btn').addEventListener('click', () => navigate('emergency'));
-  container.appendChild(emergCard);
-
-  // --- Lo Premium va al final: ya viviste el valor gratis, ahora la invitación ---
-
-  // --- Pregúntale a tu guía ---
-  const guideCard = document.createElement('div');
-  guideCard.className = 'card';
-  guideCard.style.background = 'linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))';
-  guideCard.style.border = 'none';
-  const subtitulo = isPremium() ? esc(sanaApertura()) : t('Una duda puntual, ahora mismo, con el contexto de tu perfil.');
-  guideCard.innerHTML = `
-    <div class="spread"><h3>💬 ${susanaName()}${t(', tu guía')}</h3>${isPremium() ? '' : `<span class="tag info">${t('Premium')}</span>`}</div>
-    <p class="small mt">${subtitulo}</p>
-    <button class="btn ghost sm mt">${isPremium() ? t('Abrir chat →') : t('Conocer más →')}</button>`;
-  guideCard.querySelector('.btn').addEventListener('click', () => navigate('assistant'));
-  container.appendChild(guideCard);
-
-  // --- Misión 12 semanas ---
-  const { mision } = getState();
-  const misionCard = document.createElement('div');
-  misionCard.className = 'card';
-  misionCard.style.borderLeft = '4px solid var(--primary)';
-  if (mision && mision.inicio) {
-    const done = (mision.completadas || []).length;
-    const activa = isPremium();
-    misionCard.innerHTML = `
-      <div class="spread"><h3>${t('🎯 Misión 12 semanas')}</h3><span class="tag ${activa ? 'verde' : 'rojo'}">${activa ? `${done}/12` : t('Pausada')}</span></div>
-      <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((done / 12) * 100)}%"></div></div>
-      <button class="link-btn small">${activa ? t('Continuar mi misión →') : t('Renovar Premium para continuar →')}</button>`;
-  } else {
-    misionCard.innerHTML = `
-      <div class="spread"><h3>${t('🎯 Misión 12 semanas')}</h3>${isPremium() ? '' : `<span class="tag info">${t('Premium')}</span>`}</div>
-      <p class="small">${MISSION.descripcion}</p>
-      <button class="link-btn small">${isPremium() ? t('Empezar mi misión →') : t('Conocer la misión →')}</button>`;
-  }
-  misionCard.querySelector('.link-btn').addEventListener('click', () => navigate('mission'));
-  container.appendChild(misionCard);
+  // Plan de 7 días, Guía (SuSana) y Misión 12 semanas se movieron a
+  // Progreso (ver progress.js) — la usuaria pidió que el dashboard diario
+  // no acumule tarjetas grandes de cosas que no se usan todos los días;
+  // ese contenido encaja mejor en la pantalla dedicada a ver tu progreso.
 }
 
 // Estado de ánimo de Sana: se deriva 100% de datos que ya existen (último

@@ -1,7 +1,12 @@
-// Mi progreso: rachas, logros, gráficas, historial de antojos y diario de síntomas.
-import { getState, ACHIEVEMENTS, logSintoma, sintomaPattern, esc, today, getWaterGoal, isPremium, maxEscudos } from '../store.js';
+// Mi progreso: rachas, logros, gráficas, historial de antojos, diario de
+// síntomas, y los accesos a Plan de 7 días/Misión/Aprender (movidos aquí
+// desde el dashboard diario — ver dashboard.js).
+import { getState, ACHIEVEMENTS, logSintoma, sintomaPattern, esc, today, getWaterGoal, isPremium, maxEscudos, sanaApertura } from '../store.js';
 import { SYMPTOM_TYPES, SYMPTOM_CAUSES } from '../data/profiles.js';
-import { header, openModal, toast, navigate } from '../app.js';
+import { MISSION } from '../data/mission.js';
+import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
+import { header, openModal, toast, navigate, susanaName } from '../app.js';
+import { t } from '../i18n.js';
 import { barChart, lineChart } from '../charts.js';
 import { broteStage, broteBadge } from '../ruti.js';
 import { frozenFlameIcon } from '../streakAnim.js';
@@ -69,6 +74,71 @@ export function renderProgress(container) {
     <p class="small muted mt">🛡️ Pausas de Ruta: ${escudos}/${maxEscudos()} — te acompañan cuando necesitas descansar. Se gana 1 cada 7 Días en Ruta.</p>
     <p class="small muted mt">🧭 Energía de Ruta: ${energiaRuta || 0} · ${kmRuta || 0} km recorridos — se suma con cada hábito que cuidas, nunca baja sola.</p>`;
   container.appendChild(streak);
+
+  // --- Plan de 7 días (gratis, respuesta inmediata) ---
+  // Antes esta tarjeta desaparecía del todo al llegar a 7/7 -- y como es
+  // un punto de entrada importante a la vista 'emergency', completar el
+  // plan lo dejaba inaccesible para siempre, aunque la vista sí tiene un
+  // cierre armado para ese estado. Se queda, con su propia variante de
+  // completado.
+  const { emergencia } = getState();
+  const diasCompletados7 = (emergencia?.completados || []).length;
+  const emergCard = document.createElement('div');
+  emergCard.className = 'card';
+  emergCard.style.borderLeft = '4px solid var(--accent)';
+  if (diasCompletados7 >= 7) {
+    emergCard.innerHTML = `
+      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${t('Completado')}</span></div>
+      <p class="small">${t('Diste el primer paso — revisa tu semana cuando quieras.')}</p>
+      <button class="link-btn small">${t('Ver mi plan →')}</button>`;
+  } else if (emergencia?.inicio) {
+    emergCard.innerHTML = `
+      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${diasCompletados7}/7</span></div>
+      <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((diasCompletados7 / 7) * 100)}%"></div></div>
+      <button class="link-btn small">${t('Continuar mi plan →')}</button>`;
+  } else {
+    emergCard.innerHTML = `
+      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag info">${t('Gratis')}</span></div>
+      <p class="small">${EMERGENCY_PLAN.descripcion}</p>
+      <button class="link-btn small">${t('Empezar hoy mismo →')}</button>`;
+  }
+  emergCard.querySelector('.link-btn').addEventListener('click', () => navigate('emergency'));
+  container.appendChild(emergCard);
+
+  // --- Misión 12 semanas ---
+  const { mision } = getState();
+  const misionCard = document.createElement('div');
+  misionCard.className = 'card';
+  misionCard.style.borderLeft = '4px solid var(--primary)';
+  if (mision && mision.inicio) {
+    const done = (mision.completadas || []).length;
+    const activa = isPremium();
+    misionCard.innerHTML = `
+      <div class="spread"><h3>${t('🎯 Misión 12 semanas')}</h3><span class="tag ${activa ? 'verde' : 'rojo'}">${activa ? `${done}/12` : t('Pausada')}</span></div>
+      <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((done / 12) * 100)}%"></div></div>
+      <button class="link-btn small">${activa ? t('Continuar mi misión →') : t('Renovar Premium para continuar →')}</button>`;
+  } else {
+    misionCard.innerHTML = `
+      <div class="spread"><h3>${t('🎯 Misión 12 semanas')}</h3>${isPremium() ? '' : `<span class="tag info">${t('Premium')}</span>`}</div>
+      <p class="small">${MISSION.descripcion}</p>
+      <button class="link-btn small">${isPremium() ? t('Empezar mi misión →') : t('Conocer la misión →')}</button>`;
+  }
+  misionCard.querySelector('.link-btn').addEventListener('click', () => navigate('mission'));
+  container.appendChild(misionCard);
+
+  // --- Aprende: antes su propio tab en el menú inferior, ese lugar ahora
+  // lo ocupa SuSana (el "Coach", ver index.html) -- se reubica aquí como
+  // un acceso compacto, no una tarjeta grande, porque no tiene un estado
+  // de progreso propio que mostrar como las de arriba. ---
+  const aprendeCard = document.createElement('div');
+  aprendeCard.className = 'card';
+  aprendeCard.innerHTML = `<button type="button" class="setting-row" style="padding:2px 0">
+    <span class="setting-row-icon">📚</span>
+    <span class="setting-row-label">${t('Aprende')}</span>
+    <span class="setting-row-chevron">›</span>
+  </button>`;
+  aprendeCard.querySelector('.setting-row').addEventListener('click', () => navigate('learn'));
+  container.appendChild(aprendeCard);
 
   // --- Gráficas de progreso ---
   const chartsCard = document.createElement('div');
