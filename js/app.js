@@ -236,7 +236,21 @@ export function openModal(contentBuilder) {
 }
 
 // Service worker (registrado aquí para cumplir la CSP sin scripts inline).
+// sw.js ya usa skipWaiting()+clients.claim() para tomar control apenas se
+// instala una versión nueva, pero sin este listener la pestaña ya abierta
+// se queda corriendo el JS viejo en memoria hasta que alguien recarga a
+// mano — la usuaria reportó justo eso ("no veo qué cambió" tras un
+// despliegue). controllerchange dispara exactamente cuando el nuevo SW
+// toma control, así que ese es el momento correcto para recargar sola.
+// El flag `refrescando` evita un loop: controllerchange solo debería
+// disparar una vez por cambio real de versión.
 if ('serviceWorker' in navigator) {
+  let refrescando = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refrescando) return;
+    refrescando = true;
+    window.location.reload();
+  });
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
 }
 
