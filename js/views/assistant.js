@@ -21,13 +21,25 @@ export function renderAssistant(container) {
     return;
   }
 
-  const hero = document.createElement('div');
-  hero.className = 'card';
-  hero.innerHTML = `
-    <h2>💬 ${susanaName()}, tu guía</h2>
-    <p class="small mt">Pregúntale lo que quieras sobre tu alimentación, tus síntomas o tus antojos. Tiene en cuenta tu perfil, pero recuerda: <strong>no reemplaza a tu médico o nutricionista</strong>, y ante señales de alarma, busca atención profesional de inmediato.</p>
-    <p class="chat-quota mt" id="chatQuota">Cargando…</p>`;
-  container.appendChild(hero);
+  // Header de chat propio (avatar + nombre fijos arriba, separado de las
+  // burbujas) en vez de meter el saludo dentro de una tarjeta de texto
+  // genérica -- la usuaria vio esto en Fitia y pidió que SuSana se
+  // sintiera como una conversación real, no un formulario con texto
+  // explicativo arriba.
+  const chatHeader = document.createElement('div');
+  chatHeader.className = 'chat-header';
+  chatHeader.innerHTML = `
+    <span class="sana-avatar chat-header-avatar">🌿</span>
+    <div class="chat-header-info">
+      <strong>${susanaName()}</strong>
+      <span class="small muted" id="chatQuota">Cargando…</span>
+    </div>`;
+  container.appendChild(chatHeader);
+
+  const aviso = document.createElement('p');
+  aviso.className = 'small muted chat-disclaimer';
+  aviso.textContent = 'No reemplaza a tu médico o nutricionista — ante señales de alarma, busca atención profesional de inmediato.';
+  container.appendChild(aviso);
 
   const chatCard = document.createElement('div');
   chatCard.className = 'card';
@@ -42,7 +54,7 @@ export function renderAssistant(container) {
   container.appendChild(inputRow);
 
   const log = chatCard.querySelector('#chatLog');
-  const quotaEl = hero.querySelector('#chatQuota');
+  const quotaEl = chatHeader.querySelector('#chatQuota');
   const input = inputRow.querySelector('#chatInput');
   const sendBtn = inputRow.querySelector('#chatSend');
 
