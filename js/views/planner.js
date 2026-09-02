@@ -1,8 +1,8 @@
 // Recetario + lista de compras.
 import { getState, setState, isPremium } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
-import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch } from '../menu.js';
-import { header, navigate } from '../app.js';
+import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria } from '../menu.js';
+import { header, navigate, toast } from '../app.js';
 import { openRecipe } from './dashboard.js';
 
 // Recetas visibles en el plan gratuito (el resto se muestra bloqueado).
@@ -155,6 +155,28 @@ export function renderPlanner(container, params = {}) {
     body.appendChild(note);
   }
 
+  const CATEGORIA_EMOJI = { Frutas: '🍎', Verduras: '🥦', Proteínas: '🍗', Granos: '🌾', Lácteos: '🥛', Otros: '🧂' };
+
+  // Comparte la lista como texto plano (Web Share nativo si el dispositivo
+  // lo soporta; si no, la copia al portapapeles) — nunca sube nada a un
+  // servidor ni genera una imagen, solo texto.
+  async function compartirLista(grupos, tituloCard) {
+    const texto = grupos.map(({ categoria, items: itemsCat }) =>
+      `${CATEGORIA_EMOJI[categoria] || ''} ${categoria.toUpperCase()}\n${itemsCat.map((it) => `• ${it.texto}`).join('\n')}`
+    ).join('\n\n');
+    const contenido = `${tituloCard.replace(/^🛒\s*/, '')}\n\n${texto}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Mi lista de compras — NutriRuta', text: contenido }); } catch { /* la usuaria canceló el share, no es un error */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(contenido);
+      toast('Lista copiada — pégala donde quieras 📋');
+    } catch {
+      toast('No se pudo copiar automáticamente. Copia la lista a mano.');
+    }
+  }
+
   function drawShopping() {
     if (!isPremium()) {
       const upsell = document.createElement('div');
@@ -183,38 +205,49 @@ export function renderPlanner(container, params = {}) {
     const card = document.createElement('div');
     card.className = 'card';
 
-    if (rango === 'hoy') {
-      const items = shoppingList();
-      card.innerHTML = '<h2>🛒 Compras para tu menú de hoy</h2><p class="small mb">Generada automáticamente desde tu menú del día.</p>';
-      for (const it of items) {
-        const row = document.createElement('div');
-        const done = !!compras[it.texto];
-        row.className = 'shop-item' + (done ? ' done' : '');
-        row.innerHTML = `<input type="checkbox" ${done ? 'checked' : ''} id="s-${it.id}"><span>${it.texto}</span>`;
-        row.querySelector('input').addEventListener('change', (e) => {
-          setState({ compras: { ...getState().compras, [it.texto]: e.target.checked } });
-          row.classList.toggle('done', e.target.checked);
-        });
-        card.appendChild(row);
-      }
+    let items, tituloCard, sub;
+    const esHoy = rango === 'hoy';
+    if (esHoy) {
+      items = shoppingList();
+      tituloCard = '🛒 Compras para tu menú de hoy';
+      sub = 'Generada automáticamente desde tu menú del día.';
     } else {
       const dias = rango === 'semana' ? 7 : 30;
-      const items = rangeShoppingList(dias);
-      card.innerHTML = `<h2>🛒 Compras para ${rango === 'semana' ? 'esta semana' : 'este mes'}</h2>
-        <p class="small mb">Proyectada desde tu menú de los próximos ${dias} días. No sabemos cantidades exactas por receta, así que te mostramos en cuántos días aparece cada cosa — úsalo como guía de cuánto comprar.</p>`;
-      for (const it of items) {
+      items = rangeShoppingList(dias);
+      tituloCard = `🛒 Compras para ${rango === 'semana' ? 'esta semana' : 'este mes'}`;
+      sub = `Proyectada desde tu menú de los próximos ${dias} días. No sabemos cantidades exactas por receta, así que te mostramos en cuántos días aparece cada cosa — úsalo como guía de cuánto comprar.`;
+    }
+    card.innerHTML = `<h2>${tituloCard}</h2><p class="small mb">${sub}</p>`;
+
+    // Agrupada por categoría (fruta/verdura/proteína/...) en vez de una
+    // lista plana — más fácil de recorrer por pasillo del súper.
+    const grupos = agruparPorCategoria(items);
+    for (const { categoria, items: itemsCat } of grupos) {
+      const h = document.createElement('h3');
+      h.className = 'mt';
+      h.style.cssText = 'font-size:0.78rem;color:var(--primary-dark);text-transform:uppercase;letter-spacing:.04em';
+      h.textContent = `${CATEGORIA_EMOJI[categoria] || ''} ${categoria}`;
+      card.appendChild(h);
+      for (const it of itemsCat) {
         const row = document.createElement('div');
         const done = !!compras[it.texto];
         row.className = 'shop-item' + (done ? ' done' : '');
-        const diasTexto = [...new Set(it.dias)].slice(0, 6).join(', ');
-        row.innerHTML = `<input type="checkbox" ${done ? 'checked' : ''} id="s-r-${it.texto}">
-          <span>${it.texto} <span class="muted small">· ${it.count}× (${diasTexto})</span></span>`;
+        const extra = esHoy ? '' : ` <span class="muted small">· ${it.count}× (${[...new Set(it.dias)].slice(0, 6).join(', ')})</span>`;
+        row.innerHTML = `<input type="checkbox" ${done ? 'checked' : ''}><span>${it.texto}${extra}</span>`;
         row.querySelector('input').addEventListener('change', (e) => {
           setState({ compras: { ...getState().compras, [it.texto]: e.target.checked } });
           row.classList.toggle('done', e.target.checked);
         });
         card.appendChild(row);
       }
+    }
+
+    if (items.length) {
+      const shareBtn = document.createElement('button');
+      shareBtn.className = 'btn ghost sm full mt';
+      shareBtn.textContent = '📤 Compartir lista';
+      shareBtn.addEventListener('click', () => compartirLista(grupos, tituloCard));
+      card.appendChild(shareBtn);
     }
     body.appendChild(card);
   }

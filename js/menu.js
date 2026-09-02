@@ -196,6 +196,51 @@ export function displayIngredient(ing, exclusiones) {
   return { texto: ing.n, sustituido: false };
 }
 
+// Categoría de compra de un ingrediente — agrupación puramente visual para
+// hacer la lista más fácil de recorrer en el súper (fruta, verdura, etc.),
+// nunca una clasificación nutricional ni médica. Por keyword sobre el
+// nombre real del ingrediente (no hay ese dato en recipes.js todavía);
+// "Otros" es el fallback honesto para lo que no reconoce, no se fuerza
+// una categoría incorrecta.
+const CATEGORIAS_COMPRA = [
+  ['Frutas', ['banano', 'plátano', 'manzana', 'fresa', 'arándano', 'mora', 'kiwi', 'mandarina', 'naranja', 'pera', 'uva', 'durazno', 'ciruela', 'dátil', 'limón', 'limon', 'coco', 'aguacate']],
+  ['Verduras', ['espinaca', 'brócoli', 'brocoli', 'calabacín', 'calabacin', 'zanahoria', 'tomate', 'pepino', 'lechuga', 'apio', 'coliflor', 'cebolla', 'pimentón', 'pimenton', 'ahuyama', 'berenjena', 'champiñon', 'champiñón', 'col morada', 'habichuela', 'ajo', 'jengibre', 'batata', 'papa']],
+  ['Proteínas', ['pollo', 'pechuga', 'pavo', 'carne', 'atún', 'atun', 'pescado', 'salmón', 'salmon', 'tilapia', 'trucha', 'camarones', 'huevo', 'tofu', 'edamame', 'garbanzo', 'lenteja', 'arveja']],
+  ['Granos', ['avena', 'arroz', 'pasta', 'pan integral', 'pan ', 'tortilla', 'arepa', 'quinoa', 'maíz', 'maiz', 'tostada']],
+  ['Lácteos', ['yogur', 'queso', 'leche', 'kéfir', 'kefir', 'requesón', 'requeson', 'cottage']],
+];
+
+// No basta con "la primera categoría que matchea" en orden fijo: frases
+// como "lentejas guisadas con tomate y zanahoria" contienen keywords de
+// varias categorías a la vez. Se usa la que aparece MÁS TEMPRANO en el
+// texto — el ingrediente principal casi siempre se nombra primero, lo
+// demás son acompañantes mencionados después.
+export function categoriaIngrediente(texto) {
+  const n = normaliza(texto);
+  let mejor = null;
+  let mejorPos = Infinity;
+  for (const [categoria, keywords] of CATEGORIAS_COMPRA) {
+    for (const k of keywords) {
+      const pos = n.indexOf(normaliza(k));
+      if (pos !== -1 && pos < mejorPos) { mejorPos = pos; mejor = categoria; }
+    }
+  }
+  return mejor || 'Otros';
+}
+
+// Agrupa una lista de items de compra ({texto, ...}) por categoría, en un
+// orden fijo pensado para recorrer el súper por pasillo — "Otros" siempre
+// al final.
+const ORDEN_CATEGORIAS = ['Frutas', 'Verduras', 'Proteínas', 'Granos', 'Lácteos', 'Otros'];
+export function agruparPorCategoria(items) {
+  const grupos = new Map(ORDEN_CATEGORIAS.map((c) => [c, []]));
+  for (const item of items) {
+    const cat = categoriaIngrediente(item.texto);
+    grupos.get(cat).push(item);
+  }
+  return ORDEN_CATEGORIAS.map((cat) => ({ categoria: cat, items: grupos.get(cat) })).filter((g) => g.items.length);
+}
+
 // Lista de compras del menú del día.
 export function shoppingList(dateStr = today()) {
   const { user } = getState();
