@@ -34,7 +34,8 @@ const DEFAULT_STATE = {
     // rutina real en Ajustes; estos valores son el default si nunca la toca.
     horaComidas: { ...DEFAULT_HORA_COMIDAS },
     tonoSusana: 'calida',   // 'calida' | 'motivadora' | 'directa' — cómo le habla SuSana, ver ai-assistant
-    contextoSusana: ''      // texto libre opcional, ej. "no hago ejercicio hace meses" — contexto extra que SuSana suma al de siempre (perfiles/síntomas/racha), nunca lo reemplaza
+    contextoSusana: '',     // texto libre opcional, ej. "no hago ejercicio hace meses" — contexto extra que SuSana suma al de siempre (perfiles/síntomas/racha), nunca lo reemplaza
+    referidoPor: null       // código de quien la invitó (capturado de "?ref=" en app.js), ver hotmart-webhook/referral-check
   },
   agua: { fecha: '', vasos: 0 },
   comidasSeguidas: { fecha: '', ids: [] }, // recetas del menú real de hoy que se abrieron — para auto-marcar "seguí el menú"

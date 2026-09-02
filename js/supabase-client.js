@@ -226,6 +226,14 @@ export async function checkIsAdmin() {
   return data === true;
 }
 
+// Código propio de referido (se crea la primera vez que se pide, ver
+// mi_codigo_referido() en la migración add_referidos).
+export async function miCodigoReferido() {
+  const { data, error } = await supabase.rpc('mi_codigo_referido');
+  if (error) throw error;
+  return data;
+}
+
 // Activar/quitar Premium a mano desde el panel de admin (ver
 // admin_set_plan en la migración: valida admin_emails ella misma y deja
 // registro con monto 0 en pagos para poder distinguir esto de un cobro

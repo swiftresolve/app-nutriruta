@@ -1,5 +1,5 @@
 // Router mínimo + arranque con puerta de autenticación.
-import { getState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo } from './store.js';
+import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo } from './store.js';
 import { getSession, supabase } from './supabase-client.js';
 import { broteStage, broteBadge } from './ruti.js';
 import { renderAuth } from './views/auth.js';
@@ -274,6 +274,20 @@ if ('serviceWorker' in navigator) {
   let session = null;
   try { session = await getSession(); } catch { /* offline sin sesión previa */ }
   authed = !!session;
+
+  // Enlace de referido ("?ref=CODIGO", compartido desde Ajustes): se guarda
+  // en el estado local ANTES de crear la cuenta, así viaja con el resto del
+  // quiz/onboarding y sube a la nube con la migración normal que ya hace
+  // initCloud() al registrarse — no hace falta lógica aparte. Nunca
+  // sobreescribe uno que ya tenga (evita que abrir un segundo link cambie
+  // a quién ya se le atribuyó la referida), y nunca se aplica si ya hay
+  // sesión (una cuenta existente no se "re-refiere").
+  if (!session) {
+    const refCode = new URLSearchParams(window.location.search).get('ref');
+    if (refCode && !getState().user.referidoPor) {
+      setState({ user: { ...getState().user, referidoPor: refCode.trim().toUpperCase().slice(0, 12) } });
+    }
+  }
 
   if (isInviteLink && session) {
     navigate('resetPassword');

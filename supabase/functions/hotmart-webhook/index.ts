@@ -132,6 +132,7 @@ Deno.serve(async (req) => {
     if (error) return json({ error: 'No se pudo activar el plan' }, 500);
     await registrarPago(admin, userId, email, event, periodo, PLAN_PRICES[periodo] ?? 0, transactionId);
     console.log(`Premium ${periodo} activado para ${email} (${event}).`);
+    if (periodo === 'anual') await registrarReferidoSiAplica(admin, userId, periodo, transactionId);
     await enviarPush(userId, {
       title: '✨ ¡Ya eres Premium!',
       body: 'SuSana y la Misión de 12 semanas ya están disponibles para ti.',
@@ -141,6 +142,16 @@ Deno.serve(async (req) => {
   }
 
   if (DESACTIVAR_INMEDIATO.has(event)) {
+    // Si esta compra tenía un referido pendiente (30 días para el
+    // referente y la referida en cuanto pasen 7 días, ver referral-check),
+    // se cancela de inmediato -- nunca se otorga sobre una compra que se
+    // canceló/reembolsó/expiró. El cron vuelve a verificar esto de todas
+    // formas antes de otorgar (por si el orden de los webhooks se cruza),
+    // pero cancelar aquí también evita el trabajo de esperar 7 días para
+    // algo que ya se sabe que no aplica.
+    await admin.from('referidos').update({ estado: 'cancelado', resuelto_en: new Date().toISOString() })
+      .eq('referido_id', userId).eq('estado', 'pendiente');
+
     const { data: perfilPrevio } = await admin
       .from('profiles')
       .select('plan_periodo')
@@ -191,6 +202,48 @@ Deno.serve(async (req) => {
   console.log(`Evento ignorado: ${event} (${email}).`);
   return json({ ok: true, ignorado: event });
 });
+
+// Sistema de referidos (ver migración add_referidos): si esta usuaria
+// llegó con un código de referido guardado (user.referidoPor, capturado de
+// "?ref=" en app.js y migrado a la nube al crear la cuenta) y el plan es
+// anual, se registra un referido "pendiente" -- el cron referral-check
+// (7 días después) verifica que siga vigente y recién ahí otorga los 30
+// días a ambas cuentas. Nunca se otorga nada aquí mismo: eso evita
+// regalar Premium por una compra que se cancela/reembolsa en la primera
+// semana.
+async function registrarReferidoSiAplica(
+  admin: ReturnType<typeof createClient>,
+  referidoId: string,
+  periodo: string,
+  transactionId: string | null
+) {
+  try {
+    const { data: perfil } = await admin.from('profiles').select('state').eq('id', referidoId).maybeSingle();
+    const codigo = String(perfil?.state?.user?.referidoPor ?? '').trim().toUpperCase();
+    if (!codigo) return;
+
+    const { data: referente } = await admin.from('profiles').select('id').eq('referido_codigo', codigo).maybeSingle();
+    if (!referente || referente.id === referidoId) return; // código inválido o auto-referido
+
+    // unique(referido_id) en la tabla ya lo impide a nivel de base de datos,
+    // pero se verifica antes para no depender solo del error de conflicto.
+    const { data: existente } = await admin.from('referidos').select('id').eq('referido_id', referidoId).maybeSingle();
+    if (existente) return;
+
+    const { error } = await admin.from('referidos').insert({
+      referente_id: referente.id,
+      referido_id: referidoId,
+      codigo,
+      periodo,
+      fecha_compra: new Date().toISOString(),
+      hotmart_transaction: transactionId
+    });
+    if (error) console.error('No se pudo registrar el referido:', error.message);
+    else console.log(`Referido pendiente registrado: ${referente.id} -> ${referidoId} (código ${codigo}).`);
+  } catch (e) {
+    console.error('Error registrando referido:', e instanceof Error ? e.message : e);
+  }
+}
 
 async function registrarPago(
   admin: ReturnType<typeof createClient>,

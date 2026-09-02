@@ -2,7 +2,7 @@
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
-import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin } from '../supabase-client.js';
+import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido } from '../supabase-client.js';
 import { navigate, header, openModal, toast } from '../app.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
@@ -93,6 +93,45 @@ export function renderSettings(container) {
     account.appendChild(adminLink);
   });
   container.appendChild(account);
+
+  // Referidos: compartir el código propio. El bono (30 días de Premium
+  // para cada quien) solo se otorga si la persona referida activa el plan
+  // ANUAL y no lo cancela/reembolsa en los primeros 7 días — ver
+  // hotmart-webhook (registra el referido "pendiente") y el cron
+  // referral-check (lo confirma y otorga pasados los 7 días).
+  const referidos = document.createElement('div');
+  referidos.className = 'card';
+  referidos.innerHTML = `
+    <h2>🎁 Invita y gana Premium</h2>
+    <p class="small mb">Comparte tu código. Cuando alguien lo usa y activa el <strong>plan anual</strong> sin cancelarlo en los primeros 7 días, ambas ganan <strong>30 días de Premium</strong> gratis.</p>
+    <div class="row" style="gap:8px">
+      <div id="ref-codigo" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em;flex:1">Cargando…</div>
+      <button type="button" class="btn ghost sm" id="ref-copiar" disabled>Copiar</button>
+    </div>
+    <button type="button" class="btn accent full mt" id="ref-compartir" disabled>📤 Compartir mi código</button>`;
+  const refCodigoEl = referidos.querySelector('#ref-codigo');
+  const refCopiarBtn = referidos.querySelector('#ref-copiar');
+  const refCompartirBtn = referidos.querySelector('#ref-compartir');
+  miCodigoReferido().then((codigo) => {
+    refCodigoEl.textContent = codigo;
+    const link = `https://nutriruta.app/?ref=${codigo}`;
+    refCopiarBtn.disabled = false;
+    refCompartirBtn.disabled = false;
+    refCopiarBtn.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(link); toast('Enlace copiado 📋'); }
+      catch { toast('No se pudo copiar. Copia el código a mano: ' + codigo); }
+    });
+    refCompartirBtn.addEventListener('click', async () => {
+      const texto = `Estoy usando NutriRuta y quiero invitarte 🌿 Regístrate con mi código y cuando actives el plan anual ambas ganamos 30 días de Premium gratis: ${link}`;
+      if (navigator.share) {
+        try { await navigator.share({ title: 'Te invito a NutriRuta', text: texto }); } catch { /* canceló, no es un error */ }
+        return;
+      }
+      try { await navigator.clipboard.writeText(texto); toast('Mensaje copiado — pégalo donde quieras 📋'); }
+      catch { toast('No se pudo copiar automáticamente.'); }
+    });
+  }).catch(() => { refCodigoEl.textContent = 'No se pudo cargar tu código.'; });
+  container.appendChild(referidos);
 
   // Calificación (visible en vivo en nutriruta.com — vista pública, nunca
   // expone correo ni datos de la cuenta, solo calificación + mini reseña).
