@@ -110,6 +110,22 @@ export function avatarUrlFor(userId) {
   return data.publicUrl;
 }
 
+// --- Foto de comida (diario visual) ---
+// Un archivo por comida por día ("<uid>/<fecha>-<mealId>.jpg"): volver a
+// registrar la misma comida el mismo día sobreescribe la foto en vez de
+// acumular archivos huérfanos.
+export async function uploadComidaFoto(blob, mealId, dateStr) {
+  const session = await getSession();
+  if (!session) throw new Error('No autenticado');
+  const path = `${session.user.id}/${dateStr}-${mealId}.jpg`;
+  const { error } = await supabase.storage.from('comidas').upload(path, blob, {
+    contentType: 'image/jpeg', upsert: true
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from('comidas').getPublicUrl(path);
+  return `${data.publicUrl}?v=${Date.now()}`;
+}
+
 function toSquareJpeg(file, size) {
   return new Promise((resolve, reject) => {
     const img = new Image();

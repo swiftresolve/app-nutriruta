@@ -3,11 +3,13 @@
 // sin que la usuaria lo confirme o corrija). No cuenta contra la cuota de
 // Susana ni requiere Premium (ver supabase-client.js / log-meal).
 import { openModal, toast } from '../app.js';
-import { esc, guardarComidaRegistrada } from '../store.js';
-import { detectarAlimentosFoto, detectarAlimentosTexto } from '../supabase-client.js';
+import { esc, guardarComidaRegistrada, today } from '../store.js';
+import { detectarAlimentosFoto, detectarAlimentosTexto, uploadComidaFoto } from '../supabase-client.js';
 
 // Comprime y redimensiona la foto en el cliente antes de subirla (misma
 // idea que el avatar) — no recorta a cuadrado, una comida no siempre lo es.
+// Devuelve tanto el base64 (para que la IA identifique alimentos) como el
+// Blob (para guardarla de verdad en el diario visual).
 function toJpegBase64(file, maxDim = 1000) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -20,7 +22,9 @@ function toJpegBase64(file, maxDim = 1000) {
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
       URL.revokeObjectURL(img.src);
-      resolve({ base64: dataUrl.split(',')[1], mediaType: 'image/jpeg', previewUrl: dataUrl });
+      canvas.toBlob((blob) => {
+        resolve({ base64: dataUrl.split(',')[1], mediaType: 'image/jpeg', previewUrl: dataUrl, blob });
+      }, 'image/jpeg', 0.82);
     };
     img.onerror = () => reject(new Error('Imagen inválida.'));
     img.src = URL.createObjectURL(file);
@@ -38,6 +42,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
   openModal((modal, closeFn) => {
     let alimentos = [];
     let fuente = null;
+    let fotoBlob = null;
 
     function pantallaElegir() {
       modal.innerHTML = `
@@ -57,7 +62,8 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
         e.target.value = '';
         if (!file) return;
         try {
-          const { base64, mediaType, previewUrl } = await toJpegBase64(file);
+          const { base64, mediaType, previewUrl, blob } = await toJpegBase64(file);
+          fotoBlob = blob;
           pantallaAnalizando(previewUrl);
           const detectados = await detectarAlimentosFoto(base64, mediaType);
           fuente = 'foto';
@@ -171,8 +177,19 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           render();
         }
 
-        modal.querySelector('#ml-guardar')?.addEventListener('click', () => {
-          guardarComidaRegistrada(mealId, alimentos, fuente);
+        modal.querySelector('#ml-guardar')?.addEventListener('click', async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true;
+          let fotoUrl = null;
+          if (fotoBlob) {
+            try {
+              fotoUrl = await uploadComidaFoto(fotoBlob, mealId, today());
+            } catch {
+              // La foto es un plus del diario visual, no un requisito para
+              // registrar la comida — si falla la subida, se guarda igual.
+            }
+          }
+          guardarComidaRegistrada(mealId, alimentos, fuente, today(), fotoUrl);
           toast('¡Comida registrada! 🌿');
           closeFn();
           onSaved?.();

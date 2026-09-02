@@ -351,11 +351,32 @@ export function comidaRegistrada(mealId, dateStr = today()) {
   return state.comidasRegistradas[claveComida(mealId, dateStr)] || null;
 }
 
-export function guardarComidaRegistrada(mealId, alimentos, fuente, dateStr = today()) {
+export function guardarComidaRegistrada(mealId, alimentos, fuente, dateStr = today(), fotoUrl = null) {
   const clave = claveComida(mealId, dateStr);
   const registro = { alimentos, fuente, hora: new Date().toISOString() };
+  if (fotoUrl) registro.fotoUrl = fotoUrl;
   setState({ comidasRegistradas: { ...state.comidasRegistradas, [clave]: registro } });
   return registro;
+}
+
+// Registros de los últimos `dias` días con foto, agrupados por fecha y
+// ordenados del más reciente al más antiguo — lo que alimenta "Mi Diario".
+export function diasConDiario(dias = 14) {
+  const hoy = new Date(`${today()}T00:00:00`);
+  const fechas = [];
+  for (let i = 0; i < dias; i++) {
+    const d = new Date(hoy);
+    d.setDate(d.getDate() - i);
+    fechas.push(d.toISOString().slice(0, 10));
+  }
+  return fechas
+    .map((fecha) => {
+      const registros = Object.entries(state.comidasRegistradas)
+        .filter(([clave, r]) => clave.startsWith(`${fecha}|`) && r.fotoUrl)
+        .map(([clave, r]) => ({ mealId: clave.split('|')[1], ...r }));
+      return { fecha, registros };
+    })
+    .filter((dia) => dia.registros.length > 0);
 }
 
 // --- Racha: un día cuenta si se marcan al menos 3 hábitos ---

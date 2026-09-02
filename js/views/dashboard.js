@@ -282,6 +282,11 @@ export function renderDashboard(container) {
   weekBtn.textContent = '📅 Ver la semana';
   weekBtn.addEventListener('click', () => navigate('weekMenu'));
   menuActions.appendChild(weekBtn);
+  const diaryBtn = document.createElement('button');
+  diaryBtn.className = 'btn ghost sm';
+  diaryBtn.textContent = '📔 Mi Diario';
+  diaryBtn.addEventListener('click', () => navigate('diary'));
+  menuActions.appendChild(diaryBtn);
   menuCard.appendChild(menuActions);
 
   // --- Botón SOS ---
