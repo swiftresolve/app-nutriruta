@@ -53,6 +53,13 @@ export function renderAssistant(container) {
     <button class="btn accent" id="chatSend" aria-label="Enviar">➤</button>`;
   container.appendChild(inputRow);
 
+  // inputRow es position:fixed (ver styles.css) -- queda fuera del flujo
+  // normal, así que sin este espaciador el último mensaje del chat
+  // quedaría tapado detrás de él.
+  const spacer = document.createElement('div');
+  spacer.className = 'chat-input-spacer';
+  container.appendChild(spacer);
+
   const log = chatCard.querySelector('#chatLog');
   const quotaEl = chatHeader.querySelector('#chatQuota');
   const input = inputRow.querySelector('#chatInput');
