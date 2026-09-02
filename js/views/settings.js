@@ -1,5 +1,5 @@
 // Ajustes: cuenta, perfiles, exclusiones, quiz, datos y sección legal.
-import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, DEFAULT_HORA_COMIDAS } from '../store.js';
+import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
 import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin } from '../supabase-client.js';
@@ -352,6 +352,31 @@ export function renderSettings(container) {
     });
   });
   container.appendChild(horarios);
+
+  // Tema: claro/oscuro/sistema. Se aplica al instante (setTema toca
+  // document.documentElement), sin recargar la página.
+  const temaCard = document.createElement('div');
+  temaCard.className = 'card';
+  const TEMAS = [
+    { id: 'sistema', label: '📱 Sistema', desc: 'Sigue el ajuste de tu celular.' },
+    { id: 'claro', label: '☀️ Claro', desc: 'Siempre fondo claro.' },
+    { id: 'oscuro', label: '🌙 Oscuro', desc: 'Siempre fondo oscuro.' }
+  ];
+  temaCard.innerHTML = `<h2>🎨 Tema</h2><div class="chips mt"></div>`;
+  const temaChips = temaCard.querySelector('.chips');
+  const temaActual = getTema();
+  for (const t of TEMAS) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip' + (temaActual === t.id ? ' selected' : '');
+    chip.innerHTML = `${esc(t.label)}<br><span class="small" style="font-weight:400">${esc(t.desc)}</span>`;
+    chip.addEventListener('click', () => {
+      setTema(t.id);
+      navigate('settings');
+    });
+    temaChips.appendChild(chip);
+  }
+  container.appendChild(temaCard);
 
   // Tono de SuSana: cómo te habla, no qué te dice — nunca rompe la regla
   // de no usar culpa (ver ai-assistant), solo cambia el estilo.

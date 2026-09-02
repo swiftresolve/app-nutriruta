@@ -20,6 +20,41 @@
   --nav-gap: 14px; /* separación de la nav flotante respecto al borde inferior */
 }
 
+/* ===== Tema oscuro =====
+   Se define UNA vez y se repite para los dos disparadores posibles:
+   - preferencia del sistema (@media), a menos que la usuaria haya
+     elegido explícitamente "Claro" ([data-theme="light"] gana siempre).
+   - elección explícita "Oscuro" en Ajustes ([data-theme="dark"]).
+   Solo se reescriben los tokens de superficie/texto (bg, card, ink,
+   ink-soft, los *-soft, shadow) -- los colores de marca (primary/accent/
+   green/yellow/red) se dejan igual porque ya tienen contraste suficiente
+   sobre fondo oscuro. Elementos con colores fijos por fuera de estas
+   variables (el "plato" de las recetas, los círculos del camino) quedan
+   pendientes de un ajuste visual propio más adelante -- se ven bien pero
+   no cambian de tono con el tema todavía. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --primary-soft: #163C35;
+    --secondary-soft: #1B2E3D;
+    --accent-soft: #3A2620;
+    --bg: #10201B;
+    --card: #17281F;
+    --ink: #EAF3EF;
+    --ink-soft: #92A9A0;
+    --shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+:root[data-theme="dark"] {
+  --primary-soft: #163C35;
+  --secondary-soft: #1B2E3D;
+  --accent-soft: #3A2620;
+  --bg: #10201B;
+  --card: #17281F;
+  --ink: #EAF3EF;
+  --ink-soft: #92A9A0;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.3);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { -webkit-text-size-adjust: 100%; }

@@ -107,6 +107,26 @@ export function resetState() {
   activeKey = KEY;
 }
 
+// --- Tema (claro/oscuro/sistema) ---
+// Preferencia del dispositivo/navegador, no un dato de salud: se guarda en
+// su propia llave de localStorage (no en el estado por cuenta) para que
+// funcione ANTES de iniciar sesión y no se borre con resetState()/logout.
+// El valor real ya se aplicó al cargar la página (ver theme-init.js, que
+// corre antes que este módulo para evitar el parpadeo) — esta función es
+// para cuando la usuaria lo CAMBIA en caliente desde Ajustes.
+const TEMA_KEY = 'nutriruta-tema';
+
+export function getTema() {
+  try { return localStorage.getItem(TEMA_KEY) || 'sistema'; } catch { return 'sistema'; }
+}
+
+export function setTema(tema) {
+  try { localStorage.setItem(TEMA_KEY, tema); } catch { /* localStorage bloqueado, sigue en memoria nomás */ }
+  if (tema === 'claro') document.documentElement.setAttribute('data-theme', 'light');
+  else if (tema === 'oscuro') document.documentElement.setAttribute('data-theme', 'dark');
+  else document.documentElement.removeAttribute('data-theme');
+}
+
 // ---------- Sincronización con la nube (Supabase, protegida por RLS) ----------
 let plan = { tipo: 'free', periodo: null, desde: null };
 let pushTimer = null;
