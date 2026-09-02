@@ -1,7 +1,7 @@
 // Recetario + lista de compras.
 import { getState, setState, isPremium } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
-import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria } from '../menu.js';
+import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, formatCantidad } from '../menu.js';
 import { header, navigate, toast } from '../app.js';
 import { openRecipe } from './dashboard.js';
 
@@ -160,9 +160,18 @@ export function renderPlanner(container, params = {}) {
   // Comparte la lista como texto plano (Web Share nativo si el dispositivo
   // lo soporta; si no, la copia al portapapeles) — nunca sube nada a un
   // servidor ni genera una imagen, solo texto.
-  async function compartirLista(grupos, tituloCard) {
+  // Cantidad real sumada (ej. "3 huevos") cuando existe; si no, la nota de
+  // en cuántos días aparece — usado tanto al pintar la fila como al armar
+  // el texto de "Compartir", para que digan siempre lo mismo.
+  function textoItem(it, esHoy) {
+    if (esHoy) return it.texto;
+    if (it.resto && it.cantidadTotal) return `${formatCantidad(it.cantidadTotal)} ${it.resto}`;
+    return `${it.texto} · ${it.count}× (${[...new Set(it.dias)].slice(0, 6).join(', ')})`;
+  }
+
+  async function compartirLista(grupos, tituloCard, esHoy) {
     const texto = grupos.map(({ categoria, items: itemsCat }) =>
-      `${CATEGORIA_EMOJI[categoria] || ''} ${categoria.toUpperCase()}\n${itemsCat.map((it) => `• ${it.texto}`).join('\n')}`
+      `${CATEGORIA_EMOJI[categoria] || ''} ${categoria.toUpperCase()}\n${itemsCat.map((it) => `• ${textoItem(it, esHoy)}`).join('\n')}`
     ).join('\n\n');
     const contenido = `${tituloCard.replace(/^🛒\s*/, '')}\n\n${texto}`;
     if (navigator.share) {
@@ -215,7 +224,7 @@ export function renderPlanner(container, params = {}) {
       const dias = rango === 'semana' ? 7 : 30;
       items = rangeShoppingList(dias);
       tituloCard = `🛒 Compras para ${rango === 'semana' ? 'esta semana' : 'este mes'}`;
-      sub = `Proyectada desde tu menú de los próximos ${dias} días. No sabemos cantidades exactas por receta, así que te mostramos en cuántos días aparece cada cosa — úsalo como guía de cuánto comprar.`;
+      sub = `Proyectada desde tu menú de los próximos ${dias} días, con la cantidad ya sumada cuando la conocemos. Para lo que no tiene una medida exacta (ej. "al gusto") te mostramos en cuántos días aparece, como guía.`;
     }
     card.innerHTML = `<h2>${tituloCard}</h2><p class="small mb">${sub}</p>`;
 
@@ -230,12 +239,25 @@ export function renderPlanner(container, params = {}) {
       card.appendChild(h);
       for (const it of itemsCat) {
         const row = document.createElement('div');
-        const done = !!compras[it.texto];
+        const claveGuardado = it.resto || it.texto;
+        const done = !!compras[claveGuardado];
         row.className = 'shop-item' + (done ? ' done' : '');
-        const extra = esHoy ? '' : ` <span class="muted small">· ${it.count}× (${[...new Set(it.dias)].slice(0, 6).join(', ')})</span>`;
-        row.innerHTML = `<input type="checkbox" ${done ? 'checked' : ''}><span>${it.texto}${extra}</span>`;
+        // Con cantidad real sumada (ej. "3 huevos") no hace falta el "×N
+        // días" -- el número YA es la cantidad a comprar. Sin cantidad
+        // reconocida (ej. "Canela al gusto"), se sigue mostrando en cuántos
+        // días aparece, como guía en su lugar.
+        let textoPrincipal = it.texto;
+        let extra = '';
+        if (!esHoy) {
+          if (it.resto && it.cantidadTotal) {
+            textoPrincipal = `${formatCantidad(it.cantidadTotal)} ${it.resto}`;
+          } else {
+            extra = ` <span class="muted small">· ${it.count}× (${[...new Set(it.dias)].slice(0, 6).join(', ')})</span>`;
+          }
+        }
+        row.innerHTML = `<input type="checkbox" ${done ? 'checked' : ''}><span>${textoPrincipal}${extra}</span>`;
         row.querySelector('input').addEventListener('change', (e) => {
-          setState({ compras: { ...getState().compras, [it.texto]: e.target.checked } });
+          setState({ compras: { ...getState().compras, [claveGuardado]: e.target.checked } });
           row.classList.toggle('done', e.target.checked);
         });
         card.appendChild(row);
@@ -246,7 +268,7 @@ export function renderPlanner(container, params = {}) {
       const shareBtn = document.createElement('button');
       shareBtn.className = 'btn ghost sm full mt';
       shareBtn.textContent = '📤 Compartir lista';
-      shareBtn.addEventListener('click', () => compartirLista(grupos, tituloCard));
+      shareBtn.addEventListener('click', () => compartirLista(grupos, tituloCard, esHoy));
       card.appendChild(shareBtn);
     }
     body.appendChild(card);

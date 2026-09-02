@@ -191,9 +191,14 @@ export function displayRecipe(recipe, exclusiones) {
 // Ingrediente a mostrar (aplica sustitución si el grupo está excluido).
 export function displayIngredient(ing, exclusiones) {
   if (ing.grupo && exclusiones.includes(ing.grupo) && ing.sub) {
-    return { texto: ing.sub, sustituido: true, original: ing.n };
+    return { texto: ing.sub, sustituido: true, original: ing.n, cantidad: null, resto: null };
   }
-  return { texto: ing.n, sustituido: false };
+  // cantidad/resto vienen de recipes.js (número + el texto sin ese número,
+  // ej. "1 taza de espinaca" -> cantidad:1, resto:"taza de espinaca") --
+  // permiten sumar cantidades reales en la lista de compras proyectada en
+  // vez de solo contar apariciones. No todos los ingredientes lo tienen
+  // (ej. "Canela al gusto" no tiene una cantidad real que sumar).
+  return { texto: ing.n, sustituido: false, cantidad: ing.cantidad ?? null, resto: ing.resto ?? null };
 }
 
 // Categoría de compra de un ingrediente — agrupación puramente visual para
@@ -272,9 +277,13 @@ function addDays(dateStr, n) {
 // Lista de compras proyectada a varios días: como el menú es determinístico
 // por fecha (misma semilla + overrides guardados), se puede calcular el menú
 // de cualquier día futuro sin que la usuaria tenga que "visitarlo" primero.
-// Como las recetas no tienen cantidades, no inventamos números — en vez de
-// eso mostramos en cuántos días/recetas aparece cada ingrediente, para que
-// la usuaria calcule el volumen con ese criterio real.
+// Cuando el ingrediente trae cantidad/resto reales (recipes.js), se suman
+// de verdad (ej. "2 huevos" + "1 huevo" -> "3 huevos"); si no los trae (ej.
+// "Canela al gusto"), no se inventa un número — se sigue mostrando en
+// cuántos días/recetas aparece, como antes.
+// Se agrupa por `resto` cuando existe (en vez de por el texto completo)
+// para que variantes con distinta cantidad del mismo ingrediente ("1 huevo"
+// vs "2 huevos") se fusionen en un solo renglón en vez de listarse aparte.
 export function rangeShoppingList(days, startDate = today()) {
   const { user } = getState();
   const map = new Map();
@@ -285,14 +294,21 @@ export function rangeShoppingList(days, startDate = today()) {
       if (!recipe) continue;
       for (const ing of recipe.ingredientes) {
         const d = displayIngredient(ing, user.exclusiones);
-        if (!map.has(d.texto)) map.set(d.texto, { texto: d.texto, count: 0, dias: [] });
-        const entry = map.get(d.texto);
+        const key = d.resto || d.texto;
+        if (!map.has(key)) map.set(key, { texto: d.texto, resto: d.resto, cantidadTotal: 0, count: 0, dias: [] });
+        const entry = map.get(key);
         entry.count += 1;
         entry.dias.push(weekday);
+        if (d.cantidad != null) entry.cantidadTotal += d.cantidad;
       }
     }
   }
   return [...map.values()].sort((a, b) => b.count - a.count);
+}
+
+// Formatea una cantidad sumada para mostrar ("3", "3.5", nunca "3.500000004").
+export function formatCantidad(n) {
+  return String(Math.round(n * 100) / 100);
 }
 
 // Snacks anti-ansiedad disponibles para el usuario.

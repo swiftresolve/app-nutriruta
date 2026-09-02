@@ -20,12 +20,12 @@ export const RECIPES = [
     descripcion: 'Proteína y verduras para empezar el día con glucosa estable.',
     tituloSub: { huevo: { nombre: 'Revuelto de tofu con espinaca y tomate', emoji: '🌱' } },
     ingredientes: [
-      { n: '2 huevos', grupo: 'huevo', sub: 'tofu firme revuelto (media taza)' },
-      { n: '1 taza de espinaca fresca' },
-      { n: '1 tomate pequeño en cubos' },
-      { n: '1 cdta de aceite de oliva' },
-      { n: '½ aguacate pequeño' },
-      { n: '1 rebanada de pan integral', grupo: 'gluten', sub: '3 cdas de avena sin gluten cocida' }
+      { n: '2 huevos', cantidad: 2, resto: 'huevos', grupo: 'huevo', sub: 'tofu firme revuelto (media taza)' },
+      { n: '1 taza de espinaca fresca', cantidad: 1, resto: 'taza de espinaca fresca' },
+      { n: '1 tomate pequeño en cubos', cantidad: 1, resto: 'tomate pequeño en cubos' },
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' },
+      { n: '½ aguacate pequeño', cantidad: 0.5, resto: 'aguacate pequeño' },
+      { n: '1 rebanada de pan integral', cantidad: 1, resto: 'rebanada de pan integral', grupo: 'gluten', sub: '3 cdas de avena sin gluten cocida' }
     ],
     pasos: [
       'Batir los huevos y mezclarlos con la espinaca y el tomate.',
@@ -40,10 +40,10 @@ export const RECIPES = [
     nombre: 'Avena nocturna con chía y fresas',
     descripcion: 'Fibra soluble y proteína: ideal para colesterol y glucosa.',
     ingredientes: [
-      { n: '4 cdas de avena integral', grupo: 'gluten', sub: 'avena certificada sin gluten' },
-      { n: '1 cda de semillas de chía' },
-      { n: '¾ taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'bebida de almendra o soya sin azúcar' },
-      { n: '5 fresas en trozos' },
+      { n: '4 cdas de avena integral', cantidad: 4, resto: 'cdas de avena integral', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '1 cda de semillas de chía', cantidad: 1, resto: 'cda de semillas de chía' },
+      { n: '¾ taza de yogur natural sin azúcar', cantidad: 0.75, resto: 'taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'bebida de almendra o soya sin azúcar' },
+      { n: '5 fresas en trozos', cantidad: 5, resto: 'fresas en trozos' },
       { n: 'Canela al gusto' }
     ],
     pasos: [
@@ -61,9 +61,9 @@ export const RECIPES = [
     descripcion: 'Grasa buena + proteína: saciedad sin picos de glucosa.',
     tituloSub: { huevo: { nombre: 'Tostada integral con aguacate y hummus', emoji: '🥑' } },
     ingredientes: [
-      { n: '1 rebanada de pan 100 % integral', grupo: 'gluten', sub: 'tortilla de maíz o pan sin gluten' },
-      { n: '½ aguacate' },
-      { n: '1 huevo cocido o pochado', grupo: 'huevo', sub: 'hummus (2 cdas)', subGrupo: 'legumbres' },
+      { n: '1 rebanada de pan 100 % integral', cantidad: 1, resto: 'rebanada de pan 100 % integral', grupo: 'gluten', sub: 'tortilla de maíz o pan sin gluten' },
+      { n: '½ aguacate', cantidad: 0.5, resto: 'aguacate' },
+      { n: '1 huevo cocido o pochado', cantidad: 1, resto: 'huevo cocido o pochado', grupo: 'huevo', sub: 'hummus (2 cdas)', subGrupo: 'legumbres' },
       { n: 'Semillas de linaza y limón al gusto' }
     ],
     pasos: [
@@ -80,11 +80,11 @@ export const RECIPES = [
     nombre: 'Batido verde con proteína',
     descripcion: 'Verduras y proteína en 5 minutos, sin azúcar añadida.',
     ingredientes: [
-      { n: '1 taza de espinaca' },
-      { n: '½ banano maduro' },
-      { n: '1 taza de bebida de almendra sin azúcar', grupo: 'frutos_secos', sub: 'bebida de avena o agua' },
-      { n: '2 cdas de yogur griego natural', grupo: 'lacteos', sub: 'tofu suave (¼ taza)', subGrupo: 'soya' },
-      { n: '1 cda de linaza molida' }
+      { n: '1 taza de espinaca', cantidad: 1, resto: 'taza de espinaca' },
+      { n: '½ banano maduro', cantidad: 0.5, resto: 'banano maduro' },
+      { n: '1 taza de bebida de almendra sin azúcar', cantidad: 1, resto: 'taza de bebida de almendra sin azúcar', grupo: 'frutos_secos', sub: 'bebida de avena o agua' },
+      { n: '2 cdas de yogur griego natural', cantidad: 2, resto: 'cdas de yogur griego natural', grupo: 'lacteos', sub: 'tofu suave (¼ taza)', subGrupo: 'soya' },
+      { n: '1 cda de linaza molida', cantidad: 1, resto: 'cda de linaza molida' }
     ],
     pasos: [
       'Licuar todos los ingredientes hasta que quede cremoso.',
@@ -100,10 +100,10 @@ export const RECIPES = [
     descripcion: 'Versión balanceada del clásico: maíz integral + proteína.',
     tituloSub: { huevo: { nombre: 'Arepa de maíz con frijoles y verduras', emoji: '🫓' } },
     ingredientes: [
-      { n: '1 arepa pequeña de maíz (sin queso)' },
-      { n: '1 huevo revuelto', grupo: 'huevo', sub: 'frijoles negros (media taza)', subGrupo: 'legumbres' },
+      { n: '1 arepa pequeña de maíz (sin queso)', cantidad: 1, resto: 'arepa pequeña de maíz (sin queso)' },
+      { n: '1 huevo revuelto', cantidad: 1, resto: 'huevo revuelto', grupo: 'huevo', sub: 'frijoles negros (media taza)', subGrupo: 'legumbres' },
       { n: 'Tomate y cilantro picados' },
-      { n: '1 cdta de aceite de oliva' }
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' }
     ],
     pasos: [
       'Asar la arepa a la plancha.',
@@ -119,10 +119,10 @@ export const RECIPES = [
     nombre: 'Bowl de yogur, nueces y arándanos',
     descripcion: 'Fermentados + fibra para la microbiota.',
     ingredientes: [
-      { n: '1 taza de yogur natural o kéfir sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
-      { n: '8 nueces', grupo: 'frutos_secos', sub: '1 cda de semillas de girasol' },
-      { n: '½ taza de arándanos o mora' },
-      { n: '1 cda de avena', grupo: 'gluten', sub: 'quinoa inflada' }
+      { n: '1 taza de yogur natural o kéfir sin azúcar', cantidad: 1, resto: 'taza de yogur natural o kéfir sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
+      { n: '8 nueces', cantidad: 8, resto: 'nueces', grupo: 'frutos_secos', sub: '1 cda de semillas de girasol' },
+      { n: '½ taza de arándanos o mora', cantidad: 0.5, resto: 'taza de arándanos o mora' },
+      { n: '1 cda de avena', cantidad: 1, resto: 'cda de avena', grupo: 'gluten', sub: 'quinoa inflada' }
     ],
     pasos: [
       'Servir el yogur en un bowl.',
@@ -137,9 +137,9 @@ export const RECIPES = [
     nombre: 'Panqueques de avena y banano',
     descripcion: 'Dulce natural sin azúcar añadida ni harina blanca.',
     ingredientes: [
-      { n: '½ taza de avena molida', grupo: 'gluten', sub: 'avena sin gluten molida' },
-      { n: '1 banano maduro' },
-      { n: '1 huevo', grupo: 'huevo', sub: '1 cda de linaza + 3 cdas de agua (huevo de linaza)' },
+      { n: '½ taza de avena molida', cantidad: 0.5, resto: 'taza de avena molida', grupo: 'gluten', sub: 'avena sin gluten molida' },
+      { n: '1 banano maduro', cantidad: 1, resto: 'banano maduro' },
+      { n: '1 huevo', cantidad: 1, resto: 'huevo', grupo: 'huevo', sub: '1 cda de linaza + 3 cdas de agua (huevo de linaza)' },
       { n: 'Canela y 1 cdta de aceite de coco' }
     ],
     pasos: [
@@ -160,8 +160,8 @@ export const RECIPES = [
     descripcion: 'El snack anti-antojo clásico: fibra + grasa buena.',
     tituloSub: { frutos_secos: { nombre: 'Manzana con semillas de calabaza', emoji: '🍎' } },
     ingredientes: [
-      { n: '1 manzana con piel' },
-      { n: '12 almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de calabaza' }
+      { n: '1 manzana con piel', cantidad: 1, resto: 'manzana con piel' },
+      { n: '12 almendras', cantidad: 12, resto: 'almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de calabaza' }
     ],
     pasos: [
       'Lavar y cortar la manzana en rebanadas.',
@@ -176,8 +176,8 @@ export const RECIPES = [
     descripcion: 'Proteína vegetal y crunch para media mañana.',
     tituloSub: { legumbres: { nombre: 'Guacamole con bastones de zanahoria', emoji: '🥑' } },
     ingredientes: [
-      { n: '3 cdas de hummus de garbanzo', grupo: 'legumbres', sub: 'guacamole natural' },
-      { n: '1 zanahoria en bastones' },
+      { n: '3 cdas de hummus de garbanzo', cantidad: 3, resto: 'cdas de hummus de garbanzo', grupo: 'legumbres', sub: 'guacamole natural' },
+      { n: '1 zanahoria en bastones', cantidad: 1, resto: 'zanahoria en bastones' },
       { n: 'Pepino en bastones (opcional)' }
     ],
     pasos: ['Cortar los vegetales.', 'Untar en el hummus y disfrutar despacio.'],
@@ -190,8 +190,8 @@ export const RECIPES = [
     nombre: 'Pera + yogur natural',
     descripcion: 'Fibra soluble y probióticos.',
     ingredientes: [
-      { n: '1 pera con piel' },
-      { n: '½ taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur vegetal sin azúcar' }
+      { n: '1 pera con piel', cantidad: 1, resto: 'pera con piel' },
+      { n: '½ taza de yogur natural sin azúcar', cantidad: 0.5, resto: 'taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur vegetal sin azúcar' }
     ],
     pasos: ['Picar la pera y mezclar con el yogur.', 'Agregar canela si se desea.'],
     apto: ['colesterol', 'colon_irritable', 'prediabetes', 'migranas', 'estrenimiento'],
@@ -204,8 +204,8 @@ export const RECIPES = [
     descripcion: 'Snack de pura proteína para cortar el antojo salado.',
     tituloSub: { huevo: { nombre: 'Garbanzos tostados con tomates cherry', emoji: '🫘' } },
     ingredientes: [
-      { n: '1 huevo duro', grupo: 'huevo', sub: 'un puñado de garbanzos tostados', subGrupo: 'legumbres' },
-      { n: '6 tomates cherry' },
+      { n: '1 huevo duro', cantidad: 1, resto: 'huevo duro', grupo: 'huevo', sub: 'un puñado de garbanzos tostados', subGrupo: 'legumbres' },
+      { n: '6 tomates cherry', cantidad: 6, resto: 'tomates cherry' },
       { n: 'Sal marina y orégano' }
     ],
     pasos: ['Pelar el huevo y partirlo.', 'Acompañar con los tomates.'],
@@ -218,8 +218,8 @@ export const RECIPES = [
     descripcion: 'Vitamina C y omega vegetal; la fruta entera, nunca en jugo.',
     tituloSub: { frutos_secos: { nombre: 'Naranja entera + semillas de girasol', emoji: '🍊' } },
     ingredientes: [
-      { n: '1 naranja en gajos' },
-      { n: '6 nueces', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
+      { n: '1 naranja en gajos', cantidad: 1, resto: 'naranja en gajos' },
+      { n: '6 nueces', cantidad: 6, resto: 'nueces', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
     ],
     pasos: ['Pelar la naranja y comerla en gajos con las nueces.'],
     apto: ['colesterol', 'higado_graso', 'colon_irritable', 'migranas', 'prediabetes', 'estrenimiento'],
@@ -230,8 +230,8 @@ export const RECIPES = [
     nombre: 'Kéfir con chía',
     descripcion: 'Doble apoyo a la microbiota.',
     ingredientes: [
-      { n: '1 vaso de kéfir sin azúcar', grupo: 'lacteos', sub: 'kéfir de agua o yogur vegetal' },
-      { n: '1 cda de semillas de chía' }
+      { n: '1 vaso de kéfir sin azúcar', cantidad: 1, resto: 'vaso de kéfir sin azúcar', grupo: 'lacteos', sub: 'kéfir de agua o yogur vegetal' },
+      { n: '1 cda de semillas de chía', cantidad: 1, resto: 'cda de semillas de chía' }
     ],
     pasos: ['Mezclar y dejar reposar 10 minutos antes de tomar.'],
     apto: ['candidiasis', 'colon_irritable', 'resistencia_insulina', 'prediabetes', 'estrenimiento'],
@@ -245,8 +245,8 @@ export const RECIPES = [
     descripcion: 'Plato modelo: ½ verduras, ¼ integral, ¼ proteína + grasa buena.',
     tituloSub: { pescado: { nombre: 'Pollo a la plancha con quinoa y ensalada', emoji: '🍗' } },
     ingredientes: [
-      { n: '1 filete de salmón o trucha', grupo: 'pescado', sub: 'pechuga de pollo a la plancha' },
-      { n: '¾ taza de quinoa cocida' },
+      { n: '1 filete de salmón o trucha', cantidad: 1, resto: 'filete de salmón o trucha', grupo: 'pescado', sub: 'pechuga de pollo a la plancha' },
+      { n: '¾ taza de quinoa cocida', cantidad: 0.75, resto: 'taza de quinoa cocida' },
       { n: 'Ensalada de lechuga, pepino, zanahoria y brócoli' },
       { n: 'Aderezo: aceite de oliva + limón' }
     ],
@@ -264,8 +264,8 @@ export const RECIPES = [
     descripcion: 'Fibra soluble + proteína vegetal, el combo cardioprotector.',
     tituloSub: { legumbres: { nombre: 'Pollo guisado con arroz integral', emoji: '🍗' } },
     ingredientes: [
-      { n: '1 taza de lentejas guisadas con tomate y zanahoria', grupo: 'legumbres', sub: 'pollo desmechado guisado' },
-      { n: '½ taza de arroz integral' },
+      { n: '1 taza de lentejas guisadas con tomate y zanahoria', cantidad: 1, resto: 'taza de lentejas guisadas con tomate y zanahoria', grupo: 'legumbres', sub: 'pollo desmechado guisado' },
+      { n: '½ taza de arroz integral', cantidad: 0.5, resto: 'taza de arroz integral' },
       { n: 'Ensalada verde con aceite de oliva' }
     ],
     pasos: [
@@ -281,10 +281,10 @@ export const RECIPES = [
     nombre: 'Pollo al horno con batata y brócoli',
     descripcion: 'Carbohidrato de bajo índice glucémico + proteína magra.',
     ingredientes: [
-      { n: '1 pechuga de pollo al horno con especias' },
-      { n: '1 batata mediana asada' },
-      { n: '1 taza de brócoli al vapor' },
-      { n: '1 cdta de aceite de oliva' }
+      { n: '1 pechuga de pollo al horno con especias', cantidad: 1, resto: 'pechuga de pollo al horno con especias' },
+      { n: '1 batata mediana asada', cantidad: 1, resto: 'batata mediana asada' },
+      { n: '1 taza de brócoli al vapor', cantidad: 1, resto: 'taza de brócoli al vapor' },
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' }
     ],
     pasos: [
       'Hornear el pollo y la batata con especias 25–30 minutos.',
@@ -301,10 +301,10 @@ export const RECIPES = [
     descripcion: 'Inspirado en la dieta mediterránea, la más estudiada para prevenir diabetes.',
     tituloSub: { legumbres: { nombre: 'Bowl mediterráneo de pollo', emoji: '🥙' } },
     ingredientes: [
-      { n: '1 taza de garbanzos cocidos', grupo: 'legumbres', sub: 'pollo en cubos salteado' },
+      { n: '1 taza de garbanzos cocidos', cantidad: 1, resto: 'taza de garbanzos cocidos', grupo: 'legumbres', sub: 'pollo en cubos salteado' },
       { n: 'Tomate, pepino y pimentón picados' },
       { n: 'Aceitunas y aceite de oliva' },
-      { n: '½ taza de quinoa o arroz integral' },
+      { n: '½ taza de quinoa o arroz integral', cantidad: 0.5, resto: 'taza de quinoa o arroz integral' },
       { n: 'Limón y orégano' }
     ],
     pasos: [
@@ -321,9 +321,9 @@ export const RECIPES = [
     descripcion: 'Pescado blanco suave, apto para digestiones sensibles.',
     tituloSub: { pescado: { nombre: 'Pavo al horno con verduras asadas', emoji: '🍗' } },
     ingredientes: [
-      { n: '1 filete de tilapia o pescado blanco', grupo: 'pescado', sub: 'pechuga de pavo' },
+      { n: '1 filete de tilapia o pescado blanco', cantidad: 1, resto: 'filete de tilapia o pescado blanco', grupo: 'pescado', sub: 'pechuga de pavo' },
       { n: 'Calabacín, zanahoria y pimentón asados' },
-      { n: '½ taza de arroz integral', },
+      { n: '½ taza de arroz integral', cantidad: 0.5, resto: 'taza de arroz integral', },
       { n: 'Limón, eneldo y aceite de oliva' }
     ],
     pasos: [
@@ -340,9 +340,9 @@ export const RECIPES = [
     descripcion: 'Opción 100 % vegetal alta en proteína.',
     tituloSub: { soya: { nombre: 'Salteado de pollo con verduras y arroz integral', emoji: '🍗' } },
     ingredientes: [
-      { n: '150 g de tofu firme en cubos', grupo: 'soya', sub: 'pollo o huevo revuelto' },
+      { n: '150 g de tofu firme en cubos', cantidad: 150, resto: 'g de tofu firme en cubos', grupo: 'soya', sub: 'pollo o huevo revuelto' },
       { n: 'Brócoli, zanahoria y habichuelas' },
-      { n: '½ taza de arroz integral' },
+      { n: '½ taza de arroz integral', cantidad: 0.5, resto: 'taza de arroz integral' },
       { n: 'Jengibre y ajonjolí (sin salsas azucaradas)' }
     ],
     pasos: [
@@ -361,7 +361,7 @@ export const RECIPES = [
     ingredientes: [
       { n: 'Caldo natural de pollo (sin cubos industriales)' },
       { n: 'Zanahoria, calabacín, apio y ahuyama' },
-      { n: '1 taza de pollo desmechado' },
+      { n: '1 taza de pollo desmechado', cantidad: 1, resto: 'taza de pollo desmechado' },
       { n: 'Cilantro fresco' }
     ],
     pasos: [
@@ -377,9 +377,9 @@ export const RECIPES = [
     descripcion: 'Rápida, alta en omega 3 y sin cocción.',
     tituloSub: { pescado: { nombre: 'Ensalada completa de huevo y aguacate', emoji: '🥗' } },
     ingredientes: [
-      { n: '1 lata de atún en agua', grupo: 'pescado', sub: 'huevo duro picado (2 unidades)', subGrupo: 'huevo' },
+      { n: '1 lata de atún en agua', cantidad: 1, resto: 'lata de atún en agua', grupo: 'pescado', sub: 'huevo duro picado (2 unidades)', subGrupo: 'huevo' },
       { n: 'Lechuga, tomate, pepino y maíz tierno' },
-      { n: '½ aguacate' },
+      { n: '½ aguacate', cantidad: 0.5, resto: 'aguacate' },
       { n: 'Aceite de oliva y limón' }
     ],
     pasos: [
@@ -396,8 +396,8 @@ export const RECIPES = [
     nombre: 'Yogur natural con semillas de chía',
     descripcion: 'El snack de las 4 pm que estabiliza el resto del día.',
     ingredientes: [
-      { n: '¾ taza de yogur natural descremado sin azúcar', grupo: 'lacteos', sub: 'yogur vegetal sin azúcar' },
-      { n: '1 cda de semillas de chía' },
+      { n: '¾ taza de yogur natural descremado sin azúcar', cantidad: 0.75, resto: 'taza de yogur natural descremado sin azúcar', grupo: 'lacteos', sub: 'yogur vegetal sin azúcar' },
+      { n: '1 cda de semillas de chía', cantidad: 1, resto: 'cda de semillas de chía' },
       { n: 'Canela (opcional)' }
     ],
     pasos: ['Mezclar el yogur con la chía.', 'Dejar reposar 5 minutos y comer despacio.'],
@@ -410,9 +410,9 @@ export const RECIPES = [
     descripcion: 'Para el antojo de dulce de la tarde, sin azúcar.',
     tituloSub: { frutos_secos: { nombre: 'Infusión + semillas de calabaza y cacao amargo', emoji: '🍵' } },
     ingredientes: [
-      { n: '1 infusión de manzanilla o canela' },
-      { n: '10 almendras', grupo: 'frutos_secos', sub: 'semillas de calabaza tostadas' },
-      { n: '2 cuadritos de chocolate ≥ 85 % cacao' }
+      { n: '1 infusión de manzanilla o canela', cantidad: 1, resto: 'infusión de manzanilla o canela' },
+      { n: '10 almendras', cantidad: 10, resto: 'almendras', grupo: 'frutos_secos', sub: 'semillas de calabaza tostadas' },
+      { n: '2 cuadritos de chocolate ≥ 85 % cacao', cantidad: 2, resto: 'cuadritos de chocolate ≥ 85 % cacao' }
     ],
     pasos: ['Preparar la infusión.', 'Acompañar con las almendras y el chocolate amargo, saboreando despacio.'],
     apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'migranas'],
@@ -425,8 +425,8 @@ export const RECIPES = [
     descripcion: 'Crunch + grasa buena = antojo controlado.',
     tituloSub: { frutos_secos: { nombre: 'Apio con hummus', emoji: '🥬' } },
     ingredientes: [
-      { n: '2 tallos de apio en bastones' },
-      { n: '1 cda de crema de maní 100 % (sin azúcar)', grupo: 'frutos_secos', sub: 'hummus', subGrupo: 'legumbres' }
+      { n: '2 tallos de apio en bastones', cantidad: 2, resto: 'tallos de apio en bastones' },
+      { n: '1 cda de crema de maní 100 % (sin azúcar)', cantidad: 1, resto: 'cda de crema de maní 100 % (sin azúcar)', grupo: 'frutos_secos', sub: 'hummus', subGrupo: 'legumbres' }
     ],
     pasos: ['Untar el apio en la crema de maní y disfrutar.'],
     apto: ['resistencia_insulina', 'prediabetes', 'colesterol', 'candidiasis'],
@@ -439,8 +439,8 @@ export const RECIPES = [
     descripcion: 'Dulce natural + proteína láctea ligera.',
     tituloSub: { lacteos: { nombre: 'Fresas con nueces', emoji: '🍓' } },
     ingredientes: [
-      { n: '1 taza de fresas' },
-      { n: '1 tajada de queso fresco bajo en grasa o cuajada', grupo: 'lacteos', sub: 'un puñado de nueces', subGrupo: 'frutos_secos' }
+      { n: '1 taza de fresas', cantidad: 1, resto: 'taza de fresas' },
+      { n: '1 tajada de queso fresco bajo en grasa o cuajada', cantidad: 1, resto: 'tajada de queso fresco bajo en grasa o cuajada', grupo: 'lacteos', sub: 'un puñado de nueces', subGrupo: 'frutos_secos' }
     ],
     pasos: ['Lavar las fresas y servir con el queso fresco.'],
     apto: ['resistencia_insulina', 'prediabetes', 'migranas', 'higado_graso'],
@@ -453,9 +453,9 @@ export const RECIPES = [
     descripcion: 'Snack crocante que reemplaza los paquetes.',
     tituloSub: { legumbres: { nombre: 'Semillas de calabaza tostadas especiadas', emoji: '🎃' } },
     ingredientes: [
-      { n: '1 taza de garbanzos cocidos', grupo: 'legumbres', sub: 'semillas de calabaza tostadas' },
+      { n: '1 taza de garbanzos cocidos', cantidad: 1, resto: 'taza de garbanzos cocidos', grupo: 'legumbres', sub: 'semillas de calabaza tostadas' },
       { n: 'Pimentón en polvo, comino y sal marina' },
-      { n: '1 cdta de aceite de oliva' }
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' }
     ],
     pasos: [
       'Secar los garbanzos y mezclarlos con el aceite y las especias.',
@@ -470,7 +470,7 @@ export const RECIPES = [
     nombre: 'Agua con gas, limón y hierbabuena',
     descripcion: 'El ritual que reemplaza la gaseosa o la cerveza.',
     ingredientes: [
-      { n: '1 vaso de agua con gas' },
+      { n: '1 vaso de agua con gas', cantidad: 1, resto: 'vaso de agua con gas' },
       { n: 'Rodajas de limón' },
       { n: 'Hojas de hierbabuena y hielo' }
     ],
@@ -485,9 +485,9 @@ export const RECIPES = [
     nombre: 'Crema de ahuyama con pollo a la plancha',
     descripcion: 'Cena ligera y caliente, sin crema de leche.',
     ingredientes: [
-      { n: '2 tazas de ahuyama (calabaza) cocida' },
+      { n: '2 tazas de ahuyama (calabaza) cocida', cantidad: 2, resto: 'tazas de ahuyama (calabaza) cocida' },
       { n: 'Caldo natural y especias (licuar, sin crema de leche)' },
-      { n: '1 pechuga pequeña de pollo a la plancha' },
+      { n: '1 pechuga pequeña de pollo a la plancha', cantidad: 1, resto: 'pechuga pequeña de pollo a la plancha' },
       { n: 'Ensalada de hojas verdes' }
     ],
     pasos: [
@@ -504,10 +504,10 @@ export const RECIPES = [
     descripcion: 'Cena vegetal alta en proteína.',
     tituloSub: { huevo: { nombre: 'Tortilla de garbanzo y calabacín', emoji: '🥒' } },
     ingredientes: [
-      { n: '2 huevos', grupo: 'huevo', sub: 'garbanzos en harina (tortilla de garbanzo)', subGrupo: 'legumbres' },
-      { n: '1 calabacín rallado' },
-      { n: '¼ de cebolla (omitir en colon sensible)' },
-      { n: '1 cdta de aceite de oliva' }
+      { n: '2 huevos', cantidad: 2, resto: 'huevos', grupo: 'huevo', sub: 'garbanzos en harina (tortilla de garbanzo)', subGrupo: 'legumbres' },
+      { n: '1 calabacín rallado', cantidad: 1, resto: 'calabacín rallado' },
+      { n: '¼ de cebolla (omitir en colon sensible)', cantidad: 0.25, resto: 'de cebolla (omitir en colon sensible)' },
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' }
     ],
     pasos: [
       'Mezclar los huevos con el calabacín escurrido.',
@@ -523,8 +523,8 @@ export const RECIPES = [
     descripcion: 'Baja carga glucémica y crucíferas para el hígado.',
     tituloSub: { pescado: { nombre: 'Pavo a la plancha con puré de coliflor', emoji: '🍗' } },
     ingredientes: [
-      { n: '1 filete de pescado blanco al vapor', grupo: 'pescado', sub: 'pechuga de pavo a la plancha' },
-      { n: '2 tazas de coliflor cocida (hacer puré con aceite de oliva)' },
+      { n: '1 filete de pescado blanco al vapor', cantidad: 1, resto: 'filete de pescado blanco al vapor', grupo: 'pescado', sub: 'pechuga de pavo a la plancha' },
+      { n: '2 tazas de coliflor cocida (hacer puré con aceite de oliva)', cantidad: 2, resto: 'tazas de coliflor cocida (hacer puré con aceite de oliva)' },
       { n: 'Espinacas salteadas' }
     ],
     pasos: [
@@ -541,7 +541,7 @@ export const RECIPES = [
     nombre: 'Ensalada tibia de pollo y verduras asadas',
     descripcion: 'Completa pero liviana para la noche.',
     ingredientes: [
-      { n: '1 taza de pollo en tiras a la plancha' },
+      { n: '1 taza de pollo en tiras a la plancha', cantidad: 1, resto: 'taza de pollo en tiras a la plancha' },
       { n: 'Calabacín, pimentón y champiñones asados' },
       { n: 'Hojas verdes y ¼ de aguacate' },
       { n: 'Aceite de oliva y vinagre (omitir vinagre en candidiasis)' }
@@ -559,7 +559,7 @@ export const RECIPES = [
     descripcion: 'Fibra soluble en versión suave para la noche.',
     tituloSub: { legumbres: { nombre: 'Sopa ligera de pollo y zanahoria', emoji: '🍜' } },
     ingredientes: [
-      { n: '¾ taza de lentejas rojas', grupo: 'legumbres', sub: 'pollo desmechado con verduras' },
+      { n: '¾ taza de lentejas rojas', cantidad: 0.75, resto: 'taza de lentejas rojas', grupo: 'legumbres', sub: 'pollo desmechado con verduras' },
       { n: 'Zanahoria y apio en cubos' },
       { n: 'Comino y cúrcuma' },
       { n: 'Caldo natural' }
@@ -577,10 +577,10 @@ export const RECIPES = [
     nombre: 'Tacos de lechuga con pavo molido',
     descripcion: 'Antojo de comida rápida en versión saludable.',
     ingredientes: [
-      { n: '150 g de pavo o pollo molido salteado con especias' },
+      { n: '150 g de pavo o pollo molido salteado con especias', cantidad: 150, resto: 'g de pavo o pollo molido salteado con especias' },
       { n: 'Hojas grandes de lechuga (como tortilla)' },
       { n: 'Tomate, cilantro y limón' },
-      { n: '¼ de aguacate' }
+      { n: '¼ de aguacate', cantidad: 0.25, resto: 'de aguacate' }
     ],
     pasos: [
       'Saltear el pavo con especias mexicanas naturales.',
@@ -596,10 +596,10 @@ export const RECIPES = [
     descripcion: 'Cena exprés en 10 minutos.',
     tituloSub: { huevo: { nombre: 'Revuelto de champiñones, espinaca y tofu', emoji: '🍄' } },
     ingredientes: [
-      { n: '2 huevos', grupo: 'huevo', sub: 'tofu firme desmenuzado', subGrupo: 'soya' },
-      { n: '1 taza de champiñones laminados' },
-      { n: '1 taza de espinaca' },
-      { n: '1 cdta de aceite de oliva' }
+      { n: '2 huevos', cantidad: 2, resto: 'huevos', grupo: 'huevo', sub: 'tofu firme desmenuzado', subGrupo: 'soya' },
+      { n: '1 taza de champiñones laminados', cantidad: 1, resto: 'taza de champiñones laminados' },
+      { n: '1 taza de espinaca', cantidad: 1, resto: 'taza de espinaca' },
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' }
     ],
     pasos: [
       'Saltear los champiñones, agregar la espinaca.',
@@ -617,9 +617,9 @@ export const RECIPES = [
     descripcion: 'Proteína completa + antioxidantes, sin picos de glucosa.',
     tituloSub: { lacteos: { nombre: 'Yogur de coco con semillas y arándanos', emoji: '🥥' } },
     ingredientes: [
-      { n: '1 taza de yogur griego natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
-      { n: '1 cda de semillas de chía o linaza molida' },
-      { n: '½ taza de arándanos o fresas' },
+      { n: '1 taza de yogur griego natural sin azúcar', cantidad: 1, resto: 'taza de yogur griego natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
+      { n: '1 cda de semillas de chía o linaza molida', cantidad: 1, resto: 'cda de semillas de chía o linaza molida' },
+      { n: '½ taza de arándanos o fresas', cantidad: 0.5, resto: 'taza de arándanos o fresas' },
       { n: 'Canela al gusto' }
     ],
     pasos: [
@@ -637,10 +637,10 @@ export const RECIPES = [
     descripcion: 'Desayuno salado clásico, proteína y grasa buena desde temprano.',
     tituloSub: { huevo: { nombre: 'Revuelto de tofu con aguacate y pico de gallo', emoji: '🌱' } },
     ingredientes: [
-      { n: '2 huevos revueltos', grupo: 'huevo', sub: 'tofu firme revuelto (media taza)' },
-      { n: '½ aguacate en láminas' },
+      { n: '2 huevos revueltos', cantidad: 2, resto: 'huevos revueltos', grupo: 'huevo', sub: 'tofu firme revuelto (media taza)' },
+      { n: '½ aguacate en láminas', cantidad: 0.5, resto: 'aguacate en láminas' },
       { n: 'Tomate y cebolla picados finamente (pico de gallo)' },
-      { n: '1 cdta de aceite de oliva' }
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' }
     ],
     pasos: [
       'Revolver los huevos a fuego bajo con el aceite de oliva.',
@@ -656,10 +656,10 @@ export const RECIPES = [
     descripcion: 'Desayuno líquido pero completo: fibra, proteína y grasa buena juntas.',
     tituloSub: { frutos_secos: { nombre: 'Batido verde de espinaca, banano y semillas de girasol', emoji: '🥤' } },
     ingredientes: [
-      { n: '1 taza de espinaca fresca' },
-      { n: '½ banano' },
-      { n: '1 cda de mantequilla de maní natural sin azúcar', grupo: 'frutos_secos', sub: 'crema de semillas de girasol' },
-      { n: '1 taza de bebida vegetal sin azúcar o agua' },
+      { n: '1 taza de espinaca fresca', cantidad: 1, resto: 'taza de espinaca fresca' },
+      { n: '½ banano', cantidad: 0.5, resto: 'banano' },
+      { n: '1 cda de mantequilla de maní natural sin azúcar', cantidad: 1, resto: 'cda de mantequilla de maní natural sin azúcar', grupo: 'frutos_secos', sub: 'crema de semillas de girasol' },
+      { n: '1 taza de bebida vegetal sin azúcar o agua', cantidad: 1, resto: 'taza de bebida vegetal sin azúcar o agua' },
       { n: 'Hielo al gusto' }
     ],
     pasos: [
@@ -676,9 +676,9 @@ export const RECIPES = [
     descripcion: 'Clásico sin gluten, equilibrado con proteína y grasa buena.',
     tituloSub: { lacteos: { nombre: 'Arepa de maíz con hummus y aguacate', emoji: '🫓' } },
     ingredientes: [
-      { n: '1 arepa de maíz mediana' },
-      { n: '30 g de queso fresco bajo en sodio', grupo: 'lacteos', sub: '2 cdas de hummus' },
-      { n: '½ aguacate' }
+      { n: '1 arepa de maíz mediana', cantidad: 1, resto: 'arepa de maíz mediana' },
+      { n: '30 g de queso fresco bajo en sodio', cantidad: 30, resto: 'g de queso fresco bajo en sodio', grupo: 'lacteos', sub: '2 cdas de hummus' },
+      { n: '½ aguacate', cantidad: 0.5, resto: 'aguacate' }
     ],
     pasos: [
       'Asar la arepa hasta que esté dorada por ambos lados.',
@@ -695,9 +695,9 @@ export const RECIPES = [
     nombre: 'Palitos de zanahoria y apio con guacamole',
     descripcion: 'Snack crocante, fibra y grasa buena, sin azúcar.',
     ingredientes: [
-      { n: '1 zanahoria en palitos' },
-      { n: '1 tallo de apio en palitos' },
-      { n: '½ aguacate machacado con limón y sal' }
+      { n: '1 zanahoria en palitos', cantidad: 1, resto: 'zanahoria en palitos' },
+      { n: '1 tallo de apio en palitos', cantidad: 1, resto: 'tallo de apio en palitos' },
+      { n: '½ aguacate machacado con limón y sal', cantidad: 0.5, resto: 'aguacate machacado con limón y sal' }
     ],
     pasos: [
       'Cortar la zanahoria y el apio en palitos.',
@@ -714,8 +714,8 @@ export const RECIPES = [
     descripcion: 'Combo dulce-salado que evita el pico de azúcar de la fruta sola.',
     tituloSub: { lacteos: { nombre: 'Hummus con uvas', emoji: '🍇' } },
     ingredientes: [
-      { n: '40 g de queso fresco bajo en sodio', grupo: 'lacteos', sub: '2 cdas de hummus' },
-      { n: '10 uvas' }
+      { n: '40 g de queso fresco bajo en sodio', cantidad: 40, resto: 'g de queso fresco bajo en sodio', grupo: 'lacteos', sub: '2 cdas de hummus' },
+      { n: '10 uvas', cantidad: 10, resto: 'uvas' }
     ],
     pasos: [
       'Servir el queso en cubos junto con las uvas.'
@@ -729,8 +729,8 @@ export const RECIPES = [
     nombre: 'Té verde con un puñado de nueces',
     descripcion: 'Antioxidantes + grasa buena, ideal para sostener energía sin azúcar.',
     ingredientes: [
-      { n: '1 taza de té verde sin azúcar' },
-      { n: '8–10 nueces o almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
+      { n: '1 taza de té verde sin azúcar', cantidad: 1, resto: 'taza de té verde sin azúcar' },
+      { n: '8–10 nueces o almendras', cantidad: 9, resto: 'nueces o almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
     ],
     pasos: [
       'Preparar el té verde.',
@@ -744,8 +744,8 @@ export const RECIPES = [
     nombre: 'Gelatina sin azúcar con fruta fresca',
     descripcion: 'Antojo dulce ligero, sin azúcar añadida ni harinas.',
     ingredientes: [
-      { n: '1 taza de gelatina sin azúcar preparada' },
-      { n: '½ taza de fresas o durazno en trozos' }
+      { n: '1 taza de gelatina sin azúcar preparada', cantidad: 1, resto: 'taza de gelatina sin azúcar preparada' },
+      { n: '½ taza de fresas o durazno en trozos', cantidad: 0.5, resto: 'taza de fresas o durazno en trozos' }
     ],
     pasos: [
       'Preparar la gelatina siguiendo las instrucciones del empaque.',
@@ -761,10 +761,10 @@ export const RECIPES = [
     nombre: 'Carne magra a la plancha con arroz integral y ensalada',
     descripcion: 'Plato modelo con proteína de fácil digestión y carbohidrato integral.',
     ingredientes: [
-      { n: '120 g de carne magra (lomo o falda) a la plancha' },
-      { n: '½ taza de arroz integral' },
+      { n: '120 g de carne magra (lomo o falda) a la plancha', cantidad: 120, resto: 'g de carne magra (lomo o falda) a la plancha' },
+      { n: '½ taza de arroz integral', cantidad: 0.5, resto: 'taza de arroz integral' },
       { n: 'Ensalada de lechuga, tomate y pepino' },
-      { n: '1 cdta de aceite de oliva' }
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' }
     ],
     pasos: [
       'Cocinar la carne a la plancha con especias, sin exceso de sal.',
@@ -780,10 +780,10 @@ export const RECIPES = [
     descripcion: 'Carbohidrato de absorción más lenta que la pasta blanca, con proteína y fibra.',
     tituloSub: { gluten: { nombre: 'Arroz integral con pollo y vegetales salteados', emoji: '🍚' } },
     ingredientes: [
-      { n: '¾ taza de pasta integral cocida', grupo: 'gluten', sub: '¾ taza de arroz integral' },
-      { n: '120 g de pechuga de pollo en tiras' },
+      { n: '¾ taza de pasta integral cocida', cantidad: 0.75, resto: 'taza de pasta integral cocida', grupo: 'gluten', sub: '¾ taza de arroz integral' },
+      { n: '120 g de pechuga de pollo en tiras', cantidad: 120, resto: 'g de pechuga de pollo en tiras' },
       { n: 'Calabacín, pimentón y champiñones salteados' },
-      { n: '1 cdta de aceite de oliva y ajo' }
+      { n: '1 cdta de aceite de oliva y ajo', cantidad: 1, resto: 'cdta de aceite de oliva y ajo' }
     ],
     pasos: [
       'Cocinar la pasta al dente y reservar.',
@@ -800,8 +800,8 @@ export const RECIPES = [
     descripcion: 'Proteína vegetal completa (quinoa + legumbre) con fibra de sobra.',
     tituloSub: { legumbres: { nombre: 'Bowl de quinoa, pollo y verduras asadas', emoji: '🥗' } },
     ingredientes: [
-      { n: '½ taza de quinoa cocida' },
-      { n: '½ taza de garbanzos cocidos', grupo: 'legumbres', sub: '100 g de pollo desmechado' },
+      { n: '½ taza de quinoa cocida', cantidad: 0.5, resto: 'taza de quinoa cocida' },
+      { n: '½ taza de garbanzos cocidos', cantidad: 0.5, resto: 'taza de garbanzos cocidos', grupo: 'legumbres', sub: '100 g de pollo desmechado' },
       { n: 'Calabacín, berenjena y pimentón asados' },
       { n: 'Aceite de oliva y limón' }
     ],
@@ -819,9 +819,9 @@ export const RECIPES = [
     nombre: 'Pechuga en salsa de champiñones con puré de ahuyama',
     descripcion: 'Carbohidrato suave para digestiones sensibles, sin crema ni harinas.',
     ingredientes: [
-      { n: '1 pechuga de pollo a la plancha' },
+      { n: '1 pechuga de pollo a la plancha', cantidad: 1, resto: 'pechuga de pollo a la plancha' },
       { n: 'Salsa de champiñones salteados con caldo natural (sin crema)' },
-      { n: '1 taza de puré de ahuyama (sin mantequilla, con un chorrito de aceite de oliva)' }
+      { n: '1 taza de puré de ahuyama (sin mantequilla, con un chorrito de aceite de oliva)', cantidad: 1, resto: 'taza de puré de ahuyama (sin mantequilla, con un chorrito de aceite de oliva)' }
     ],
     pasos: [
       'Cocinar la pechuga a la plancha.',
@@ -838,9 +838,9 @@ export const RECIPES = [
     nombre: 'Tostadas de arroz con aguacate y semillas',
     descripcion: 'Alternativa sin gluten a las galletas de paquete, con grasa buena.',
     ingredientes: [
-      { n: '2 tostadas de arroz inflado' },
-      { n: '½ aguacate machacado' },
-      { n: '1 cdta de semillas de ajonjolí o chía' }
+      { n: '2 tostadas de arroz inflado', cantidad: 2, resto: 'tostadas de arroz inflado' },
+      { n: '½ aguacate machacado', cantidad: 0.5, resto: 'aguacate machacado' },
+      { n: '1 cdta de semillas de ajonjolí o chía', cantidad: 1, resto: 'cdta de semillas de ajonjolí o chía' }
     ],
     pasos: [
       'Machacar el aguacate con sal y limón.',
@@ -855,7 +855,7 @@ export const RECIPES = [
     nombre: 'Compota de manzana con canela (sin azúcar)',
     descripcion: 'Dulce natural y suave, fácil de digerir.',
     ingredientes: [
-      { n: '2 manzanas peladas y en cubos' },
+      { n: '2 manzanas peladas y en cubos', cantidad: 2, resto: 'manzanas peladas y en cubos' },
       { n: 'Canela al gusto' },
       { n: 'Un chorrito de agua' }
     ],
@@ -871,8 +871,8 @@ export const RECIPES = [
     nombre: 'Infusión de jengibre con un puñado de almendras',
     descripcion: 'Calma la digestión y sostiene energía sin azúcar.',
     ingredientes: [
-      { n: '1 taza de infusión de jengibre' },
-      { n: '8–10 almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de calabaza' }
+      { n: '1 taza de infusión de jengibre', cantidad: 1, resto: 'taza de infusión de jengibre' },
+      { n: '8–10 almendras', cantidad: 9, resto: 'almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de calabaza' }
     ],
     pasos: [
       'Preparar la infusión con jengibre fresco.',
@@ -886,8 +886,8 @@ export const RECIPES = [
     nombre: 'Chips de batata al horno',
     descripcion: 'Reemplaza las papas fritas de paquete sin freír y con más fibra.',
     ingredientes: [
-      { n: '1 batata mediana en láminas finas' },
-      { n: '1 cdta de aceite de oliva' },
+      { n: '1 batata mediana en láminas finas', cantidad: 1, resto: 'batata mediana en láminas finas' },
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' },
       { n: 'Sal y especias al gusto' }
     ],
     pasos: [
@@ -904,10 +904,10 @@ export const RECIPES = [
     nombre: 'Crema de calabacín ligera (sin crema de leche)',
     descripcion: 'Cena suave e hidratante, sin lácteos ni harinas espesantes.',
     ingredientes: [
-      { n: '3 calabacines en trozos' },
-      { n: '1 papa pequeña' },
+      { n: '3 calabacines en trozos', cantidad: 3, resto: 'calabacines en trozos' },
+      { n: '1 papa pequeña', cantidad: 1, resto: 'papa pequeña' },
       { n: 'Caldo natural de verduras' },
-      { n: '1 cdta de aceite de oliva' }
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' }
     ],
     pasos: [
       'Cocinar el calabacín y la papa en el caldo hasta ablandar.',
@@ -923,8 +923,8 @@ export const RECIPES = [
     descripcion: 'Ligera, alta en proteína, ideal para una cena que no pese.',
     tituloSub: { huevo: { nombre: 'Tortilla de tofu y espinaca al horno', emoji: '🌱' } },
     ingredientes: [
-      { n: '3 huevos', grupo: 'huevo', sub: 'media taza de tofu firme licuado con especias' },
-      { n: '2 tazas de espinaca fresca' },
+      { n: '3 huevos', cantidad: 3, resto: 'huevos', grupo: 'huevo', sub: 'media taza de tofu firme licuado con especias' },
+      { n: '2 tazas de espinaca fresca', cantidad: 2, resto: 'tazas de espinaca fresca' },
       { n: 'Cebolla picada y especias al gusto' }
     ],
     pasos: [
@@ -941,7 +941,7 @@ export const RECIPES = [
     descripcion: 'Cocción al vapor en su propio jugo: ligero y fácil de digerir.',
     tituloSub: { pescado: { nombre: 'Pechuga de pollo en papillote con limón y hierbas', emoji: '🍗' } },
     ingredientes: [
-      { n: '1 filete de pescado blanco', grupo: 'pescado', sub: 'pechuga de pollo delgada' },
+      { n: '1 filete de pescado blanco', cantidad: 1, resto: 'filete de pescado blanco', grupo: 'pescado', sub: 'pechuga de pollo delgada' },
       { n: 'Limón en rodajas, eneldo y perejil' },
       { n: 'Zanahoria y calabacín en juliana' }
     ],
@@ -958,8 +958,8 @@ export const RECIPES = [
     descripcion: 'Cena vegetal completa: fibra soluble y proteína vegetal.',
     tituloSub: { legumbres: { nombre: 'Ensalada tibia de pollo con espinaca', emoji: '🍗' } },
     ingredientes: [
-      { n: '¾ taza de lentejas cocidas', grupo: 'legumbres', sub: '100 g de pollo desmechado' },
-      { n: '1 taza de espinaca salteada' },
+      { n: '¾ taza de lentejas cocidas', cantidad: 0.75, resto: 'taza de lentejas cocidas', grupo: 'legumbres', sub: '100 g de pollo desmechado' },
+      { n: '1 taza de espinaca salteada', cantidad: 1, resto: 'taza de espinaca salteada' },
       { n: 'Tomates cherry y aceite de oliva' },
       { n: 'Limón al gusto' }
     ],
@@ -980,9 +980,9 @@ export const RECIPES = [
     descripcion: 'Sin aceite extra en la cocción del huevo: proteína limpia para arrancar.',
     tituloSub: { huevo: { nombre: 'Tofu revuelto sobre espinaca salteada', emoji: '🌱' } },
     ingredientes: [
-      { n: '2 huevos pochados', grupo: 'huevo', sub: 'media taza de tofu firme revuelto' },
-      { n: '1 taza de espinaca salteada con ajo' },
-      { n: '1 rebanada de pan integral', grupo: 'gluten', sub: '3 cdas de avena sin gluten cocida' }
+      { n: '2 huevos pochados', cantidad: 2, resto: 'huevos pochados', grupo: 'huevo', sub: 'media taza de tofu firme revuelto' },
+      { n: '1 taza de espinaca salteada con ajo', cantidad: 1, resto: 'taza de espinaca salteada con ajo' },
+      { n: '1 rebanada de pan integral', cantidad: 1, resto: 'rebanada de pan integral', grupo: 'gluten', sub: '3 cdas de avena sin gluten cocida' }
     ],
     pasos: [
       'Pochar los huevos en agua con un chorrito de vinagre.',
@@ -998,10 +998,10 @@ export const RECIPES = [
     nombre: 'Bowl de avena horneada con manzana y canela',
     descripcion: 'Desayuno tibio y reconfortante, sin azúcar añadida.',
     ingredientes: [
-      { n: '½ taza de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
-      { n: '1 manzana rallada' },
+      { n: '½ taza de avena en hojuelas', cantidad: 0.5, resto: 'taza de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '1 manzana rallada', cantidad: 1, resto: 'manzana rallada' },
       { n: 'Canela y una pizca de nuez moscada' },
-      { n: '¾ taza de bebida vegetal sin azúcar' }
+      { n: '¾ taza de bebida vegetal sin azúcar', cantidad: 0.75, resto: 'taza de bebida vegetal sin azúcar' }
     ],
     pasos: [
       'Mezclar todos los ingredientes en un molde apto para horno.',
@@ -1017,9 +1017,9 @@ export const RECIPES = [
     descripcion: 'Desayuno salado para llevar, con proteína magra.',
     tituloSub: { gluten: { nombre: 'Bowl de pavo y aguacate sobre lechuga', emoji: '🥬' } },
     ingredientes: [
-      { n: '1 tortilla integral', grupo: 'gluten', sub: '2 hojas grandes de lechuga' },
-      { n: '3 lonjas de pechuga de pavo' },
-      { n: '¼ de aguacate' },
+      { n: '1 tortilla integral', cantidad: 1, resto: 'tortilla integral', grupo: 'gluten', sub: '2 hojas grandes de lechuga' },
+      { n: '3 lonjas de pechuga de pavo', cantidad: 3, resto: 'lonjas de pechuga de pavo' },
+      { n: '¼ de aguacate', cantidad: 0.25, resto: 'de aguacate' },
       { n: 'Tomate y lechuga' }
     ],
     pasos: [
@@ -1036,9 +1036,9 @@ export const RECIPES = [
     descripcion: 'Antojo de chocolate resuelto sin azúcar, con fibra soluble.',
     tituloSub: { lacteos: { nombre: 'Pudín de chía con cacao y bebida de almendra', emoji: '🍫' } },
     ingredientes: [
-      { n: '3 cdas de semillas de chía' },
-      { n: '1 taza de leche o yogur bebible sin azúcar', grupo: 'lacteos', sub: 'bebida de almendra sin azúcar' },
-      { n: '1 cdta de cacao puro en polvo sin azúcar' },
+      { n: '3 cdas de semillas de chía', cantidad: 3, resto: 'cdas de semillas de chía' },
+      { n: '1 taza de leche o yogur bebible sin azúcar', cantidad: 1, resto: 'taza de leche o yogur bebible sin azúcar', grupo: 'lacteos', sub: 'bebida de almendra sin azúcar' },
+      { n: '1 cdta de cacao puro en polvo sin azúcar', cantidad: 1, resto: 'cdta de cacao puro en polvo sin azúcar' },
       { n: 'Canela al gusto' }
     ],
     pasos: [
@@ -1056,8 +1056,8 @@ export const RECIPES = [
     nombre: 'Agua de pepino y menta con almendras',
     descripcion: 'Hidratación con sabor natural, sin azúcar, más grasa buena.',
     ingredientes: [
-      { n: '1 vaso de agua con pepino en rodajas y hojas de menta' },
-      { n: '8–10 almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
+      { n: '1 vaso de agua con pepino en rodajas y hojas de menta', cantidad: 1, resto: 'vaso de agua con pepino en rodajas y hojas de menta' },
+      { n: '8–10 almendras', cantidad: 9, resto: 'almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
     ],
     pasos: [
       'Dejar reposar el pepino y la menta en agua fría al menos 15 minutos.',
@@ -1071,8 +1071,8 @@ export const RECIPES = [
     nombre: 'Mandarina con semillas de calabaza',
     descripcion: 'Vitamina C + zinc, snack rápido sin preparación.',
     ingredientes: [
-      { n: '2 mandarinas' },
-      { n: '2 cdas de semillas de calabaza' }
+      { n: '2 mandarinas', cantidad: 2, resto: 'mandarinas' },
+      { n: '2 cdas de semillas de calabaza', cantidad: 2, resto: 'cdas de semillas de calabaza' }
     ],
     pasos: [
       'Pelar las mandarinas y comer junto con las semillas.'
@@ -1087,8 +1087,8 @@ export const RECIPES = [
     descripcion: 'Snack crocante casero, sin harinas refinadas ni ultraprocesados.',
     tituloSub: { legumbres: { nombre: 'Crackers de avena con guacamole', emoji: '🥑' } },
     ingredientes: [
-      { n: '4 crackers de avena integral', grupo: 'gluten', sub: 'crackers de arroz inflado' },
-      { n: '3 cdas de hummus', grupo: 'legumbres', sub: '3 cdas de guacamole' }
+      { n: '4 crackers de avena integral', cantidad: 4, resto: 'crackers de avena integral', grupo: 'gluten', sub: 'crackers de arroz inflado' },
+      { n: '3 cdas de hummus', cantidad: 3, resto: 'cdas de hummus', grupo: 'legumbres', sub: '3 cdas de guacamole' }
     ],
     pasos: [
       'Untar el hummus sobre las crackers y servir.'
@@ -1103,7 +1103,7 @@ export const RECIPES = [
     descripcion: 'Snack antiansiedad simple: la canela ayuda a estabilizar el ánimo dulce sin azúcar.',
     tituloSub: { lacteos: { nombre: 'Yogur de coco con canela y nuez moscada', emoji: '🥥' } },
     ingredientes: [
-      { n: '1 taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
+      { n: '1 taza de yogur natural sin azúcar', cantidad: 1, resto: 'taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
       { n: 'Canela y nuez moscada al gusto' }
     ],
     pasos: [
@@ -1120,8 +1120,8 @@ export const RECIPES = [
     nombre: 'Pavo al horno con ensalada de quinoa',
     descripcion: 'Proteína muy magra, ideal si se busca cuidar el hígado y el colesterol.',
     ingredientes: [
-      { n: '150 g de pechuga de pavo al horno' },
-      { n: '½ taza de quinoa cocida con verduras picadas' },
+      { n: '150 g de pechuga de pavo al horno', cantidad: 150, resto: 'g de pechuga de pavo al horno' },
+      { n: '½ taza de quinoa cocida con verduras picadas', cantidad: 0.5, resto: 'taza de quinoa cocida con verduras picadas' },
       { n: 'Aceite de oliva y limón' }
     ],
     pasos: [
@@ -1138,8 +1138,8 @@ export const RECIPES = [
     descripcion: 'Proteína ligera de mar, alta en zinc, con carbohidrato integral.',
     tituloSub: { mariscos: { nombre: 'Arroz integral con pollo salteado y vegetales', emoji: '🍗' } },
     ingredientes: [
-      { n: '150 g de camarones', grupo: 'mariscos', sub: 'pechuga de pollo en cubos' },
-      { n: '½ taza de arroz integral' },
+      { n: '150 g de camarones', cantidad: 150, resto: 'g de camarones', grupo: 'mariscos', sub: 'pechuga de pollo en cubos' },
+      { n: '½ taza de arroz integral', cantidad: 0.5, resto: 'taza de arroz integral' },
       { n: 'Pimentón, cebolla y arvejas salteadas' },
       { n: 'Ajo y aceite de oliva' }
     ],
@@ -1157,8 +1157,8 @@ export const RECIPES = [
     nombre: 'Berenjena rellena de carne magra y vegetales',
     descripcion: 'Plato completo horneado, sin frituras.',
     ingredientes: [
-      { n: '1 berenjena grande' },
-      { n: '100 g de carne molida magra' },
+      { n: '1 berenjena grande', cantidad: 1, resto: 'berenjena grande' },
+      { n: '100 g de carne molida magra', cantidad: 100, resto: 'g de carne molida magra' },
       { n: 'Tomate, cebolla y pimentón picados' },
       { n: 'Especias al gusto' }
     ],
@@ -1177,9 +1177,9 @@ export const RECIPES = [
     descripcion: 'Almuerzo suave y económico, fácil de digerir.',
     tituloSub: { pescado: { nombre: 'Bowl de pollo, papa cocida y arvejas', emoji: '🍗' } },
     ingredientes: [
-      { n: '1 lata de atún en agua', grupo: 'pescado', sub: '100 g de pollo desmechado' },
-      { n: '1 papa mediana cocida en cubos' },
-      { n: '½ taza de arvejas cocidas' },
+      { n: '1 lata de atún en agua', cantidad: 1, resto: 'lata de atún en agua', grupo: 'pescado', sub: '100 g de pollo desmechado' },
+      { n: '1 papa mediana cocida en cubos', cantidad: 1, resto: 'papa mediana cocida en cubos' },
+      { n: '½ taza de arvejas cocidas', cantidad: 0.5, resto: 'taza de arvejas cocidas' },
       { n: 'Aceite de oliva y limón' }
     ],
     pasos: [
@@ -1197,8 +1197,8 @@ export const RECIPES = [
     nombre: 'Infusión de manzanilla con galletas de avena caseras',
     descripcion: 'Calma digestiva por la tarde, sin harinas refinadas.',
     ingredientes: [
-      { n: '1 taza de infusión de manzanilla' },
-      { n: '2 galletas de avena caseras sin azúcar añadida', grupo: 'gluten', sub: '2 galletas de arroz' }
+      { n: '1 taza de infusión de manzanilla', cantidad: 1, resto: 'taza de infusión de manzanilla' },
+      { n: '2 galletas de avena caseras sin azúcar añadida', cantidad: 2, resto: 'galletas de avena caseras sin azúcar añadida', grupo: 'gluten', sub: '2 galletas de arroz' }
     ],
     pasos: [
       'Preparar la infusión de manzanilla.',
@@ -1212,8 +1212,8 @@ export const RECIPES = [
     nombre: 'Palomitas de maíz caseras con aceite de oliva',
     descripcion: 'Reemplaza el paquete de snacks salados por fibra de grano entero.',
     ingredientes: [
-      { n: '¼ taza de maíz pira' },
-      { n: '1 cdta de aceite de oliva' },
+      { n: '¼ taza de maíz pira', cantidad: 0.25, resto: 'taza de maíz pira' },
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' },
       { n: 'Sal al gusto (con moderación)' }
     ],
     pasos: [
@@ -1230,8 +1230,8 @@ export const RECIPES = [
     descripcion: 'Fruta con enzimas digestivas + probióticos: combo suave y efectivo.',
     tituloSub: { lacteos: { nombre: 'Kiwi con yogur de coco', emoji: '🥥' } },
     ingredientes: [
-      { n: '2 kiwis en trozos' },
-      { n: '½ taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' }
+      { n: '2 kiwis en trozos', cantidad: 2, resto: 'kiwis en trozos' },
+      { n: '½ taza de yogur natural sin azúcar', cantidad: 0.5, resto: 'taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' }
     ],
     pasos: [
       'Mezclar el kiwi con el yogur y servir.'
@@ -1244,7 +1244,7 @@ export const RECIPES = [
     nombre: 'Té de jengibre con limón',
     descripcion: 'Bebida caliente sin azúcar para media tarde, sin alcohol ni cafeína extra.',
     ingredientes: [
-      { n: '1 taza de agua caliente con jengibre fresco' },
+      { n: '1 taza de agua caliente con jengibre fresco', cantidad: 1, resto: 'taza de agua caliente con jengibre fresco' },
       { n: 'Jugo de ½ limón' }
     ],
     pasos: [
@@ -1261,8 +1261,8 @@ export const RECIPES = [
     nombre: 'Calabacines rellenos de quinoa y vegetales',
     descripcion: 'Cena vegetariana ligera y colorida, horneada sin frituras.',
     ingredientes: [
-      { n: '2 calabacines medianos' },
-      { n: '½ taza de quinoa cocida' },
+      { n: '2 calabacines medianos', cantidad: 2, resto: 'calabacines medianos' },
+      { n: '½ taza de quinoa cocida', cantidad: 0.5, resto: 'taza de quinoa cocida' },
       { n: 'Tomate, cebolla y pimentón picados' },
       { n: 'Aceite de oliva y orégano' }
     ],
@@ -1279,9 +1279,9 @@ export const RECIPES = [
     nombre: 'Pechuga al limón y romero con arroz blanco',
     descripcion: 'Cena suave con carbohidrato de fácil digestión para noches sensibles.',
     ingredientes: [
-      { n: '1 pechuga de pollo delgada' },
+      { n: '1 pechuga de pollo delgada', cantidad: 1, resto: 'pechuga de pollo delgada' },
       { n: 'Limón, romero fresco y aceite de oliva' },
-      { n: '½ taza de arroz blanco' }
+      { n: '½ taza de arroz blanco', cantidad: 0.5, resto: 'taza de arroz blanco' }
     ],
     pasos: [
       'Marinar la pechuga con limón y romero.',
@@ -1298,8 +1298,8 @@ export const RECIPES = [
     descripcion: 'Omega 3 + cocción sin grasa añadida, ideal para colesterol.',
     tituloSub: { pescado: { nombre: 'Pechuga en papillote con espinaca y limón', emoji: '🍗' } },
     ingredientes: [
-      { n: '1 filete de salmón', grupo: 'pescado', sub: 'pechuga de pollo delgada' },
-      { n: '1 taza de espinaca fresca' },
+      { n: '1 filete de salmón', cantidad: 1, resto: 'filete de salmón', grupo: 'pescado', sub: 'pechuga de pollo delgada' },
+      { n: '1 taza de espinaca fresca', cantidad: 1, resto: 'taza de espinaca fresca' },
       { n: 'Limón y eneldo' }
     ],
     pasos: [
@@ -1315,7 +1315,7 @@ export const RECIPES = [
     descripcion: 'Cena caliente antiinflamatoria, hidratante y suave.',
     ingredientes: [
       { n: 'Caldo natural de pollo (sin cubos industriales)' },
-      { n: '1 taza de pollo desmechado' },
+      { n: '1 taza de pollo desmechado', cantidad: 1, resto: 'taza de pollo desmechado' },
       { n: 'Zanahoria, calabacín y apio' },
       { n: 'Jengibre fresco rallado' }
     ],
@@ -1334,9 +1334,9 @@ export const RECIPES = [
     descripcion: 'Huevos pochados en salsa de tomate especiada, sin harinas.',
     tituloSub: { huevo: { nombre: 'Tofu revuelto en salsa de tomate especiada', emoji: '🌱' } },
     ingredientes: [
-      { n: '2 huevos', grupo: 'huevo', sub: 'media taza de tofu firme en cubos' },
-      { n: '1 taza de salsa de tomate natural con pimentón y comino' },
-      { n: '1 cdta de aceite de oliva' }
+      { n: '2 huevos', cantidad: 2, resto: 'huevos', grupo: 'huevo', sub: 'media taza de tofu firme en cubos' },
+      { n: '1 taza de salsa de tomate natural con pimentón y comino', cantidad: 1, resto: 'taza de salsa de tomate natural con pimentón y comino' },
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' }
     ],
     pasos: [
       'Sofreír el pimentón en la salsa de tomate con las especias 5 minutos.',
@@ -1353,9 +1353,9 @@ export const RECIPES = [
     descripcion: 'Proteína de absorción lenta, ideal para sostener saciedad toda la mañana.',
     tituloSub: { lacteos: { nombre: 'Bowl de tofu batido con frutos rojos', emoji: '🌱' } },
     ingredientes: [
-      { n: '¾ taza de requesón o queso cottage bajo en sodio', grupo: 'lacteos', sub: 'media taza de tofu sedoso batido' },
-      { n: '½ taza de fresas y arándanos' },
-      { n: '1 cda de semillas de chía' }
+      { n: '¾ taza de requesón o queso cottage bajo en sodio', cantidad: 0.75, resto: 'taza de requesón o queso cottage bajo en sodio', grupo: 'lacteos', sub: 'media taza de tofu sedoso batido' },
+      { n: '½ taza de fresas y arándanos', cantidad: 0.5, resto: 'taza de fresas y arándanos' },
+      { n: '1 cda de semillas de chía', cantidad: 1, resto: 'cda de semillas de chía' }
     ],
     pasos: [
       'Servir el requesón en un bowl.',
@@ -1370,9 +1370,9 @@ export const RECIPES = [
     descripcion: 'Clásico rápido con proteína magra y carbohidrato integral.',
     tituloSub: { gluten: { nombre: 'Roll-up de lechuga con pavo y queso fresco', emoji: '🥬' } },
     ingredientes: [
-      { n: '2 rebanadas de pan integral', grupo: 'gluten', sub: '2 hojas grandes de lechuga' },
-      { n: '3 lonjas de pechuga de pavo' },
-      { n: '1 lonja de queso fresco bajo en sodio', grupo: 'lacteos', sub: '2 cdas de hummus' },
+      { n: '2 rebanadas de pan integral', cantidad: 2, resto: 'rebanadas de pan integral', grupo: 'gluten', sub: '2 hojas grandes de lechuga' },
+      { n: '3 lonjas de pechuga de pavo', cantidad: 3, resto: 'lonjas de pechuga de pavo' },
+      { n: '1 lonja de queso fresco bajo en sodio', cantidad: 1, resto: 'lonja de queso fresco bajo en sodio', grupo: 'lacteos', sub: '2 cdas de hummus' },
       { n: 'Tomate y lechuga' }
     ],
     pasos: [
@@ -1388,9 +1388,9 @@ export const RECIPES = [
     descripcion: 'Crocante horneado con avena, semillas y frutos secos — sin miel ni panela.',
     tituloSub: { lacteos: { nombre: 'Granola casera con yogur de coco', emoji: '🥥' } },
     ingredientes: [
-      { n: '½ taza de avena en hojuelas horneada con canela', grupo: 'gluten', sub: 'avena certificada sin gluten' },
-      { n: '1 cda de nueces y semillas de girasol', grupo: 'frutos_secos', sub: '2 cdas extra de semillas de girasol' },
-      { n: '¾ taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' }
+      { n: '½ taza de avena en hojuelas horneada con canela', cantidad: 0.5, resto: 'taza de avena en hojuelas horneada con canela', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '1 cda de nueces y semillas de girasol', cantidad: 1, resto: 'cda de nueces y semillas de girasol', grupo: 'frutos_secos', sub: '2 cdas extra de semillas de girasol' },
+      { n: '¾ taza de yogur natural sin azúcar', cantidad: 0.75, resto: 'taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' }
     ],
     pasos: [
       'Hornear la avena con canela a 160°C por 15 minutos, revolviendo a mitad de cocción.',
@@ -1406,9 +1406,9 @@ export const RECIPES = [
     nombre: 'Tortitas de avena y plátano (2 ingredientes)',
     descripcion: 'Dulce natural del plátano, sin azúcar ni harina añadida.',
     ingredientes: [
-      { n: '1 plátano maduro machacado' },
-      { n: '½ taza de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
-      { n: '1 huevo', grupo: 'huevo', sub: '¼ taza de puré de manzana sin azúcar' },
+      { n: '1 plátano maduro machacado', cantidad: 1, resto: 'plátano maduro machacado' },
+      { n: '½ taza de avena en hojuelas', cantidad: 0.5, resto: 'taza de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '1 huevo', cantidad: 1, resto: 'huevo', grupo: 'huevo', sub: '¼ taza de puré de manzana sin azúcar' },
       { n: 'Canela al gusto' }
     ],
     pasos: [
@@ -1427,7 +1427,7 @@ export const RECIPES = [
     descripcion: 'Proteína vegetal completa, snack entretenido de "pelar y comer".',
     tituloSub: { soya: { nombre: 'Garbanzos tostados con sal marina', emoji: '🫘' } },
     ingredientes: [
-      { n: '1 taza de edamames con cáscara', grupo: 'soya', sub: '½ taza de garbanzos tostados' },
+      { n: '1 taza de edamames con cáscara', cantidad: 1, resto: 'taza de edamames con cáscara', grupo: 'soya', sub: '½ taza de garbanzos tostados' },
       { n: 'Sal marina al gusto' }
     ],
     pasos: [
@@ -1444,8 +1444,8 @@ export const RECIPES = [
     descripcion: 'Snack líquido rápido, sostiene energía sin picos de glucosa.',
     tituloSub: { lacteos: { nombre: 'Batido de avena con bebida de almendra', emoji: '🥤' } },
     ingredientes: [
-      { n: '3 cdas de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
-      { n: '1 taza de leche o yogur bebible sin azúcar', grupo: 'lacteos', sub: 'bebida de almendra sin azúcar' },
+      { n: '3 cdas de avena en hojuelas', cantidad: 3, resto: 'cdas de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '1 taza de leche o yogur bebible sin azúcar', cantidad: 1, resto: 'taza de leche o yogur bebible sin azúcar', grupo: 'lacteos', sub: 'bebida de almendra sin azúcar' },
       { n: 'Canela al gusto' }
     ],
     pasos: [
@@ -1461,8 +1461,8 @@ export const RECIPES = [
     descripcion: 'Crocante fresco, fibra y proteína vegetal sin cocción.',
     tituloSub: { legumbres: { nombre: 'Rodajas de pepino con guacamole', emoji: '🥑' } },
     ingredientes: [
-      { n: '1 pepino en rodajas' },
-      { n: '3 cdas de hummus', grupo: 'legumbres', sub: '3 cdas de guacamole' },
+      { n: '1 pepino en rodajas', cantidad: 1, resto: 'pepino en rodajas' },
+      { n: '3 cdas de hummus', cantidad: 3, resto: 'cdas de hummus', grupo: 'legumbres', sub: '3 cdas de guacamole' },
       { n: 'Pimentón dulce al gusto' }
     ],
     pasos: [
@@ -1478,8 +1478,8 @@ export const RECIPES = [
     nombre: 'Ciruelas pasas con nueces',
     descripcion: 'El clásico snack para el tránsito intestinal, con grasa buena.',
     ingredientes: [
-      { n: '4–5 ciruelas pasas' },
-      { n: '6–8 nueces', grupo: 'frutos_secos', sub: '2 cdas de semillas de calabaza' }
+      { n: '4–5 ciruelas pasas', cantidad: 4.5, resto: 'ciruelas pasas' },
+      { n: '6–8 nueces', cantidad: 7, resto: 'nueces', grupo: 'frutos_secos', sub: '2 cdas de semillas de calabaza' }
     ],
     pasos: [
       'Servir las ciruelas pasas junto con las nueces.'
@@ -1493,8 +1493,8 @@ export const RECIPES = [
     nombre: 'Agua de coco natural con un puñado de almendras',
     descripcion: 'Hidratación con electrolitos naturales, sin azúcar añadida.',
     ingredientes: [
-      { n: '1 vaso de agua de coco natural (sin azúcar añadida)' },
-      { n: '8–10 almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
+      { n: '1 vaso de agua de coco natural (sin azúcar añadida)', cantidad: 1, resto: 'vaso de agua de coco natural (sin azúcar añadida)' },
+      { n: '8–10 almendras', cantidad: 9, resto: 'almendras', grupo: 'frutos_secos', sub: '2 cdas de semillas de girasol' }
     ],
     pasos: [
       'Servir el agua de coco bien fría.',
@@ -1512,7 +1512,7 @@ export const RECIPES = [
     descripcion: 'Grasa buena del aceite de oliva y frutos secos, sabor intenso sin crema.',
     tituloSub: { frutos_secos: { nombre: 'Pechuga con pesto de albahaca y semillas de girasol', emoji: '🌿' } },
     ingredientes: [
-      { n: '1 pechuga de pollo a la plancha' },
+      { n: '1 pechuga de pollo a la plancha', cantidad: 1, resto: 'pechuga de pollo a la plancha' },
       { n: 'Pesto casero: albahaca, aceite de oliva, ajo y piñones', grupo: 'frutos_secos', sub: 'pesto con semillas de girasol en vez de piñones' },
       { n: 'Tomates cherry asados' }
     ],
@@ -1529,8 +1529,8 @@ export const RECIPES = [
     nombre: 'Arroz de coliflor con pollo salteado',
     descripcion: 'Carbohidrato ligero de bajo índice glucémico, alto en fibra.',
     ingredientes: [
-      { n: '2 tazas de coliflor rallada (arroz de coliflor)' },
-      { n: '150 g de pechuga de pollo en cubos' },
+      { n: '2 tazas de coliflor rallada (arroz de coliflor)', cantidad: 2, resto: 'tazas de coliflor rallada (arroz de coliflor)' },
+      { n: '150 g de pechuga de pollo en cubos', cantidad: 150, resto: 'g de pechuga de pollo en cubos' },
       { n: 'Zanahoria y arvejas' },
       { n: 'Ajo y aceite de oliva' }
     ],
@@ -1548,9 +1548,9 @@ export const RECIPES = [
     descripcion: 'Omega 3 + grasa buena, plato de fin de semana.',
     tituloSub: { pescado: { nombre: 'Pechuga con costra de almendras y espinaca salteada', emoji: '🍗' }, frutos_secos: { nombre: 'Trucha con costra de ajonjolí y espinaca salteada', emoji: '🐟' } },
     ingredientes: [
-      { n: '1 filete de trucha', grupo: 'pescado', sub: 'pechuga de pollo delgada' },
+      { n: '1 filete de trucha', cantidad: 1, resto: 'filete de trucha', grupo: 'pescado', sub: 'pechuga de pollo delgada' },
       { n: 'Almendras trituradas', grupo: 'frutos_secos', sub: 'ajonjolí' },
-      { n: '1 taza de espinaca salteada con ajo' }
+      { n: '1 taza de espinaca salteada con ajo', cantidad: 1, resto: 'taza de espinaca salteada con ajo' }
     ],
     pasos: [
       'Cubrir la trucha con las almendras trituradas.',
@@ -1566,7 +1566,7 @@ export const RECIPES = [
     descripcion: 'Plato único con proteína vegetal, fibra y especias reconfortantes.',
     tituloSub: { legumbres: { nombre: 'Chili de pollo desmechado y vegetales', emoji: '🍗' } },
     ingredientes: [
-      { n: '1 taza de lentejas cocidas', grupo: 'legumbres', sub: '100 g de pollo desmechado' },
+      { n: '1 taza de lentejas cocidas', cantidad: 1, resto: 'taza de lentejas cocidas', grupo: 'legumbres', sub: '100 g de pollo desmechado' },
       { n: 'Tomate, pimentón y cebolla' },
       { n: 'Comino y pimentón ahumado (sin exceso de picante si hay sensibilidad digestiva)' }
     ],
@@ -1583,10 +1583,10 @@ export const RECIPES = [
     nombre: 'Pollo al curry suave con leche de coco y arroz integral',
     descripcion: 'Especiado sin picante fuerte, con grasa buena de la leche de coco.',
     ingredientes: [
-      { n: '150 g de pechuga de pollo en cubos' },
-      { n: '½ taza de leche de coco (light si se prefiere)' },
+      { n: '150 g de pechuga de pollo en cubos', cantidad: 150, resto: 'g de pechuga de pollo en cubos' },
+      { n: '½ taza de leche de coco (light si se prefiere)', cantidad: 0.5, resto: 'taza de leche de coco (light si se prefiere)' },
       { n: 'Curry suave, jengibre y cúrcuma' },
-      { n: '½ taza de arroz integral' }
+      { n: '½ taza de arroz integral', cantidad: 0.5, resto: 'taza de arroz integral' }
     ],
     pasos: [
       'Sofreír el pollo con jengibre y las especias.',
@@ -1602,9 +1602,9 @@ export const RECIPES = [
     nombre: 'Ensalada de quinoa, pollo y arándanos',
     descripcion: 'Combo dulce-salado con antioxidantes y proteína magra.',
     ingredientes: [
-      { n: '½ taza de quinoa cocida' },
-      { n: '100 g de pechuga de pollo desmechada' },
-      { n: '¼ taza de arándanos secos sin azúcar añadida' },
+      { n: '½ taza de quinoa cocida', cantidad: 0.5, resto: 'taza de quinoa cocida' },
+      { n: '100 g de pechuga de pollo desmechada', cantidad: 100, resto: 'g de pechuga de pollo desmechada' },
+      { n: '¼ taza de arándanos secos sin azúcar añadida', cantidad: 0.25, resto: 'taza de arándanos secos sin azúcar añadida' },
       { n: 'Espinaca, aceite de oliva y limón' }
     ],
     pasos: [
@@ -1622,9 +1622,9 @@ export const RECIPES = [
     descripcion: 'Espeso y con cuchara, no un jugo: la fibra entera se mantiene.',
     tituloSub: { lacteos: { nombre: 'Smoothie bowl de frutos rojos con yogur de coco', emoji: '🥥' } },
     ingredientes: [
-      { n: '½ taza de fresas y moras congeladas' },
-      { n: '½ taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
-      { n: '1 cda de semillas de chía por encima' }
+      { n: '½ taza de fresas y moras congeladas', cantidad: 0.5, resto: 'taza de fresas y moras congeladas' },
+      { n: '½ taza de yogur natural sin azúcar', cantidad: 0.5, resto: 'taza de yogur natural sin azúcar', grupo: 'lacteos', sub: 'yogur de coco sin azúcar' },
+      { n: '1 cda de semillas de chía por encima', cantidad: 1, resto: 'cda de semillas de chía por encima' }
     ],
     pasos: [
       'Licuar las frutas congeladas con el yogur hasta espesar.',
@@ -1639,8 +1639,8 @@ export const RECIPES = [
     descripcion: 'Snack estilo mediterráneo, salado y con grasa buena.',
     tituloSub: { lacteos: { nombre: 'Aceitunas con hummus y tomates cherry', emoji: '🫘' } },
     ingredientes: [
-      { n: '8–10 aceitunas' },
-      { n: '40 g de queso fresco bajo en sodio', grupo: 'lacteos', sub: '3 cdas de hummus' },
+      { n: '8–10 aceitunas', cantidad: 9, resto: 'aceitunas' },
+      { n: '40 g de queso fresco bajo en sodio', cantidad: 40, resto: 'g de queso fresco bajo en sodio', grupo: 'lacteos', sub: '3 cdas de hummus' },
       { n: 'Tomates cherry' }
     ],
     pasos: [
@@ -1654,8 +1654,8 @@ export const RECIPES = [
     nombre: 'Infusión de hinojo con manzana',
     descripcion: 'Clásica para desinflamar y calmar gases por la tarde.',
     ingredientes: [
-      { n: '1 taza de infusión de hinojo' },
-      { n: '1 manzana pequeña en trozos' }
+      { n: '1 taza de infusión de hinojo', cantidad: 1, resto: 'taza de infusión de hinojo' },
+      { n: '1 manzana pequeña en trozos', cantidad: 1, resto: 'manzana pequeña en trozos' }
     ],
     pasos: [
       'Preparar la infusión de semillas de hinojo.',
@@ -1669,9 +1669,9 @@ export const RECIPES = [
     nombre: 'Barrita casera de avena y dátil',
     descripcion: 'Reemplaza la barrita comercial: solo dos ingredientes reales, sin azúcar añadida.',
     ingredientes: [
-      { n: '1 taza de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
-      { n: '6 dátiles sin semilla remojados' },
-      { n: '2 cdas de semillas de chía o linaza' }
+      { n: '1 taza de avena en hojuelas', cantidad: 1, resto: 'taza de avena en hojuelas', grupo: 'gluten', sub: 'avena certificada sin gluten' },
+      { n: '6 dátiles sin semilla remojados', cantidad: 6, resto: 'dátiles sin semilla remojados' },
+      { n: '2 cdas de semillas de chía o linaza', cantidad: 2, resto: 'cdas de semillas de chía o linaza' }
     ],
     pasos: [
       'Licuar los dátiles remojados hasta formar una pasta.',
@@ -1687,7 +1687,7 @@ export const RECIPES = [
     nombre: 'Pepino con limón y un toque de chile piquín',
     descripcion: 'Snack fresco, casi sin calorías, hidratante.',
     ingredientes: [
-      { n: '1 pepino grande en bastones' },
+      { n: '1 pepino grande en bastones', cantidad: 1, resto: 'pepino grande en bastones' },
       { n: 'Jugo de 1 limón' },
       { n: 'Chile piquín al gusto (opcional, con moderación)' }
     ],
@@ -1706,8 +1706,8 @@ export const RECIPES = [
     nombre: 'Coliflor al horno con curry suave',
     descripcion: 'Cena vegetal simple, alta en fibra y baja en calorías.',
     ingredientes: [
-      { n: '1 coliflor pequeña en floretes' },
-      { n: '1 cdta de aceite de oliva' },
+      { n: '1 coliflor pequeña en floretes', cantidad: 1, resto: 'coliflor pequeña en floretes' },
+      { n: '1 cdta de aceite de oliva', cantidad: 1, resto: 'cdta de aceite de oliva' },
       { n: 'Curry suave y cúrcuma' }
     ],
     pasos: [
@@ -1724,8 +1724,8 @@ export const RECIPES = [
     descripcion: 'Cena ligera con proteína de mar y fibra crocante, sin frituras.',
     tituloSub: { pescado: { nombre: 'Tacos de pollo desmechado con col morada', emoji: '🍗' } },
     ingredientes: [
-      { n: '2 tortillas de maíz pequeñas' },
-      { n: '1 filete de pescado blanco desmenuzado', grupo: 'pescado', sub: '100 g de pollo desmechado' },
+      { n: '2 tortillas de maíz pequeñas', cantidad: 2, resto: 'tortillas de maíz pequeñas' },
+      { n: '1 filete de pescado blanco desmenuzado', cantidad: 1, resto: 'filete de pescado blanco desmenuzado', grupo: 'pescado', sub: '100 g de pollo desmechado' },
       { n: 'Col morada picada y limón' }
     ],
     pasos: [
@@ -1742,8 +1742,8 @@ export const RECIPES = [
     nombre: 'Crema de brócoli con almendras (sin lácteos)',
     descripcion: 'Cena caliente cremosa sin usar crema de leche.',
     ingredientes: [
-      { n: '2 tazas de brócoli' },
-      { n: '¼ taza de almendras remojadas', grupo: 'frutos_secos', sub: '¼ taza de semillas de girasol remojadas' },
+      { n: '2 tazas de brócoli', cantidad: 2, resto: 'tazas de brócoli' },
+      { n: '¼ taza de almendras remojadas', cantidad: 0.25, resto: 'taza de almendras remojadas', grupo: 'frutos_secos', sub: '¼ taza de semillas de girasol remojadas' },
       { n: 'Caldo de verduras natural' }
     ],
     pasos: [
@@ -1759,7 +1759,7 @@ export const RECIPES = [
     nombre: 'Pollo teriyaki casero con vegetales al vapor',
     descripcion: 'Salsa casera sin azúcar refinada, mucho más ligera que la comercial.',
     ingredientes: [
-      { n: '150 g de pechuga de pollo en cubos' },
+      { n: '150 g de pechuga de pollo en cubos', cantidad: 150, resto: 'g de pechuga de pollo en cubos' },
       { n: 'Salsa de soya baja en sodio, jengibre y un toque de miel', grupo: 'soya', sub: 'salsa de coco (coconut aminos)' },
       { n: 'Brócoli y zanahoria al vapor' }
     ],
@@ -1778,9 +1778,9 @@ export const RECIPES = [
     descripcion: 'Cena rápida, ligera y alta en proteína.',
     tituloSub: { huevo: { nombre: 'Revuelto de tofu, calabacín y queso fresco', emoji: '🌱' }, lacteos: { nombre: 'Omelette de calabacín sin queso', emoji: '🍳' } },
     ingredientes: [
-      { n: '2 huevos', grupo: 'huevo', sub: 'media taza de tofu firme revuelto' },
-      { n: '½ calabacín rallado' },
-      { n: '30 g de queso fresco bajo en sodio', grupo: 'lacteos', sub: 'omitir el queso' }
+      { n: '2 huevos', cantidad: 2, resto: 'huevos', grupo: 'huevo', sub: 'media taza de tofu firme revuelto' },
+      { n: '½ calabacín rallado', cantidad: 0.5, resto: 'calabacín rallado' },
+      { n: '30 g de queso fresco bajo en sodio', cantidad: 30, resto: 'g de queso fresco bajo en sodio', grupo: 'lacteos', sub: 'omitir el queso' }
     ],
     pasos: [
       'Batir los huevos con el calabacín rallado.',
