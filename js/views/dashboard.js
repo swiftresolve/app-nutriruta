@@ -244,8 +244,8 @@ export function renderDashboard(container) {
       extraHtml: `<div class="row mt" style="gap:8px">
         <span class="dot ${light}"></span>
         <button type="button" class="icon-btn swap-btn" title="Cambiar receta" aria-label="Cambiar receta">🔄</button>
-      </div>
-      <button type="button" class="link-btn small log-btn" style="display:block;text-align:left;white-space:normal;margin-top:6px">${registro ? '✏️ Editar lo que comí' : '¿Qué comiste realmente?'}</button>`
+        <button type="button" class="icon-btn log-btn" title="${registro ? 'Editar lo que comiste' : '¿Qué comiste realmente?'}" aria-label="${registro ? 'Editar lo que comiste' : 'Registrar lo que comiste'}">${registro ? '✏️' : '📸'}</button>
+      </div>`
     };
   });
   renderPathMap(menuCard.querySelector('#menu-path'), menuItems, { showLine: false });
