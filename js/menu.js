@@ -68,6 +68,29 @@ export function matchesSearch(recipe, query) {
   return recipe.ingredientes.some((ing) => normaliza(ing.n).includes(q));
 }
 
+// "¿Qué tienes en casa?" — busca en el catálogo REAL de recetas (nunca
+// inventa ninguna), aceptando varios ingredientes separados por coma
+// ("huevos, avena, banano"). Ordena primero por cuántos ingredientes de
+// los que escribió realmente coinciden, y entre empates, por la misma
+// afinidad al perfil que ya usa el menú del día.
+export function buscarPorIngredientes(texto) {
+  const { user } = getState();
+  const terminos = String(texto ?? '').split(',').map((t) => normaliza(t.trim())).filter(Boolean);
+  if (!terminos.length) return [];
+  return RECIPES
+    .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
+    .filter((r) => trafficLight(r, user.perfiles) !== 'rojo')
+    .map((r) => {
+      const nombreN = normaliza(r.nombre);
+      const ingsN = r.ingredientes.map((i) => normaliza(i.n));
+      const coincidencias = terminos.filter((t) => nombreN.includes(t) || ingsN.some((i) => i.includes(t))).length;
+      return { recipe: r, coincidencias };
+    })
+    .filter((x) => x.coincidencias > 0)
+    .sort((a, b) => b.coincidencias - a.coincidencias || score(b.recipe, user.perfiles) - score(a.recipe, user.perfiles))
+    .map((x) => x.recipe);
+}
+
 // Recetas disponibles para una comida, ordenadas por afinidad al usuario.
 export function candidatesFor(mealId) {
   const { user } = getState();

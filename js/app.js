@@ -17,6 +17,7 @@ import { renderAssistant } from './views/assistant.js';
 import { renderTestimonials } from './views/testimonials.js';
 import { renderResetPassword } from './views/resetPassword.js';
 import { renderAdmin } from './views/admin.js';
+import { renderWeekMenu } from './views/weekMenu.js';
 
 const app = document.getElementById('app');
 const nav = document.getElementById('bottom-nav');
@@ -36,7 +37,8 @@ const ROUTES = {
   assistant: renderAssistant,
   testimonials: renderTestimonials,
   resetPassword: renderResetPassword,
-  admin: renderAdmin
+  admin: renderAdmin,
+  weekMenu: renderWeekMenu
 };
 
 // 'quiz' es público: ahora se responde ANTES de crear cuenta (ver spec de

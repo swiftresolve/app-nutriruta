@@ -5,6 +5,15 @@ import { SANA_OPENERS } from './data/sanaOpeners.js';
 
 const KEY = 'nutriruta-state-v1';
 
+// Default exportado (no solo interno a DEFAULT_STATE): loadFromKey() abajo
+// hace un merge SUPERFICIAL a nivel raíz con localStorage/la nube, así que
+// una cuenta creada antes de que existiera horaComidas tiene un objeto
+// `user` guardado que reemplaza por completo al default y NO trae este
+// campo. Quien lo lea (dashboard.js) necesita este mismo default como
+// fallback por-comida, no un `0` genérico — con `0` la ventana horaria de
+// "ahora" queda rota (todo el día cae en la última comida).
+export const DEFAULT_HORA_COMIDAS = { desayuno: 7, media_manana: 10, almuerzo: 12, media_tarde: 16, cena: 19 };
+
 const DEFAULT_STATE = {
   onboarded: false,
   user: {
@@ -19,7 +28,12 @@ const DEFAULT_STATE = {
     alcoholFreq: 'nunca',
     colonPredominante: null,
     pesoKg: null,           // opcional: solo para calcular la meta de agua
-    trackearPeso: false     // opcional y apagado por defecto: registro de peso en el tiempo
+    trackearPeso: false,    // opcional y apagado por defecto: registro de peso en el tiempo
+    // Hora de inicio (24h) real de cada comida — antes era una franja fija
+    // igual para todo el mundo (7/10/12/16/19). Cada quien la ajusta a su
+    // rutina real en Ajustes; estos valores son el default si nunca la toca.
+    horaComidas: { ...DEFAULT_HORA_COMIDAS },
+    tonoSusana: 'calida'    // 'calida' | 'motivadora' | 'directa' — cómo le habla Susana, ver ai-assistant
   },
   agua: { fecha: '', vasos: 0 },
   comidasSeguidas: { fecha: '', ids: [] }, // recetas del menú real de hoy que se abrieron — para auto-marcar "seguí el menú"

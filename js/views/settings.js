@@ -1,6 +1,7 @@
 // Ajustes: cuenta, perfiles, exclusiones, quiz, datos y sección legal.
-import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal } from '../store.js';
+import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, DEFAULT_HORA_COMIDAS } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
+import { MEALS } from '../data/recipes.js';
 import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin } from '../supabase-client.js';
 import { navigate, header, openModal, toast } from '../app.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
@@ -320,6 +321,64 @@ export function renderSettings(container) {
     setState({ user: { ...getState().user, trackearPeso: e.target.checked } });
   });
   container.appendChild(peso);
+
+  // Horario real de tus comidas: antes era una franja fija igual para
+  // todo el mundo (7am/10am/12pm/4pm/7pm) — ahora cada quien la ajusta a
+  // su rutina real, y "Tu ruta de hoy" usa esto para saber cuál estación
+  // es "Ahora".
+  const horarios = document.createElement('div');
+  horarios.className = 'card';
+  // Cuentas creadas antes de que existiera este campo no lo tienen guardado
+  // (el merge de estado es superficial a nivel raíz, no rellena dentro de
+  // `user`) -- se completa con DEFAULT_HORA_COMIDAS por comida, nunca se
+  // deja vacío (eso mostraría 12:00 am seleccionado, que no es el default real).
+  const horaComidas = { ...DEFAULT_HORA_COMIDAS, ...(user.horaComidas || {}) };
+  horarios.innerHTML = `
+    <h2>⏰ Horario de tus comidas</h2>
+    <p class="small mb">A qué hora sueles comer, de verdad — así "Tu ruta de hoy" sabe cuál comida es "Ahora".</p>
+    ${MEALS.map((m) => `
+      <div class="row spread mt" style="align-items:center">
+        <span class="small">${esc(m.emoji)} ${esc(m.nombre)}</span>
+        <select class="hora-sel" data-meal="${m.id}" style="padding:8px;border-radius:10px;border:1.5px solid #D8E6E2;font:inherit">
+          ${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${horaComidas[m.id] === h ? 'selected' : ''}>${h === 0 ? '12:00 am' : h < 12 ? `${h}:00 am` : h === 12 ? '12:00 pm' : `${h - 12}:00 pm`}</option>`).join('')}
+        </select>
+      </div>`).join('')}`;
+  horarios.querySelectorAll('.hora-sel').forEach((sel) => {
+    sel.addEventListener('change', () => {
+      const cur = getState().user;
+      const nuevo = { ...DEFAULT_HORA_COMIDAS, ...(cur.horaComidas || {}), [sel.dataset.meal]: Number(sel.value) };
+      setState({ user: { ...cur, horaComidas: nuevo } });
+      toast('Horario actualizado 🌿');
+    });
+  });
+  container.appendChild(horarios);
+
+  // Tono de Susana: cómo te habla, no qué te dice — nunca rompe la regla
+  // de no usar culpa (ver ai-assistant), solo cambia el estilo.
+  const tono = document.createElement('div');
+  tono.className = 'card';
+  const TONOS = [
+    { id: 'calida', label: '💛 Cálida', desc: 'Cercana y suave, el tono de siempre.' },
+    { id: 'motivadora', label: '🌟 Motivadora', desc: 'Más entusiasta, celebra cada avance.' },
+    { id: 'directa', label: '🎯 Directa', desc: 'Va al punto, menos rodeos.' }
+  ];
+  tono.innerHTML = `
+    <h2>💬 Cómo te habla Susana</h2>
+    <p class="small mb">Nunca usa culpa ni regaños, solo cambia el estilo.</p>
+    <div class="chips mt"></div>`;
+  const tonoChips = tono.querySelector('.chips');
+  for (const t of TONOS) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip' + ((user.tonoSusana || 'calida') === t.id ? ' selected' : '');
+    chip.innerHTML = `${esc(t.label)}<br><span class="small" style="font-weight:400">${esc(t.desc)}</span>`;
+    chip.addEventListener('click', () => {
+      setState({ user: { ...getState().user, tonoSusana: t.id } });
+      navigate('settings');
+    });
+    tonoChips.appendChild(chip);
+  }
+  container.appendChild(tono);
 
   // Colon irritable: síntoma predominante (solo si el perfil está activo)
   if (user.perfiles.includes('colon_irritable')) {

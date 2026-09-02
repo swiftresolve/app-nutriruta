@@ -4,8 +4,9 @@
 // que se construyeron): arriba lo que se usa gratis todos los días (paso del
 // día, hábitos, agua, menú, SOS, plan de 7 días); Sana y la Misión —lo
 // Premium— van después, cuando ya sentiste valor real, no antes.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, sanaApertura, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, sanaApertura, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS } from '../store.js';
 import { MISSION } from '../data/mission.js';
+import { MEALS } from '../data/recipes.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe } from '../menu.js';
@@ -18,6 +19,7 @@ import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
 import { renderNotifPrompt, notifPromptVisible } from './notifPrompt.js';
 import { openMealLogModal } from './mealLogModal.js';
 import { openMealSwapModal } from './mealSwapModal.js';
+import { openKitchenSearchModal } from './kitchenSearchModal.js';
 
 const DAILY_HABITS = [
   { id: 'agua', nombre: 'Tomé suficiente agua 💧' },
@@ -203,10 +205,14 @@ export function renderDashboard(container) {
   menuCard.innerHTML = '<div class="spread"><h2>🍽️ Tu ruta de hoy</h2></div><div id="menu-path"></div>';
   container.appendChild(menuCard);
 
-  // Horas de inicio reales (24h) de cada comida, en el mismo orden que
-  // MEALS — no se parsean del texto mostrado ("4:00 pm") porque parseInt
-  // no distingue am/pm y calcularía mal la tarde/noche.
-  const HORAS_INICIO_COMIDA = [7, 10, 12, 16, 19];
+  // Hora de inicio real (24h) de cada comida, en el mismo orden que MEALS
+  // — ya no es una franja fija igual para todo el mundo: cada quien la
+  // ajusta a su rutina real en Ajustes (user.horaComidas). Si una cuenta
+  // vieja no tiene este campo guardado (creada antes de que existiera),
+  // cae en DEFAULT_HORA_COMIDAS por comida -- nunca en 0, que rompería la
+  // ventana de "ahora" (todo el día caería en la última comida).
+  const horasUsuario = getState().user.horaComidas || {};
+  const HORAS_INICIO_COMIDA = MEALS.map((m) => Number.isFinite(horasUsuario[m.id]) ? horasUsuario[m.id] : DEFAULT_HORA_COMIDAS[m.id]);
   const horaActual = new Date().getHours();
   const menuHoy = dailyMenu();
   const menuItems = menuHoy.map(({ meal, recipe }, i) => {
@@ -258,12 +264,25 @@ export function renderDashboard(container) {
     });
   });
 
+  const menuActions = document.createElement('div');
+  menuActions.className = 'row wrap mt';
+  menuActions.style.marginTop = '20px';
   const shopBtn = document.createElement('button');
-  shopBtn.className = 'btn ghost sm mt';
-  shopBtn.style.marginTop = '20px';
+  shopBtn.className = 'btn ghost sm';
   shopBtn.textContent = '🛒 Ver lista de compras';
   shopBtn.addEventListener('click', () => navigate('planner', { tab: 'compras' }));
-  menuCard.appendChild(shopBtn);
+  menuActions.appendChild(shopBtn);
+  const kitchenBtn = document.createElement('button');
+  kitchenBtn.className = 'btn ghost sm';
+  kitchenBtn.textContent = '🔍 ¿Qué tienes en casa?';
+  kitchenBtn.addEventListener('click', () => openKitchenSearchModal((recipe) => openRecipe(recipe)));
+  menuActions.appendChild(kitchenBtn);
+  const weekBtn = document.createElement('button');
+  weekBtn.className = 'btn ghost sm';
+  weekBtn.textContent = '📅 Ver la semana';
+  weekBtn.addEventListener('click', () => navigate('weekMenu'));
+  menuActions.appendChild(weekBtn);
+  menuCard.appendChild(menuActions);
 
   // --- Botón SOS ---
   const sosBtn = document.createElement('button');
