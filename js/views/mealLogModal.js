@@ -43,8 +43,48 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
     let alimentos = [];
     let fuente = null;
     let fotoBlob = null;
+    let stream = null;
+
+    function detenerCamara() {
+      if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
+    }
+
+    // El selector de foto NO vive dentro de modal.innerHTML (cada pantalla
+    // lo reemplaza por completo) — se crea una sola vez en el body y se
+    // reutiliza. Es solo el respaldo de "galería" cuando la cámara en vivo
+    // no está disponible; sin capture="environment" a propósito, para que
+    // sea el picker normal de archivos y no reabra la cámara del sistema.
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.hidden = true;
+    document.body.appendChild(fileInput);
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      e.target.value = '';
+      if (!file) return;
+      try {
+        const { base64, mediaType, previewUrl, blob } = await toJpegBase64(file);
+        fotoBlob = blob;
+        pantallaAnalizando(previewUrl);
+        const detectados = await detectarAlimentosFoto(base64, mediaType);
+        fuente = 'foto';
+        pantallaConfirmar(detectados, previewUrl);
+      } catch (err) {
+        toast(err.message || 'No se pudo procesar la foto.');
+        pantallaElegir();
+      }
+    });
+
+    // Si el modal se cierra por cualquier vía (✕, tocar fuera, guardar) hay
+    // que apagar la cámara siempre — sin esto la lucecita queda prendida.
+    const cierreObs = new MutationObserver(() => {
+      if (!modal.isConnected) { detenerCamara(); fileInput.remove(); cierreObs.disconnect(); }
+    });
+    cierreObs.observe(document.body, { childList: true });
 
     function pantallaElegir() {
+      detenerCamara();
       modal.innerHTML = `
         <h2>¿Qué comiste en ${esc(mealTitle)}?</h2>
         <p class="small muted mt">Regístralo con foto, voz o texto — puedes corregir la lista antes de guardar.</p>
@@ -52,30 +92,68 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           <button type="button" class="btn ghost" id="ml-foto" style="flex-direction:column;height:80px;width:90px">📸<span class="small mt">Foto</span></button>
           ${speechRecognitionCtor() ? '<button type="button" class="btn ghost" id="ml-voz" style="flex-direction:column;height:80px;width:90px">🎤<span class="small mt">Voz</span></button>' : ''}
           <button type="button" class="btn ghost" id="ml-texto" style="flex-direction:column;height:80px;width:90px">⌨️<span class="small mt">Texto</span></button>
-        </div>
-        <input type="file" id="ml-file" accept="image/*" capture="environment" hidden>`;
+        </div>`;
 
-      const fileInput = modal.querySelector('#ml-file');
-      modal.querySelector('#ml-foto').addEventListener('click', () => fileInput.click());
-      fileInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        e.target.value = '';
-        if (!file) return;
-        try {
-          const { base64, mediaType, previewUrl, blob } = await toJpegBase64(file);
-          fotoBlob = blob;
-          pantallaAnalizando(previewUrl);
-          const detectados = await detectarAlimentosFoto(base64, mediaType);
-          fuente = 'foto';
-          pantallaConfirmar(detectados, previewUrl);
-        } catch (err) {
-          toast(err.message || 'No se pudo procesar la foto.');
-          pantallaElegir();
-        }
-      });
-
+      modal.querySelector('#ml-foto').addEventListener('click', () => pantallaCamara());
       modal.querySelector('#ml-voz')?.addEventListener('click', () => pantallaVoz());
       modal.querySelector('#ml-texto').addEventListener('click', () => pantallaTexto());
+    }
+
+    // Cámara en vivo dentro de la app (no el selector nativo del sistema,
+    // que saca a la usuaria de la PWA) — encuadre visual como el de Fitia,
+    // pero con getUserMedia real en vez de <input capture>. Si el navegador
+    // no soporta la API o se niega el permiso, cae a la galería (fileInput)
+    // con un aviso, en vez de dejar la pantalla en blanco.
+    async function pantallaCamara() {
+      modal.innerHTML = `
+        <h2>Foto de tu comida</h2>
+        <div class="camera-wrap mt">
+          <video id="ml-video" autoplay playsinline muted></video>
+          <div class="camera-frame"></div>
+        </div>
+        <div class="row mt" style="gap:10px;justify-content:center;align-items:center">
+          <button type="button" class="btn ghost sm" id="ml-cam-galeria">🖼️ Galería</button>
+          <button type="button" id="ml-shutter" class="btn accent" style="width:72px;height:72px;border-radius:50%;font-size:1.6rem;flex:none">📸</button>
+          <button type="button" class="btn ghost sm" id="ml-cam-cancelar">Cancelar</button>
+        </div>
+        <p class="small muted mt center">Encuadra tu plato y toca el botón central.</p>`;
+
+      modal.querySelector('#ml-cam-cancelar').addEventListener('click', () => { detenerCamara(); pantallaElegir(); });
+      modal.querySelector('#ml-cam-galeria').addEventListener('click', () => { detenerCamara(); fileInput.click(); });
+
+      const video = modal.querySelector('#ml-video');
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+        video.srcObject = stream;
+      } catch {
+        toast('No pudimos abrir la cámara. Elige una foto de tu galería.');
+        fileInput.click();
+        return;
+      }
+
+      modal.querySelector('#ml-shutter').addEventListener('click', () => {
+        // Recorte cuadrado centrado del frame actual del video, coherente
+        // con el encuadre que se le muestra a la usuaria.
+        const w = video.videoWidth, h = video.videoHeight;
+        const side = Math.min(w, h);
+        const canvas = document.createElement('canvas');
+        canvas.width = side; canvas.height = side;
+        canvas.getContext('2d').drawImage(video, (w - side) / 2, (h - side) / 2, side, side, 0, 0, side, side);
+        detenerCamara();
+        canvas.toBlob(async (blob) => {
+          const previewUrl = canvas.toDataURL('image/jpeg', 0.85);
+          fotoBlob = blob;
+          pantallaAnalizando(previewUrl);
+          try {
+            const detectados = await detectarAlimentosFoto(previewUrl.split(',')[1], 'image/jpeg');
+            fuente = 'foto';
+            pantallaConfirmar(detectados, previewUrl);
+          } catch (err) {
+            toast(err.message || 'No se pudo procesar la foto.');
+            pantallaElegir();
+          }
+        }, 'image/jpeg', 0.85);
+      });
     }
 
     function pantallaAnalizando(previewUrl) {

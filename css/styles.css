@@ -515,6 +515,20 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @keyframes modal-pop-in { from { transform: translateY(16px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
 .modal-close { position: sticky; top: 0; float: right; font-size: 1.3rem; color: var(--ink-soft); }
 
+/* ===== Cámara en vivo (registro de comida) ===== */
+.camera-wrap {
+  position: relative; width: 100%; aspect-ratio: 1; border-radius: var(--radius);
+  overflow: hidden; background: #16211d;
+}
+.camera-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Encuadre tipo "scan": un box-shadow con spread enorme oscurece todo
+   fuera del rectángulo central, sin necesitar 4 divs para las esquinas. */
+.camera-frame {
+  position: absolute; inset: 9%; border: 3px solid rgba(255,255,255,0.9);
+  border-radius: 20px; pointer-events: none;
+  box-shadow: 0 0 0 999px rgba(10, 20, 17, 0.45);
+}
+
 /* ===== Progress ===== */
 .streak-hero { text-align: center; padding: 24px 16px; }
 .streak-hero .num { font-size: 3rem; font-weight: 800; color: var(--primary-dark); line-height: 1; }
