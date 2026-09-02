@@ -803,7 +803,20 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .breath-done { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .breath-done-emoji { font-size: 1.5rem; line-height: 1; }
 
-/* ===== Lessons ===== */
+/* ===== Fila con emoji (lecciones de Aprende, Legal en Ajustes) =====
+   .recipe-item/.recipe-emoji nunca tuvieron una regla propia -- quedaban
+   sin ningún estilo (texto suelto, sin fila ni separación), aunque se
+   usan en dos pantallas distintas. Mismo lenguaje visual que
+   .setting-row, solo que con un emoji grande a la izquierda en vez de
+   un ícono chico. */
+.recipe-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 12px 4px; border-bottom: 1px solid rgba(35,56,51,0.08);
+}
+.recipe-item:last-child { border-bottom: none; }
+.recipe-emoji { font-size: 1.5rem; flex: none; }
+.recipe-item .info { flex: 1; min-width: 0; }
+.recipe-item > span:last-child:not(.info) { flex: none; color: var(--ink-soft); font-size: 1.1rem; }
 .lesson-item { width: 100%; text-align: left; }
 details.glossary { border-bottom: 1px solid #EFF5F3; padding: 10px 0; }
 details.glossary summary { font-weight: 600; cursor: pointer; }

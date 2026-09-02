@@ -309,36 +309,31 @@ export function renderSettings(container) {
     });
   }
 
-  // Sonido: chime corto al completar una micro-acción (hábito, agua, paso del día)
-  const sonido = document.createElement('div');
-  sonido.className = 'card';
-  sonido.innerHTML = `
-    <div class="spread"><h2>🔊 Sonido</h2></div>
-    <label class="habit" style="border-bottom:none">
+  // Sonido + Ruti: antes una tarjeta entera por cada interruptor (mucho
+  // encabezado repetido para un solo toggle cada una) -- agrupadas en una
+  // sola tarjeta de preferencias, mismo patrón que "Funciones Inteligentes"
+  // de Fitia (varios toggles juntos, no uno por tarjeta).
+  const prefsToggles = document.createElement('div');
+  prefsToggles.className = 'card';
+  prefsToggles.innerHTML = `
+    <h2>🔊 Sonido y Ruti</h2>
+    <label class="habit">
       <input type="checkbox" id="sonido-toggle" ${getState().sonidoActivado !== false ? 'checked' : ''}>
-      <span>Chime al marcar hábitos, agua o "Tu paso de hoy"</span>
+      <span>🔊 Sonido al marcar hábitos, agua o "Tu paso de hoy"</span>
+    </label>
+    <label class="habit" style="border-bottom:none">
+      <input type="checkbox" id="ruti-oculto-toggle" ${getState().rutiOculto ? 'checked' : ''}>
+      <span>🦦 Ocultar a Ruti (modo minimalista)</span>
     </label>`;
-  sonido.querySelector('#sonido-toggle').addEventListener('change', (e) => {
+  prefsToggles.querySelector('#sonido-toggle').addEventListener('change', (e) => {
     setState({ sonidoActivado: e.target.checked });
     toast(e.target.checked ? 'Sonido activado 🔊' : 'Sonido desactivado');
   });
-  container.appendChild(sonido);
-
-  // Ruti: modo minimalista, sin la mascota — la app sigue funcionando
-  // igual, solo deja de mostrarla donde aparece.
-  const rutiCard = document.createElement('div');
-  rutiCard.className = 'card';
-  rutiCard.innerHTML = `
-    <div class="spread"><h2>🦦 Ruti</h2></div>
-    <label class="habit" style="border-bottom:none">
-      <input type="checkbox" id="ruti-oculto-toggle" ${getState().rutiOculto ? 'checked' : ''}>
-      <span>Ocultar a Ruti (modo minimalista)</span>
-    </label>`;
-  rutiCard.querySelector('#ruti-oculto-toggle').addEventListener('change', (e) => {
+  prefsToggles.querySelector('#ruti-oculto-toggle').addEventListener('change', (e) => {
     setState({ rutiOculto: e.target.checked });
     toast(e.target.checked ? 'Ruti ya no aparecerá en la app' : '¡Ruti está de vuelta! 🦦');
   });
-  container.appendChild(rutiCard);
+  container.appendChild(prefsToggles);
 
   // Perfiles activos — lista de una sola columna (antes eran chips que se
   // amontonaban sin orden claro al haber varios activos a la vez).
@@ -557,8 +552,7 @@ export function renderSettings(container) {
   }
   excl.insertAdjacentHTML('beforeend', `
     <label class="muted small mt" for="excl-otro" style="display:block">¿Algo más que no comas? (separa varios con coma)</label>
-    <input id="excl-otro" type="text" placeholder="Ej: cilantro, champiñones" maxlength="200"
-      style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #D8E6E2;font:inherit;margin-top:6px">`);
+    <input id="excl-otro" type="text" placeholder="Ej: cilantro, champiñones" maxlength="200" class="auth-input">`);
   const exclOtroInput = excl.querySelector('#excl-otro');
   exclOtroInput.value = (user.exclusionesOtro || []).join(', ');
   exclOtroInput.addEventListener('change', (e) => {
