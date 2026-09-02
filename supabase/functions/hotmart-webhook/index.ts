@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
     console.log(`Premium ${periodo} activado para ${email} (${event}).`);
     await enviarPush(userId, {
       title: '✨ ¡Ya eres Premium!',
-      body: 'Susana y la Misión de 12 semanas ya están disponibles para ti.',
+      body: 'SuSana y la Misión de 12 semanas ya están disponibles para ti.',
       url: './'
     });
     return json({ ok: true, plan: 'premium', periodo });

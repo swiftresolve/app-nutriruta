@@ -189,7 +189,7 @@ function pintarPanel(container, d) {
   const sana = document.createElement('div');
   sana.className = 'card';
   sana.innerHTML = `
-    <h2>💬 Uso de Susana</h2>
+    <h2>💬 Uso de SuSana</h2>
     <p class="small mt">${s.mensajes_mes} mensajes este mes, de ${s.usuarias_activas_mes} usuario${s.usuarias_activas_mes === 1 ? '' : 's'} distinto${s.usuarias_activas_mes === 1 ? '' : 's'}.</p>`;
   container.appendChild(sana);
 

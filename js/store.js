@@ -33,7 +33,7 @@ const DEFAULT_STATE = {
     // igual para todo el mundo (7/10/12/16/19). Cada quien la ajusta a su
     // rutina real en Ajustes; estos valores son el default si nunca la toca.
     horaComidas: { ...DEFAULT_HORA_COMIDAS },
-    tonoSusana: 'calida'    // 'calida' | 'motivadora' | 'directa' — cómo le habla Susana, ver ai-assistant
+    tonoSusana: 'calida'    // 'calida' | 'motivadora' | 'directa' — cómo le habla SuSana, ver ai-assistant
   },
   agua: { fecha: '', vasos: 0 },
   comidasSeguidas: { fecha: '', ids: [] }, // recetas del menú real de hoy que se abrieron — para auto-marcar "seguí el menú"

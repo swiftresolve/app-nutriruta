@@ -353,7 +353,7 @@ export function renderSettings(container) {
   });
   container.appendChild(horarios);
 
-  // Tono de Susana: cómo te habla, no qué te dice — nunca rompe la regla
+  // Tono de SuSana: cómo te habla, no qué te dice — nunca rompe la regla
   // de no usar culpa (ver ai-assistant), solo cambia el estilo.
   const tono = document.createElement('div');
   tono.className = 'card';
@@ -363,7 +363,7 @@ export function renderSettings(container) {
     { id: 'directa', label: '🎯 Directa', desc: 'Va al punto, menos rodeos.' }
   ];
   tono.innerHTML = `
-    <h2>💬 Cómo te habla Susana</h2>
+    <h2>💬 Cómo te habla SuSana</h2>
     <p class="small mb">Nunca usa culpa ni regaños, solo cambia el estilo.</p>
     <div class="chips mt"></div>`;
   const tonoChips = tono.querySelector('.chips');

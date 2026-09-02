@@ -255,7 +255,7 @@ export async function askGuide(message) {
 }
 
 // Identifica alimentos en una foto o un texto libre (dictado por voz o
-// escrito) — no cuenta contra la cuota de Susana ni requiere Premium (ver
+// escrito) — no cuenta contra la cuota de SuSana ni requiere Premium (ver
 // log-meal). Devuelve la lista cruda de nombres; quien llama la muestra
 // editable antes de guardarla, nunca se guarda sin confirmar.
 async function invokeLogMeal(body) {

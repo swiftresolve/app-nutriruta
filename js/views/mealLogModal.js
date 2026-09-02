@@ -1,7 +1,7 @@
 // Modal de "¿Qué comiste realmente?" — foto, voz o texto, siempre con una
 // lista editable antes de guardar (nunca se guarda algo que la IA detectó
 // sin que la usuaria lo confirme o corrija). No cuenta contra la cuota de
-// Susana ni requiere Premium (ver supabase-client.js / log-meal).
+// SuSana ni requiere Premium (ver supabase-client.js / log-meal).
 import { openModal, toast } from '../app.js';
 import { esc, guardarComidaRegistrada, today } from '../store.js';
 import { detectarAlimentosFoto, detectarAlimentosTexto, uploadComidaFoto } from '../supabase-client.js';

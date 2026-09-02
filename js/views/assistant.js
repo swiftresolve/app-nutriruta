@@ -86,7 +86,7 @@ export function renderAssistant(container) {
       const data = await fetchGuideHistory();
       log.innerHTML = '';
       if (!data.history.length) {
-        addBubble('system', `¡Hola! Soy Susana 🌿 ${sanaApertura()}`);
+        addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`);
       } else {
         for (const m of data.history) addBubble(m.role, m.content);
       }

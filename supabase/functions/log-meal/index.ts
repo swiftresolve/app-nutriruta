@@ -1,7 +1,7 @@
 // Identifica alimentos en una foto o un texto libre para el registro rápido
 // de "qué comí realmente" en cada estación de Tu Ruta de Hoy.
 //
-// A diferencia de Susana (ai-assistant): esto NO cuenta contra la cuota de
+// A diferencia de SuSana (ai-assistant): esto NO cuenta contra la cuota de
 // 25 mensajes/mes ni requiere Premium — decisión explícita de la usuaria,
 // "reducir fricción para registrar" es un principio del producto, no un
 // beneficio de pago. Solo requiere sesión válida (verify_jwt=true) para que
