@@ -201,6 +201,47 @@ export function displayIngredient(ing, exclusiones) {
   return { texto: ing.n, sustituido: false, cantidad: ing.cantidad ?? null, resto: ing.resto ?? null };
 }
 
+// Conversión métrico → imperial (Ajustes → Unidades). Solo convierte
+// unidades de medida reales (peso/volumen); un conteo de piezas ("2
+// huevos", "6 tomates cherry") no tiene unidad que convertir, se muestra
+// igual en ambos sistemas. Las de cocina (taza/cda/cdta/vaso) son tan
+// cercanas a su equivalente real (240/15/5 ml vs. 1 cup/tbsp/tsp de EE.UU.)
+// que solo se traduce la palabra, sin tocar el número — convertir eso a
+// decimales sería más impreciso, no más exacto.
+const UNIDADES_A_IMPERIAL = {
+  g: { factor: 0.035274, etiqueta: 'oz' },
+  gramos: { factor: 0.035274, etiqueta: 'oz' },
+  kg: { factor: 2.20462, etiqueta: 'lb' },
+  ml: { factor: 0.033814, etiqueta: 'fl oz' },
+  l: { factor: 33.814, etiqueta: 'fl oz' },
+  litro: { factor: 33.814, etiqueta: 'fl oz' },
+  taza: { factor: 1, etiqueta: 'cup' },
+  tazas: { factor: 1, etiqueta: 'cups' },
+  cda: { factor: 1, etiqueta: 'tbsp' },
+  cdas: { factor: 1, etiqueta: 'tbsp' },
+  cdta: { factor: 1, etiqueta: 'tsp' },
+  cdtas: { factor: 1, etiqueta: 'tsp' },
+  vaso: { factor: 1, etiqueta: 'cup' },
+  vasos: { factor: 1, etiqueta: 'cups' }
+};
+
+// Arma el texto final de una cantidad+resto (ver displayIngredient/
+// rangeShoppingList) según el sistema de unidades elegido. Si no hay
+// cantidad/resto estructurados (ej. "Canela al gusto"), o el primer
+// token de `resto` no es una unidad reconocida (ej. "huevos", cuenta de
+// piezas), devuelve el texto sin tocar — nunca inventa una conversión
+// sobre algo que no es una medida real.
+export function textoConCantidad(cantidad, resto, sistema = 'metrico') {
+  const base = `${formatCantidad(cantidad)} ${resto}`;
+  if (sistema !== 'imperial') return base;
+  const espacio = resto.indexOf(' ');
+  const primera = (espacio === -1 ? resto : resto.slice(0, espacio)).toLowerCase();
+  const conv = UNIDADES_A_IMPERIAL[primera];
+  if (!conv) return base;
+  const restoDescripcion = espacio === -1 ? '' : resto.slice(espacio);
+  return `${formatCantidad(cantidad * conv.factor)} ${conv.etiqueta}${restoDescripcion}`;
+}
+
 // Categoría de compra de un ingrediente — agrupación puramente visual para
 // hacer la lista más fácil de recorrer en el súper (fruta, verdura, etc.),
 // nunca una clasificación nutricional ni médica. Por keyword sobre el

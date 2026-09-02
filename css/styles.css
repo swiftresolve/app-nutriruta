@@ -225,6 +225,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .chip.selected:active { box-shadow: none; }
 .chip.small { padding: 5px 11px; font-size: 0.8rem; box-shadow: 0 2px 0 #D8E6E2, 0 2px 4px rgba(35,56,51,0.05); }
+/* Opción visible pero todavía no disponible (ej. idioma English) --
+   sigue siendo tocable (el toast explica por qué), solo se ve apagada. */
+.chip.locked { opacity: 0.5; }
 @keyframes chip-pop { 0% { transform: scale(0.9); } 55% { transform: scale(1.06); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) {
   .chip.selected { animation: none; }

@@ -9,7 +9,7 @@ import { MISSION } from '../data/mission.js';
 import { MEALS } from '../data/recipes.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
-import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe } from '../menu.js';
+import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad } from '../menu.js';
 import { navigate, header, openModal, toast, susanaName } from '../app.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
@@ -433,7 +433,8 @@ export function openRecipe(recipe) {
     const shown = displayRecipe(recipe, user.exclusiones);
     const ings = recipe.ingredientes.map((ing) => {
       const d = displayIngredient(ing, user.exclusiones);
-      return `<div class="ingredient">• ${d.texto}${d.sustituido ? ` <span class="sub-note">(sustituto de ${d.original})</span>` : ''}</div>`;
+      const texto = (d.cantidad != null && d.resto) ? textoConCantidad(d.cantidad, d.resto, user.unidades) : d.texto;
+      return `<div class="ingredient">• ${texto}${d.sustituido ? ` <span class="sub-note">(sustituto de ${d.original})</span>` : ''}</div>`;
     }).join('');
     modal.insertAdjacentHTML('beforeend', `
       <div style="font-size:2.4rem">${shown.emoji}</div>

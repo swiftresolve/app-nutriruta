@@ -35,7 +35,8 @@ const DEFAULT_STATE = {
     horaComidas: { ...DEFAULT_HORA_COMIDAS },
     tonoSusana: 'calida',   // 'calida' | 'motivadora' | 'directa' — cómo le habla SuSana, ver ai-assistant
     contextoSusana: '',     // texto libre opcional, ej. "no hago ejercicio hace meses" — contexto extra que SuSana suma al de siempre (perfiles/síntomas/racha), nunca lo reemplaza
-    referidoPor: null       // código de quien la invitó (capturado de "?ref=" en app.js), ver hotmart-webhook/referral-check
+    referidoPor: null,      // código de quien la invitó (capturado de "?ref=" en app.js), ver hotmart-webhook/referral-check
+    unidades: 'metrico'     // 'metrico' | 'imperial' — ver textoConCantidad en menu.js. idioma de interfaz/alimentos: pendiente, ver proyecto-nutriruta-fitia
   },
   agua: { fecha: '', vasos: 0 },
   comidasSeguidas: { fecha: '', ids: [] }, // recetas del menú real de hoy que se abrieron — para auto-marcar "seguí el menú"

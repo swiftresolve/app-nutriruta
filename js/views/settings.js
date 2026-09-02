@@ -417,6 +417,60 @@ export function renderSettings(container) {
   }
   container.appendChild(temaCard);
 
+  // Interfaz y Unidades — misma estructura que la pantalla de Fitia
+  // (idioma de interfaz / idioma de alimentos / unidades por separado).
+  // Unidades funciona de verdad ahora (ver textoConCantidad en menu.js);
+  // los selectores de idioma están presentes pero solo tienen Español
+  // disponible por ahora — "English" avisa que viene después en vez de
+  // fingir que ya funciona (la traducción de las +100 recetas y toda la
+  // interfaz es un proyecto de contenido aparte, ver memoria del roadmap).
+  const idiomaUnidades = document.createElement('div');
+  idiomaUnidades.className = 'card';
+  idiomaUnidades.innerHTML = `
+    <h2>🌎 Interfaz y Unidades</h2>
+    <label class="small" style="font-weight:600;display:block;margin-top:10px">Idioma de interfaz</label>
+    <div class="chips mt" id="idioma-interfaz-chips"></div>
+    <label class="small" style="font-weight:600;display:block;margin-top:14px">Idioma de alimentos</label>
+    <div class="chips mt" id="idioma-alimentos-chips"></div>
+    <label class="small" style="font-weight:600;display:block;margin-top:14px">Unidades</label>
+    <div class="chips mt" id="unidades-chips"></div>`;
+
+  const IDIOMAS = [
+    { id: 'es', label: '🇪🇸 Español', disponible: true },
+    { id: 'en', label: '🇺🇸 English', disponible: false }
+  ];
+  for (const contenedorId of ['idioma-interfaz-chips', 'idioma-alimentos-chips']) {
+    const cont = idiomaUnidades.querySelector(`#${contenedorId}`);
+    for (const idi of IDIOMAS) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip' + (idi.id === 'es' ? ' selected' : '') + (idi.disponible ? '' : ' locked');
+      chip.textContent = idi.label;
+      chip.addEventListener('click', () => {
+        if (!idi.disponible) toast('English llega pronto — por ahora la app y las recetas están solo en español.');
+      });
+      cont.appendChild(chip);
+    }
+  }
+
+  const UNIDADES = [
+    { id: 'metrico', label: '📏 Métrico', desc: 'Gramos, mililitros.' },
+    { id: 'imperial', label: '🥄 Imperial', desc: 'Onzas, libras, cups.' }
+  ];
+  const unidadesChips = idiomaUnidades.querySelector('#unidades-chips');
+  for (const u of UNIDADES) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip' + ((user.unidades || 'metrico') === u.id ? ' selected' : '');
+    chip.innerHTML = `${esc(u.label)}<br><span class="small" style="font-weight:400">${esc(u.desc)}</span>`;
+    chip.addEventListener('click', () => {
+      setState({ user: { ...getState().user, unidades: u.id } });
+      navigate('settings');
+    });
+    unidadesChips.appendChild(chip);
+  }
+  container.appendChild(idiomaUnidades);
+
   // Tono de SuSana: cómo te habla, no qué te dice — nunca rompe la regla
   // de no usar culpa (ver ai-assistant), solo cambia el estilo.
   const tono = document.createElement('div');

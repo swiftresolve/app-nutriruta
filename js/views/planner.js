@@ -1,7 +1,7 @@
 // Recetario + lista de compras.
 import { getState, setState, isPremium } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
-import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, formatCantidad } from '../menu.js';
+import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
 import { header, navigate, toast } from '../app.js';
 import { openRecipe } from './dashboard.js';
 
@@ -165,7 +165,7 @@ export function renderPlanner(container, params = {}) {
   // el texto de "Compartir", para que digan siempre lo mismo.
   function textoItem(it, esHoy) {
     if (esHoy) return it.texto;
-    if (it.resto && it.cantidadTotal) return `${formatCantidad(it.cantidadTotal)} ${it.resto}`;
+    if (it.resto && it.cantidadTotal) return textoConCantidad(it.cantidadTotal, it.resto, getState().user.unidades);
     return `${it.texto} · ${it.count}× (${[...new Set(it.dias)].slice(0, 6).join(', ')})`;
   }
 
@@ -250,7 +250,7 @@ export function renderPlanner(container, params = {}) {
         let extra = '';
         if (!esHoy) {
           if (it.resto && it.cantidadTotal) {
-            textoPrincipal = `${formatCantidad(it.cantidadTotal)} ${it.resto}`;
+            textoPrincipal = textoConCantidad(it.cantidadTotal, it.resto, getState().user.unidades);
           } else {
             extra = ` <span class="muted small">· ${it.count}× (${[...new Set(it.dias)].slice(0, 6).join(', ')})</span>`;
           }
