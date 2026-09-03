@@ -378,7 +378,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   .quiz-step { animation: none; }
 }
 .quiz-nav { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 26px; }
-.quiz-nav .btn { flex: none; height: calc(var(--btn-h) + 2px); font-size: 1.08rem; }
+.quiz-nav .btn { flex: none; height: calc(var(--btn-h) + 2px); font-size: 1.14rem; }
 .quiz-nav p { width: 100%; }
 .quiz-nav p { text-align: center; margin: 0; }
 
