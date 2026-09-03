@@ -593,7 +593,10 @@ export function renderSettings(container) {
   excl.className = 'card';
   excl.innerHTML = '<h2>🚫 Alimentos que no consumo</h2><p class="small mb">Filtramos recetas y proponemos sustituciones.</p><div class="chips"></div>';
   const exclChips = excl.querySelector('.chips');
-  for (const e of EXCLUSIONS) {
+  // "Ninguno" es solo para el quiz (evita que el paso quede vacío en la
+  // BD) -- en Ajustes no hace falta, aquí ya se ve directo si hay chips
+  // marcados o no.
+  for (const e of EXCLUSIONS.filter((x) => x.id !== 'ninguna')) {
     const b = document.createElement('button');
     b.className = 'chip' + (user.exclusiones.includes(e.id) ? ' selected' : '');
     b.textContent = `${e.emoji} ${e.nombre}`;

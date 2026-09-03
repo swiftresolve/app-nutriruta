@@ -187,7 +187,9 @@ export function renderQuiz(container) {
       title: '¿Qué quieres lograr?',
       sub: 'Elige todo lo que aplique.',
       completo: () => answers.objetivos.length > 0 || answers.objetivosOtro.length > 0,
-      render: (el, onChange) => renderGoalsConOtro(el, onChange)
+      render: (el, onChange) => renderChipsConOtro(el, GOALS, answers.objetivos, answers.objetivosOtro, {
+        titulo: 'Agrega una meta propia', placeholder: 'Ej. Dormir mejor, tener más disciplina...'
+      }, onChange)
     },
     {
       title: '¿Tienes alguna condición conocida?',
@@ -197,14 +199,11 @@ export function renderQuiz(container) {
     },
     {
       title: '¿Qué alimentos no consumes?',
-      sub: 'Alergias, intolerancias o preferencias. Adaptaremos recetas y sustituciones. Si no tienes ninguna, solo presiona Siguiente.',
-      render(el) {
-        chips(el, EXCLUSIONS, answers.exclusiones, true);
-        el.insertAdjacentHTML('beforeend', '<div class="mt" id="excl-otro-tags"></div>');
-        pintarOtroTags(el.querySelector('#excl-otro-tags'), answers.exclusionesOtro, {
-          titulo: 'Agrega una alergia o intolerancia', placeholder: 'Ej. Cilantro, champiñones...'
-        });
-      }
+      sub: 'Alergias, intolerancias o preferencias. Adaptaremos recetas y sustituciones.',
+      completo: () => answers.exclusiones.length > 0 || answers.exclusionesOtro.length > 0,
+      render: (el, onChange) => renderChipsConOtro(el, EXCLUSIONS, answers.exclusiones, answers.exclusionesOtro, {
+        titulo: 'Agrega una alergia o intolerancia', placeholder: 'Ej. Cilantro, champiñones...'
+      }, onChange)
     },
     {
       title: '¿Con cuáles de estos retos te identificas?',
@@ -275,15 +274,17 @@ export function renderQuiz(container) {
   // aunque justo debajo ya seguían dos tags en columnas). Con una sola
   // grilla, el checkerboard de columnas continúa sin cortes y solo se
   // centra el último de verdad, cuando el total combinado es impar.
-  function renderGoalsConOtro(el, onChange) {
+  // Genérico -- lo usan tanto "¿Qué quieres lograr?" (GOALS) como
+  // "¿Qué alimentos no consumes?" (EXCLUSIONS), cualquier pregunta de
+  // opciones múltiples que también tenga un bloque de "+ Agregar otro".
+  function renderChipsConOtro(el, options, target, otroArr, textos, onChange) {
     el.innerHTML = '';
     const wrap = document.createElement('div');
     wrap.className = 'chips';
     el.appendChild(wrap);
-    chips(el, GOALS, answers.objetivos, true, undefined, false, onChange, wrap);
-    pintarOtroTags(el, answers.objetivosOtro, {
-      titulo: 'Agrega una meta propia', placeholder: 'Ej. Dormir mejor, tener más disciplina...'
-    }, onChange, () => renderGoalsConOtro(el, onChange), wrap);
+    chips(el, options, target, true, undefined, false, onChange, wrap);
+    pintarOtroTags(el, otroArr, textos, onChange,
+      () => renderChipsConOtro(el, options, target, otroArr, textos, onChange), wrap);
   }
 
   // "+ Agregar otro" + modal con Enter/coma para ir agregando etiquetas,
@@ -531,7 +532,7 @@ export function renderQuiz(container) {
         objetivos: answers.objetivos,
         objetivosOtro: answers.objetivosOtro.slice(0, 10),
         perfiles,
-        exclusiones: answers.exclusiones,
+        exclusiones: answers.exclusiones.filter((x) => x !== 'ninguna'),
         exclusionesOtro: answers.exclusionesOtro.slice(0, 10),
         habitosDificiles: answers.habitosDificiles,
         motivacion: answers.motivacion,

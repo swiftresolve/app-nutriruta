@@ -119,7 +119,8 @@ export const EXCLUSIONS = [
   { id: 'frutos_secos', nombre: 'Frutos secos', emoji: '🥜' },
   { id: 'huevo', nombre: 'Huevo', emoji: '🥚' },
   { id: 'legumbres', nombre: 'Legumbres', emoji: '🫘' },
-  { id: 'soya', nombre: 'Soya', emoji: '🫛' }
+  { id: 'soya', nombre: 'Soya', emoji: '🫛' },
+  { id: 'ninguna', nombre: 'Ninguno', emoji: '✅' }
 ];
 
 export const GOALS = [
