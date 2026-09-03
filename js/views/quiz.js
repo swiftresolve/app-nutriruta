@@ -268,6 +268,19 @@ export function renderQuiz(container) {
 
     s.render(view.querySelector('.step-body'), () => { next.disabled = s.completo ? !s.completo() : false; });
     container.appendChild(view);
+
+    // El botón se alinea con el ancho real del TEXTO del título, no un
+    // porcentaje fijo arbitrario -- h2 es un bloque que ocupa todo el
+    // ancho disponible por defecto, así que para medir su contenido real
+    // se vuelve inline-block un instante (se ajusta solo al texto, o a la
+    // línea más larga si el título se parte en dos) y se revierte.
+    const h2 = view.querySelector('h2');
+    if (h2) {
+      const prevDisplay = h2.style.display;
+      h2.style.display = 'inline-block';
+      next.style.width = `${Math.min(h2.offsetWidth, view.clientWidth)}px`;
+      h2.style.display = prevDisplay;
+    }
   }
 
   function result() {
