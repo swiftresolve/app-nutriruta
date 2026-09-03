@@ -94,6 +94,13 @@ export function navigate(route, params = {}) {
   // Sin bottom-nav no hace falta reservarle espacio abajo -- si no, queda
   // un hueco vacío grande en pantallas cortas como la bienvenida del quiz.
   app.classList.toggle('no-nav', !showNav);
+  // Clase propia para el quiz (en vez de depender de #app.no-nav:has(.quiz-step)
+  // en el CSS) -- :has() no lo soportan todos los navegadores/WebView
+  // Android reales, y sin soporte esa regla simplemente no aplicaba nunca:
+  // el botón "Siguiente" quedaba en flujo normal, sin el alto fijo que lo
+  // mantiene pegado arriba del teclado. Esta clase la pone JS a mano, con
+  // el route ya conocido, así que funciona sin importar el navegador.
+  app.classList.toggle('quiz-active', route === 'quiz');
   nav.querySelectorAll('.nav-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.route === route);
   });
