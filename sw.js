@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-5bf0202e46';
+const CACHE = 'nutriruta-6562368898';
 const ASSETS = [
   './',
   './index.html',
@@ -43,7 +43,8 @@ const ASSETS = [
   './img/ruti/curiosa.png',
   './img/ruti/tranquila.png',
   './img/ruti/celebracion.png',
-  './img/ruti/bienvenida.webm'
+  './img/ruti/bienvenida.webm',
+  './fonts/karla-variable.woff2'
 ];
 
 self.addEventListener('install', (e) => {
