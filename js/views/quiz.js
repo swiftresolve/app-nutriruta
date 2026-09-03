@@ -77,7 +77,7 @@ export function renderQuiz(container) {
   const steps = [
     {
       title: '¡Hola! 🌿 Empecemos con NutriRuta',
-      sub: 'Vamos a encontrar una Ruta que funcione para ti.',
+      sub: '',
       render(el) {
         // Video de bienvenida (fondo transparente, ver img/ruti/bienvenida.webm)
         // en vez de la imagen fija -- si el navegador no soporta WebM con
@@ -90,7 +90,9 @@ export function renderQuiz(container) {
           <video autoplay muted loop playsinline poster="./img/ruti/saludo.png" style="height:150px;width:auto;display:block;margin:0 auto" id="q-ruti-video">
             <source src="./img/ruti/bienvenida.webm" type="video/webm">
           </video>`;
-        el.innerHTML = `<div class="center mb">${rutiHtml}</div>`;
+        el.innerHTML = `
+          <div class="center mb">${rutiHtml}</div>
+          <p class="center small" style="font-weight:600">Hola, soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>`;
         const video = el.querySelector('#q-ruti-video');
         if (video && !video.canPlayType('video/webm; codecs="vp9"')) {
           video.outerHTML = rutiSiVisible('saludo', { size: 150 });
@@ -104,9 +106,10 @@ export function renderQuiz(container) {
       title: '¿Cómo te llamas?',
       sub: 'Opcional -- puedes dejarlo en blanco.',
       render(el) {
+        // El aviso legal completo ya vive en Ajustes -> Legal (Términos y
+        // Privacidad, ver settings.js) -- repetirlo aquí era redundante.
         el.innerHTML = `
-          <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60" class="auth-input">
-          <div class="legal-note">🔒 Tus datos se guardan en tu cuenta protegida y solo tú puedes verlos. NutriRuta es una herramienta de autoayuda: no diagnostica ni reemplaza a tu médico o nutricionista.</div>`;
+          <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60" class="auth-input">`;
         const input = el.querySelector('#q-nombre');
         input.value = answers.nombre; // asignación por propiedad: sin riesgo de inyección HTML
         input.addEventListener('input', (e) => { answers.nombre = e.target.value.trim(); });
