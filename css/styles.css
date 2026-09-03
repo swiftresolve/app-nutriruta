@@ -336,7 +336,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 /* Reserva el espacio de la barra fija arriba de cada pregunta -- sin
    esto el contenido centrado podría dibujarse debajo de ella. */
-.quiz-step:not(.quiz-step-intro) { padding-top: 56px; }
+.quiz-step:not(.quiz-step-intro) { padding-top: 48px; }
 /* La barra ocupa todo el ancho restante, alineada a la derecha con los
    botones/chips de abajo (mismo borde derecho del contenedor). */
 .quiz-topbar .quiz-progress { flex: 1; margin: 0; }
@@ -357,7 +357,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    (ancho y alto parejo) — no en fila libre tipo etiquetas, que se veía
    despareja porque cada chip mide lo que mide su propio texto. */
 .quiz-step .chips {
-  margin-top: 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+  margin-top: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
 }
 .quiz-step .chips.chips-1col { grid-template-columns: 1fr; }
 .quiz-step .chips .chip {
@@ -404,7 +404,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* Reserva el espacio del botón fijo abajo -- en todas las pantallas,
    incluida la bienvenida (también tiene botón + link de inicio de
    sesión, un poco más alto por eso). */
-.quiz-step { padding-bottom: 110px; }
+.quiz-step { padding-bottom: 98px; }
 /* Solo la bienvenida (contenido corto y fijo) se centra verticalmente
    -- vía margin:auto en el propio ítem, no justify-content:center en el
    contenedor (eso rompía las preguntas con contenido más largo: el
