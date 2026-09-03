@@ -344,7 +344,12 @@ export function renderQuiz(container) {
         });
       }
       function agregar(textoForzado) {
-        const texto = (textoForzado ?? input.value).trim().replace(/,$/, '').trim();
+        let texto = (textoForzado ?? input.value).trim().replace(/,$/, '').trim();
+        // Primera letra mayúscula, el resto en minúscula -- sin importar
+        // cómo lo haya escrito la usuaria (todo mayúsculas, todo
+        // minúsculas, mezclado), se ve igual de prolijo que el resto de
+        // las opciones predefinidas ("Pescado", "Gluten"...).
+        if (texto) texto = texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
         if (texto && !arr.includes(texto)) arr.push(texto);
         pintarTags();
       }

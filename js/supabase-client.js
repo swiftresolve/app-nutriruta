@@ -32,13 +32,15 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
-// Enlace de "olvidé mi contraseña": reutiliza el mismo marcador "?invite=1"
-// que ya usa el enlace de invitación de Hotmart, así app.js lo detecta y
-// lleva directo a resetPassword.js sin necesitar una ruta nueva ni tocar
-// la lógica de arranque.
+// Enlace de "olvidé mi contraseña": lleva a la misma pantalla de crear
+// contraseña que el enlace de invitación de Hotmart (resetPassword.js),
+// pero con su propia marca "?reset=1" -- así app.js puede distinguir
+// "acabas de comprar" de "olvidaste tu clave" y mostrar el texto
+// correcto en cada caso (antes ambos mostraban "tu compra ya está
+// confirmada", que no aplica si solo olvidaste la contraseña).
 export async function requestPasswordReset(email) {
   return supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/?invite=1`
+    redirectTo: `${window.location.origin}/?reset=1`
   });
 }
 

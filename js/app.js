@@ -307,6 +307,7 @@ if ('serviceWorker' in navigator) {
   // añade su "code" al lado sin tocarla, así que la detección no depende de
   // un detalle interno de Supabase que puede cambiar entre versiones.
   const isInviteLink = new URLSearchParams(window.location.search).has('invite');
+  const isResetLink = new URLSearchParams(window.location.search).has('reset');
 
   let session = null;
   try { session = await getSession(); } catch { /* offline sin sesión previa */ }
@@ -326,8 +327,8 @@ if ('serviceWorker' in navigator) {
     }
   }
 
-  if (isInviteLink && session) {
-    navigate('resetPassword');
+  if ((isInviteLink || isResetLink) && session) {
+    navigate('resetPassword', { modo: isResetLink ? 'reset' : 'invite' });
   } else {
     if (session) await initCloud();
     // El quiz ya no vive detrás del login: se responde primero (invitada,
