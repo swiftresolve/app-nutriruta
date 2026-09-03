@@ -105,27 +105,36 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
     // no soporta la API o se niega el permiso, cae a la galería (fileInput)
     // con un aviso, en vez de dejar la pantalla en blanco.
     async function pantallaCamara() {
+      // Pantalla completa (fondo negro de borde a borde), mismo lenguaje
+      // visual que la cámara de Fitia que mostró la usuaria: instrucción
+      // arriba, marco redondeado grande, obturador circular blanco abajo
+      // con galería/cancelar como íconos secundarios a los lados.
+      const backdrop = modal.parentElement;
+      backdrop.classList.add('cam-fullscreen');
+      function salirFullscreen() { backdrop.classList.remove('cam-fullscreen'); }
+
       modal.innerHTML = `
-        <h2>Foto de tu comida</h2>
-        <div class="camera-wrap mt">
+        <div class="camera-top"><button type="button" class="camera-cancelar" id="ml-cam-cancelar">Cancelar</button></div>
+        <p class="camera-instruccion">Toma una foto de tu comida</p>
+        <div class="camera-wrap">
           <video id="ml-video" autoplay playsinline muted></video>
           <div class="camera-frame"></div>
         </div>
-        <div class="row mt" style="gap:10px;justify-content:center;align-items:center">
-          <button type="button" class="btn ghost sm" id="ml-cam-galeria">🖼️ Galería</button>
-          <button type="button" id="ml-shutter" class="btn accent" style="width:72px;height:72px;border-radius:50%;font-size:1.6rem;flex:none">📸</button>
-          <button type="button" class="btn ghost sm" id="ml-cam-cancelar">Cancelar</button>
-        </div>
-        <p class="small muted mt center">Encuadra tu plato y toca el botón central.</p>`;
+        <div class="camera-controls">
+          <button type="button" class="camera-icon-btn" id="ml-cam-galeria" aria-label="Elegir de la galería">🖼️</button>
+          <button type="button" id="ml-shutter" class="camera-shutter" aria-label="Tomar foto"></button>
+          <span class="camera-icon-btn" style="visibility:hidden" aria-hidden="true"></span>
+        </div>`;
 
-      modal.querySelector('#ml-cam-cancelar').addEventListener('click', () => { detenerCamara(); pantallaElegir(); });
-      modal.querySelector('#ml-cam-galeria').addEventListener('click', () => { detenerCamara(); fileInput.click(); });
+      modal.querySelector('#ml-cam-cancelar').addEventListener('click', () => { detenerCamara(); salirFullscreen(); pantallaElegir(); });
+      modal.querySelector('#ml-cam-galeria').addEventListener('click', () => { detenerCamara(); salirFullscreen(); fileInput.click(); });
 
       const video = modal.querySelector('#ml-video');
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
         video.srcObject = stream;
       } catch {
+        salirFullscreen();
         toast('No pudimos abrir la cámara. Elige una foto de tu galería.');
         fileInput.click();
         return;
@@ -140,6 +149,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
         canvas.width = side; canvas.height = side;
         canvas.getContext('2d').drawImage(video, (w - side) / 2, (h - side) / 2, side, side, 0, 0, side, side);
         detenerCamara();
+        salirFullscreen();
         canvas.toBlob(async (blob) => {
           const previewUrl = canvas.toDataURL('image/jpeg', 0.85);
           fotoBlob = blob;

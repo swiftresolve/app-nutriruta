@@ -693,18 +693,44 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @keyframes modal-pop-in { from { transform: translateY(16px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
 .modal-close { position: sticky; top: 0; float: right; font-size: 1.3rem; color: var(--ink-soft); }
 
-/* ===== Cámara en vivo (registro de comida) ===== */
+/* ===== Cámara en vivo (registro de comida) — pantalla completa, mismo
+   lenguaje visual que la cámara de Fitia (referencia de la usuaria):
+   fondo negro de borde a borde, marco redondeado centrado, obturador
+   circular grande abajo con los botones secundarios a los lados. ===== */
+.modal-backdrop.cam-fullscreen { background: #000; padding: 0; }
+.modal-backdrop.cam-fullscreen .modal {
+  max-width: none; max-height: none; width: 100%; height: 100%;
+  border-radius: 0; background: #000; padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; overflow: hidden; animation: none;
+}
+.camera-top { display: flex; justify-content: flex-start; flex: none; }
+.camera-cancelar {
+  background: rgba(255,255,255,0.12); color: #fff; border-radius: 999px;
+  padding: 7px 16px; font-size: 0.85rem; font-weight: 600;
+}
+.camera-instruccion { color: #fff; text-align: center; font-weight: 600; margin: 10px 0; flex: none; }
 .camera-wrap {
-  position: relative; width: 100%; aspect-ratio: 1; border-radius: var(--radius);
+  position: relative; flex: 1 1 auto; min-height: 0; width: 100%; border-radius: 28px;
   overflow: hidden; background: #16211d;
 }
 .camera-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* Encuadre tipo "scan": un box-shadow con spread enorme oscurece todo
    fuera del rectángulo central, sin necesitar 4 divs para las esquinas. */
 .camera-frame {
-  position: absolute; inset: 9%; border: 3px solid rgba(255,255,255,0.9);
+  position: absolute; inset: 4%; border: 3px solid rgba(255,255,255,0.9);
   border-radius: 20px; pointer-events: none;
-  box-shadow: 0 0 0 999px rgba(10, 20, 17, 0.45);
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.55);
+}
+.camera-controls { flex: none; display: flex; align-items: center; justify-content: center; gap: 28px; margin-top: 18px; }
+.camera-shutter {
+  width: 76px; height: 76px; border-radius: 50%; flex: none;
+  background: #fff; border: 4px solid rgba(255,255,255,0.35);
+}
+.camera-shutter:active { transform: scale(0.94); }
+.camera-icon-btn {
+  width: 44px; height: 44px; border-radius: 50%; flex: none;
+  background: rgba(255,255,255,0.12); color: #fff; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
 }
 
 /* ===== Progress ===== */
