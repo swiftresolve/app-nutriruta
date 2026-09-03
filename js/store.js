@@ -23,6 +23,7 @@ const DEFAULT_STATE = {
     exclusiones: [],
     exclusionesOtro: [],   // alimentos que no consume, escritos a mano (ej. "cilantro")
     habitosDificiles: [],
+    motivacion: '',
     actividad: 'medio',
     azucarFreq: 'a_veces',
     alcoholFreq: 'nunca',

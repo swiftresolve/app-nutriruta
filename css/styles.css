@@ -326,6 +326,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .quiz-topbar-back:active { transform: translateX(-2px); box-shadow: none; }
 .quiz-step h2 { font-size: 1.3rem; margin-bottom: 4px; }
+.quiz-step-intro h2, .quiz-step-intro > p { text-align: center; }
 /* Las opciones del quiz van en grilla de 2 columnas, alineadas entre sí
    (ancho y alto parejo) — no en fila libre tipo etiquetas, que se veía
    despareja porque cada chip mide lo que mide su propio texto. */

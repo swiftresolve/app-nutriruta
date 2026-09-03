@@ -24,6 +24,13 @@ const CONDITIONS = [
   { id: 'ninguna', nombre: 'Ninguna diagnosticada', emoji: '✅' }
 ];
 
+const MOTIVATION = [
+  { id: 'poca', nombre: 'Poco motivado/a', emoji: '😔' },
+  { id: 'algo', nombre: 'Algo motivado/a', emoji: '🙂' },
+  { id: 'mucha', nombre: 'Muy motivado/a', emoji: '😃' },
+  { id: 'total', nombre: 'Totalmente motivado/a', emoji: '🤩' }
+];
+
 const ACTIVITY = [
   { id: 'bajo', nombre: 'Bajo (casi no me muevo)' },
   { id: 'medio', nombre: 'Medio (camino / algo de ejercicio)' },
@@ -62,7 +69,7 @@ export function renderQuiz(container) {
     nombre: known.nombre || '', objetivos: [], condiciones: [], exclusiones: [], exclusionesOtroTexto: '',
     // Sin valor por defecto: ninguna opción debe verse preseleccionada,
     // la usuaria elige de verdad cada respuesta.
-    habitosDificiles: [], actividad: '', azucarFreq: '', alcoholFreq: '',
+    habitosDificiles: [], motivacion: '', actividad: '', azucarFreq: '', alcoholFreq: '',
     pesoKg: known.pesoKg || ''
   };
   let step = 0;
@@ -114,6 +121,12 @@ export function renderQuiz(container) {
       title: '¿Con cuáles de estos retos te identificas?',
       sub: 'Marca lo que te pasa hoy en día. Sin culpa: nos ayuda a acompañarte mejor. Si ninguno aplica, solo presiona Siguiente.',
       render: (el) => chips(el, HARD_HABITS, answers.habitosDificiles, true, undefined, true)
+    },
+    {
+      title: '¿Qué tan motivado/a estás para lograrlo?',
+      sub: '',
+      completo: () => !!answers.motivacion,
+      render: (el, onChange) => chips(el, MOTIVATION, answers, false, 'motivacion', true, onChange)
     },
     {
       title: '¿Tu nivel de actividad física?',
@@ -189,17 +202,22 @@ export function renderQuiz(container) {
     const s = steps[step];
     const pct = Math.round(((step + 1) / (steps.length + 1)) * 100);
     const view = document.createElement('div');
-    view.className = 'quiz-step';
+    // El primer paso (bienvenida) es solo presentación -- no hay nada
+    // "avanzado" todavía, así que no muestra la barra de progreso, y su
+    // título/párrafo van centrados en vez de alineados a la izquierda
+    // como el resto de las preguntas.
+    view.className = 'quiz-step' + (step === 0 ? ' quiz-step-intro' : '');
     view.innerHTML = `
+      ${step === 0 ? '' : `
       <div class="quiz-topbar">
-        <button class="quiz-topbar-back" aria-label="Atrás" ${step === 0 ? 'style="visibility:hidden"' : ''}><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="quiz-topbar-back" aria-label="Atrás"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div class="quiz-progress"><div style="width:${pct}%"></div></div>
-      </div>
+      </div>`}
       <h2>${s.title}</h2>
       ${s.sub ? `<p>${s.sub}</p>` : ''}
       <div class="step-body"></div>
       <div class="quiz-nav"></div>`;
-    view.querySelector('.quiz-topbar-back').addEventListener('click', () => { if (step > 0) { step--; draw(); } });
+    view.querySelector('.quiz-topbar-back')?.addEventListener('click', () => { if (step > 0) { step--; draw(); } });
 
     // El botón SIEMPRE está visible (como en Fitia) -- nunca aparece de la
     // nada ni avanza solo. Empieza deshabilitado si el paso lo requiere
@@ -232,6 +250,7 @@ export function renderQuiz(container) {
         exclusiones: answers.exclusiones,
         exclusionesOtro,
         habitosDificiles: answers.habitosDificiles,
+        motivacion: answers.motivacion,
         actividad: answers.actividad,
         azucarFreq: answers.azucarFreq,
         alcoholFreq: answers.alcoholFreq,
