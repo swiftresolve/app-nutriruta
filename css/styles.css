@@ -310,7 +310,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* Barra superior tipo Duolingo: flechita para volver, barra de progreso
    al centro, X para cerrar (solo al retomar el quiz desde Ajustes — la
    primera vez no hay a dónde volver todavía). */
-.quiz-topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.quiz-topbar { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
 /* La barra ocupa todo el ancho restante, alineada a la derecha con los
    botones/chips de abajo (mismo borde derecho del contenedor). */
 .quiz-topbar .quiz-progress { flex: 1; margin: 0; }
