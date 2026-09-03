@@ -187,13 +187,7 @@ export function renderQuiz(container) {
       title: '¿Qué quieres lograr?',
       sub: 'Elige todo lo que aplique.',
       completo: () => answers.objetivos.length > 0 || answers.objetivosOtro.length > 0,
-      render(el, onChange) {
-        chips(el, GOALS, answers.objetivos, true, undefined, false, onChange);
-        el.insertAdjacentHTML('beforeend', '<div class="mt" id="obj-otro-tags"></div>');
-        pintarOtroTags(el.querySelector('#obj-otro-tags'), answers.objetivosOtro, {
-          titulo: 'Agrega una meta propia', placeholder: 'Ej. Dormir mejor, tener más disciplina...'
-        }, onChange);
-      }
+      render: (el, onChange) => renderGoalsConOtro(el, onChange)
     },
     {
       title: '¿Tienes alguna condición conocida?',
@@ -273,6 +267,25 @@ export function renderQuiz(container) {
     }
   }
 
+  // "¿Qué quieres lograr?": las metas predefinidas (GOALS) y las que la
+  // usuaria escribe a mano (objetivosOtro) comparten UNA sola grilla de
+  // 2 columnas -- si estuvieran en dos grillas separadas, cada una
+  // centraría su propio último ítem si le tocaba número impar, y se veía
+  // un salto raro (ej. "Menos ansiedad por comida" sola y centrada,
+  // aunque justo debajo ya seguían dos tags en columnas). Con una sola
+  // grilla, el checkerboard de columnas continúa sin cortes y solo se
+  // centra el último de verdad, cuando el total combinado es impar.
+  function renderGoalsConOtro(el, onChange) {
+    el.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'chips';
+    el.appendChild(wrap);
+    chips(el, GOALS, answers.objetivos, true, undefined, false, onChange, wrap);
+    pintarOtroTags(el, answers.objetivosOtro, {
+      titulo: 'Agrega una meta propia', placeholder: 'Ej. Dormir mejor, tener más disciplina...'
+    }, onChange, () => renderGoalsConOtro(el, onChange), wrap);
+  }
+
   // "+ Agregar otro" + modal con Enter/coma para ir agregando etiquetas,
   // igual al patrón que la usuaria mostró de Fitia (minuto 7 del video
   // original): un chip abre un modal con un campo de texto, cada Enter
@@ -287,43 +300,46 @@ export function renderQuiz(container) {
   // por objetivos ("¿Qué quieres lograr?") -- misma UI de tags + botón
   // "+ Agregar otro" que abre un modal, solo cambia el array que se
   // edita y los textos mostrados.
-  function pintarOtroTags(el, arr, textos, onChange) {
-    el.innerHTML = '';
-    if (arr.length) {
-      // Grilla normal de 2 columnas (no chips-1col) -- con la regla ya
-      // existente en styles.css, la última queda sola y centrada si el
-      // total es impar, y en pares de a dos si es par.
-      const wrap = document.createElement('div');
-      wrap.className = 'chips';
-      wrap.style.marginTop = '0';
-      arr.forEach((texto, i) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'chip selected';
-        b.innerHTML = `<span class="chip-tag-texto">${esc(texto)}</span>${ICONO_QUITAR}`;
-        b.setAttribute('aria-label', `Quitar ${texto}`);
-        b.addEventListener('click', () => {
-          arr.splice(i, 1);
-          pintarOtroTags(el, arr, textos, onChange);
-          if (onChange) onChange();
-        });
-        wrap.appendChild(b);
+  // repintar: función a usar para redibujar todo tras agregar/quitar un
+  // tag -- por defecto se re-llama a sí misma, pero cuando estas tags
+  // comparten grilla con otras opciones (ver renderGoalsConOtro) el
+  // llamador pasa su propio repintado completo, para no perder esas
+  // otras opciones al volver a pintar.
+  // sharedWrap: grilla ya existente donde appendear los tags (en vez de
+  // crear una propia) -- ver chips() arriba, mismo propósito.
+  function pintarOtroTags(el, arr, textos, onChange, repintar, sharedWrap) {
+    const rep = repintar || (() => pintarOtroTags(el, arr, textos, onChange, repintar, sharedWrap));
+    if (!sharedWrap) el.innerHTML = '';
+    // El botón "+ Agregar otro" vive DENTRO de la misma grilla de 2
+    // columnas que las etiquetas (no como bloque aparte abajo) -- así
+    // cuenta como una opción más para la regla de abajo: si el total
+    // (predefinidas + escritas a mano + este botón) es impar, la última
+    // queda centrada sola; si es par, siempre en 2 columnas parejas.
+    const wrap = sharedWrap || document.createElement('div');
+    if (!sharedWrap) { wrap.className = 'chips'; wrap.style.marginTop = '0'; }
+    arr.forEach((texto, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip selected';
+      b.innerHTML = `<span class="chip-tag-texto">${esc(texto)}</span>${ICONO_QUITAR}`;
+      b.setAttribute('aria-label', `Quitar ${texto}`);
+      b.addEventListener('click', () => {
+        arr.splice(i, 1);
+        rep();
+        if (onChange) onChange();
       });
-      el.appendChild(wrap);
-    }
+      wrap.appendChild(b);
+    });
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
-    addBtn.className = 'chip mt';
-    // Mismo ancho que la grilla de chips de arriba (edge a edge), no
-    // solo lo que mide su propio texto -- se veía descuadrado.
-    addBtn.style.width = '100%';
-    addBtn.style.justifyContent = 'center';
+    addBtn.className = 'chip';
     addBtn.textContent = '+ Agregar otro';
-    addBtn.addEventListener('click', () => abrirModalOtro(el, arr, textos, onChange));
-    el.appendChild(addBtn);
+    addBtn.addEventListener('click', () => abrirModalOtro(el, arr, textos, onChange, rep));
+    wrap.appendChild(addBtn);
+    if (!sharedWrap) el.appendChild(wrap);
   }
 
-  function abrirModalOtro(el, arr, textos, onChange) {
+  function abrirModalOtro(el, arr, textos, onChange, repintar) {
     openModal((modal, closeFn) => {
       modal.insertAdjacentHTML('beforeend', `
         <h2>${textos.titulo}</h2>
@@ -373,7 +389,7 @@ export function renderQuiz(container) {
       modal.querySelector('#q-otro-listo').addEventListener('click', () => {
         if (input.value.trim()) agregar();
         closeFn();
-        pintarOtroTags(el, arr, textos, onChange);
+        (repintar || (() => pintarOtroTags(el, arr, textos, onChange)))();
         if (onChange) onChange();
       });
       pintarTags();
@@ -386,9 +402,22 @@ export function renderQuiz(container) {
   // Fitia: el botón siempre está visible, deshabilitado hasta elegir una
   // respuesta, y hay que presionarlo a propósito para avanzar (nunca
   // avanza solo).
-  function chips(el, options, target, multi, prop, oneCol, onChange) {
-    const wrap = document.createElement('div');
-    wrap.className = 'chips' + (oneCol ? ' chips-1col' : '');
+  // sharedWrap: para preguntas donde estas opciones comparten UNA sola
+  // grilla de 2 columnas con un bloque de tags "+ Agregar otro" de abajo
+  // (ver renderGoalsConOtro) -- si cada bloque tuviera su propia grilla,
+  // cada una centraría su propio último ítem si le tocaba número impar,
+  // y se veía un salto raro (un ítem centrado solo, con más opciones en
+  // columnas justo debajo). Con una grilla compartida el checkerboard de
+  // columnas no se corta, y solo se centra el último de verdad cuando el
+  // total combinado (predefinidas + escritas a mano) es impar.
+  function chips(el, options, target, multi, prop, oneCol, onChange, sharedWrap) {
+    const wrap = sharedWrap || document.createElement('div');
+    if (!sharedWrap) wrap.className = 'chips' + (oneCol ? ' chips-1col' : '');
+    // Los botones de ESTAS opciones, en el mismo orden que `options` --
+    // no se buscan por índice en wrap.querySelectorAll('.chip') porque
+    // wrap puede tener también tags de otra fuente (ver sharedWrap) que
+    // no corresponden 1 a 1 con `options`.
+    const chipEls = [];
     for (const opt of options) {
       const b = document.createElement('button');
       b.className = 'chip';
@@ -406,19 +435,20 @@ export function renderQuiz(container) {
             const j = target.indexOf(opt.id);
             j >= 0 ? target.splice(j, 1) : target.push(opt.id);
           }
-          wrap.querySelectorAll('.chip').forEach((c, k) => c.classList.toggle('selected', target.includes(options[k].id)));
+          chipEls.forEach((c, k) => c.classList.toggle('selected', target.includes(options[k].id)));
         } else {
           // Tocar la misma opción ya elegida la deselecciona (vuelve a
           // quedar sin responder) en vez de quedar "atascada" sin forma
           // de quitarla -- pedido explícito de la usuaria.
           target[prop] = target[prop] === opt.id ? '' : opt.id;
-          wrap.querySelectorAll('.chip').forEach((c, k) => c.classList.toggle('selected', options[k].id === target[prop]));
+          chipEls.forEach((c, k) => c.classList.toggle('selected', options[k].id === target[prop]));
         }
         if (onChange) onChange();
       });
+      chipEls.push(b);
       wrap.appendChild(b);
     }
-    el.appendChild(wrap);
+    if (!sharedWrap) el.appendChild(wrap);
   }
 
   function draw() {

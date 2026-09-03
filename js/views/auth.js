@@ -1,5 +1,5 @@
 // Inicio de sesión y registro (Supabase Auth: JWT + refresh token rotativo).
-import { signIn, signUp, requestPasswordReset } from '../supabase-client.js';
+import { signIn, signUp, requestPasswordReset, signInWithGoogle } from '../supabase-client.js';
 import { initCloud, getState, resetState } from '../store.js';
 import { navigate, toast, setAuthed } from '../app.js';
 
@@ -13,6 +13,12 @@ export function passwordIssues(pw) {
   return issues;
 }
 
+const GOOGLE_ICON = `<svg viewBox="0 0 48 48" width="19" height="19">
+  <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.6 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
+  <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.9 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6 29.6 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/>
+  <path fill="#4CAF50" d="M24 44c5.5 0 10.4-2.1 14.1-5.6l-6.5-5.5C29.6 34.7 27 35.7 24 35.7c-5.3 0-9.7-3.4-11.3-8.1l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/>
+  <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C39.9 37.6 44 31.9 44 24c0-1.3-.1-2.7-.4-3.5z"/>
+</svg>`;
 const EYE_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 const EYE_OFF_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a20.6 20.6 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a20.5 20.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 
@@ -58,6 +64,8 @@ export function renderAuth(container, params = {}) {
       </div>
       <div class="card">
         <h2 class="center" style="justify-content:center">${mode === 'login' ? 'Inicia sesión' : 'Crea tu cuenta'}</h2>
+        <button type="button" class="btn ghost full" id="a-google" style="display:flex;align-items:center;justify-content:center;gap:10px">${GOOGLE_ICON}Continuar con Google</button>
+        <div class="row center small muted mt" style="gap:8px"><span style="flex:1;height:1px;background:var(--primary-soft)"></span>o<span style="flex:1;height:1px;background:var(--primary-soft)"></span></div>
         <form novalidate>
           ${mode === 'signup' ? `
           <label class="muted small" for="a-nombre">Nombre o alias (opcional)</label>
@@ -81,6 +89,22 @@ export function renderAuth(container, params = {}) {
       <div class="legal-note">NutriRuta es una guía de autoayuda: no reemplaza la atención de un profesional de salud.</div>`;
 
     attachPasswordToggle(view.querySelector('#a-pass'));
+
+    view.querySelector('#a-google').addEventListener('click', async () => {
+      const errEl = view.querySelector('#a-error');
+      errEl.textContent = '';
+      const btn = view.querySelector('#a-google');
+      btn.disabled = true;
+      try {
+        const { error } = await signInWithGoogle();
+        if (error) throw error;
+        // Si todo sale bien, Supabase redirige a Google -- el código de
+        // abajo casi nunca se ejecuta, solo si falla antes de redirigir.
+      } catch (err) {
+        errEl.textContent = 'No se pudo continuar con Google. Intenta con correo y contraseña.';
+        btn.disabled = false;
+      }
+    });
 
     view.querySelector('#a-toggle').addEventListener('click', () => {
       mode = mode === 'login' ? 'signup' : 'login';

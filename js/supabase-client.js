@@ -28,6 +28,18 @@ export async function signIn(email, password) {
   return supabase.auth.signInWithPassword({ email, password });
 }
 
+// Login con Google (como Fitia) -- redirige a Google y de vuelta a la app
+// con la sesión ya creada. Requiere activar el provider "Google" en
+// Supabase (Authentication → Providers) con credenciales OAuth de Google
+// Cloud Console -- sin eso, Supabase responde con error "provider is not
+// enabled" al presionar el botón, aunque el código ya esté listo.
+export async function signInWithGoogle() {
+  return supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin }
+  });
+}
+
 export async function signOut() {
   return supabase.auth.signOut();
 }
