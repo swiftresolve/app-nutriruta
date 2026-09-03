@@ -30,6 +30,33 @@ function iniciarRutiBienvenida(el, size) {
   }
 }
 
+// Estallido de confeti sobre toda la pantalla (ej. al terminar de armar
+// el plan) -- solo papelitos de colores cayendo, nada de emoji. Se
+// dibuja en un overlay fixed aparte (no dentro del contenedor del
+// quiz), así sigue viéndose completo aunque la pantalla debajo cambie
+// o navegue antes de que termine de caer. Respeta "reducir movimiento".
+const CONFETI_COLORES = ['#2BB5A0', '#7CC96A', '#FFC94A', '#FF7A5C', '#5AA9E6'];
+function lanzarConfeti() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const capa = document.createElement('div');
+  capa.className = 'confeti-capa';
+  const N = 90;
+  for (let i = 0; i < N; i++) {
+    const p = document.createElement('span');
+    p.className = 'confeti-pieza';
+    const izquierda = Math.random() * 100;
+    const retraso = Math.random() * 0.4;
+    const duracion = 2.2 + Math.random() * 1.3;
+    const giro = Math.random() * 360;
+    const color = CONFETI_COLORES[i % CONFETI_COLORES.length];
+    const ancho = 6 + Math.random() * 5;
+    p.style.cssText = `left:${izquierda}%; --duracion:${duracion}s; animation-delay:${retraso}s; background:${color}; width:${ancho}px; height:${ancho * 0.4}px; transform:rotate(${giro}deg);`;
+    capa.appendChild(p);
+  }
+  document.body.appendChild(capa);
+  setTimeout(() => capa.remove(), 4000);
+}
+
 // Logos reales (no emoji genérico) para las redes que sí tienen un ícono
 // reconocible -- la usuaria lo pidió explícitamente para Instagram,
 // Facebook, YouTube y TikTok. SVG a mano con los colores de marca (sin
@@ -621,6 +648,9 @@ export function renderQuiz(container) {
       setTimeout(() => {
         const el = view.querySelector(`#ap-${i}`);
         if (el) { el.classList.add('done'); el.querySelector('.armando-check').textContent = '✓'; }
+        // Al chulear la última, un estallido de confeti sobre toda la
+        // pantalla -- solo papelitos de colores, sin emoji de fiesta.
+        if (i === items.length - 1) lanzarConfeti();
       }, 500 + i * 550);
     });
     setTimeout(onDone, total);
