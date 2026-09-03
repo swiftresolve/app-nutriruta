@@ -98,6 +98,16 @@ body {
   flex-direction: column;
   justify-content: flex-start;
 }
+/* Quiz específicamente (no auth/resetPassword, que sí pueden crecer y
+   scrollear la página entera con normalidad): la barra de arriba, el
+   título/subtítulo y el botón de abajo quedan fijos en su lugar SIEMPRE
+   -- ya no como position:fixed con un padding "adivinado" para no
+   toparlos (eso fallaba con preguntas largas, el título terminaba
+   scrolleado detrás de la barra). En su lugar, #app se fija a la altura
+   real de la pantalla y adentro es un flex column: cabecera y pie en
+   flujo normal (nunca se mueven), y section-body es la ÚNICA parte que
+   hace scroll, en el espacio que sobra entre ambos. */
+#app.no-nav:has(.quiz-step) { height: 100dvh; overflow: hidden; padding-bottom: 0; }
 
 /* Transición de pantalla al navegar (no en re-renders internos de una
    misma vista, esos no pasan por navigate() así que no la disparan). */
@@ -322,21 +332,15 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .quiz-progress { height: 8px; background: #E2EEEB; border-radius: 999px; overflow: hidden; margin: 14px 0 22px; }
 .quiz-progress > div { height: 100%; background: var(--primary); border-radius: 999px; transition: width 0.35s cubic-bezier(.34,1.2,.64,1); }
 /* Barra superior tipo Duolingo: flechita para volver, barra de progreso
-   al centro, X para cerrar (solo al retomar el quiz desde Ajustes — la
-   primera vez no hay a dónde volver todavía). Fija arriba del todo --
-   #app.no-nav centra el resto de la pregunta verticalmente en el
-   espacio disponible, y si la barra viviera dentro de ese bloque
-   centrado se movería de posición según cuánto contenido tenga cada
-   pregunta. Mismo patrón de centrado por ancho que .bottom-nav/
-   .chat-input-row (fixed + left:50% + transform, no todo el viewport). */
-.quiz-topbar {
-  display: flex; align-items: center; gap: 6px;
-  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-  width: calc(100% - 32px); max-width: 528px; z-index: 60;
-}
-/* Reserva el espacio de la barra fija arriba de cada pregunta -- sin
-   esto el contenido centrado podría dibujarse debajo de ella. */
-.quiz-step:not(.quiz-step-intro) { padding-top: 48px; }
+   al centro. Ya NO es position:fixed -- eso obligaba a "adivinar" cuánto
+   espacio reservarle arriba (fallaba con preguntas largas: el título
+   terminaba scrolleado detrás) y además rebotaba al abrir la pantalla
+   (el visor del navegador cambia de alto un instante mientras se
+   asienta la barra de direcciones, y un position:fixed con bottom/top
+   en píxeles fijos salta cuando eso pasa). Ahora vive en flujo normal,
+   como primer hijo del flex-column de .quiz-step (ver más abajo) --
+   nunca se mueve porque nunca se calculó su posición a mano. */
+.quiz-topbar { display: flex; align-items: center; gap: 6px; flex: none; }
 /* La barra ocupa todo el ancho restante, alineada a la derecha con los
    botones/chips de abajo (mismo borde derecho del contenedor). */
 .quiz-topbar .quiz-progress { flex: 1; margin: 0; }
@@ -351,8 +355,32 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   color: var(--ink-soft); flex: none; display: flex; align-items: center; justify-content: center;
 }
 .quiz-topbar-back:active { transform: translateX(-2px); box-shadow: none; }
-.quiz-step h2 { font-size: 1.3rem; margin-bottom: 4px; }
-.quiz-step-intro h2, .quiz-step-intro > p { text-align: center; }
+.quiz-step h2 { font-size: 1.3rem; margin-bottom: 4px; flex: none; }
+.quiz-step > .quiz-content > p { flex: none; }
+.quiz-step-intro h2, .quiz-step-intro > .quiz-content > p { text-align: center; }
+/* quiz-content agrupa título + subtítulo + step-body -- ocupa el
+   espacio que sobra entre la barra de arriba y el botón de abajo
+   (flex:1). En las preguntas normales el título queda arriba del todo
+   dentro de ese espacio (flex:none) y solo step-body scrollea (flex:1).
+   En la bienvenida (sin barra arriba) el título es parte del MISMO
+   grupo que se centra como bloque -- justify-content:center lo trata
+   junto con el video y la frase, no por separado -- así el botón queda
+   fijo abajo del todo sin que el título "suba" solo. */
+.quiz-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.quiz-step-intro .quiz-content { justify-content: center; align-items: center; }
+.quiz-step-intro .step-body { flex: none; }
+/* step-body es la ÚNICA parte de la pregunta que hace scroll -- flex:1
+   la deja ocupar exactamente el espacio que sobra entre el título y el
+   botón de abajo, sin importar cuánto contenido tenga (2 chips o 12).
+   min-height:0 es necesario para que un hijo flex pueda scrollear en
+   vez de simplemente estirar a su padre. */
+.step-body {
+  flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; min-height: 0; -webkit-overflow-scrolling: touch;
+  /* Sigue siendo scrolleable con el dedo/rueda -- solo se oculta la
+     barrita visual, no la función. */
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.step-body::-webkit-scrollbar { display: none; }
 /* Las opciones del quiz van en grilla de 2 columnas, alineadas entre sí
    (ancho y alto parejo) — no en fila libre tipo etiquetas, que se veía
    despareja porque cada chip mide lo que mide su propio texto. */
@@ -366,10 +394,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   /* Como ahora son tarjetas anchas (no etiquetas cortas), el radio de
      píldora (999px) se veía como un óvalo raro — mismo radio que .card. */
   border-radius: 16px;
-  /* Sin esto el botón no es flex y el texto queda pegado arriba en vez de
-     centrado verticalmente — se notaba al quedar más alto que su pareja
-     de fila. min-height fija un piso común para todas las opciones. */
-  display: flex; align-items: center; justify-content: flex-start; min-height: 46px;
+  /* height FIJO (no min-height) para que TODAS las opciones midan
+     exactamente lo mismo, no solo las de la misma fila -- antes una
+     opción de una sola línea y otra de dos líneas quedaban de alturas
+     distintas entre preguntas. 46px alcanza para una línea; si el texto
+     llega a partirse en dos, el propio texto se ve más chico centrado,
+     nunca estira la tarjeta -- por eso los textos de las opciones deben
+     ser cortos (ver GOALS en profiles.js, ya recortado por esto mismo). */
+  display: flex; align-items: center; justify-content: flex-start; height: 46px; overflow: hidden;
 }
 /* Si el total de opciones es impar, la última queda sola en la columna
    izquierda con un hueco vacío a la derecha — que ocupe las dos columnas
@@ -381,7 +413,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* Cada pregunta entra deslizándose, como el quiz de Duolingo — como
    draw() crea un .quiz-step nuevo en cada paso, la animación se repite
    sola en cada pregunta sin necesitar JS extra. */
-.quiz-step { animation: quiz-step-in 0.35s cubic-bezier(.22,1,.36,1); }
+/* .quiz-step es el flex-column real: cabecera (barra+título, flex:none)
+   arriba, step-body (flex:1, scrollea sola) al medio, quiz-nav
+   (flex:none) siempre pegado abajo -- estructural, no una posición en
+   píxeles calculada/adivinada, por eso ni rebota al abrir ni dej al
+   título taparse con nada sin importar cuánto contenido tenga. Ocupa
+   toda la altura que le da #app.no-nav:has(.quiz-step) (100dvh). */
+.quiz-step { display: flex; flex-direction: column; height: 100%; animation: quiz-step-in 0.35s cubic-bezier(.22,1,.36,1); }
 @keyframes quiz-step-in {
   from { opacity: 0; transform: translateX(28px); }
   to { opacity: 1; transform: translateX(0); }
@@ -389,29 +427,17 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @media (prefers-reduced-motion: reduce) {
   .quiz-step { animation: none; }
 }
-/* Fijo abajo del todo, mismo patrón de centrado por ancho que
-   .quiz-topbar/.bottom-nav/.chat-input-row -- así el botón siempre
-   está en el mismo lugar sin importar cuánto contenido tenga la
-   pregunta arriba, en vez de moverse con el bloque centrado. */
 .quiz-nav {
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom));
-  transform: translateX(-50%); width: calc(100% - 32px); max-width: 528px; z-index: 60;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; flex: none;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
-.quiz-nav .btn { flex: none; height: calc(var(--btn-h) + 2px); font-size: 1.14rem; }
+/* Ancho fijo, igual en TODAS las preguntas -- antes se media contra el
+   ancho del título de cada paso y quedaba distinto según qué tan largo
+   fuera el texto (la usuaria pidió que todos midan igual al de
+   "¿Qué quieres lograr?", que ocupa casi todo el ancho de contenido). */
+.quiz-nav .btn { flex: none; width: 100%; height: calc(var(--btn-h) + 2px); font-size: 1.14rem; }
 .quiz-nav p { width: 100%; }
 .quiz-nav p { text-align: center; margin: 0; }
-/* Reserva el espacio del botón fijo abajo -- en todas las pantallas,
-   incluida la bienvenida (también tiene botón + link de inicio de
-   sesión, un poco más alto por eso). */
-.quiz-step { padding-bottom: 98px; }
-/* Solo la bienvenida (contenido corto y fijo) se centra verticalmente
-   -- vía margin:auto en el propio ítem, no justify-content:center en el
-   contenedor (eso rompía las preguntas con contenido más largo: el
-   navegador arrancaba el scroll a la mitad del bloque centrado, con el
-   título ya tapado detrás de la barra fija de arriba). */
-.quiz-step-intro { padding-bottom: 130px; margin-top: auto; margin-bottom: auto; }
-
 /* "Armando tu plan…": checklist que se revela paso a paso antes del
    resultado del quiz. */
 .armando-list { display: flex; flex-direction: column; gap: 14px; max-width: 320px; margin: 0 auto; text-align: left; }

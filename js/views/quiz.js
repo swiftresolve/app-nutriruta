@@ -16,7 +16,8 @@ const CONDITIONS = [
   { id: 'prediabetes', nombre: 'Prediabetes', emoji: '🛡️' },
   { id: 'colesterol', nombre: 'Colesterol alto', emoji: '❤️' },
   { id: 'colon_irritable', nombre: 'Colon irritable', emoji: '🌱' },
-  { id: 'gases', nombre: 'Gases / hinchazón frecuente', emoji: '🎈' },
+  { id: 'gases', nombre: 'Gases', emoji: '🎈' },
+  { id: 'hinchazon', nombre: 'Hinchazón frecuente', emoji: '🎈' },
   { id: 'estrenimiento', nombre: 'Estreñimiento', emoji: '🚰' },
   { id: 'candidiasis', nombre: 'Candidiasis', emoji: '🌸' },
   { id: 'migranas', nombre: 'Migrañas', emoji: '🧠' },
@@ -50,6 +51,7 @@ function deriveProfiles(a) {
   const p = new Set();
   for (const c of a.condiciones) {
     if (c === 'sop') p.add('resistencia_insulina'); // SOP se maneja con reglas de RI
+    else if (c === 'hinchazon') p.add('gases'); // mismo perfil dietético que "Gases", solo se separó la opción del quiz para que el texto fuera más corto
     else if (c !== 'ninguna' && PROFILES[c]) p.add(c);
   }
   if (a.objetivos.includes('azucar') || a.azucarFreq === 'muy_frecuente') p.add('resistencia_insulina');
@@ -236,9 +238,11 @@ export function renderQuiz(container) {
         <button class="quiz-topbar-back" aria-label="Atrás"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div class="quiz-progress"><div style="width:${pct}%"></div></div>
       </div>`}
-      <h2>${s.title}</h2>
-      ${s.sub ? `<p>${s.sub}</p>` : ''}
-      <div class="step-body"></div>
+      <div class="quiz-content">
+        <h2>${s.title}</h2>
+        ${s.sub ? `<p>${s.sub}</p>` : ''}
+        <div class="step-body"></div>
+      </div>
       <div class="quiz-nav"></div>`;
     view.querySelector('.quiz-topbar-back')?.addEventListener('click', () => { if (step > 0) { step--; draw(); } });
 
@@ -268,19 +272,6 @@ export function renderQuiz(container) {
 
     s.render(view.querySelector('.step-body'), () => { next.disabled = s.completo ? !s.completo() : false; });
     container.appendChild(view);
-
-    // El botón se alinea con el ancho real del TEXTO del título, no un
-    // porcentaje fijo arbitrario -- h2 es un bloque que ocupa todo el
-    // ancho disponible por defecto, así que para medir su contenido real
-    // se vuelve inline-block un instante (se ajusta solo al texto, o a la
-    // línea más larga si el título se parte en dos) y se revierte.
-    const h2 = view.querySelector('h2');
-    if (h2) {
-      const prevDisplay = h2.style.display;
-      h2.style.display = 'inline-block';
-      next.style.width = `${Math.min(h2.offsetWidth, view.clientWidth)}px`;
-      h2.style.display = prevDisplay;
-    }
   }
 
   function result() {
