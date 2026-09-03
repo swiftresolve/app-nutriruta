@@ -1,7 +1,7 @@
 // Quiz inicial de personalización (onboarding).
 import { getState, setState, esc, today } from '../store.js';
 import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
-import { navigate } from '../app.js';
+import { navigate, openModal } from '../app.js';
 import { rutiMascot } from '../mascot.js';
 
 // Respeta el modo minimalista ("Ocultar Ruti" en Ajustes) — la app sigue
@@ -9,6 +9,38 @@ import { rutiMascot } from '../mascot.js';
 function rutiSiVisible(mood, opts) {
   return getState().rutiOculto ? '' : rutiMascot(mood, opts);
 }
+
+// Video de bienvenida (fondo transparente, ver img/ruti/bienvenida.webm)
+// -- se reutiliza en la bienvenida del quiz Y en "Armando tu plan" (la
+// usuaria pidió la misma animación en ambas). Si el navegador no soporta
+// WebM con canal alfa o el video falla, cae a la imagen estática real.
+function rutiBienvenidaHtml(size) {
+  return getState().rutiOculto ? '' : `
+    <video autoplay muted loop playsinline poster="./img/ruti/saludo.png" style="height:${size}px;width:auto;display:block;margin:0 auto" class="q-ruti-video">
+      <source src="./img/ruti/bienvenida.webm" type="video/webm">
+    </video>`;
+}
+function iniciarRutiBienvenida(el, size) {
+  const video = el.querySelector('.q-ruti-video');
+  if (!video) return;
+  if (!video.canPlayType('video/webm; codecs="vp9"')) {
+    video.outerHTML = rutiSiVisible('saludo', { size });
+  } else {
+    video.addEventListener('error', () => { video.outerHTML = rutiSiVisible('saludo', { size }); });
+  }
+}
+
+const ORIGEN = [
+  { id: 'instagram', nombre: 'Instagram', emoji: '📸' },
+  { id: 'tiktok', nombre: 'TikTok', emoji: '🎵' },
+  { id: 'facebook', nombre: 'Facebook', emoji: '📘' },
+  { id: 'amigo', nombre: 'Un amigo o familiar', emoji: '👋' },
+  { id: 'referido', nombre: 'Código de un amigo', emoji: '🎁' },
+  { id: 'busqueda', nombre: 'Buscando en internet', emoji: '🔍' },
+  { id: 'youtube', nombre: 'YouTube', emoji: '▶️' },
+  { id: 'anuncio', nombre: 'Un anuncio publicitario', emoji: '📣' },
+  { id: 'otro', nombre: 'Otro', emoji: '✨' }
+];
 
 const CONDITIONS = [
   { id: 'higado_graso', nombre: 'Hígado graso', emoji: '🫀' },
@@ -68,7 +100,7 @@ export function renderQuiz(container) {
   // Prellenar con lo ya conocido (p. ej. el nombre dado al registrarse).
   const known = getState().user;
   const answers = {
-    nombre: known.nombre || '', objetivos: [], condiciones: [], exclusiones: [], exclusionesOtroTexto: '',
+    nombre: known.nombre || '', objetivos: [], condiciones: [], exclusiones: [], exclusionesOtro: [], origen: '', origenOtroTexto: '',
     // Sin valor por defecto: ninguna opción debe verse preseleccionada,
     // la usuaria elige de verdad cada respuesta.
     habitosDificiles: [], motivacion: '', actividad: '', azucarFreq: '', alcoholFreq: '',
@@ -81,26 +113,14 @@ export function renderQuiz(container) {
       title: '¡Hola! 🌿 Empecemos con NutriRuta',
       sub: '',
       render(el) {
-        // Video de bienvenida (fondo transparente, ver img/ruti/bienvenida.webm)
-        // en vez de la imagen fija -- si el navegador no soporta WebM con
-        // canal alfa (algo de Safari viejo), cae a la imagen estática real,
-        // nunca a un cuadro roto. Bienvenida pura, sin pedir nada todavía
-        // (el nombre y el aviso de privacidad viven en el siguiente paso) --
-        // comparado con Duolingo/Fitia, la primera pantalla no debía pedir
-        // datos antes de generar interés.
-        const rutiHtml = getState().rutiOculto ? '' : `
-          <video autoplay muted loop playsinline poster="./img/ruti/saludo.png" style="height:150px;width:auto;display:block;margin:0 auto" id="q-ruti-video">
-            <source src="./img/ruti/bienvenida.webm" type="video/webm">
-          </video>`;
+        // Bienvenida pura, sin pedir nada todavía (el nombre y el aviso de
+        // privacidad viven en el siguiente paso) -- comparado con
+        // Duolingo/Fitia, la primera pantalla no debía pedir datos antes
+        // de generar interés.
         el.innerHTML = `
-          <div class="center mb">${rutiHtml}</div>
+          <div class="center mb">${rutiBienvenidaHtml(150)}</div>
           <p class="center small" style="font-weight:600">Soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>`;
-        const video = el.querySelector('#q-ruti-video');
-        if (video && !video.canPlayType('video/webm; codecs="vp9"')) {
-          video.outerHTML = rutiSiVisible('saludo', { size: 150 });
-        } else {
-          video?.addEventListener('error', () => { video.outerHTML = rutiSiVisible('saludo', { size: 150 }); });
-        }
+        iniciarRutiBienvenida(el, 150);
         el.querySelector('#q-ya-tengo-cuenta')?.addEventListener('click', () => navigate('auth'));
       }
     },
@@ -115,6 +135,22 @@ export function renderQuiz(container) {
         const input = el.querySelector('#q-nombre');
         input.value = answers.nombre; // asignación por propiedad: sin riesgo de inyección HTML
         input.addEventListener('input', (e) => { answers.nombre = e.target.value.trim(); });
+      }
+    },
+    {
+      title: '¿Cómo te enteraste de NutriRuta?',
+      sub: '',
+      completo: () => !!answers.origen,
+      render(el, onChange) {
+        chips(el, ORIGEN, answers, false, 'origen', true, () => {
+          pintarOrigenOtro(el);
+          onChange();
+        });
+        const otroBox = document.createElement('div');
+        otroBox.className = 'mt';
+        otroBox.id = 'q-origen-otro-box';
+        el.appendChild(otroBox);
+        pintarOrigenOtro(el);
       }
     },
     {
@@ -134,12 +170,8 @@ export function renderQuiz(container) {
       sub: 'Alergias, intolerancias o preferencias. Adaptaremos recetas y sustituciones. Si no tienes ninguna, solo presiona Siguiente.',
       render(el) {
         chips(el, EXCLUSIONS, answers.exclusiones, true);
-        el.insertAdjacentHTML('beforeend', `
-          <label class="muted small mt" for="q-excl-otro" style="display:block">¿Algo más que no comas? (opcional, separa varios con coma)</label>
-          <input id="q-excl-otro" type="text" placeholder="Ej: cilantro, champiñones" maxlength="200" class="auth-input">`);
-        const input = el.querySelector('#q-excl-otro');
-        input.value = answers.exclusionesOtroTexto;
-        input.addEventListener('input', (e) => { answers.exclusionesOtroTexto = e.target.value; });
+        el.insertAdjacentHTML('beforeend', '<div class="mt" id="excl-otro-tags"></div>');
+        pintarExclusionesOtro(el.querySelector('#excl-otro-tags'));
       }
     },
     {
@@ -187,6 +219,96 @@ export function renderQuiz(container) {
       render: (el, onChange) => chips(el, FREQ_OPTIONS, answers, false, 'alcoholFreq', true, onChange)
     }
   ];
+
+  // Textbox que aparece solo cuando se elige "Otro" en el origen -- se
+  // repinta después de cada cambio de chip para mostrarlo/ocultarlo.
+  function pintarOrigenOtro(el) {
+    const box = el.querySelector('#q-origen-otro-box');
+    if (!box) return;
+    box.innerHTML = answers.origen === 'otro'
+      ? '<input type="text" id="q-origen-otro-input" placeholder="Cuéntanos dónde" maxlength="80" class="auth-input">'
+      : '';
+    const input = box.querySelector('#q-origen-otro-input');
+    if (input) {
+      input.value = answers.origenOtroTexto;
+      input.addEventListener('input', (e) => { answers.origenOtroTexto = e.target.value; });
+    }
+  }
+
+  // "+ Agregar otro" + modal con Enter/coma para ir agregando etiquetas,
+  // igual al patrón que la usuaria mostró de Fitia (minuto 7 del video
+  // original): un chip abre un modal con un campo de texto, cada Enter
+  // (o coma) agrega lo escrito como una etiqueta propia y limpia el
+  // campo para seguir escribiendo, sin cerrar el modal. "Listo" cierra.
+  function pintarExclusionesOtro(el) {
+    el.innerHTML = '';
+    if (answers.exclusionesOtro.length) {
+      // Grilla normal de 2 columnas (no chips-1col) -- con la regla ya
+      // existente en styles.css, la última queda sola y centrada si el
+      // total es impar, y en pares de a dos si es par.
+      const wrap = document.createElement('div');
+      wrap.className = 'chips';
+      wrap.style.marginTop = '0';
+      answers.exclusionesOtro.forEach((texto, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'chip selected';
+        b.innerHTML = `<span class="chip-tag-texto">${esc(texto)}</span><span class="chip-tag-quitar" aria-hidden="true">✕</span>`;
+        b.setAttribute('aria-label', `Quitar ${texto}`);
+        b.addEventListener('click', () => {
+          answers.exclusionesOtro.splice(i, 1);
+          pintarExclusionesOtro(el);
+        });
+        wrap.appendChild(b);
+      });
+      el.appendChild(wrap);
+    }
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'chip mt';
+    addBtn.textContent = '+ Agregar otro';
+    addBtn.addEventListener('click', () => abrirModalExclusionOtro(el));
+    el.appendChild(addBtn);
+  }
+
+  function abrirModalExclusionOtro(el) {
+    openModal((modal, closeFn) => {
+      modal.insertAdjacentHTML('beforeend', `
+        <h2>Agrega una alergia o intolerancia</h2>
+        <p class="small muted mb">Escribe y presiona Enter (o coma) para agregar</p>
+        <input type="text" id="q-excl-nueva" placeholder="Ej. Cilantro, champiñones..." maxlength="40" class="auth-input">
+        <div class="chips chips-1col mt" id="q-excl-nueva-tags"></div>
+        <button type="button" class="btn full mt" id="q-excl-listo">Listo</button>`);
+      const input = modal.querySelector('#q-excl-nueva');
+      const tagsBox = modal.querySelector('#q-excl-nueva-tags');
+      function pintarTags() {
+        tagsBox.innerHTML = answers.exclusionesOtro.map((texto, i) => `
+          <button type="button" class="chip selected" data-i="${i}"><span class="chip-tag-texto">${esc(texto)}</span><span class="chip-tag-quitar" aria-hidden="true">✕</span></button>`).join('');
+        tagsBox.querySelectorAll('.chip').forEach((b) => {
+          b.addEventListener('click', () => {
+            answers.exclusionesOtro.splice(Number(b.dataset.i), 1);
+            pintarTags();
+          });
+        });
+      }
+      function agregar() {
+        const texto = input.value.trim().replace(/,$/, '').trim();
+        if (texto && !answers.exclusionesOtro.includes(texto)) answers.exclusionesOtro.push(texto);
+        input.value = '';
+        pintarTags();
+      }
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); agregar(); }
+      });
+      modal.querySelector('#q-excl-listo').addEventListener('click', () => {
+        if (input.value.trim()) agregar();
+        closeFn();
+        pintarExclusionesOtro(el);
+      });
+      pintarTags();
+      input.focus();
+    });
+  }
 
   // onChange: se llama después de marcar/desmarcar una selección, para que
   // draw() pueda habilitar el botón "Siguiente" -- igual que el quiz de
@@ -277,8 +399,6 @@ export function renderQuiz(container) {
   function result() {
     const perfiles = deriveProfiles(answers);
     const pesoValido = Number(answers.pesoKg);
-    const exclusionesOtro = answers.exclusionesOtroTexto
-      .split(',').map((t) => t.trim()).filter(Boolean).slice(0, 10);
     setState({
       onboarded: true,
       user: {
@@ -286,12 +406,14 @@ export function renderQuiz(container) {
         objetivos: answers.objetivos,
         perfiles,
         exclusiones: answers.exclusiones,
-        exclusionesOtro,
+        exclusionesOtro: answers.exclusionesOtro.slice(0, 10),
         habitosDificiles: answers.habitosDificiles,
         motivacion: answers.motivacion,
         actividad: answers.actividad,
         azucarFreq: answers.azucarFreq,
         alcoholFreq: answers.alcoholFreq,
+        origen: answers.origen,
+        origenOtroTexto: answers.origen === 'otro' ? answers.origenOtroTexto.trim().slice(0, 80) : '',
         pesoKg: pesoValido >= 30 && pesoValido <= 300 ? pesoValido : null,
         trackearPeso: false
       }
@@ -317,14 +439,22 @@ export function renderQuiz(container) {
     const view = document.createElement('div');
     view.className = 'quiz-step center';
     const nombreTxt = answers.nombre ? `, ${esc(answers.nombre)}` : '';
+    // Lista real de lo que de verdad se calculó arriba -- nada inventado,
+    // solo se desglosa cada prioridad real como su propio ítem (en vez de
+    // mostrar solo la primera) y se suman las demás partes reales del
+    // plan, para que la lista sea más larga y el ritmo se sienta menos
+    // apurado (pedido explícito de la usuaria).
     const items = [
       `Perfil: ${PROFILES[main].nombre}`,
-      `Primer paso: ${esc(prioridades[0] || 'Progreso, no perfección')}`,
-      'Menú del día personalizado'
+      ...prioridades.map((p) => `Prioridad: ${esc(p)}`),
+      'Menú del día personalizado',
+      'Lista de compras automática',
+      'Recetario adaptado a ti'
     ];
-    const total = 380 + items.length * 420 + 300;
+    const total = 500 + items.length * 550 + 300;
     const RADIO = 42, CIRC = 2 * Math.PI * 42;
     view.innerHTML = `
+      <div class="center mb">${rutiBienvenidaHtml(90)}</div>
       <h2 class="mt">Armando tu plan${nombreTxt}…</h2>
       <div class="armando-ring mt">
         <svg viewBox="0 0 96 96">
@@ -334,21 +464,20 @@ export function renderQuiz(container) {
         </svg>
         <span class="armando-ring-pct" id="ap-pct">0%</span>
       </div>
-      <div class="quiz-progress mt" style="max-width:280px;margin-left:auto;margin-right:auto"><div id="ap-bar" style="width:0%"></div></div>
       <div class="armando-list mt">${items.map((t, i) => `<div class="armando-item" id="ap-${i}"><span class="armando-check">⏳</span><span>${t}</span></div>`).join('')}</div>`;
     container.appendChild(view);
+    iniciarRutiBienvenida(view, 90);
 
-    // Anillo + barra reflejan el mismo avance real que el checklist de
-    // abajo (mismo `total`), no una animación aparte desincronizada.
+    // El anillo refleja el mismo avance real que el checklist de abajo
+    // (mismo `total`), no una animación aparte desincronizada. Ya no hay
+    // una segunda barra lineal debajo -- era redundante con el anillo.
     const ringFill = view.querySelector('.armando-ring-fill');
     const pctLabel = view.querySelector('#ap-pct');
-    const bar = view.querySelector('#ap-bar');
     const startedAt = Date.now();
     const tick = setInterval(() => {
       const pct = Math.min(100, Math.round(((Date.now() - startedAt) / total) * 100));
       ringFill.style.strokeDashoffset = (CIRC * (1 - pct / 100)).toFixed(1);
       pctLabel.textContent = `${pct}%`;
-      bar.style.width = `${pct}%`;
       if (pct >= 100) clearInterval(tick);
     }, 60);
 
@@ -356,7 +485,7 @@ export function renderQuiz(container) {
       setTimeout(() => {
         const el = view.querySelector(`#ap-${i}`);
         if (el) { el.classList.add('done'); el.querySelector('.armando-check').textContent = '✓'; }
-      }, 380 + i * 420);
+      }, 500 + i * 550);
     });
     setTimeout(onDone, total);
   }
@@ -365,7 +494,6 @@ export function renderQuiz(container) {
     container.innerHTML = '';
     const view = document.createElement('div');
     view.innerHTML = `
-      <div class="quiz-progress"><div style="width:100%"></div></div>
       <div class="card center">
         ${rutiSiVisible('saludo', { size: 100 })}
         <h2 class="mt">${answers.nombre ? `${esc(answers.nombre)}, tu` : 'Tu'} plan está listo</h2>

@@ -24,6 +24,8 @@ const DEFAULT_STATE = {
     exclusionesOtro: [],   // alimentos que no consume, escritos a mano (ej. "cilantro")
     habitosDificiles: [],
     motivacion: '',
+    origen: '',   // como se entero de NutriRuta (marketing, ver ORIGEN en quiz.js)
+    origenOtroTexto: '',
     actividad: 'medio',
     azucarFreq: 'a_veces',
     alcoholFreq: 'nunca',

@@ -24,6 +24,22 @@ import { renderDiary } from './views/diary.js';
 const app = document.getElementById('app');
 const nav = document.getElementById('bottom-nav');
 
+// --vvh: alto REAL visible del navegador, no el de la pantalla completa.
+// 100dvh no se achica cuando se abre el teclado en varios navegadores
+// móviles (sobre todo iOS Safari) -- el layout del quiz (barra arriba +
+// botón fijo abajo, ver styles.css #app.no-nav:has(.quiz-step)) usaba
+// 100dvh y el botón "Siguiente" quedaba tapado detrás del teclado al
+// escribir el nombre. visualViewport sí reporta el alto real visible
+// (se achica con el teclado), así que se expone como variable CSS y se
+// mantiene actualizada en cada cambio.
+function actualizarVvh() {
+  const vv = window.visualViewport;
+  document.documentElement.style.setProperty('--vvh', `${(vv ? vv.height : window.innerHeight)}px`);
+}
+actualizarVvh();
+window.visualViewport?.addEventListener('resize', actualizarVvh);
+window.addEventListener('resize', actualizarVvh);
+
 const ROUTES = {
   auth: renderAuth,
   quiz: renderQuiz,

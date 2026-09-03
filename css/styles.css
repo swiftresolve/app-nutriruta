@@ -107,7 +107,7 @@ body {
    real de la pantalla y adentro es un flex column: cabecera y pie en
    flujo normal (nunca se mueven), y section-body es la ÚNICA parte que
    hace scroll, en el espacio que sobra entre ambos. */
-#app.no-nav:has(.quiz-step) { height: 100dvh; overflow: hidden; padding-bottom: 0; }
+#app.no-nav:has(.quiz-step) { height: var(--vvh, 100dvh); overflow: hidden; padding-bottom: 0; }
 
 /* Transición de pantalla al navegar (no en re-renders internos de una
    misma vista, esos no pasan por navigate() así que no la disparan). */
@@ -273,6 +273,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s, color 0.12s, border-color 0.12s;
 }
 .chip:active { transform: translateY(2px) scale(0.97); box-shadow: 0 0 0 #D8E6E2; }
+/* Etiquetas de "otro alimento" agregadas a mano (quiz, ver
+   pintarExclusionesOtro en quiz.js): la "quitar" (✕) va chica y con
+   espacio real respecto al texto, no pegada como un carácter más. */
+.chip-tag-texto { margin-right: 10px; }
+.chip-tag-quitar { font-size: 0.72rem; opacity: 0.65; }
 /* Verde de marca con transparencia + borde, no relleno sólido — para que
    se note que está elegido sin perder la sensación de tarjeta suave. */
 .chip.selected {
