@@ -79,12 +79,26 @@ export function renderQuiz(container) {
       title: '¡Hola! 🌿 Empecemos con NutriRuta',
       sub: 'Vamos a conocerte un poco para personalizar tu experiencia. Esto no reemplaza una consulta médica, pero nos ayuda a darte mejores recomendaciones.',
       render(el) {
+        // Video de bienvenida (fondo transparente, ver img/ruti/bienvenida.webm)
+        // en vez de la imagen fija -- si el navegador no soporta WebM con
+        // canal alfa (algo de Safari viejo), cae a la imagen estática real,
+        // nunca a un cuadro roto.
+        const rutiHtml = getState().rutiOculto ? '' : `
+          <video autoplay muted loop playsinline poster="./img/ruti/saludo.png" style="height:120px;width:auto;display:block;margin:0 auto" id="q-ruti-video">
+            <source src="./img/ruti/bienvenida.webm" type="video/webm">
+          </video>`;
         el.innerHTML = `
-          <div class="center mb">${rutiSiVisible('saludo', { size: 120 })}</div>
+          <div class="center mb">${rutiHtml}</div>
           <p class="center small" style="font-weight:600">Hola, soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>
           <label class="muted mt" for="q-nombre" style="display:block">${answers.nombre ? `Te llamaremos <strong>${esc(answers.nombre)}</strong>. Puedes cambiarlo si quieres:` : '¿Cómo te llamas? (opcional)'}</label>
           <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60" class="auth-input">
           <div class="legal-note">🔒 Tus datos se guardan en tu cuenta protegida y solo tú puedes verlos. NutriRuta es una herramienta de autoayuda: no diagnostica ni reemplaza a tu médico o nutricionista.</div>`;
+        const video = el.querySelector('#q-ruti-video');
+        if (video && !video.canPlayType('video/webm; codecs="vp9"')) {
+          video.outerHTML = rutiSiVisible('saludo', { size: 120 });
+        } else {
+          video?.addEventListener('error', () => { video.outerHTML = rutiSiVisible('saludo', { size: 120 }); });
+        }
         el.querySelector('#q-ya-tengo-cuenta')?.addEventListener('click', () => navigate('auth'));
         const input = el.querySelector('#q-nombre');
         input.value = answers.nombre; // asignación por propiedad: sin riesgo de inyección HTML
