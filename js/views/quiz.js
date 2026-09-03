@@ -84,8 +84,7 @@ export function renderQuiz(container) {
           <p class="center small" style="font-weight:600">Hola, soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>
           <label class="muted mt" for="q-nombre" style="display:block">${answers.nombre ? `Te llamaremos <strong>${esc(answers.nombre)}</strong>. Puedes cambiarlo si quieres:` : '¿Cómo te llamas? (opcional)'}</label>
           <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60" class="auth-input">
-          <div class="legal-note">🔒 Tus datos se guardan en tu cuenta protegida y solo tú puedes verlos. NutriRuta es una herramienta de autoayuda: no diagnostica ni reemplaza a tu médico o nutricionista.</div>
-          ${!getState().onboarded ? '<p class="center small mt">¿Ya tienes cuenta? <button type="button" class="link-btn" id="q-ya-tengo-cuenta">Inicia sesión</button></p>' : ''}`;
+          <div class="legal-note">🔒 Tus datos se guardan en tu cuenta protegida y solo tú puedes verlos. NutriRuta es una herramienta de autoayuda: no diagnostica ni reemplaza a tu médico o nutricionista.</div>`;
         el.querySelector('#q-ya-tengo-cuenta')?.addEventListener('click', () => navigate('auth'));
         const input = el.querySelector('#q-nombre');
         input.value = answers.nombre; // asignación por propiedad: sin riesgo de inyección HTML
@@ -225,12 +224,23 @@ export function renderQuiz(container) {
     const navEl = view.querySelector('.quiz-nav');
     const next = document.createElement('button');
     next.className = 'btn full';
-    next.textContent = step === steps.length - 1 ? 'Ver mi resultado ✨' : 'Siguiente';
+    next.textContent = step === 0 ? 'Empezar' : step === steps.length - 1 ? 'Ver mi resultado ✨' : 'Siguiente';
     next.disabled = s.completo ? !s.completo() : false;
     next.addEventListener('click', () => {
       if (step === steps.length - 1) result(); else { step++; draw(); }
     });
     navEl.appendChild(next);
+
+    // "¿Ya tienes cuenta?" va DEBAJO del botón, no arriba -- solo en la
+    // bienvenida (nunca se muestra si ya viene onboarded, ej. reeditando
+    // respuestas desde Ajustes).
+    if (step === 0 && !getState().onboarded) {
+      const loginP = document.createElement('p');
+      loginP.className = 'center small mt';
+      loginP.innerHTML = '¿Ya tienes cuenta? <button type="button" class="link-btn" id="q-ya-tengo-cuenta">Inicia sesión</button>';
+      loginP.querySelector('#q-ya-tengo-cuenta').addEventListener('click', () => navigate('auth'));
+      navEl.appendChild(loginP);
+    }
 
     s.render(view.querySelector('.step-body'), () => { next.disabled = s.completo ? !s.completo() : false; });
     container.appendChild(view);

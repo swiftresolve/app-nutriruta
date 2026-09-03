@@ -234,16 +234,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
     0 0 0 3px #FFF, 0 0 0 6px #FFD86B, 0 3px 10px rgba(255, 184, 0, 0.35);
 }
 /* ===== Ruti (nutria exploradora) — distinta del Brote de Ruta ===== */
-/* Las ilustraciones oficiales de Ruti (ver img/ruti/) tienen fondo
-   crema/blanco fijo -- background:#fff hace que se lea como una insignia
-   circular a propósito, no como un recorte desalineado sobre tarjetas
-   oscuras. object-fit:cover + object-position:center centra el recorte
-   dentro del círculo sin deformarlo. */
-.ruti-mascot {
-  border-radius: 50%; flex: none; display: inline-block; overflow: hidden;
-  background: #fff; transform-origin: 50% 85%;
-}
-.ruti-mascot img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
+/* Los recortes de Ruti son verticales (más altos que anchos) -- se
+   dimensiona por alto, el ancho sale solo de la proporción real de la
+   imagen, para que no quede angosta y perdida dentro de una caja
+   cuadrada forzada. */
+.ruti-mascot { flex: none; display: inline-block; transform-origin: 50% 85%; }
+.ruti-mascot img { height: 100%; width: auto; display: block; }
 .ruti-mascot.animated { animation: ruti-sway 3.5s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .ruti-mascot.animated { animation: none; } }
 
@@ -381,8 +377,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @media (prefers-reduced-motion: reduce) {
   .quiz-step { animation: none; }
 }
-.quiz-nav { display: flex; gap: 10px; margin-top: 26px; }
+.quiz-nav { display: flex; flex-direction: column; align-items: stretch; gap: 10px; margin-top: 26px; }
 .quiz-nav .btn { flex: 1; }
+.quiz-nav p { text-align: center; margin: 0; }
 
 /* "Armando tu plan…": checklist que se revela paso a paso antes del
    resultado del quiz. */
