@@ -947,7 +947,7 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 /* ===== Toast ===== */
 .toast {
   position: fixed; bottom: calc(var(--nav-h) + var(--nav-gap) + 18px); left: 50%; transform: translateX(-50%);
-  background: var(--ink); color: #fff; border-radius: 999px;
+  background: #233833; color: #fff; border-radius: 999px;
   padding: 10px 20px; font-size: 0.9rem; z-index: 70; max-width: 90vw; text-align: center;
   animation: slide-up 0.2s ease;
 }

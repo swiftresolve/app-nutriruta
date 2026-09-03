@@ -92,9 +92,13 @@ export function renderSettings(container) {
       avatarEstado.textContent = '¡Foto actualizada! 🌿';
       setTimeout(() => { if (avatarEstado.textContent === '¡Foto actualizada! 🌿') avatarEstado.textContent = ''; }, 2500);
     } catch (err) {
-      avatarEstado.textContent = err.message && err.message.includes('demasiado grande')
-        ? err.message
-        : 'No se pudo subir la foto. Intenta de nuevo.';
+      // Antes se mostraba un mensaje genérico que escondía el error real
+      // (ej. RLS, CORS, tipo de archivo, sesión vencida) y hacía imposible
+      // diagnosticar el bug reportado ("sigue sin funcionar"). Mostrar el
+      // detalle real hasta encontrar la causa de fondo.
+      const detalle = err.message || err.error_description || err.error || JSON.stringify(err);
+      console.error('Error subiendo avatar:', err);
+      avatarEstado.textContent = `No se pudo subir la foto: ${detalle}`;
     }
   });
   const plansBtn = document.createElement('button');
