@@ -470,6 +470,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
   background: var(--card); box-shadow: var(--shadow); opacity: 0.5; transition: opacity .25s ease;
   font-weight: 600; color: var(--ink-soft);
+  /* Un poco más chica que el texto base, y con clamp() para que se
+     adapte sola al ancho real de pantalla (más chica en celulares
+     angostos, sin quedar diminuta en pantallas más anchas) en vez de un
+     tamaño fijo único. */
+  font-size: clamp(0.8rem, 3.4vw, 0.92rem);
 }
 .armando-item.done { opacity: 1; color: var(--ink); }
 .armando-check {

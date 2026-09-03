@@ -581,18 +581,26 @@ export function renderQuiz(container) {
     ];
     const total = 500 + items.length * 550 + 300;
     const RADIO = 42, CIRC = 2 * Math.PI * 42;
+    // El contenido va dentro de .step-body (mismo scroll interno que usa
+    // el resto del quiz) -- sin esto, con una lista larga de prioridades
+    // el checklist se salía del viewport y quedaba cortado abajo, sin
+    // forma de verlo completo (el contenedor #app.quiz-active tiene
+    // overflow:hidden). No cambia ningún estilo/tamaño, solo permite
+    // scroll cuando el contenido no cabe entero.
     view.innerHTML = `
-      <div class="center mb">${rutiBienvenidaHtml(90)}</div>
-      <h2 class="mt">Armando tu plan${nombreTxt}…</h2>
-      <div class="armando-ring mt">
-        <svg viewBox="0 0 96 96">
-          <circle class="armando-ring-track" cx="48" cy="48" r="${RADIO}"/>
-          <circle class="armando-ring-fill" cx="48" cy="48" r="${RADIO}"
-            stroke-dasharray="${CIRC.toFixed(1)}" stroke-dashoffset="${CIRC.toFixed(1)}"/>
-        </svg>
-        <span class="armando-ring-pct" id="ap-pct">0%</span>
-      </div>
-      <div class="armando-list mt">${items.map((t, i) => `<div class="armando-item" id="ap-${i}"><span class="armando-check">⏳</span><span>${t}</span></div>`).join('')}</div>`;
+      <div class="step-body center">
+        <div class="center mb">${rutiBienvenidaHtml(90)}</div>
+        <h2 class="mt">Armando tu plan${nombreTxt}…</h2>
+        <div class="armando-ring mt">
+          <svg viewBox="0 0 96 96">
+            <circle class="armando-ring-track" cx="48" cy="48" r="${RADIO}"/>
+            <circle class="armando-ring-fill" cx="48" cy="48" r="${RADIO}"
+              stroke-dasharray="${CIRC.toFixed(1)}" stroke-dashoffset="${CIRC.toFixed(1)}"/>
+          </svg>
+          <span class="armando-ring-pct" id="ap-pct">0%</span>
+        </div>
+        <div class="armando-list mt">${items.map((t, i) => `<div class="armando-item" id="ap-${i}"><span class="armando-check">⏳</span><span>${t}</span></div>`).join('')}</div>
+      </div>`;
     container.appendChild(view);
     iniciarRutiBienvenida(view, 90);
 
