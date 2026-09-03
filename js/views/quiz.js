@@ -298,6 +298,10 @@ export function renderQuiz(container) {
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'chip mt';
+    // Mismo ancho que la grilla de chips de arriba (edge a edge), no
+    // solo lo que mide su propio texto -- se veía descuadrado.
+    addBtn.style.width = '100%';
+    addBtn.style.justifyContent = 'center';
     addBtn.textContent = '+ Agregar otro';
     addBtn.addEventListener('click', () => abrirModalExclusionOtro(el));
     el.appendChild(addBtn);
@@ -382,7 +386,10 @@ export function renderQuiz(container) {
           }
           wrap.querySelectorAll('.chip').forEach((c, k) => c.classList.toggle('selected', target.includes(options[k].id)));
         } else {
-          target[prop] = opt.id;
+          // Tocar la misma opción ya elegida la deselecciona (vuelve a
+          // quedar sin responder) en vez de quedar "atascada" sin forma
+          // de quitarla -- pedido explícito de la usuaria.
+          target[prop] = target[prop] === opt.id ? '' : opt.id;
           wrap.querySelectorAll('.chip').forEach((c, k) => c.classList.toggle('selected', options[k].id === target[prop]));
         }
         if (onChange) onChange();
