@@ -207,8 +207,9 @@ export function renderQuiz(container) {
     },
     {
       title: '¿Con cuáles de estos retos te identificas?',
-      sub: 'Marca lo que te pasa hoy en día. Sin culpa: nos ayuda a acompañarte mejor. Si ninguno aplica, solo presiona Siguiente.',
-      render: (el) => chips(el, HARD_HABITS, answers.habitosDificiles, true, undefined, true)
+      sub: 'Marca lo que te pasa hoy en día. Sin culpa: nos ayuda a acompañarte mejor.',
+      completo: () => answers.habitosDificiles.length > 0,
+      render: (el, onChange) => chips(el, HARD_HABITS, answers.habitosDificiles, true, undefined, true, onChange)
     },
     {
       title: '¿Qué tan motivado/a estás para lograrlo?',
@@ -534,7 +535,7 @@ export function renderQuiz(container) {
         perfiles,
         exclusiones: answers.exclusiones.filter((x) => x !== 'ninguna'),
         exclusionesOtro: answers.exclusionesOtro.slice(0, 10),
-        habitosDificiles: answers.habitosDificiles,
+        habitosDificiles: answers.habitosDificiles.filter((x) => x !== 'ninguna'),
         motivacion: answers.motivacion,
         actividad: answers.actividad,
         azucarFreq: answers.azucarFreq,

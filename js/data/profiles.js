@@ -168,5 +168,7 @@ export const HARD_HABITS = [
   { id: 'comer_fuera', nombre: 'Como fuera de casa muy seguido' },
   { id: 'poca_agua', nombre: 'Tomo poca agua' },
   { id: 'constancia', nombre: 'Me cuesta ser constante' },
-  { id: 'estres', nombre: 'Como rápido o por estrés' }
+  { id: 'estres', nombre: 'Como rápido o por estrés' },
+  { id: 'domicilios', nombre: 'Pido domicilio muy seguido' },
+  { id: 'ninguna', nombre: 'Ninguno de estos', emoji: '✅' }
 ];
