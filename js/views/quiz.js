@@ -127,7 +127,7 @@ export function renderQuiz(container) {
   // Prellenar con lo ya conocido (p. ej. el nombre dado al registrarse).
   const known = getState().user;
   const answers = {
-    nombre: known.nombre || '', objetivos: [], condiciones: [], exclusiones: [], exclusionesOtro: [], origen: '', origenOtroTexto: '',
+    nombre: known.nombre || '', objetivos: [], objetivosOtro: [], condiciones: [], exclusiones: [], exclusionesOtro: [], origen: '', origenOtroTexto: '',
     // Sin valor por defecto: ninguna opción debe verse preseleccionada,
     // la usuaria elige de verdad cada respuesta.
     habitosDificiles: [], motivacion: '', actividad: '', azucarFreq: '', alcoholFreq: '',
@@ -186,8 +186,14 @@ export function renderQuiz(container) {
     {
       title: '¿Qué quieres lograr?',
       sub: 'Elige todo lo que aplique.',
-      completo: () => answers.objetivos.length > 0,
-      render: (el, onChange) => chips(el, GOALS, answers.objetivos, true, undefined, false, onChange)
+      completo: () => answers.objetivos.length > 0 || answers.objetivosOtro.length > 0,
+      render(el, onChange) {
+        chips(el, GOALS, answers.objetivos, true, undefined, false, onChange);
+        el.insertAdjacentHTML('beforeend', '<div class="mt" id="obj-otro-tags"></div>');
+        pintarOtroTags(el.querySelector('#obj-otro-tags'), answers.objetivosOtro, {
+          titulo: 'Agrega una meta propia', placeholder: 'Ej. Dormir mejor, tener más disciplina...'
+        }, onChange);
+      }
     },
     {
       title: '¿Tienes alguna condición conocida?',
@@ -201,7 +207,9 @@ export function renderQuiz(container) {
       render(el) {
         chips(el, EXCLUSIONS, answers.exclusiones, true);
         el.insertAdjacentHTML('beforeend', '<div class="mt" id="excl-otro-tags"></div>');
-        pintarExclusionesOtro(el.querySelector('#excl-otro-tags'));
+        pintarOtroTags(el.querySelector('#excl-otro-tags'), answers.exclusionesOtro, {
+          titulo: 'Agrega una alergia o intolerancia', placeholder: 'Ej. Cilantro, champiñones...'
+        });
       }
     },
     {
@@ -275,24 +283,29 @@ export function renderQuiz(container) {
     <path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
   </svg>`;
 
-  function pintarExclusionesOtro(el) {
+  // Genérico: usado tanto por exclusiones (alergias/intolerancias) como
+  // por objetivos ("¿Qué quieres lograr?") -- misma UI de tags + botón
+  // "+ Agregar otro" que abre un modal, solo cambia el array que se
+  // edita y los textos mostrados.
+  function pintarOtroTags(el, arr, textos, onChange) {
     el.innerHTML = '';
-    if (answers.exclusionesOtro.length) {
+    if (arr.length) {
       // Grilla normal de 2 columnas (no chips-1col) -- con la regla ya
       // existente en styles.css, la última queda sola y centrada si el
       // total es impar, y en pares de a dos si es par.
       const wrap = document.createElement('div');
       wrap.className = 'chips';
       wrap.style.marginTop = '0';
-      answers.exclusionesOtro.forEach((texto, i) => {
+      arr.forEach((texto, i) => {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'chip selected';
         b.innerHTML = `<span class="chip-tag-texto">${esc(texto)}</span>${ICONO_QUITAR}`;
         b.setAttribute('aria-label', `Quitar ${texto}`);
         b.addEventListener('click', () => {
-          answers.exclusionesOtro.splice(i, 1);
-          pintarExclusionesOtro(el);
+          arr.splice(i, 1);
+          pintarOtroTags(el, arr, textos, onChange);
+          if (onChange) onChange();
         });
         wrap.appendChild(b);
       });
@@ -306,33 +319,33 @@ export function renderQuiz(container) {
     addBtn.style.width = '100%';
     addBtn.style.justifyContent = 'center';
     addBtn.textContent = '+ Agregar otro';
-    addBtn.addEventListener('click', () => abrirModalExclusionOtro(el));
+    addBtn.addEventListener('click', () => abrirModalOtro(el, arr, textos, onChange));
     el.appendChild(addBtn);
   }
 
-  function abrirModalExclusionOtro(el) {
+  function abrirModalOtro(el, arr, textos, onChange) {
     openModal((modal, closeFn) => {
       modal.insertAdjacentHTML('beforeend', `
-        <h2>Agrega una alergia o intolerancia</h2>
+        <h2>${textos.titulo}</h2>
         <p class="small muted mb">Escribe y presiona Enter (o coma) para agregar</p>
-        <input type="text" id="q-excl-nueva" placeholder="Ej. Cilantro, champiñones..." maxlength="40" class="auth-input">
-        <div class="chips chips-1col mt" id="q-excl-nueva-tags"></div>
-        <button type="button" class="btn full mt" id="q-excl-listo">Listo</button>`);
-      const input = modal.querySelector('#q-excl-nueva');
-      const tagsBox = modal.querySelector('#q-excl-nueva-tags');
+        <input type="text" id="q-otro-nueva" placeholder="${textos.placeholder}" maxlength="40" class="auth-input">
+        <div class="chips chips-1col mt" id="q-otro-nueva-tags"></div>
+        <button type="button" class="btn full mt" id="q-otro-listo">Listo</button>`);
+      const input = modal.querySelector('#q-otro-nueva');
+      const tagsBox = modal.querySelector('#q-otro-nueva-tags');
       function pintarTags() {
-        tagsBox.innerHTML = answers.exclusionesOtro.map((texto, i) => `
+        tagsBox.innerHTML = arr.map((texto, i) => `
           <button type="button" class="chip selected" data-i="${i}"><span class="chip-tag-texto">${esc(texto)}</span>${ICONO_QUITAR}</button>`).join('');
         tagsBox.querySelectorAll('.chip').forEach((b) => {
           b.addEventListener('click', () => {
-            answers.exclusionesOtro.splice(Number(b.dataset.i), 1);
+            arr.splice(Number(b.dataset.i), 1);
             pintarTags();
           });
         });
       }
       function agregar(textoForzado) {
         const texto = (textoForzado ?? input.value).trim().replace(/,$/, '').trim();
-        if (texto && !answers.exclusionesOtro.includes(texto)) answers.exclusionesOtro.push(texto);
+        if (texto && !arr.includes(texto)) arr.push(texto);
         pintarTags();
       }
       input.addEventListener('keydown', (e) => {
@@ -352,10 +365,11 @@ export function renderQuiz(container) {
         partes.forEach((p) => agregar(p));
         input.value = resto;
       });
-      modal.querySelector('#q-excl-listo').addEventListener('click', () => {
+      modal.querySelector('#q-otro-listo').addEventListener('click', () => {
         if (input.value.trim()) agregar();
         closeFn();
-        pintarExclusionesOtro(el);
+        pintarOtroTags(el, arr, textos, onChange);
+        if (onChange) onChange();
       });
       pintarTags();
       input.focus();
@@ -466,6 +480,7 @@ export function renderQuiz(container) {
       user: {
         nombre: answers.nombre,
         objetivos: answers.objetivos,
+        objetivosOtro: answers.objetivosOtro.slice(0, 10),
         perfiles,
         exclusiones: answers.exclusiones,
         exclusionesOtro: answers.exclusionesOtro.slice(0, 10),

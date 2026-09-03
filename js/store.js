@@ -19,6 +19,7 @@ const DEFAULT_STATE = {
   user: {
     nombre: '',
     objetivos: [],
+    objetivosOtro: [],     // metas propias, escritas a mano (no estaban en la lista)
     perfiles: [],
     exclusiones: [],
     exclusionesOtro: [],   // alimentos que no consume, escritos a mano (ej. "cilantro")
