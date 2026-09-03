@@ -88,19 +88,18 @@ export function renderQuiz(container) {
     {
       title: '¿Qué quieres lograr?',
       sub: 'Elige todo lo que aplique.',
-      botonDiferido: true,
-      render: (el) => chips(el, GOALS, answers.objetivos, true)
+      completo: () => answers.objetivos.length > 0,
+      render: (el, onChange) => chips(el, GOALS, answers.objetivos, true, undefined, false, onChange)
     },
     {
       title: '¿Tienes alguna condición conocida?',
       sub: 'Solo si te la han mencionado en un chequeo. Puedes elegir varias.',
-      botonDiferido: true,
-      render: (el) => chips(el, CONDITIONS, answers.condiciones, true)
+      completo: () => answers.condiciones.length > 0,
+      render: (el, onChange) => chips(el, CONDITIONS, answers.condiciones, true, undefined, false, onChange)
     },
     {
       title: '¿Qué alimentos no consumes?',
-      sub: 'Alergias, intolerancias o preferencias. Adaptaremos recetas y sustituciones.',
-      botonDiferido: true,
+      sub: 'Alergias, intolerancias o preferencias. Adaptaremos recetas y sustituciones. Si no tienes ninguna, solo presiona Siguiente.',
       render(el) {
         chips(el, EXCLUSIONS, answers.exclusiones, true);
         el.insertAdjacentHTML('beforeend', `
@@ -113,14 +112,14 @@ export function renderQuiz(container) {
     },
     {
       title: '¿Con cuáles de estos retos te identificas?',
-      sub: 'Marca lo que te pasa hoy en día. Sin culpa: nos ayuda a acompañarte mejor.',
+      sub: 'Marca lo que te pasa hoy en día. Sin culpa: nos ayuda a acompañarte mejor. Si ninguno aplica, solo presiona Siguiente.',
       render: (el) => chips(el, HARD_HABITS, answers.habitosDificiles, true, undefined, true)
     },
     {
       title: '¿Tu nivel de actividad física?',
       sub: '',
-      sinBoton: true,
-      render: (el) => chips(el, ACTIVITY, answers, false, 'actividad', true, avanzarAuto)
+      completo: () => !!answers.actividad,
+      render: (el, onChange) => chips(el, ACTIVITY, answers, false, 'actividad', true, onChange)
     },
     {
       title: '¿Cuál es tu peso? (opcional)',
@@ -140,20 +139,23 @@ export function renderQuiz(container) {
     {
       title: '¿Con qué frecuencia consumes azúcar?',
       sub: 'Gaseosas, jugos industriales, postres, dulces, panadería…',
-      sinBoton: true,
-      render: (el) => chips(el, FREQ_OPTIONS, answers, false, 'azucarFreq', true, avanzarAuto)
+      completo: () => !!answers.azucarFreq,
+      render: (el, onChange) => chips(el, FREQ_OPTIONS, answers, false, 'azucarFreq', true, onChange)
     },
     {
       title: '¿Con qué frecuencia consumes alcohol?',
       sub: 'Cerveza, vino, licores… Si no tomas, elige "Nunca".',
-      render: (el) => chips(el, FREQ_OPTIONS, answers, false, 'alcoholFreq', true)
+      completo: () => !!answers.alcoholFreq,
+      render: (el, onChange) => chips(el, FREQ_OPTIONS, answers, false, 'alcoholFreq', true, onChange)
     }
   ];
 
-  // onElegir (solo en preguntas de una sola respuesta): se llama después de
-  // marcar la selección, para avanzar sola al siguiente paso — como en
-  // Duolingo, sin esperar un botón "Siguiente" aparte.
-  function chips(el, options, target, multi, prop, oneCol, onElegir) {
+  // onChange: se llama después de marcar/desmarcar una selección, para que
+  // draw() pueda habilitar el botón "Siguiente" -- igual que el quiz de
+  // Fitia: el botón siempre está visible, deshabilitado hasta elegir una
+  // respuesta, y hay que presionarlo a propósito para avanzar (nunca
+  // avanza solo).
+  function chips(el, options, target, multi, prop, oneCol, onChange) {
     const wrap = document.createElement('div');
     wrap.className = 'chips' + (oneCol ? ' chips-1col' : '');
     for (const opt of options) {
@@ -171,27 +173,15 @@ export function renderQuiz(container) {
             j >= 0 ? target.splice(j, 1) : target.push(opt.id);
           }
           wrap.querySelectorAll('.chip').forEach((c, k) => c.classList.toggle('selected', target.includes(options[k].id)));
-          // En preguntas de varias respuestas no se puede avanzar sola al
-          // primer toque (no se podría marcar una segunda opción) — en vez
-          // de eso, aparece el botón de continuar recién con la primera
-          // elección, para no mostrar un botón vacío desde el principio.
-          wrap.dispatchEvent(new CustomEvent('quiz-multi-select', { bubbles: true }));
         } else {
           target[prop] = opt.id;
           wrap.querySelectorAll('.chip').forEach((c, k) => c.classList.toggle('selected', options[k].id === target[prop]));
-          if (onElegir) onElegir();
         }
+        if (onChange) onChange();
       });
       wrap.appendChild(b);
     }
     el.appendChild(wrap);
-  }
-
-  // Avanza sola tras un instante (para que se alcance a ver la selección
-  // resaltada antes de pasar) — solo se usa en preguntas de una sola
-  // respuesta que no son la última del quiz.
-  function avanzarAuto() {
-    setTimeout(() => { step++; draw(); }, 220);
   }
 
   function draw() {
@@ -209,34 +199,22 @@ export function renderQuiz(container) {
       ${s.sub ? `<p>${s.sub}</p>` : ''}
       <div class="step-body"></div>
       <div class="quiz-nav"></div>`;
-    s.render(view.querySelector('.step-body'));
     view.querySelector('.quiz-topbar-back').addEventListener('click', () => { if (step > 0) { step--; draw(); } });
 
-    // La flecha de arriba ya cubre "Atrás" — abajo solo queda un botón
-    // (Siguiente / Ver mi resultado), y solo si el paso lo necesita: las
-    // preguntas de una sola respuesta avanzan solas al elegir (avanzarAuto)
-    // y no muestran ningún botón.
-    if (!s.sinBoton) {
-      const navEl = view.querySelector('.quiz-nav');
-      const next = document.createElement('button');
-      next.className = 'btn full'; next.textContent = step === steps.length - 1 ? 'Ver mi resultado ✨' : 'Siguiente';
-      next.addEventListener('click', () => {
-        if (step === steps.length - 1) result(); else { step++; draw(); }
-      });
-      if (s.botonDiferido) {
-        // Preguntas de varias respuestas: el botón aparece recién con la
-        // primera elección (evento 'quiz-multi-select' desde chips()), no
-        // desde el principio. Si nadie elige nada (es válido: "ninguna"
-        // también es una respuesta), aparece solo tras una pausa — para
-        // que jamás quede sin forma de continuar.
-        next.style.display = 'none';
-        const revelar = () => { next.style.display = ''; };
-        view.addEventListener('quiz-multi-select', revelar, { once: true });
-        const espera = setTimeout(revelar, 1400);
-        next.addEventListener('click', () => clearTimeout(espera), { once: true });
-      }
-      navEl.appendChild(next);
-    }
+    // El botón SIEMPRE está visible (como en Fitia) -- nunca aparece de la
+    // nada ni avanza solo. Empieza deshabilitado si el paso lo requiere
+    // (s.completo) y se habilita apenas hay una respuesta válida.
+    const navEl = view.querySelector('.quiz-nav');
+    const next = document.createElement('button');
+    next.className = 'btn full';
+    next.textContent = step === steps.length - 1 ? 'Ver mi resultado ✨' : 'Siguiente';
+    next.disabled = s.completo ? !s.completo() : false;
+    next.addEventListener('click', () => {
+      if (step === steps.length - 1) result(); else { step++; draw(); }
+    });
+    navEl.appendChild(next);
+
+    s.render(view.querySelector('.step-body'), () => { next.disabled = s.completo ? !s.completo() : false; });
     container.appendChild(view);
   }
 
