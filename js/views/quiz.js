@@ -148,8 +148,8 @@ export function renderQuiz(container) {
         // título (h2) sigue igual, no se toca -- el logo+nombre se agrega
         // en draw() ANTES del h2, solo para este paso (ver más abajo).
         el.innerHTML = `
-          <div class="center mb">${rutiBienvenidaHtml(150)}</div>
-          <p class="center small" style="font-weight:600">Soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>`;
+          <div class="center"><div class="ruti-bubble">Soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</div></div>
+          <div class="center mb">${rutiBienvenidaHtml(150)}</div>`;
         iniciarRutiBienvenida(el, 150);
         el.querySelector('#q-ya-tengo-cuenta')?.addEventListener('click', () => navigate('auth'));
       }

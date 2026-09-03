@@ -527,6 +527,24 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   .header-tooltip { animation: none; }
 }
 
+/* Globo de dialogo de Ruti en la bienvenida, como el de Duo en Duolingo:
+   caja redondeada arriba, con una colita apuntando hacia el mascota
+   debajo. */
+.ruti-bubble {
+  position: relative; display: inline-block; max-width: 260px;
+  margin: 0 0 26px; padding: 12px 16px;
+  background: var(--card); color: var(--ink); border-radius: 16px;
+  border: 1.5px solid var(--primary-soft);
+  box-shadow: 0 6px 18px rgba(35, 56, 51, 0.12);
+  font-weight: 600; text-align: center;
+}
+.ruti-bubble::before, .ruti-bubble::after {
+  content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+  border: 9px solid transparent;
+}
+.ruti-bubble::before { top: 100%; border-top-color: var(--primary-soft); }
+.ruti-bubble::after { top: calc(100% - 1.5px); border-top-color: var(--card); }
+
 /* Nombre de Susana en dos colores: "Su" + "Sana" */
 .susana-name .su { color: var(--secondary); }
 .susana-name .sana { color: var(--primary-dark); }
