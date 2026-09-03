@@ -323,14 +323,27 @@ export function renderQuiz(container) {
           });
         });
       }
-      function agregar() {
-        const texto = input.value.trim().replace(/,$/, '').trim();
+      function agregar(textoForzado) {
+        const texto = (textoForzado ?? input.value).trim().replace(/,$/, '').trim();
         if (texto && !answers.exclusionesOtro.includes(texto)) answers.exclusionesOtro.push(texto);
-        input.value = '';
         pintarTags();
       }
       input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); agregar(); }
+        if (e.key === 'Enter') { e.preventDefault(); agregar(); input.value = ''; }
+      });
+      // La coma se detecta con 'input' (no 'keydown') a propósito: en
+      // varios teclados móviles (Android/iOS con predicción de texto) el
+      // evento keydown para signos de puntuación no siempre reporta la
+      // tecla real -- 'input' sí refleja el valor real sin importar el
+      // método de entrada (teclado físico, virtual, autocompletado,
+      // pegar). Si se pega "a,b,c" de una vez, agrega "a" y "b" y deja
+      // "c" lista para seguir escribiendo, en vez de perder el resto.
+      input.addEventListener('input', () => {
+        if (!input.value.includes(',')) return;
+        const partes = input.value.split(',');
+        const resto = partes.pop();
+        partes.forEach((p) => agregar(p));
+        input.value = resto;
       });
       modal.querySelector('#q-excl-listo').addEventListener('click', () => {
         if (input.value.trim()) agregar();
@@ -528,19 +541,29 @@ export function renderQuiz(container) {
   function mostrarResultado(main, rest, prioridades) {
     container.innerHTML = '';
     const view = document.createElement('div');
+    view.className = 'quiz-step';
+    // Misma estructura que el resto del quiz (quiz-content con scroll +
+    // quiz-nav fijo abajo) para que el botón quede pegado abajo igual
+    // que en las demás pantallas, y la misma animación de Ruti que la
+    // bienvenida (no la imagen estática suelta).
     view.innerHTML = `
-      <div class="card center">
-        ${rutiSiVisible('saludo', { size: 100 })}
-        <h2 class="mt">${answers.nombre ? `${esc(answers.nombre)}, tu` : 'Tu'} plan está listo</h2>
-        <p class="small mt">Perfil principal: <strong>${PROFILES[main].nombre}</strong></p>
-        ${rest.length ? `<p class="mt">También te conviene seguir: <strong>${rest.map((p) => PROFILES[p].nombre).join(', ')}</strong></p>` : ''}
+      <div class="quiz-content">
+        <div class="step-body">
+          <div class="card center">
+            ${rutiBienvenidaHtml(100)}
+            <h2 class="mt">${answers.nombre ? `${esc(answers.nombre)}, tu` : 'Tu'} plan está listo</h2>
+            <p class="small mt">Perfil principal: <strong>${PROFILES[main].nombre}</strong></p>
+            ${rest.length ? `<p class="mt">También te conviene seguir: <strong>${rest.map((p) => PROFILES[p].nombre).join(', ')}</strong></p>` : ''}
+          </div>
+          <div class="card">
+            <h3>Tus primeros pasos 👣</h3>
+            <ul class="steps check mt">${prioridades.map((p) => `<li>${p}</li>`).join('')}</ul>
+          </div>
+          <div class="legal-note">La información que diste nos ayuda a personalizar tu experiencia. Esta app es una guía de autoayuda y no reemplaza la atención de un profesional de salud.</div>
+        </div>
       </div>
-      <div class="card">
-        <h3>Tus primeros pasos 👣</h3>
-        <ul class="steps check mt">${prioridades.map((p) => `<li>${p}</li>`).join('')}</ul>
-      </div>
-      <div class="legal-note">La información que diste nos ayuda a personalizar tu experiencia. Esta app es una guía de autoayuda y no reemplaza la atención de un profesional de salud.</div>
-      <button class="btn full accent">Siguiente →</button>`;
+      <div class="quiz-nav"><button class="btn accent">Siguiente →</button></div>`;
+    iniciarRutiBienvenida(view, 100);
     view.querySelector('.btn').addEventListener('click', () => mostrarCompromiso());
     container.appendChild(view);
   }
@@ -560,14 +583,21 @@ export function renderQuiz(container) {
       { dias: 30, label: '30 días', sub: 'Cambiar de verdad' }
     ];
     // Sin preseleccionar: es un compromiso, tiene que elegirse de verdad.
+    // Ya no hay barra de progreso -- el quiz de preguntas terminó, esto es
+    // una pantalla de cierre, no un paso más. El botón queda fijo abajo
+    // igual que el resto (quiz-content + quiz-nav, misma estructura que
+    // usa draw() para el resto de pantallas del quiz).
     let elegido = null;
     view.innerHTML = `
-      <div class="quiz-progress"><div style="width:100%"></div></div>
-      <h2>Antes de empezar: un compromiso contigo 💛</h2>
-      <p>Sé que a veces el día a día no deja espacio para pensar en ti. Pero tu cuerpo lleva la cuenta, incluso cuando tú no la llevas. Comprometerte hoy — aunque sea con un paso chiquito — no es una exigencia más: es una forma real de decirte a ti misma que mereces cuidarte con constancia.</p>
-      <p class="mt" style="font-weight:600">¿Con cuántos días quieres empezar este compromiso?</p>
-      <div class="chips chips-1col mt" id="compromiso-chips"></div>
-      <button class="btn full accent mt" disabled>Ver mi menú personalizado 🍽️</button>`;
+      <div class="quiz-content">
+        <h2>Antes de empezar: un compromiso contigo 💛</h2>
+        <p>Sé que a veces el día a día no deja espacio para pensar en ti. Pero tu cuerpo lleva la cuenta, incluso cuando tú no la llevas. Comprometerte hoy — aunque sea con un paso chiquito — no es una exigencia más: es una forma real de decirte a ti misma que mereces cuidarte con constancia.</p>
+        <p class="mt" style="font-weight:600">¿Con cuántos días quieres empezar este compromiso?</p>
+        <div class="step-body">
+          <div class="chips chips-1col" id="compromiso-chips"></div>
+        </div>
+      </div>
+      <div class="quiz-nav"><button class="btn accent" disabled>Ver mi menú personalizado 🍽️</button></div>`;
     const chipWrap = view.querySelector('#compromiso-chips');
     const continuarBtn = view.querySelector('.btn');
     for (const o of opciones) {

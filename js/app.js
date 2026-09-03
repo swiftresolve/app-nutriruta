@@ -32,12 +32,21 @@ const nav = document.getElementById('bottom-nav');
 // escribir el nombre. visualViewport sí reporta el alto real visible
 // (se achica con el teclado), así que se expone como variable CSS y se
 // mantiene actualizada en cada cambio.
+// En iOS Safari eso no bastaba: al enfocar un input el propio Safari
+// desplaza la página entera hacia arriba para mantenerlo visible (aunque
+// #app tenga overflow:hidden), y como #app queda posicionado respecto al
+// viewport de LAYOUT (no al visual, que es el que se mueve), terminaba
+// corriéndose hacia arriba y dejando el botón tapado igual. Se compensa
+// ese corrimiento aplicando -visualViewport.offsetTop como transform, así
+// #app se queda anclado a lo que se ve de verdad en cada momento.
 function actualizarVvh() {
   const vv = window.visualViewport;
   document.documentElement.style.setProperty('--vvh', `${(vv ? vv.height : window.innerHeight)}px`);
+  app.style.transform = vv && vv.offsetTop ? `translateY(${vv.offsetTop}px)` : '';
 }
 actualizarVvh();
 window.visualViewport?.addEventListener('resize', actualizarVvh);
+window.visualViewport?.addEventListener('scroll', actualizarVvh);
 window.addEventListener('resize', actualizarVvh);
 
 const ROUTES = {
