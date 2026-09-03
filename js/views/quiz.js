@@ -92,7 +92,7 @@ export function renderQuiz(container) {
           </video>`;
         el.innerHTML = `
           <div class="center mb">${rutiHtml}</div>
-          <p class="center small" style="font-weight:600">Hola, soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>`;
+          <p class="center small" style="font-weight:600">Soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>`;
         const video = el.querySelector('#q-ruti-video');
         if (video && !video.canPlayType('video/webm; codecs="vp9"')) {
           video.outerHTML = rutiSiVisible('saludo', { size: 150 });
