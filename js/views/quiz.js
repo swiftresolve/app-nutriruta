@@ -63,7 +63,7 @@ const ORIGEN = [
   { id: 'facebook', nombre: 'Facebook', iconoHtml: LOGO_FACEBOOK },
   { id: 'youtube', nombre: 'YouTube', iconoHtml: LOGO_YOUTUBE },
   { id: 'amigo', nombre: 'Un amigo o familiar', emoji: '👋' },
-  { id: 'referido', nombre: 'Código de un amigo', emoji: '🎁' },
+  { id: 'referido', nombre: 'Fui referido/a', emoji: '🎁' },
   { id: 'busqueda', nombre: 'Buscando en internet', emoji: '🔍' },
   { id: 'anuncio', nombre: 'Un anuncio publicitario', emoji: '📣' },
   { id: 'otro', nombre: 'Otro', emoji: '✨' }

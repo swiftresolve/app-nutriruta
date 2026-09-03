@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-7b8e27a396';
+const CACHE = 'nutriruta-ff5aa9689d';
 const ASSETS = [
   './',
   './index.html',
