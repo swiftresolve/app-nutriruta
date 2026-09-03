@@ -96,7 +96,7 @@ export function celebrateStreak(n, stats) {
     </div>
     <div class="streak-act streak-act-2">
       <div class="streak-title-sm">🔥 ¡Racha de ${n} día${n === 1 ? '' : 's'}!</div>
-      ${rutiMascot('celebracion', { size: 84, animated: false })}
+      ${rutiMascot('celebracion', { size: 110, animated: false })}
       <div class="cw-strip">${celebrateWeekStrip()}</div>
       <p class="small streak-tip">Vuelve mañana para sumar otro día — sin presión, a tu ritmo.</p>
     </div>`;

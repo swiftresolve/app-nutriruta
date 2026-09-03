@@ -80,7 +80,7 @@ export function renderQuiz(container) {
       sub: 'Vamos a conocerte un poco para personalizar tu experiencia. Esto no reemplaza una consulta médica, pero nos ayuda a darte mejores recomendaciones.',
       render(el) {
         el.innerHTML = `
-          <div class="center mb">${rutiSiVisible('saludo', { size: 64 })}</div>
+          <div class="center mb">${rutiSiVisible('saludo', { size: 120 })}</div>
           <p class="center small" style="font-weight:600">Hola, soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>
           <label class="muted mt" for="q-nombre" style="display:block">${answers.nombre ? `Te llamaremos <strong>${esc(answers.nombre)}</strong>. Puedes cambiarlo si quieres:` : '¿Cómo te llamas? (opcional)'}</label>
           <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60" class="auth-input">
@@ -339,7 +339,7 @@ export function renderQuiz(container) {
     view.innerHTML = `
       <div class="quiz-progress"><div style="width:100%"></div></div>
       <div class="card center">
-        ${rutiSiVisible('saludo', { size: 72 })}
+        ${rutiSiVisible('saludo', { size: 100 })}
         <h2 class="mt">${answers.nombre ? `${esc(answers.nombre)}, tu` : 'Tu'} plan está listo</h2>
         <p class="small mt">Perfil principal: <strong>${PROFILES[main].nombre}</strong></p>
         ${rest.length ? `<p class="mt">También te conviene seguir: <strong>${rest.map((p) => PROFILES[p].nombre).join(', ')}</strong></p>` : ''}
