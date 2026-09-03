@@ -88,6 +88,16 @@ body {
   padding: 16px 16px calc(var(--nav-h) + var(--nav-gap) + 28px);
   min-height: 100vh;
 }
+/* Pantallas sin bottom-nav (quiz, auth, resetPassword) no necesitan ese
+   espacio reservado abajo -- sin esto quedaba un hueco vacío grande en
+   pantallas cortas como la bienvenida del quiz. Centradas verticalmente
+   también, para que no se vean pegadas arriba con aire libre abajo. */
+#app.no-nav {
+  padding-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
 
 /* Transición de pantalla al navegar (no en re-renders internos de una
    misma vista, esos no pasan por navigate() así que no la disparan). */

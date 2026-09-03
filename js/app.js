@@ -66,6 +66,9 @@ export function navigate(route, params = {}) {
 
   const showNav = route !== 'quiz' && route !== 'auth' && route !== 'resetPassword';
   nav.classList.toggle('hidden', !showNav);
+  // Sin bottom-nav no hace falta reservarle espacio abajo -- si no, queda
+  // un hueco vacío grande en pantallas cortas como la bienvenida del quiz.
+  app.classList.toggle('no-nav', !showNav);
   nav.querySelectorAll('.nav-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.route === route);
   });
