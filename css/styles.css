@@ -465,7 +465,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .quiz-nav p { text-align: center; margin: 0; }
 /* "Armando tu plan…": checklist que se revela paso a paso antes del
    resultado del quiz. */
-.armando-list { display: flex; flex-direction: column; gap: 14px; max-width: 320px; margin: 0 auto; text-align: left; }
+/* Antes max-width:320px quedaba más angosto que el resto del contenido
+   del quiz (que ya respeta los márgenes de #app) -- ahora ocupa el
+   mismo ancho disponible, con un tope generoso solo para que no se
+   estire de más en pantallas muy anchas. */
+.armando-list { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 480px; margin: 0 auto; text-align: left; }
 .armando-item {
   display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
   background: var(--card); box-shadow: var(--shadow); opacity: 0.5; transition: opacity .25s ease;
