@@ -77,29 +77,36 @@ export function renderQuiz(container) {
   const steps = [
     {
       title: '¡Hola! 🌿 Empecemos con NutriRuta',
-      sub: 'Vamos a conocerte un poco para personalizar tu experiencia. Esto no reemplaza una consulta médica, pero nos ayuda a darte mejores recomendaciones.',
+      sub: 'Vamos a encontrar una Ruta que funcione para ti.',
       render(el) {
         // Video de bienvenida (fondo transparente, ver img/ruti/bienvenida.webm)
         // en vez de la imagen fija -- si el navegador no soporta WebM con
         // canal alfa (algo de Safari viejo), cae a la imagen estática real,
-        // nunca a un cuadro roto.
+        // nunca a un cuadro roto. Bienvenida pura, sin pedir nada todavía
+        // (el nombre y el aviso de privacidad viven en el siguiente paso) --
+        // comparado con Duolingo/Fitia, la primera pantalla no debía pedir
+        // datos antes de generar interés.
         const rutiHtml = getState().rutiOculto ? '' : `
-          <video autoplay muted loop playsinline poster="./img/ruti/saludo.png" style="height:120px;width:auto;display:block;margin:0 auto" id="q-ruti-video">
+          <video autoplay muted loop playsinline poster="./img/ruti/saludo.png" style="height:150px;width:auto;display:block;margin:0 auto" id="q-ruti-video">
             <source src="./img/ruti/bienvenida.webm" type="video/webm">
           </video>`;
-        el.innerHTML = `
-          <div class="center mb">${rutiHtml}</div>
-          <p class="center small" style="font-weight:600">Hola, soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>
-          <label class="muted mt" for="q-nombre" style="display:block">${answers.nombre ? `Te llamaremos <strong>${esc(answers.nombre)}</strong>. Puedes cambiarlo si quieres:` : '¿Cómo te llamas? (opcional)'}</label>
-          <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60" class="auth-input">
-          <div class="legal-note">🔒 Tus datos se guardan en tu cuenta protegida y solo tú puedes verlos. NutriRuta es una herramienta de autoayuda: no diagnostica ni reemplaza a tu médico o nutricionista.</div>`;
+        el.innerHTML = `<div class="center mb">${rutiHtml}</div>`;
         const video = el.querySelector('#q-ruti-video');
         if (video && !video.canPlayType('video/webm; codecs="vp9"')) {
-          video.outerHTML = rutiSiVisible('saludo', { size: 120 });
+          video.outerHTML = rutiSiVisible('saludo', { size: 150 });
         } else {
-          video?.addEventListener('error', () => { video.outerHTML = rutiSiVisible('saludo', { size: 120 }); });
+          video?.addEventListener('error', () => { video.outerHTML = rutiSiVisible('saludo', { size: 150 }); });
         }
         el.querySelector('#q-ya-tengo-cuenta')?.addEventListener('click', () => navigate('auth'));
+      }
+    },
+    {
+      title: '¿Cómo te llamas?',
+      sub: 'Opcional -- puedes dejarlo en blanco.',
+      render(el) {
+        el.innerHTML = `
+          <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60" class="auth-input">
+          <div class="legal-note">🔒 Tus datos se guardan en tu cuenta protegida y solo tú puedes verlos. NutriRuta es una herramienta de autoayuda: no diagnostica ni reemplaza a tu médico o nutricionista.</div>`;
         const input = el.querySelector('#q-nombre');
         input.value = answers.nombre; // asignación por propiedad: sin riesgo de inyección HTML
         input.addEventListener('input', (e) => { answers.nombre = e.target.value.trim(); });
