@@ -359,13 +359,16 @@ export function renderQuiz(container) {
           });
         });
       }
+      // Primera letra mayúscula, el resto en minúscula -- sin importar
+      // cómo lo haya escrito la usuaria (todo mayúsculas, todo
+      // minúsculas, mezclado, o como lo autocorrija/autocapitalice su
+      // teclado), se ve igual de prolijo que el resto de las opciones
+      // predefinidas ("Pescado", "Gluten"...).
+      function capitalizar(texto) {
+        return texto ? texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase() : texto;
+      }
       function agregar(textoForzado) {
-        let texto = (textoForzado ?? input.value).trim().replace(/,$/, '').trim();
-        // Primera letra mayúscula, el resto en minúscula -- sin importar
-        // cómo lo haya escrito la usuaria (todo mayúsculas, todo
-        // minúsculas, mezclado), se ve igual de prolijo que el resto de
-        // las opciones predefinidas ("Pescado", "Gluten"...).
-        if (texto) texto = texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+        const texto = capitalizar((textoForzado ?? input.value).trim().replace(/,$/, '').trim());
         if (texto && !arr.includes(texto)) arr.push(texto);
         pintarTags();
       }
@@ -380,6 +383,17 @@ export function renderQuiz(container) {
       // pegar). Si se pega "a,b,c" de una vez, agrega "a" y "b" y deja
       // "c" lista para seguir escribiendo, en vez de perder el resto.
       input.addEventListener('input', () => {
+        // Capitaliza EN VIVO mientras se escribe -- no solo al agregar
+        // el tag -- para que se vea igual sin importar si el teclado del
+        // celular tiene la mayúscula automática activada/desactivada.
+        // Reposiciona el cursor porque reasignar .value lo manda al
+        // final por defecto.
+        const cursor = input.selectionStart;
+        const capitalizado = capitalizar(input.value);
+        if (capitalizado !== input.value) {
+          input.value = capitalizado;
+          input.setSelectionRange(cursor, cursor);
+        }
         if (!input.value.includes(',')) return;
         const partes = input.value.split(',');
         const resto = partes.pop();
