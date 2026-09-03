@@ -137,7 +137,14 @@ export function renderQuiz(container) {
 
   const steps = [
     {
-      title: '¡Hola! 🌿 Empecemos con NutriRuta',
+      // El título de este paso ES el logo + nombre (arriba del todo, sin
+      // nada encima) -- mismo patrón que la pantalla de inicio de
+      // Duolingo (logo+wordmark solo, la ilustración y el texto van
+      // debajo, no un encabezado redundante repitiendo el nombre).
+      title: `<div style="display:flex;align-items:center;justify-content:center;gap:8px">
+        <img src="./icons/icon.svg" alt="" width="26" height="26">
+        <span>NutriRuta</span>
+      </div>`,
       sub: '',
       render(el) {
         // Bienvenida pura, sin pedir nada todavía (el nombre y el aviso de
