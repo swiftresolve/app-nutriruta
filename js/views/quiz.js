@@ -137,20 +137,16 @@ export function renderQuiz(container) {
 
   const steps = [
     {
-      // El título de este paso ES el logo + nombre (arriba del todo, sin
-      // nada encima) -- mismo patrón que la pantalla de inicio de
-      // Duolingo (logo+wordmark solo, la ilustración y el texto van
-      // debajo, no un encabezado redundante repitiendo el nombre).
-      title: `<div style="display:flex;align-items:center;justify-content:center;gap:8px">
-        <img src="./icons/icon.svg" alt="" width="26" height="26">
-        <span>NutriRuta</span>
-      </div>`,
+      title: '¡Hola! 🌿 Empecemos con NutriRuta',
       sub: '',
       render(el) {
         // Bienvenida pura, sin pedir nada todavía (el nombre y el aviso de
         // privacidad viven en el siguiente paso) -- comparado con
         // Duolingo/Fitia, la primera pantalla no debía pedir datos antes
         // de generar interés.
+        // El logo+nombre va arriba del todo, ANTES que el título -- el
+        // título (h2) sigue igual, no se toca -- el logo+nombre se agrega
+        // en draw() ANTES del h2, solo para este paso (ver más abajo).
         el.innerHTML = `
           <div class="center mb">${rutiBienvenidaHtml(150)}</div>
           <p class="center small" style="font-weight:600">Soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</p>`;
@@ -417,7 +413,11 @@ export function renderQuiz(container) {
     // como el resto de las preguntas.
     view.className = 'quiz-step' + (step === 0 ? ' quiz-step-intro' : '');
     view.innerHTML = `
-      ${step === 0 ? '' : `
+      ${step === 0 ? `
+      <div class="quiz-topbar quiz-topbar-brand">
+        <img src="./icons/icon.svg" alt="" width="24" height="24">
+        <span style="font-weight:800;font-size:1.02rem">NutriRuta</span>
+      </div>` : `
       <div class="quiz-topbar">
         <button class="quiz-topbar-back" aria-label="Atrás"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div class="quiz-progress"><div style="width:${pct}%"></div></div>

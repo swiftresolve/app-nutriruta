@@ -363,6 +363,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    como primer hijo del flex-column de .quiz-step (ver más abajo) --
    nunca se mueve porque nunca se calculó su posición a mano. */
 .quiz-topbar { display: flex; align-items: center; gap: 6px; flex: none; }
+/* Bienvenida: en vez de flecha+progreso, solo el logo+nombre, centrado
+   y fijo arriba (no se mueve aunque el contenido de abajo se centre). */
+.quiz-topbar-brand { justify-content: center; padding-top: 4px; }
 /* La barra ocupa todo el ancho restante, alineada a la derecha con los
    botones/chips de abajo (mismo borde derecho del contenedor). */
 .quiz-topbar .quiz-progress { flex: 1; margin: 0; }
