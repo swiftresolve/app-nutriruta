@@ -234,8 +234,16 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
     0 0 0 3px #FFF, 0 0 0 6px #FFD86B, 0 3px 10px rgba(255, 184, 0, 0.35);
 }
 /* ===== Ruti (nutria exploradora) — distinta del Brote de Ruta ===== */
-.ruti-mascot { border-radius: 50%; flex: none; display: inline-block; transform-origin: 50% 85%; }
-.ruti-mascot svg { width: 100%; height: 100%; display: block; }
+/* Las ilustraciones oficiales de Ruti (ver img/ruti/) tienen fondo
+   crema/blanco fijo -- background:#fff hace que se lea como una insignia
+   circular a propósito, no como un recorte desalineado sobre tarjetas
+   oscuras. object-fit:cover + object-position:center centra el recorte
+   dentro del círculo sin deformarlo. */
+.ruti-mascot {
+  border-radius: 50%; flex: none; display: inline-block; overflow: hidden;
+  background: #fff; transform-origin: 50% 85%;
+}
+.ruti-mascot img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; }
 .ruti-mascot.animated { animation: ruti-sway 3.5s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .ruti-mascot.animated { animation: none; } }
 

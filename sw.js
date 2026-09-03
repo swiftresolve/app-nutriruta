@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-b1f840ae8c';
+const CACHE = 'nutriruta-b5b11e692f';
 const ASSETS = [
   './',
   './index.html',
@@ -37,7 +37,12 @@ const ASSETS = [
   './js/views/resetPassword.js',
   './icons/icon.svg',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './img/ruti/saludo.png',
+  './img/ruti/feliz.png',
+  './img/ruti/curiosa.png',
+  './img/ruti/tranquila.png',
+  './img/ruti/celebracion.png'
 ];
 
 self.addEventListener('install', (e) => {
