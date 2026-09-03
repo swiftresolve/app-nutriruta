@@ -311,14 +311,17 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    al centro, X para cerrar (solo al retomar el quiz desde Ajustes — la
    primera vez no hay a dónde volver todavía). */
 .quiz-topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
-/* La flecha (30px) + el espacio (10px) empujan la barra desde la
-   izquierda; sin nada a la derecha (ya no hay X) quedaba descentrada —
-   se reserva el mismo espacio a la derecha para que quede pareja. */
-.quiz-topbar .quiz-progress { flex: 1; margin: 0 40px 0 0; }
+/* La barra ocupa todo el ancho restante, alineada a la derecha con los
+   botones/chips de abajo (mismo borde derecho del contenedor). */
+.quiz-topbar .quiz-progress { flex: 1; margin: 0; }
 /* Flecha simple, sin el círculo blanco de .icon-btn — como en la
-   referencia de la usuaria (Duolingo tampoco lo usa ahí). */
+   referencia de la usuaria (Duolingo tampoco lo usa ahí). El glifo de
+   la flecha dentro de su viewBox de 24x24 deja bastante espacio vacío
+   a su derecha (es una "<", no un ícono centrado) — se compensa con un
+   margen negativo para que la punta quede alineada con el borde
+   izquierdo de los botones/chips de abajo, medido con getBoundingClientRect.*/
 .quiz-topbar-back {
-  width: 30px; height: 30px; background: none; box-shadow: none; padding: 0;
+  width: 30px; height: 30px; background: none; box-shadow: none; padding: 0; margin-left: -11px;
   color: var(--ink-soft); flex: none; display: flex; align-items: center; justify-content: center;
 }
 .quiz-topbar-back:active { transform: translateX(-2px); box-shadow: none; }
