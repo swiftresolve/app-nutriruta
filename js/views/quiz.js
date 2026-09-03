@@ -30,14 +30,41 @@ function iniciarRutiBienvenida(el, size) {
   }
 }
 
+// Logos reales (no emoji genérico) para las redes que sí tienen un ícono
+// reconocible -- la usuaria lo pidió explícitamente para Instagram,
+// Facebook, YouTube y TikTok. SVG a mano con los colores de marca (sin
+// depender de una librería de íconos externa, coherente con el resto de
+// la app que no carga assets de terceros).
+const LOGO_INSTAGRAM = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+  <defs><linearGradient id="ig-g" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0%" stop-color="#FFDD55"/><stop offset="45%" stop-color="#E64A63"/><stop offset="100%" stop-color="#C837AB"/>
+  </linearGradient></defs>
+  <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="url(#ig-g)" stroke-width="2"/>
+  <circle cx="12" cy="12" r="4.6" fill="none" stroke="url(#ig-g)" stroke-width="2"/>
+  <circle cx="17.6" cy="6.4" r="1.3" fill="url(#ig-g)"/>
+</svg>`;
+const LOGO_FACEBOOK = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+  <circle cx="12" cy="12" r="10.5" fill="#1877F2"/>
+  <path d="M15.1 12.6h-2.2V20h-3v-7.4H8.3v-2.6h1.6V8.4c0-1.6.9-3 3.4-3h2v2.5h-1.4c-.4 0-.7.2-.7.8v1.3h2.2z" fill="#fff"/>
+</svg>`;
+const LOGO_YOUTUBE = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+  <rect x="1.5" y="5" width="21" height="14" rx="4.5" fill="#FF0000"/>
+  <path d="M10 8.6l6 3.4-6 3.4z" fill="#fff"/>
+</svg>`;
+const LOGO_TIKTOK = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+  <path d="M15.6 3h2.5c.2 1.6 1.4 3 3 3.3v2.5c-1.1 0-2.2-.4-3-1v6.6c0 3-2.4 5.4-5.4 5.4S7.3 17.4 7.3 14.4c0-2.9 2.2-5.2 5-5.4v2.6a2.8 2.8 0 1 0 2.8 2.8V3z" fill="#25F4EE"/>
+  <path d="M14.9 3h2.5c.2 1.6 1.4 3 3 3.3v2.5c-1.1 0-2.2-.4-3-1v6.6c0 3-2.4 5.4-5.4 5.4S6.6 17.4 6.6 14.4c0-2.9 2.2-5.2 5-5.4v2.6a2.8 2.8 0 1 0 2.8 2.8V3z" fill="#FE2C55" opacity="0.75"/>
+  <path d="M15.25 3h2.5c.2 1.6 1.4 3 3 3.3v2.5c-1.1 0-2.2-.4-3-1v6.6c0 3-2.4 5.4-5.4 5.4s-5.4-2.4-5.4-5.4c0-2.9 2.2-5.2 5-5.4v2.6a2.8 2.8 0 1 0 2.8 2.8V3z" fill="#fff" opacity="0.9"/>
+</svg>`;
+
 const ORIGEN = [
-  { id: 'instagram', nombre: 'Instagram', emoji: '📸' },
-  { id: 'tiktok', nombre: 'TikTok', emoji: '🎵' },
-  { id: 'facebook', nombre: 'Facebook', emoji: '📘' },
+  { id: 'instagram', nombre: 'Instagram', iconoHtml: LOGO_INSTAGRAM },
+  { id: 'tiktok', nombre: 'TikTok', iconoHtml: LOGO_TIKTOK },
+  { id: 'facebook', nombre: 'Facebook', iconoHtml: LOGO_FACEBOOK },
+  { id: 'youtube', nombre: 'YouTube', iconoHtml: LOGO_YOUTUBE },
   { id: 'amigo', nombre: 'Un amigo o familiar', emoji: '👋' },
   { id: 'referido', nombre: 'Código de un amigo', emoji: '🎁' },
   { id: 'busqueda', nombre: 'Buscando en internet', emoji: '🔍' },
-  { id: 'youtube', nombre: 'YouTube', emoji: '▶️' },
   { id: 'anuncio', nombre: 'Un anuncio publicitario', emoji: '📣' },
   { id: 'otro', nombre: 'Otro', emoji: '✨' }
 ];
@@ -126,7 +153,7 @@ export function renderQuiz(container) {
     },
     {
       title: '¿Cómo te llamas?',
-      sub: 'Opcional -- puedes dejarlo en blanco.',
+      sub: '',
       render(el) {
         // El aviso legal completo ya vive en Ajustes -> Legal (Términos y
         // Privacidad, ver settings.js) -- repetirlo aquí era redundante.
@@ -240,6 +267,11 @@ export function renderQuiz(container) {
   // original): un chip abre un modal con un campo de texto, cada Enter
   // (o coma) agrega lo escrito como una etiqueta propia y limpia el
   // campo para seguir escribiendo, sin cerrar el modal. "Listo" cierra.
+  const ICONO_QUITAR = `<svg class="chip-tag-quitar" viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+    <circle cx="10" cy="10" r="9" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+  </svg>`;
+
   function pintarExclusionesOtro(el) {
     el.innerHTML = '';
     if (answers.exclusionesOtro.length) {
@@ -253,7 +285,7 @@ export function renderQuiz(container) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'chip selected';
-        b.innerHTML = `<span class="chip-tag-texto">${esc(texto)}</span><span class="chip-tag-quitar" aria-hidden="true">✕</span>`;
+        b.innerHTML = `<span class="chip-tag-texto">${esc(texto)}</span>${ICONO_QUITAR}`;
         b.setAttribute('aria-label', `Quitar ${texto}`);
         b.addEventListener('click', () => {
           answers.exclusionesOtro.splice(i, 1);
@@ -283,7 +315,7 @@ export function renderQuiz(container) {
       const tagsBox = modal.querySelector('#q-excl-nueva-tags');
       function pintarTags() {
         tagsBox.innerHTML = answers.exclusionesOtro.map((texto, i) => `
-          <button type="button" class="chip selected" data-i="${i}"><span class="chip-tag-texto">${esc(texto)}</span><span class="chip-tag-quitar" aria-hidden="true">✕</span></button>`).join('');
+          <button type="button" class="chip selected" data-i="${i}"><span class="chip-tag-texto">${esc(texto)}</span>${ICONO_QUITAR}</button>`).join('');
         tagsBox.querySelectorAll('.chip').forEach((b) => {
           b.addEventListener('click', () => {
             answers.exclusionesOtro.splice(Number(b.dataset.i), 1);
@@ -321,7 +353,10 @@ export function renderQuiz(container) {
     for (const opt of options) {
       const b = document.createElement('button');
       b.className = 'chip';
-      b.textContent = `${opt.emoji ? opt.emoji + ' ' : ''}${opt.nombre}`;
+      // iconoHtml: logo real de marca (SVG, ver LOGO_* arriba) para las
+      // pocas opciones que lo tienen -- el resto sigue usando emoji.
+      const iconoPrefijo = opt.iconoHtml || (opt.emoji ? `${opt.emoji} ` : '');
+      b.innerHTML = `${iconoPrefijo}${esc(opt.nombre)}`;
       const isSel = () => multi ? target.includes(opt.id) : target[prop] === opt.id;
       b.classList.toggle('selected', isSel());
       b.addEventListener('click', () => {

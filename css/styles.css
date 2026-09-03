@@ -277,7 +277,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    pintarExclusionesOtro en quiz.js): la "quitar" (✕) va chica y con
    espacio real respecto al texto, no pegada como un carácter más. */
 .chip-tag-texto { margin-right: 10px; }
-.chip-tag-quitar { font-size: 0.72rem; opacity: 0.65; }
+.chip > svg { flex: none; margin-right: 8px; }
+.chip-tag-quitar { flex: none; opacity: 0.65; }
 /* Verde de marca con transparencia + borde, no relleno sólido — para que
    se note que está elegido sin perder la sensación de tarjeta suave. */
 .chip.selected {
