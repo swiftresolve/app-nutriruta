@@ -96,7 +96,7 @@ body {
   padding-bottom: 16px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 /* Transición de pantalla al navegar (no en re-renders internos de una
@@ -323,8 +323,20 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .quiz-progress > div { height: 100%; background: var(--primary); border-radius: 999px; transition: width 0.35s cubic-bezier(.34,1.2,.64,1); }
 /* Barra superior tipo Duolingo: flechita para volver, barra de progreso
    al centro, X para cerrar (solo al retomar el quiz desde Ajustes — la
-   primera vez no hay a dónde volver todavía). */
-.quiz-topbar { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+   primera vez no hay a dónde volver todavía). Fija arriba del todo --
+   #app.no-nav centra el resto de la pregunta verticalmente en el
+   espacio disponible, y si la barra viviera dentro de ese bloque
+   centrado se movería de posición según cuánto contenido tenga cada
+   pregunta. Mismo patrón de centrado por ancho que .bottom-nav/
+   .chat-input-row (fixed + left:50% + transform, no todo el viewport). */
+.quiz-topbar {
+  display: flex; align-items: center; gap: 6px;
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  width: calc(100% - 32px); max-width: 528px; z-index: 60;
+}
+/* Reserva el espacio de la barra fija arriba de cada pregunta -- sin
+   esto el contenido centrado podría dibujarse debajo de ella. */
+.quiz-step:not(.quiz-step-intro) { padding-top: 56px; }
 /* La barra ocupa todo el ancho restante, alineada a la derecha con los
    botones/chips de abajo (mismo borde derecho del contenedor). */
 .quiz-topbar .quiz-progress { flex: 1; margin: 0; }
@@ -357,7 +369,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   /* Sin esto el botón no es flex y el texto queda pegado arriba en vez de
      centrado verticalmente — se notaba al quedar más alto que su pareja
      de fila. min-height fija un piso común para todas las opciones. */
-  display: flex; align-items: center; justify-content: flex-start; min-height: 58px;
+  display: flex; align-items: center; justify-content: flex-start; min-height: 46px;
 }
 /* Si el total de opciones es impar, la última queda sola en la columna
    izquierda con un hueco vacío a la derecha — que ocupe las dos columnas
@@ -377,10 +389,28 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @media (prefers-reduced-motion: reduce) {
   .quiz-step { animation: none; }
 }
-.quiz-nav { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 26px; }
+/* Fijo abajo del todo, mismo patrón de centrado por ancho que
+   .quiz-topbar/.bottom-nav/.chat-input-row -- así el botón siempre
+   está en el mismo lugar sin importar cuánto contenido tenga la
+   pregunta arriba, en vez de moverse con el bloque centrado. */
+.quiz-nav {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%); width: calc(100% - 32px); max-width: 528px; z-index: 60;
+}
 .quiz-nav .btn { flex: none; height: calc(var(--btn-h) + 2px); font-size: 1.14rem; }
 .quiz-nav p { width: 100%; }
 .quiz-nav p { text-align: center; margin: 0; }
+/* Reserva el espacio del botón fijo abajo -- en todas las pantallas,
+   incluida la bienvenida (también tiene botón + link de inicio de
+   sesión, un poco más alto por eso). */
+.quiz-step { padding-bottom: 110px; }
+/* Solo la bienvenida (contenido corto y fijo) se centra verticalmente
+   -- vía margin:auto en el propio ítem, no justify-content:center en el
+   contenedor (eso rompía las preguntas con contenido más largo: el
+   navegador arrancaba el scroll a la mitad del bloque centrado, con el
+   título ya tapado detrás de la barra fija de arriba). */
+.quiz-step-intro { padding-bottom: 130px; margin-top: auto; margin-bottom: auto; }
 
 /* "Armando tu plan…": checklist que se revela paso a paso antes del
    resultado del quiz. */
