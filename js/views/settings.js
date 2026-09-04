@@ -41,38 +41,38 @@ function abrirSelector(titulo, opciones, valorActual, onElegir) {
   });
 }
 
-// Paquetes de Faroles -- MAQUETA (ver nota en el llamador). Precios en COP,
-// provisionales: hay que reemplazarlos por los reales una vez existan los
-// productos de compra única en Hotmart.
-const PAQUETES_FAROLES = [
+// Paquetes de NutriCoins -- MAQUETA (ver nota en el llamador). Precios en
+// COP, provisionales: hay que reemplazarlos por los reales una vez existan
+// los productos de compra única en Hotmart.
+const PAQUETES_NUTRICOINS = [
   { cant: 100, precio: 3900 },
   { cant: 500, precio: 16900 },
   { cant: 1000, precio: 29900, popular: true },
   { cant: 2500, precio: 59900 }
 ];
 
-function abrirComprarFaroles() {
+function abrirComprarNutricoins() {
   openModal((modal) => {
-    const faroles = getState().faroles || 0;
+    const nutricoins = getState().nutricoins || 0;
     modal.insertAdjacentHTML('beforeend', `
-      <h2>🏮 Tus Faroles</h2>
-      <p class="num mt" style="margin:2px 0 0">${faroles}</p>
+      <h2>🪙 Tus NutriCoins</h2>
+      <p class="num mt" style="margin:2px 0 0">${nutricoins}</p>
       <p class="small muted mt">Se usan para extras puntuales -- nunca para saltarte hábitos ni comprar Pausas de Ruta, eso sigue siendo solo con constancia.</p>
-      <p class="small mt" style="font-weight:600">Comprar Faroles</p>
+      <p class="small mt" style="font-weight:600">Comprar NutriCoins</p>
       <div class="farol-grid mt">
-        ${PAQUETES_FAROLES.map((p, i) => `
+        ${PAQUETES_NUTRICOINS.map((p, i) => `
           <button type="button" class="farol-pack${p.popular ? ' popular' : ''}" data-i="${i}">
             ${p.popular ? '<span class="farol-badge">Popular</span>' : ''}
             <span class="farol-cant">${p.cant.toLocaleString('es')}</span>
-            <span class="small muted">Faroles</span>
-            <span class="farol-emoji">🏮</span>
+            <span class="small muted">NutriCoins</span>
+            <span class="farol-emoji">🪙</span>
             <span class="farol-precio">$${p.precio.toLocaleString('es')}</span>
           </button>`).join('')}
       </div>
       <p class="small muted mt">Los paquetes y precios todavía son provisionales -- esta pantalla es una maqueta mientras se conecta el cobro real.</p>`);
     modal.querySelectorAll('.farol-pack').forEach((btn) => {
       btn.addEventListener('click', () => {
-        toast('Muy pronto vas a poder comprar Faroles aquí mismo 🏮');
+        toast('Muy pronto vas a poder comprar NutriCoins aquí mismo 🪙');
       });
     });
   });
@@ -210,19 +210,19 @@ export function renderSettings(container) {
   }).catch(() => { refCodigoEl.textContent = 'No se pudo cargar tu código.'; });
   container.appendChild(referidos);
 
-  // Faroles: a diferencia de las gemas (100% ganadas con constancia, nunca
-  // en venta -- ver header() en app.js), esto SÍ se compra con dinero real.
-  // MAQUETA: los paquetes y precios son provisionales, y el botón todavía
-  // no cobra nada -- falta crear los productos de compra única en Hotmart
-  // (confirmado que soporta microtransacciones) y conectar sus IDs reales.
-  const farolesCard = document.createElement('div');
-  farolesCard.className = 'card';
-  farolesCard.innerHTML = `
-    <div class="spread"><h2>🏮 Faroles</h2><span class="small muted">${getState().faroles || 0}</span></div>
+  // NutriCoins: a diferencia de las gemas (100% ganadas con constancia,
+  // nunca en venta -- ver header() en app.js), esto SÍ se compra con dinero
+  // real. MAQUETA: los paquetes y precios son provisionales, y el botón
+  // todavía no cobra nada -- falta crear los productos de compra única en
+  // Hotmart (confirmado que soporta microtransacciones) y conectar sus IDs.
+  const nutricoinsCard = document.createElement('div');
+  nutricoinsCard.className = 'card';
+  nutricoinsCard.innerHTML = `
+    <div class="spread"><h2>🪙 NutriCoins</h2><span class="small muted">${getState().nutricoins || 0}</span></div>
     <p class="small mt">Se compran con dinero, nunca se ganan -- a diferencia de tus gemas 💎. Sirven para extras puntuales (como preguntas de más a SuSana), nunca para saltarte tu constancia real.</p>
-    <button type="button" class="btn ghost full mt" id="btn-comprar-faroles">Comprar Faroles</button>`;
-  farolesCard.querySelector('#btn-comprar-faroles').addEventListener('click', () => abrirComprarFaroles());
-  container.appendChild(farolesCard);
+    <button type="button" class="btn ghost full mt" id="btn-comprar-nutricoins">Comprar NutriCoins</button>`;
+  nutricoinsCard.querySelector('#btn-comprar-nutricoins').addEventListener('click', () => abrirComprarNutricoins());
+  container.appendChild(nutricoinsCard);
 
   // Canjear el código de un amigo: hasta ahora solo se capturaba de forma
   // automática/silenciosa con "?ref=CODIGO" en el link compartido, ANTES
