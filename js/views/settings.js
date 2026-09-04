@@ -103,15 +103,23 @@ export function renderSettings(container, params = {}) {
         <span id="resumen-avatar-fallback">${inicialResumen}</span>
       </span>
     </div>
-    <div class="card" id="resumen-info" style="flex:1;min-width:0;cursor:pointer;padding:14px;display:flex;flex-direction:column;justify-content:center">
-      <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(user.nombre || 'Sin nombre')}</strong>
+    <div class="card center" id="resumen-info" style="flex:1;min-width:0;cursor:pointer;padding:14px;display:flex;flex-direction:column;justify-content:center;align-items:center">
+      <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">${esc(user.nombre || 'Sin nombre')}</strong>
       <span class="small muted mt" id="resumen-plan">Cargando…</span>
+      <span class="small muted" id="resumen-cobro"></span>
     </div>`;
   const irACuenta = () => navigate('settings', { seccion: 'cuenta' });
   resumen.querySelector('#resumen-foto').addEventListener('click', irACuenta);
   resumen.querySelector('#resumen-info').addEventListener('click', irACuenta);
   const resumenPlan = resumen.querySelector('#resumen-plan');
+  const resumenCobro = resumen.querySelector('#resumen-cobro');
   resumenPlan.textContent = planExpired() ? 'Premium vencido' : isPremium() ? `✨ Premium ${getPlan().periodo}` : 'Plan gratuito';
+  // Próximo cobro: solo tiene sentido con un plan Premium vigente -- el
+  // plan gratuito y un Premium ya vencido no tienen fecha de cobro real.
+  if (isPremium() && !planExpired()) {
+    const vence = planExpiry();
+    resumenCobro.textContent = vence ? `Próximo cobro: ${vence.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}` : '';
+  }
   getSession().then((s) => {
     if (!s) return;
     const img = resumen.querySelector('#resumen-avatar-img');
