@@ -13,7 +13,7 @@ import { t } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
 import { renderPathMap } from '../pathMap.js';
-import { renderPrimerosPasos, primerosPasosVisible } from './primerosPasos.js';
+import { tourVisible, iniciarTour } from './tour.js';
 import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
 import { renderNotifPrompt, notifPromptVisible } from './notifPrompt.js';
 import { openMealLogModal } from './mealLogModal.js';
@@ -75,11 +75,6 @@ export function renderDashboard(container) {
     container.appendChild(hero);
   }
 
-  // --- Primeros pasos: checklist de onboarding, solo cuentas nuevas ---
-  if (primerosPasosVisible()) {
-    renderPrimerosPasos(container, () => renderDashboard(clearAndGet(container)));
-  }
-
   // --- Notificaciones: se piden aquí, cuando ya hay una racha que
   // proteger, no enterrado en Ajustes. También descartable. ---
   if (notifPromptVisible()) {
@@ -97,6 +92,7 @@ export function renderDashboard(container) {
   // en toda la app.
   const pasoRachaActual = state.racha.actual;
   const pasoCard = document.createElement('div');
+  pasoCard.id = 'tour-paso';
   pasoCard.className = 'card';
   pasoCard.style.background = 'linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))';
   pasoCard.style.border = 'none';
@@ -127,6 +123,7 @@ export function renderDashboard(container) {
   // --- Hábitos: el ciclo diario central, justo después del paso de hoy ---
   const checks = getHabits();
   const habitCard = document.createElement('div');
+  habitCard.id = 'tour-habitos';
   habitCard.className = 'card';
   habitCard.innerHTML = `<h2>✅ ${t('Hábitos de hoy')}</h2><p class="small">${t('Marca al menos 3 para sumar a tu Ruta. Agua y menú se marcan solos.')}</p>`;
   for (const h of DAILY_HABITS) {
@@ -173,6 +170,7 @@ export function renderDashboard(container) {
   // --- Agua ---
   const agua = getWater();
   const waterCard = document.createElement('div');
+  waterCard.id = 'tour-agua';
   waterCard.className = 'card';
   waterCard.innerHTML = `
     <div class="spread"><h2>${t('💧 Agua')}</h2><span class="muted small">${agua.vasos}/${agua.meta} ${t('vasos')}</span></div>
@@ -328,6 +326,14 @@ export function renderDashboard(container) {
   // Progreso (ver progress.js) — la usuaria pidió que el dashboard diario
   // no acumule tarjetas grandes de cosas que no se usan todos los días;
   // ese contenido encaja mejor en la pantalla dedicada a ver tu progreso.
+
+  // Minitutorial guiado: recién al final, con todo ya en el DOM (incluido
+  // el menú inferior, que vive fuera de este container). El chequeo de
+  // "ya hay uno corriendo" evita duplicar el overlay si algo externo
+  // vuelve a llamar renderDashboard mientras el tour sigue a medias.
+  if (tourVisible() && !document.querySelector('.tour-overlay')) {
+    iniciarTour(() => renderDashboard(clearAndGet(container)));
+  }
 }
 
 // Estado de ánimo de Sana: se deriva 100% de datos que ya existen (último

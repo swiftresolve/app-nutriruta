@@ -848,6 +848,23 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .farol-emoji { font-size: 1.8rem; margin: 6px 0; }
 .farol-precio { font-weight: 700; color: var(--ink-soft); }
 
+/* ===== Minitutorial guiado del dashboard (ver views/tour.js) ===== */
+.tour-overlay { position: fixed; inset: 0; z-index: 199; pointer-events: auto; }
+.tour-spot {
+  position: fixed; z-index: 200; border-radius: 16px;
+  /* Un solo box-shadow enorme cubre TODA la pantalla excepto el propio
+     recuadro -- así el "agujero" del spotlight siempre calza exacto con
+     el elemento real, sin recortar nada a mano por CSS. */
+  box-shadow: 0 0 0 9999px rgba(8, 18, 15, 0.74);
+  pointer-events: none;
+  transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+}
+.tour-tip {
+  position: fixed; z-index: 201; background: var(--card); color: var(--ink);
+  border-radius: 16px; padding: 16px; width: min(280px, calc(100vw - 32px));
+  box-shadow: var(--shadow); transition: top 0.3s ease, left 0.3s ease;
+}
+
 /* ===== Modal ===== */
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(20, 34, 30, 0.45);

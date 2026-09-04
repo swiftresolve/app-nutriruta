@@ -69,7 +69,7 @@ const DEFAULT_STATE = {
   nutricoins: 450,               // moneda que SÍ se compra con dinero (ver "Comprar NutriCoins" en Ajustes) -- nunca compra Pausas de Ruta ni nada que reemplace constancia real, solo extras (preguntas de más a SuSana, cosas así). Gemas y NutriCoins conviven pero no se mezclan. Toda cuenta arranca con 450 de regalo.
   energiaRuta: 0,                // acumulado histórico: constancia y cuidado de hábitos, no calorías ni peso
   kmRuta: 0,                     // acompaña a energiaRuta, mismo espíritu ("cuánto ha recorrido tu Ruta")
-  primerosPasos: { cerrado: false, minimizado: false }, // checklist de onboarding, solo cuentas nuevas
+  tourCompletado: false,          // minitutorial guiado del dashboard (ver views/tour.js) -- solo se muestra una vez, a cuentas nuevas
   sonidoActivado: true,         // chime al completar una micro-acción; silenciable en Ajustes
   rutiOculto: false,            // modo minimalista: oculta la ilustración de Ruti donde aparece
   diasCongelados: [],           // fechas ISO cubiertas por una Pausa de Ruta (racha "congelada", no rota)

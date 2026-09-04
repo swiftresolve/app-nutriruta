@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-7cf83dd2d5';
+const CACHE = 'nutriruta-93370251c3';
 const ASSETS = [
   './',
   './index.html',
@@ -33,6 +33,7 @@ const ASSETS = [
   './js/views/emergency.js',
   './js/views/assistant.js',
   './js/views/checkin.js',
+  './js/views/tour.js',
   './js/views/testimonials.js',
   './js/views/resetPassword.js',
   './icons/icon.svg',
