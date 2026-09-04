@@ -563,7 +563,7 @@ export function toggleFavorita(recipeId) {
 // ingredientes/pasos son texto libre, no la estructura con sustituciones
 // del catálogo curado -- por eso no pasan por isRecipeAvailable/
 // matchesSearch/trafficLight (esas funciones esperan esa estructura).
-export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingredientes, pasos, porciones, tiempoMin }) {
+export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingredientes, pasos, porciones, tiempoMin, origen }) {
   const receta = {
     id: `propia-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     nombre: String(nombre || '').trim().slice(0, 80),
@@ -574,6 +574,7 @@ export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingred
     tiempoMin: Math.min(240, Math.max(0, Number(tiempoMin) || 0)),
     ingredientes: (ingredientes || []).map((s) => s.trim()).filter(Boolean).slice(0, 20),
     pasos: (pasos || []).map((s) => s.trim()).filter(Boolean).slice(0, 15),
+    origen: origen === 'ia' ? 'ia' : 'manual',
     creada: today()
   };
   setState({ misRecetas: [...(state.misRecetas || []), receta] });
@@ -582,6 +583,16 @@ export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingred
 
 export function eliminarRecetaPropia(id) {
   setState({ misRecetas: (state.misRecetas || []).filter((r) => r.id !== id) });
+}
+
+// Costo en NutriCoins de generar una receta con IA (ver "Crear con IA" en
+// el Recetario) -- NutriCoins es moneda que sí se compra con dinero, así
+// que gastarla aquí no reemplaza ninguna constancia real, solo paga el
+// costo real de la llamada a la IA. No valida saldo -- eso lo hace quien
+// llama (planner.js), antes de invocar la función de generación.
+export const COSTO_RECETA_IA = 10;
+export function gastarNutricoins(n) {
+  setState({ nutricoins: Math.max(0, (state.nutricoins || 0) - n) });
 }
 
 function updateStreak() {

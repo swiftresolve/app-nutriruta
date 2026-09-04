@@ -197,6 +197,27 @@ export async function fetchGuideHistory() {
   return data;
 }
 
+// --- Crear con IA (Recetario) ---
+// Genera UNA receta vía Edge Function (generate-recipe): valida saldo de
+// NutriCoins en el servidor antes de llamar a la IA, pero el descuento real
+// del saldo lo hace el cliente tras una respuesta exitosa (ver
+// gastarNutricoins en store.js) -- mismo modelo de confianza que el resto
+// de la moneda de la app.
+export async function generarRecetaIA(comida, notas) {
+  const { data, error } = await supabase.functions.invoke('generate-recipe', { body: { comida, notas } });
+  if (error) {
+    let body = null;
+    try { body = await error.context.clone().json(); } catch { /* respuesta no era JSON */ }
+    if (body) {
+      const e = new Error(body.message || body.error || 'No pudimos generar la receta.');
+      e.code = body.error;
+      throw e;
+    }
+    throw error;
+  }
+  return data.receta;
+}
+
 // --- Notificaciones push ---
 // El cliente solo puede crear/borrar SU PROPIA suscripción (RLS); nunca leer
 // suscripciones de nadie, ni siquiera la propia de vuelta. El envío real lo

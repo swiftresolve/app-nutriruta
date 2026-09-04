@@ -233,7 +233,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .filtro-select.selected { background: var(--primary-soft); color: var(--primary-dark); border-color: var(--primary-soft); }
 /* Botones "Crear con IA" / "Crear manualmente" del Recetario -- tarjetas
    chicas, iguales entre sí, en el espacio que antes ocupaba el buscador. */
-.crear-receta-btn { border: none; transition: transform 0.1s ease; }
+.crear-receta-btn {
+  border: none; transition: transform 0.1s ease;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  background: var(--primary-soft); color: var(--primary-dark);
+  border-radius: 12px; padding: 10px 12px; font-weight: 700; font-size: 0.82rem;
+}
+.crear-receta-btn .crear-receta-emoji { font-size: 1rem; line-height: 1; }
 .crear-receta-btn:active { transform: translateY(2px) scale(0.98); }
 .btn.danger { background: var(--red); box-shadow: 0 4px 0 #A8382C, 0 6px 14px rgba(224, 91, 75, 0.2); }
 .btn.danger:active { box-shadow: 0 1px 0 #A8382C, 0 2px 6px rgba(224, 91, 75, 0.16); }
@@ -730,6 +736,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   display: flex; align-items: center; justify-content: center;
   background: var(--card); box-shadow: 0 2px 6px rgba(35,56,51,0.14);
   font-size: 0.95rem; cursor: pointer;
+}
+
+/* Tag "Nuevo" en recetas recién generadas con IA (ver nuevasIds en
+   planner.js) -- lado opuesto a la estrella de favorita para no chocar. */
+.recipe-nuevo-tag {
+  position: absolute; top: 6px; right: 6px; z-index: 2;
+  background: var(--accent); color: #fff; font-size: 0.66rem; font-weight: 700;
+  padding: 3px 8px; border-radius: 99px; box-shadow: 0 2px 6px rgba(35,56,51,0.14);
 }
 
 /* El "plato": círculo con bisel de luz, como si el emoji principal

@@ -1,8 +1,9 @@
 // Recetario + lista de compras.
-import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, esc } from '../store.js';
+import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
-import { header, navigate, toast, openModal, SEARCH_ICON } from '../app.js';
+import { header, navigate, toast, openModal, SEARCH_ICON, abrirComprarNutricoins } from '../app.js';
+import { generarRecetaIA } from '../supabase-client.js';
 import { openRecipe } from './dashboard.js';
 
 const ORDENES = [
@@ -111,8 +112,8 @@ function abrirRecetaPropia(receta, onEliminada) {
       <div class="center">
         <div style="font-size:2.6rem">${esc(receta.emoji)}</div>
         <h2 class="mt">${esc(receta.nombre)}</h2>
-        <p class="small muted mt">${meal ? `${meal.emoji} ${esc(meal.nombre)}` : ''} · Tuya</p>
-        <p class="small muted">🍽️ ${receta.porciones || 1} porción${(receta.porciones || 1) === 1 ? '' : 'es'} · ⏱️ ${receta.tiempoMin || 0} min</p>
+        <p class="small muted mt">${meal ? `${meal.emoji} ${esc(meal.nombre)}` : ''} · ${receta.origen === 'ia' ? '✨ Generada con IA' : 'Tuya'}</p>
+        ${receta.tiempoMin ? `<p class="small muted">🍽️ ${receta.porciones || 1} porción${(receta.porciones || 1) === 1 ? '' : 'es'} · ⏱️ ${receta.tiempoMin} min</p>` : ''}
       </div>
       ${receta.descripcion ? `<p class="mt">${esc(receta.descripcion)}</p>` : ''}
       ${receta.ingredientes.length ? `
@@ -145,9 +146,24 @@ export function renderPlanner(container, params = {}) {
   // mientras está activo.
   let mostrarBusqueda = false;
 
+  // "Crear con IA" -- nada de pantalla previa a llenar: tocar el botón
+  // genera de inmediato (mismo criterio que Fitia) usando la comida ya
+  // seleccionada en los filtros (o Desayuno si está en "Todas"). El banner
+  // de progreso vive en el propio grid, no en un modal. `nuevasIds` marca
+  // qué recetas de "Tus recetas" son de esta sesión de generación, para el
+  // tag "Nuevo" y para que "Ver" las encuentre ya arriba de la sección
+  // (renderMisRecetas ordena las nuevas primero).
+  let iaEstado = 'idle'; // 'idle' | 'generando' | 'lista'
+  let iaTimer = null;
+  const nuevasIds = new Set();
+
+  // La barra de búsqueda vive SOBREPUESTA encima de las pestañas
+  // Recetario/Lista de compras (position:absolute dentro de tabsRow), no
+  // dentro del body -- así al abrirla/cerrarla nada de lo que hay debajo
+  // (botones de crear, filtros, grid) se mueve.
   const tabsRow = document.createElement('div');
   tabsRow.className = 'row mb';
-  tabsRow.style.cssText = 'justify-content:space-between';
+  tabsRow.style.cssText = 'justify-content:space-between;position:relative';
   const tabs = document.createElement('div');
   tabs.className = 'chips';
   tabsRow.appendChild(tabs);
@@ -156,8 +172,29 @@ export function renderPlanner(container, params = {}) {
   searchToggleBtn.className = 'icon-btn plain';
   searchToggleBtn.setAttribute('aria-label', 'Buscar recetas');
   searchToggleBtn.innerHTML = SEARCH_ICON;
-  searchToggleBtn.addEventListener('click', () => { mostrarBusqueda = !mostrarBusqueda; drawBody(); });
   tabsRow.appendChild(searchToggleBtn);
+  const searchOverlay = document.createElement('div');
+  searchOverlay.className = 'row hidden';
+  searchOverlay.style.cssText = 'position:absolute;inset:0;align-items:center;gap:8px;background:var(--bg);z-index:3';
+  searchOverlay.innerHTML = `
+    <input id="recetas-buscar" type="search" inputmode="search" placeholder="Buscar por nombre o ingrediente…"
+      style="flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border);font:inherit;box-sizing:border-box;background:var(--card);color:var(--ink)">
+    <button type="button" class="icon-btn plain" id="cerrar-buscar" aria-label="Cerrar búsqueda"><span style="font-size:1.1rem">✕</span></button>`;
+  tabsRow.appendChild(searchOverlay);
+  const searchInputEl = searchOverlay.querySelector('#recetas-buscar');
+  searchInputEl.addEventListener('input', (e) => { busqueda = e.target.value; drawBody(); });
+  searchOverlay.querySelector('#cerrar-buscar').addEventListener('click', () => {
+    mostrarBusqueda = false;
+    busqueda = '';
+    searchInputEl.value = '';
+    searchOverlay.classList.add('hidden');
+    drawBody();
+  });
+  searchToggleBtn.addEventListener('click', () => {
+    mostrarBusqueda = !mostrarBusqueda;
+    searchOverlay.classList.toggle('hidden', !mostrarBusqueda);
+    if (mostrarBusqueda) searchInputEl.focus();
+  });
   const body = document.createElement('div');
 
   function drawTabs() {
@@ -171,6 +208,10 @@ export function renderPlanner(container, params = {}) {
     }
     // La búsqueda solo aplica al recetario, no a la lista de compras.
     searchToggleBtn.style.display = tab === 'recetas' ? '' : 'none';
+    if (tab !== 'recetas') {
+      mostrarBusqueda = false;
+      searchOverlay.classList.add('hidden');
+    }
   }
 
   function drawBody() {
@@ -178,53 +219,112 @@ export function renderPlanner(container, params = {}) {
     tab === 'recetas' ? drawRecipes() : drawShopping();
   }
 
-  // Redibujar en cada tecla borra y recrea el input — sin esto el cursor
-  // "salta" al inicio y se pierde el foco en cada letra escrita.
-  function searchAfterDraw() {
-    const input = body.querySelector('#recetas-buscar');
-    if (!input) return;
-    input.focus();
-    const pos = input.value.length;
-    input.setSelectionRange(pos, pos);
+  // Banner de "Crear con IA" -- vive dentro del grid, no en un modal. Dos
+  // estados: 'generando' (icono + barra de progreso que avanza sola, sin
+  // reflejar tiempo real de la IA) y 'lista' (check + botón "Ver" que
+  // lleva a la sección "Tus recetas", donde la nueva aparece primero con
+  // el tag "Nuevo" -- ver renderMisRecetas).
+  function bannerIA() {
+    const banner = document.createElement('div');
+    banner.className = 'card ia-banner mb';
+    banner.style.cssText = 'background:linear-gradient(135deg, var(--primary-soft), var(--card))';
+    if (iaEstado === 'generando') {
+      banner.style.cssText += ';display:flex;align-items:center;gap:14px';
+      banner.innerHTML = `
+        <span style="font-size:1.8rem">🍳</span>
+        <div style="flex:1;min-width:0">
+          <div class="spread">
+            <p style="font-weight:700">Generando receta…</p>
+            <p class="small" id="ia-pct" style="font-weight:700">0%</p>
+          </div>
+          <div style="background:var(--border);border-radius:99px;height:6px;margin-top:6px;overflow:hidden">
+            <div id="ia-fill" style="background:var(--accent);height:100%;width:0%;transition:width .3s ease-out"></div>
+          </div>
+        </div>`;
+    } else {
+      banner.classList.add('spread');
+      banner.innerHTML = `
+        <div class="row" style="gap:12px">
+          <span style="font-size:1.6rem">✅</span>
+          <p style="font-weight:700">¡Tu receta está lista!</p>
+        </div>
+        <button type="button" class="btn sm" id="ia-ver">Ver</button>`;
+      banner.querySelector('#ia-ver').addEventListener('click', () => {
+        iaEstado = 'idle';
+        drawBody();
+        const seccion = body.querySelector('#tus-recetas');
+        if (seccion) seccion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+    return banner;
+  }
+
+  function generarRecetaInline() {
+    if (iaEstado === 'generando') return;
+    if ((getState().nutricoins || 0) < COSTO_RECETA_IA) {
+      toast(`Necesitas ${COSTO_RECETA_IA} NutriCoins para generar una receta.`);
+      abrirComprarNutricoins();
+      return;
+    }
+    iaEstado = 'generando';
+    drawBody();
+
+    let pct = 0;
+    clearInterval(iaTimer);
+    iaTimer = setInterval(() => {
+      // Avanza rápido al inicio y se frena cerca del 90% -- nunca llega a
+      // 100% por sí solo, eso lo marca la respuesta real de la IA.
+      pct = Math.min(90, pct + (90 - pct) * 0.15 + 1);
+      const fill = body.querySelector('#ia-fill');
+      const label = body.querySelector('#ia-pct');
+      if (fill) fill.style.width = `${Math.round(pct)}%`;
+      if (label) label.textContent = `${Math.round(pct)}%`;
+    }, 350);
+
+    const comida = mealFilter !== 'todas' ? mealFilter : MEALS[0].id;
+    generarRecetaIA(comida, '')
+      .then((receta) => {
+        clearInterval(iaTimer);
+        gastarNutricoins(COSTO_RECETA_IA);
+        const nueva = agregarRecetaPropia({ ...receta, comida, origen: 'ia' });
+        nuevasIds.add(nueva.id);
+        iaEstado = 'lista';
+        drawBody();
+      })
+      .catch((e) => {
+        clearInterval(iaTimer);
+        iaEstado = 'idle';
+        drawBody();
+        if (e.code === 'nutricoins_insuficientes') abrirComprarNutricoins();
+        else toast(e.message || 'No pudimos generar la receta.');
+      });
   }
 
   function drawRecipes() {
     const { user, favoritas } = getState();
 
-    if (mostrarBusqueda) {
-      const search = document.createElement('div');
-      search.className = 'row mb';
-      search.style.cssText = 'align-items:center;gap:8px';
-      search.innerHTML = `
-        <input id="recetas-buscar" type="search" inputmode="search" placeholder="Buscar por nombre o ingrediente…"
-          style="flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border);font:inherit;box-sizing:border-box;background:var(--card);color:var(--ink)">
-        <button type="button" class="icon-btn plain" id="cerrar-buscar" aria-label="Cerrar búsqueda"><span style="font-size:1.1rem">✕</span></button>`;
-      const searchInput = search.querySelector('#recetas-buscar');
-      searchInput.value = busqueda;
-      searchInput.addEventListener('input', (e) => { busqueda = e.target.value; drawBody(); searchAfterDraw(); });
-      search.querySelector('#cerrar-buscar').addEventListener('click', () => { mostrarBusqueda = false; busqueda = ''; drawBody(); });
-      body.appendChild(search);
-    } else {
-      // Espacio que antes ocupaba el buscador -- por defecto, las dos
-      // formas de agregar una receta propia (como en Fitia), del mismo
-      // tamaño una junto a la otra. Nunca muestran calorías ni macros,
-      // igual que el resto del recetario.
-      const crear = document.createElement('div');
-      crear.className = 'row mb';
-      crear.style.cssText = 'gap:8px;align-items:stretch';
-      crear.innerHTML = `
-        <button type="button" class="card center crear-receta-btn" id="crear-ia" style="flex:1;min-width:0;cursor:pointer">
-          <span style="font-size:1.3rem">✨</span>
-          <p class="small mt" style="font-weight:700">Crear con IA</p>
-        </button>
-        <button type="button" class="card center crear-receta-btn" id="crear-manual" style="flex:1;min-width:0;cursor:pointer">
-          <span style="font-size:1.3rem">➕</span>
-          <p class="small mt" style="font-weight:700">Crear manualmente</p>
-        </button>`;
-      crear.querySelector('#crear-ia').addEventListener('click', () => toast('Muy pronto vas a poder crear recetas con IA 🌿'));
-      crear.querySelector('#crear-manual').addEventListener('click', () => abrirFormularioReceta(() => drawBody()));
-      body.appendChild(crear);
-    }
+    // Las dos formas de agregar una receta propia (como en Fitia), sutiles
+    // y del mismo tamaño una junto a la otra -- nunca muestran calorías ni
+    // macros. Siempre visibles (la búsqueda ya no ocupa este espacio: vive
+    // sobrepuesta encima de las pestañas Recetario/Lista de compras, ver
+    // tabsRow más arriba, para no mover nada de lo que hay debajo).
+    const crear = document.createElement('div');
+    crear.className = 'row mb';
+    crear.style.cssText = 'gap:8px;align-items:stretch';
+    crear.innerHTML = `
+      <button type="button" class="crear-receta-btn" id="crear-ia" style="flex:1;min-width:0;cursor:pointer">
+        <span class="crear-receta-emoji">✨</span>
+        <span>Crear con IA</span>
+      </button>
+      <button type="button" class="crear-receta-btn" id="crear-manual" style="flex:1;min-width:0;cursor:pointer">
+        <span class="crear-receta-emoji">➕</span>
+        <span>Crear manualmente</span>
+      </button>`;
+    crear.querySelector('#crear-ia').addEventListener('click', generarRecetaInline);
+    crear.querySelector('#crear-manual').addEventListener('click', () => abrirFormularioReceta(() => drawBody()));
+    body.appendChild(crear);
+
+    if (iaEstado !== 'idle') body.appendChild(bannerIA());
 
     const note = document.createElement('p');
     note.className = 'muted small center mt mb';
@@ -348,14 +448,21 @@ export function renderPlanner(container, params = {}) {
   // así que el match es simple .includes en vez de matchesSearch).
   function renderMisRecetas() {
     const { misRecetas, favoritas } = getState();
-    const propias = (misRecetas || [])
+    let propias = (misRecetas || [])
       .filter((r) => mealFilter === 'todas' || r.comida === mealFilter)
       .filter((r) => !busqueda || r.nombre.toLowerCase().includes(busqueda.toLowerCase()))
       .filter((r) => !soloFavoritas || (favoritas || []).includes(r.id));
     if (!propias.length) return;
 
+    // Lo recién generado con IA en esta sesión va primero (con tag
+    // "Nuevo") -- mismo comportamiento que el botón "Ver" del banner.
+    if (nuevasIds.size) {
+      propias = [...propias].sort((a, b) => (nuevasIds.has(b.id) ? 1 : 0) - (nuevasIds.has(a.id) ? 1 : 0));
+    }
+
     const divider = document.createElement('div');
     divider.className = 'recipe-section-divider';
+    divider.id = 'tus-recetas';
     divider.innerHTML = '<span>📝 Tus recetas</span>';
     body.appendChild(divider);
 
@@ -364,9 +471,11 @@ export function renderPlanner(container, params = {}) {
     const meal = MEALS.reduce((m, x) => (m[x.id] = x, m), {});
     for (const r of propias) {
       const esFavorita = (favoritas || []).includes(r.id);
+      const esNueva = nuevasIds.has(r.id);
       const item = document.createElement('button');
       item.className = 'recipe-card';
       item.innerHTML = `
+        ${esNueva ? '<span class="recipe-nuevo-tag">Nuevo</span>' : ''}
         <span class="recipe-fav" aria-label="${esFavorita ? 'Quitar de preferidos' : 'Marcar como preferida'}">${esFavorita ? '⭐' : '☆'}</span>
         <div class="recipe-plate">
           ${esc(r.emoji)}
@@ -374,13 +483,16 @@ export function renderPlanner(container, params = {}) {
         </div>
         <div class="recipe-title">${esc(r.nombre)}</div>
         <div class="recipe-desc">${esc(r.descripcion || 'Receta tuya')}</div>
-        <div class="recipe-tags"><span class="recipe-tag">✏️ Tuya</span></div>`;
+        <div class="recipe-tags"><span class="recipe-tag">${r.origen === 'ia' ? '✨ Generada con IA' : '✏️ Tuya'}</span></div>`;
       item.querySelector('.recipe-fav').addEventListener('click', (e) => {
         e.stopPropagation();
         toggleFavorita(r.id);
         drawBody();
       });
-      item.addEventListener('click', () => abrirRecetaPropia(r, () => drawBody()));
+      item.addEventListener('click', () => {
+        nuevasIds.delete(r.id);
+        abrirRecetaPropia(r, () => drawBody());
+      });
       grid.appendChild(item);
     }
     body.appendChild(grid);
