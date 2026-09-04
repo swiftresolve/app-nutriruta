@@ -168,7 +168,7 @@ export function iniciarTour(onFin) {
       }
 
       tip.querySelector('#tour-siguiente').addEventListener('click', avanzar);
-      tip.querySelector('#tour-saltar')?.addEventListener('click', avanzar);
+      tip.querySelector('#tour-saltar')?.addEventListener('click', terminar);
     }, 320);
   }
 

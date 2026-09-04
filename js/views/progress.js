@@ -38,17 +38,17 @@ export function renderProgress(container) {
   emergCard.className = 'card';
   if (diasCompletados7 >= 7) {
     emergCard.innerHTML = `
-      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${t('Completado')}</span></div>
+      <div class="spread" style="align-items:flex-start"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${t('Completado')}</span></div>
       <p class="small">${t('Diste el primer paso — revisa tu semana cuando quieras.')}</p>
       <button class="link-btn small">${t('Ver mi plan →')}</button>`;
   } else if (emergencia?.inicio) {
     emergCard.innerHTML = `
-      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${diasCompletados7}/7</span></div>
+      <div class="spread" style="align-items:flex-start"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${diasCompletados7}/7</span></div>
       <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((diasCompletados7 / 7) * 100)}%"></div></div>
       <button class="link-btn small">${t('Continuar mi plan →')}</button>`;
   } else {
     emergCard.innerHTML = `
-      <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag info">${t('Gratis')}</span></div>
+      <div class="spread" style="align-items:flex-start"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag info">${t('Gratis')}</span></div>
       <p class="small">${EMERGENCY_PLAN.descripcion}</p>
       <button class="link-btn small">${t('Empezar hoy mismo →')}</button>`;
   }
@@ -63,12 +63,12 @@ export function renderProgress(container) {
     const done = (mision.completadas || []).length;
     const activa = isPremium();
     misionCard.innerHTML = `
-      <div class="spread"><h3>${t('🎯 Misión 12 semanas')}</h3><span class="tag ${activa ? 'verde' : 'rojo'}">${activa ? `${done}/12` : t('Pausada')}</span></div>
+      <div class="spread" style="align-items:flex-start"><h3>${t('🎯 Misión 12 semanas')}</h3><span class="tag ${activa ? 'verde' : 'rojo'}">${activa ? `${done}/12` : t('Pausada')}</span></div>
       <div class="quiz-progress mt" style="margin-bottom:6px"><div style="width:${Math.round((done / 12) * 100)}%"></div></div>
       <button class="link-btn small">${activa ? t('Continuar mi misión →') : t('Renovar Premium para continuar →')}</button>`;
   } else {
     misionCard.innerHTML = `
-      <div class="spread"><h3>${t('🎯 Misión 12 semanas')}</h3>${isPremium() ? '' : `<span class="tag info">${t('Premium')}</span>`}</div>
+      <div class="spread" style="align-items:flex-start"><h3>${t('🎯 Misión 12 semanas')}</h3>${isPremium() ? '' : `<span class="tag info">${t('Premium')}</span>`}</div>
       <p class="small">${MISSION.descripcion}</p>
       <button class="link-btn small">${isPremium() ? t('Empezar mi misión →') : t('Conocer la misión →')}</button>`;
   }

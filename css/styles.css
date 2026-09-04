@@ -359,6 +359,10 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    así que sin esto "Recetario" quedaba angosto por su propio contenido
    mientras la columna de la grilla ya medía lo mismo que la otra. */
 .recetario-tabs .chip { width: 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+/* Día/Semana/Mes en Progreso: mismo patrón de grilla de columnas iguales
+   que .recetario-tabs, pero a 3 columnas. */
+#rango-tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
+#rango-tabs .chip { width: 100%; min-width: 0; text-align: center; }
 .chip {
   border: 1.5px solid transparent; background: var(--card);
   /* Antes 999px (pastilla totalmente redonda) -- misma curvatura que
