@@ -340,7 +340,8 @@ function renderProgresoCarrusel(state, container) {
     { icon: '📈', label: t('Progreso'), onTap: () => navigate('progress') },
     { icon: '💧', label: t('Agua'), valor: `${agua.vasos}/${agua.meta}`, onTap: () => abrirModalAgua(container), id: 'tour-agua' },
     { icon: '🎖️', label: t('Logros'), valor: `${state.logros.length}/${ACHIEVEMENTS.length}`, onTap: () => abrirModalLogros(state) },
-    { icon: '🛒', label: t('Lista'), onTap: () => navigate('planner', { tab: 'compras' }) }
+    { icon: '🛒', label: t('Lista'), onTap: () => navigate('planner', { tab: 'compras' }) },
+    { icon: '📔', label: t('Diario'), onTap: () => navigate('diary') }
   ];
 
   const carrusel = document.createElement('div');
