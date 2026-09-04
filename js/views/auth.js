@@ -144,10 +144,23 @@ export function renderAuth(container, params = {}) {
 
       const btn = view.querySelector('.btn');
       btn.disabled = true; btn.textContent = 'Un momento…';
+      // Transición breve de "creando tu cuenta" solo en registro (no en
+      // login, que es casi instantáneo) -- mínimo 600ms para que no
+      // parpadee si la red responde muy rápido, se ve intencional en vez
+      // de un glitch.
+      if (mode === 'signup') {
+        container.innerHTML = `
+          <div class="card center" style="margin-top:25vh">
+            <div style="font-size:3rem">🌿</div>
+            <h2 class="mt">Creando tu cuenta…</h2>
+            <p class="small muted mt">Espera un momento</p>
+          </div>`;
+      }
+      const minEspera = mode === 'signup' ? new Promise((r) => setTimeout(r, 600)) : Promise.resolve();
       try {
         if (mode === 'signup') {
           const nombre = (view.querySelector('#a-nombre')?.value || '').trim();
-          const { data, error } = await signUp(email, pass, nombre);
+          const [{ data, error }] = await Promise.all([signUp(email, pass, nombre), minEspera]);
           if (error) throw error;
           // Una cuenta nueva nunca debe heredar progreso de una sesión anterior
           // en este mismo navegador (racha, misión, plan de 7 días, onboarded…).
@@ -178,10 +191,13 @@ export function renderAuth(container, params = {}) {
         toast('¡Qué gusto tenerte en NutriRuta! 🌿');
         navigate(getState().onboarded ? 'dashboard' : 'quiz');
       } catch (err) {
+        // Si ya se reemplazó la pantalla por "Creando tu cuenta…", ese error
+        // pasó DESPUÉS -- hay que volver a dibujar el formulario (perdió el
+        // DOM) antes de poder mostrar el mensaje en su lugar de siempre.
+        if (mode === 'signup') { draw(); container.querySelector('#a-error').textContent = friendlyError(err); return; }
         errEl.textContent = friendlyError(err);
       } finally {
-        btn.disabled = false;
-        btn.textContent = mode === 'login' ? 'Entrar' : 'Registrarme';
+        if (mode === 'login') { btn.disabled = false; btn.textContent = 'Entrar'; }
       }
     });
 
