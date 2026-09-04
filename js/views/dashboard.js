@@ -5,7 +5,7 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
@@ -338,7 +338,8 @@ function renderProgresoCarrusel(state, container) {
 
   const botones = [
     { icon: '📈', label: t('Progreso'), onTap: () => navigate('progress') },
-    { icon: '💧', label: t('Agua'), valor: `${agua.vasos}/${agua.meta}`, onTap: () => abrirModalAgua(container), id: 'tour-agua' }
+    { icon: '💧', label: t('Agua'), valor: `${agua.vasos}/${agua.meta}`, onTap: () => abrirModalAgua(container), id: 'tour-agua' },
+    { icon: '🎖️', label: t('Logros'), valor: `${state.logros.length}/${ACHIEVEMENTS.length}`, onTap: () => abrirModalLogros(state) }
   ];
 
   const carrusel = document.createElement('div');
@@ -405,6 +406,27 @@ function abrirModalAgua(container) {
       }
     }
     pintar();
+  });
+}
+
+// Modal de logros -- misma grilla de insignias (.badges/.badge) que ya
+// pinta la pantalla completa de Progreso, solo que en un vistazo rápido
+// desde el dashboard. Snapshot del `state` recibido al abrir: no necesita
+// redibujarse solo, los logros no cambian mientras el modal está abierto.
+function abrirModalLogros(state) {
+  openModal((modal) => {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = '<h2>🎖️ Logros</h2><div class="badges mt"></div>';
+    const grid = wrap.querySelector('.badges');
+    for (const a of ACHIEVEMENTS) {
+      const unlocked = state.logros.includes(a.id);
+      const b = document.createElement('div');
+      b.className = 'badge' + (unlocked ? '' : ' locked');
+      b.title = a.desc;
+      b.innerHTML = `<div class="emoji">${a.emoji}</div><span class="small"><strong>${esc(a.nombre)}</strong></span>`;
+      grid.appendChild(b);
+    }
+    modal.appendChild(wrap);
   });
 }
 
