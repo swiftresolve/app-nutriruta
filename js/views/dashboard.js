@@ -60,16 +60,17 @@ export function renderDashboard(container) {
     fila.style.cssText = 'gap:8px;align-items:stretch';
     hero.style.cssText = 'flex:1;min-width:0';
     fila.appendChild(hero);
-    // display:flex en el envoltorio para que la tarjeta real que arma
-    // renderCheckinBanner (su nieta, no su hija directa del row) también
-    // se estire a la altura completa -- si no, quedaba más baja que
-    // "Buenos días" cuando esta tenía más texto.
-    const checkinCol = document.createElement('div');
-    checkinCol.style.cssText = 'flex:1;min-width:0;display:flex';
-    fila.appendChild(checkinCol);
     container.appendChild(fila);
-    renderCheckinBanner(checkinCol, () => renderDashboard(clearAndGet(container)));
-    if (checkinCol.firstElementChild) checkinCol.firstElementChild.style.cssText += ';flex:1;width:100%';
+    // Sin envoltorio extra alrededor de la tarjeta de check-in -- un div
+    // intermedio (aunque fuera display:flex con min-width:0) hacía que el
+    // reparto 1:1 del flex dejara de ser exacto (bug real de flexbox
+    // anidado, confirmado midiendo con getBoundingClientRect: con el
+    // envoltorio quedaba 226px vs 194px, sin él, 209.5px las dos). La
+    // tarjeta real de renderCheckinBanner pasa a ser hija directa de
+    // `fila`, igual que "hero" -- así se estira parejo con align-items:stretch.
+    renderCheckinBanner(fila, () => renderDashboard(clearAndGet(container)));
+    const checkinCard = fila.children[1];
+    if (checkinCard) checkinCard.style.cssText = 'flex:1;min-width:0';
   } else {
     container.appendChild(hero);
   }
