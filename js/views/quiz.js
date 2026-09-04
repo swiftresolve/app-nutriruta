@@ -229,6 +229,18 @@ export function renderQuiz(container) {
       }, onChange)
     },
     {
+      // Pantalla de transición, sin preguntar nada -- mismo formato que
+      // usa Fitia entre bloques de preguntas (ícono + título + texto +
+      // botón), pero con contenido real de NutriRuta, no estadísticas
+      // inventadas tipo "3x mejores resultados" ni "+100 estudios" sin
+      // fuente (eso no se copia, ver conversación).
+      intro: true,
+      icono: '🍽️',
+      title: 'Así se arma tu menú, cada día',
+      sub: 'Con tus respuestas armamos tu menú diario y tu lista de compras solos — cada receta elegida para tus perfiles de salud, no genérica.',
+      render() {}
+    },
+    {
       title: '¿Tienes alguna condición conocida?',
       sub: 'Solo si te la han mencionado en un chequeo. Puedes elegir varias.',
       completo: () => answers.condiciones.length > 0,
@@ -265,6 +277,13 @@ export function renderQuiz(container) {
       sub: 'Elige las que quieres ver en tu menú diario (ej. si ayunas, puedes dejar fuera el desayuno).',
       completo: () => answers.comidasIncluidas.length > 0,
       render: (el, onChange) => chips(el, MEALS, answers.comidasIncluidas, true, undefined, false, onChange)
+    },
+    {
+      intro: true,
+      icono: '💧',
+      title: 'Ahora, un poco sobre ti',
+      sub: 'Con esto afinamos tu meta diaria de agua a tu cuerpo real.',
+      render() {}
     },
     {
       // Como en Fitia ("Sobre ti"), pero con un uso real y distinto al de
@@ -696,7 +715,7 @@ export function renderQuiz(container) {
     // "avanzado" todavía, así que no muestra la barra de progreso, y su
     // título/párrafo van centrados en vez de alineados a la izquierda
     // como el resto de las preguntas.
-    view.className = 'quiz-step' + (step === 0 ? ' quiz-step-intro' : '');
+    view.className = 'quiz-step' + (step === 0 || s.intro ? ' quiz-step-intro' : '');
     view.innerHTML = `
       ${step === 0 ? `
       <div class="quiz-topbar quiz-topbar-brand">
@@ -708,6 +727,7 @@ export function renderQuiz(container) {
         <div class="quiz-progress"><div style="width:${pct}%"></div></div>
       </div>`}
       <div class="quiz-content">
+        ${s.intro && s.icono ? `<div class="center mb" style="font-size:3rem">${s.icono}</div>` : ''}
         <h2>${s.title}</h2>
         ${s.sub ? `<p>${s.sub}</p>` : ''}
         <div class="step-body"></div>
