@@ -2,7 +2,7 @@
 import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
-import { header, navigate, toast, openModal, SEARCH_ICON, abrirComprarNutricoins } from '../app.js';
+import { header, navigate, toast, openModal, SEARCH_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
 import { generarRecetaIA } from '../supabase-client.js';
 import { openRecipe } from './dashboard.js';
 
@@ -155,6 +155,8 @@ export function renderPlanner(container, params = {}) {
   // (renderMisRecetas ordena las nuevas primero).
   let iaEstado = 'idle'; // 'idle' | 'generando' | 'lista'
   let iaTimer = null;
+  let iaCantidad = 1;
+  let iaCompletadas = 0;
   const nuevasIds = new Set();
 
   // La barra de búsqueda vive SOBREPUESTA encima de las pestañas
@@ -220,10 +222,11 @@ export function renderPlanner(container, params = {}) {
   }
 
   // Banner de "Crear con IA" -- vive dentro del grid, no en un modal. Dos
-  // estados: 'generando' (icono + barra de progreso que avanza sola, sin
-  // reflejar tiempo real de la IA) y 'lista' (check + botón "Ver" que
-  // lleva a la sección "Tus recetas", donde la nueva aparece primero con
-  // el tag "Nuevo" -- ver renderMisRecetas).
+  // estados: 'generando' (icono + barra de progreso -- proporción REAL de
+  // recetas completadas, con una animación suave dentro de cada una
+  // mientras se espera su respuesta) y 'lista' (check + botón "Ver" que
+  // lleva a la sección "Tus recetas", donde las nuevas aparecen primero
+  // con el tag "Nuevo" -- ver renderMisRecetas).
   function bannerIA() {
     const banner = document.createElement('div');
     banner.className = 'card ia-banner mb';
@@ -234,7 +237,7 @@ export function renderPlanner(container, params = {}) {
         <span style="font-size:1.8rem">🍳</span>
         <div style="flex:1;min-width:0">
           <div class="spread">
-            <p style="font-weight:700">Generando receta…</p>
+            <p style="font-weight:700">Generando ${iaCantidad === 1 ? 'receta' : `${iaCantidad} recetas`}…</p>
             <p class="small" id="ia-pct" style="font-weight:700">0%</p>
           </div>
           <div style="background:var(--border);border-radius:99px;height:6px;margin-top:6px;overflow:hidden">
@@ -246,7 +249,7 @@ export function renderPlanner(container, params = {}) {
       banner.innerHTML = `
         <div class="row" style="gap:12px">
           <span style="font-size:1.6rem">✅</span>
-          <p style="font-weight:700">¡Tu receta está lista!</p>
+          <p style="font-weight:700">¡Tu${iaCantidad === 1 ? '' : 's'} ${iaCantidad === 1 ? 'receta está' : `${iaCantidad} recetas están`} list${iaCantidad === 1 ? 'a' : 'as'}!</p>
         </div>
         <button type="button" class="btn sm" id="ia-ver">Ver</button>`;
       banner.querySelector('#ia-ver').addEventListener('click', () => {
@@ -259,45 +262,185 @@ export function renderPlanner(container, params = {}) {
     return banner;
   }
 
-  function generarRecetaInline() {
-    if (iaEstado === 'generando') return;
-    if ((getState().nutricoins || 0) < COSTO_RECETA_IA) {
+  // Paso 1: "¿Cuántas recetas quieres generar?" -- selector -/+, costo
+  // total en vivo (COSTO_RECETA_IA por receta, ver store.js). Tope: 5 a la
+  // vez (suficiente para no disparar el costo de la IA de un solo tirón) o
+  // lo que alcance el saldo actual, lo que sea menor.
+  const MAX_CANTIDAD_IA = 5;
+  function abrirSelectorCantidadIA() {
+    const saldo = getState().nutricoins || 0;
+    if (saldo < COSTO_RECETA_IA) {
       toast(`Necesitas ${COSTO_RECETA_IA} NutriCoins para generar una receta.`);
       abrirComprarNutricoins();
       return;
     }
+    const tope = Math.max(1, Math.min(MAX_CANTIDAD_IA, Math.floor(saldo / COSTO_RECETA_IA)));
+    openModal((modal, closeFn) => {
+      let cantidad = 1;
+      modal.insertAdjacentHTML('beforeend', `
+        <div class="center">
+          <h2>¿Cuántas recetas quieres generar?</h2>
+        </div>
+        <div class="row mt" style="justify-content:center;align-items:center;gap:22px">
+          <button type="button" class="icon-btn" id="cant-menos" aria-label="Menos">−</button>
+          <div class="center" style="min-width:70px">
+            <p id="cant-num" style="font-size:2.2rem;font-weight:800;line-height:1">1</p>
+            <p class="small muted" id="cant-label">receta</p>
+          </div>
+          <button type="button" class="icon-btn" id="cant-mas" aria-label="Más">+</button>
+        </div>
+        <p class="small muted center mt" id="cant-costo">1 receta = ${COSTO_RECETA_IA} NutriCoins</p>
+        <button type="button" class="btn full mt" id="cant-continuar">Continuar</button>`);
+
+      const numEl = modal.querySelector('#cant-num');
+      const labelEl = modal.querySelector('#cant-label');
+      const costoEl = modal.querySelector('#cant-costo');
+      function pintar() {
+        numEl.textContent = cantidad;
+        labelEl.textContent = cantidad === 1 ? 'receta' : 'recetas';
+        costoEl.textContent = `${cantidad} ${cantidad === 1 ? 'receta' : 'recetas'} = ${cantidad * COSTO_RECETA_IA} NutriCoins`;
+        modal.querySelector('#cant-menos').disabled = cantidad <= 1;
+        modal.querySelector('#cant-mas').disabled = cantidad >= tope;
+      }
+      pintar();
+      modal.querySelector('#cant-menos').addEventListener('click', () => { cantidad = Math.max(1, cantidad - 1); pintar(); });
+      modal.querySelector('#cant-mas').addEventListener('click', () => { cantidad = Math.min(tope, cantidad + 1); pintar(); });
+      modal.querySelector('#cant-continuar').addEventListener('click', () => {
+        closeFn();
+        abrirDescribirRecetaIA(cantidad);
+      });
+    });
+  }
+
+  // Paso 2: "Describe la receta que quieres" -- comida (dropdown) + notas
+  // opcionales. Al generar, cierra el modal y vuelve al Recetario, donde
+  // se ve el banner de progreso (bannerIA) -- la IA nunca se llama desde
+  // dentro del modal.
+  const NOTAS_MAX = 200;
+  function abrirDescribirRecetaIA(cantidad) {
+    openModal((modal, closeFn) => {
+      let comidaElegida = mealFilter !== 'todas' ? mealFilter : MEALS[0].id;
+      modal.insertAdjacentHTML('beforeend', `
+        <div class="center">
+          <h2>Describe la receta que quieres</h2>
+          <p class="small muted mt">Menciona ingredientes, un plato específico, o ajusta el tiempo de preparación. Sin calorías ni macros.</p>
+        </div>
+        <div class="center mt" style="position:relative">
+          <button type="button" class="chip small" id="ia-comida-btn"></button>
+          <div id="ia-comida-menu" class="card hidden" style="position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);z-index:5;width:200px;padding:6px 14px;box-shadow:0 8px 24px rgba(8,18,15,0.18)"></div>
+        </div>
+        <div style="position:relative">
+          <textarea id="ia-notas" class="auth-input mt" rows="5" maxlength="${NOTAS_MAX}" placeholder="Ej: con pollo, sin lácteos, algo rápido…" style="resize:none"></textarea>
+          <p class="small muted" id="ia-contador" style="text-align:right;margin-top:-6px">${NOTAS_MAX} caracteres restantes</p>
+        </div>
+        <button type="button" class="btn full" id="ia-generar">Generar ${cantidad === 1 ? 'receta' : 'recetas'} · ${cantidad * COSTO_RECETA_IA} 🪙</button>`);
+
+      const btnComida = modal.querySelector('#ia-comida-btn');
+      const menuComida = modal.querySelector('#ia-comida-menu');
+      function pintarBtnComida() {
+        const m = MEALS.find((x) => x.id === comidaElegida);
+        btnComida.textContent = `${m.emoji} ${m.nombre} ⌄`;
+      }
+      pintarBtnComida();
+      for (const m of MEALS) {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'habit selector-opcion' + (m.id === comidaElegida ? ' selected' : '');
+        row.innerHTML = `<label>${m.emoji} ${m.nombre}</label>${m.id === comidaElegida ? '<span>✓</span>' : ''}`;
+        row.addEventListener('click', () => {
+          comidaElegida = m.id;
+          pintarBtnComida();
+          menuComida.classList.add('hidden');
+          menuComida.querySelectorAll('.selector-opcion').forEach((r) => {
+            r.classList.toggle('selected', r === row);
+            const check = r.querySelector('span');
+            if (r === row && !check) r.insertAdjacentHTML('beforeend', '<span>✓</span>');
+            if (r !== row && check) check.remove();
+          });
+        });
+        menuComida.appendChild(row);
+      }
+      btnComida.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuComida.classList.toggle('hidden');
+      });
+      modal.addEventListener('click', (e) => {
+        if (e.target !== btnComida && !menuComida.contains(e.target)) menuComida.classList.add('hidden');
+      });
+
+      const notasEl = modal.querySelector('#ia-notas');
+      const contador = modal.querySelector('#ia-contador');
+      notasEl.addEventListener('input', () => {
+        contador.textContent = `${NOTAS_MAX - notasEl.value.length} caracteres restantes`;
+      });
+
+      modal.querySelector('#ia-generar').addEventListener('click', () => {
+        const notas = notasEl.value.trim();
+        closeFn();
+        generarRecetasInline(cantidad, comidaElegida, notas);
+      });
+    });
+  }
+
+  function generarRecetasInline(cantidad, comida, notas) {
+    if (iaEstado === 'generando') return;
     iaEstado = 'generando';
+    iaCantidad = cantidad;
+    iaCompletadas = 0;
     drawBody();
 
-    let pct = 0;
+    let segPct = 0; // progreso animado dentro de la receta en curso (0-100)
     clearInterval(iaTimer);
     iaTimer = setInterval(() => {
-      // Avanza rápido al inicio y se frena cerca del 90% -- nunca llega a
-      // 100% por sí solo, eso lo marca la respuesta real de la IA.
-      pct = Math.min(90, pct + (90 - pct) * 0.15 + 1);
+      // Avanza rápido al inicio y se frena cerca del 90% de SU tramo --
+      // nunca llega a 100% por sí solo, eso lo marca la respuesta real.
+      segPct = Math.min(90, segPct + (90 - segPct) * 0.15 + 1);
+      pintarProgreso();
+    }, 350);
+
+    function pintarProgreso() {
+      const pct = ((iaCompletadas + segPct / 100) / cantidad) * 100;
       const fill = body.querySelector('#ia-fill');
       const label = body.querySelector('#ia-pct');
       if (fill) fill.style.width = `${Math.round(pct)}%`;
       if (label) label.textContent = `${Math.round(pct)}%`;
-    }, 350);
+    }
 
-    const comida = mealFilter !== 'todas' ? mealFilter : MEALS[0].id;
-    generarRecetaIA(comida, '')
-      .then((receta) => {
-        clearInterval(iaTimer);
+    async function generarUna() {
+      try {
+        const receta = await generarRecetaIA(comida, notas);
         gastarNutricoins(COSTO_RECETA_IA);
+        // header() no es reactivo -- pinta el saldo una sola vez al montar
+        // la vista, así que sin este parche el número del header se queda
+        // desactualizado hasta la próxima navegación (mismo parche que ya
+        // existe para gemas/escudos en app.js tras comprar una Pausa de Ruta).
+        const nutricoinsBtn = document.querySelector('#hs-nutricoins');
+        if (nutricoinsBtn) {
+          const saldo = getState().nutricoins || 0;
+          nutricoinsBtn.classList.toggle('sin-saldo', saldo <= 0);
+          nutricoinsBtn.innerHTML = `${coinIcon(saldo > 0 ? ORO_NUTRICOINS : PLATA_NUTRICOINS, 15)}<span class="value">${saldo}</span>`;
+        }
         const nueva = agregarRecetaPropia({ ...receta, comida, origen: 'ia' });
         nuevasIds.add(nueva.id);
-        iaEstado = 'lista';
-        drawBody();
-      })
-      .catch((e) => {
+        iaCompletadas++;
+        segPct = 0;
+        pintarProgreso();
+        if (iaCompletadas < cantidad) {
+          await generarUna();
+        } else {
+          clearInterval(iaTimer);
+          iaEstado = 'lista';
+          drawBody();
+        }
+      } catch (e) {
         clearInterval(iaTimer);
         iaEstado = 'idle';
         drawBody();
         if (e.code === 'nutricoins_insuficientes') abrirComprarNutricoins();
-        else toast(e.message || 'No pudimos generar la receta.');
-      });
+        else toast((e.message || 'No pudimos generar la receta.') + (iaCompletadas > 0 ? ` Se generaron ${iaCompletadas}.` : ''));
+      }
+    }
+    generarUna();
   }
 
   function drawRecipes() {
@@ -320,7 +463,7 @@ export function renderPlanner(container, params = {}) {
         <span class="crear-receta-emoji">➕</span>
         <span>Crear manualmente</span>
       </button>`;
-    crear.querySelector('#crear-ia').addEventListener('click', generarRecetaInline);
+    crear.querySelector('#crear-ia').addEventListener('click', abrirSelectorCantidadIA);
     crear.querySelector('#crear-manual').addEventListener('click', () => abrirFormularioReceta(() => drawBody()));
     body.appendChild(crear);
 

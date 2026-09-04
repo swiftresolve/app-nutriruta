@@ -83,6 +83,7 @@ export function navigate(route, params = {}) {
   const render = ROUTES[route] || renderDashboard;
   app.innerHTML = '';
   window.scrollTo(0, 0);
+  document.getElementById('scroll-top-btn').classList.add('hidden');
   render(app, params);
   // Reinicia la animación de entrada (quitar+forzar reflow+agregar la clase)
   // para que se vea en cada navegación, no solo la primera vez.
@@ -112,6 +113,18 @@ nav.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-route]');
   if (btn) navigate(btn.dataset.route);
 });
+
+// Botón flotante "subir al inicio" -- pantallas largas (Recetario,
+// Progreso, Configuración) obligaban a scrollear mucho para volver
+// arriba. Aparece solo tras bajar un poco (SCROLL_TOP_UMBRAL), y solo en
+// rutas con bottom-nav visible (en el quiz/auth no aplica).
+const scrollTopBtn = document.getElementById('scroll-top-btn');
+const SCROLL_TOP_UMBRAL = 400;
+window.addEventListener('scroll', () => {
+  const mostrar = window.scrollY > SCROLL_TOP_UMBRAL && !nav.classList.contains('hidden');
+  scrollTopBtn.classList.toggle('hidden', !mostrar);
+}, { passive: true });
+scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
 export function toast(msg, ms = 2600) {
   const el = document.getElementById('toast');
@@ -362,7 +375,7 @@ export function openModal(contentBuilder) {
 // (color: no afecta emojis, son glifos con su propio color fijo). Un SVG
 // propio sí se puede pintar del color que sea, siempre igual en cualquier
 // dispositivo.
-function coinIcon(color, size = 16) {
+export function coinIcon(color, size = 16) {
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" style="display:inline-block;vertical-align:-3px;flex:none">
     <circle cx="12" cy="12" r="10" fill="${color}"/>
     <circle cx="12" cy="12" r="10" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>
@@ -370,8 +383,8 @@ function coinIcon(color, size = 16) {
     <text x="12" y="16.3" text-anchor="middle" font-size="11" font-weight="800" fill="rgba(255,255,255,0.9)" font-family="inherit">$</text>
   </svg>`;
 }
-const ORO_NUTRICOINS = '#D4A017';
-const PLATA_NUTRICOINS = '#9AA5A0';
+export const ORO_NUTRICOINS = '#D4A017';
+export const PLATA_NUTRICOINS = '#9AA5A0';
 
 // Paquetes de NutriCoins -- MAQUETA (ver nota abajo). Precios en COP,
 // provisionales: hay que reemplazarlos por los reales una vez existan los

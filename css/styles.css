@@ -599,6 +599,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    el de ajustes de Fitia, en vez de metido en una burbuja. */
 .icon-btn.plain { background: none; box-shadow: none; }
 .icon-btn.plain:active { box-shadow: none; }
+.icon-btn:disabled { opacity: 0.4; cursor: default; }
+.icon-btn:disabled:active { transform: none; }
 
 /* Racha + escudos, arriba a la derecha (persistentes, como Duolingo) */
 .header-stats { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; }
@@ -1263,6 +1265,21 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   display: flex; justify-content: space-around; align-items: center;
   padding: 6px 4px; z-index: 50;
 }
+/* Botón flotante "subir al inicio" -- aparece solo tras scrollear un
+   poco (ver umbral en app.js), para no estorbar en pantallas cortas que
+   ya empiezan arriba. Mismo criterio visual que .icon-btn pero un poco
+   más chico y siempre sobre la bottom-nav. */
+.scroll-top-btn {
+  position: fixed; right: 16px; bottom: calc(var(--nav-h) + var(--nav-gap) + env(safe-area-inset-bottom) + 14px);
+  width: 42px; height: 42px; border-radius: 50%; z-index: 45;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card); color: var(--primary-dark);
+  box-shadow: 0 6px 16px rgba(35,56,51,0.2), 0 2px 6px rgba(35,56,51,0.1);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.scroll-top-btn:active { transform: translateY(2px) scale(0.94); }
+.scroll-top-btn.hidden { display: none; }
+
 .nav-btn {
   position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 1px;
