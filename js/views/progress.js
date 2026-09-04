@@ -18,7 +18,7 @@ let rangoActivo = 'semana';
 
 // Tira de los últimos 7 días (terminando hoy), un cuadrito por día — a
 // simple vista de un vistazo, no solo el número de racha.
-function weekStrip(diasCumplidos, diasCongelados = []) {
+export function weekStrip(diasCumplidos, diasCongelados = []) {
   const set = new Set(diasCumplidos);
   const congelados = new Set(diasCongelados);
   const hoyISO = new Date().toISOString().slice(0, 10);

@@ -5,7 +5,7 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
@@ -19,6 +19,7 @@ import { renderNotifPrompt, notifPromptVisible } from './notifPrompt.js';
 import { openMealLogModal } from './mealLogModal.js';
 import { openMealSwapModal } from './mealSwapModal.js';
 import { openKitchenSearchModal } from './kitchenSearchModal.js';
+import { weekStrip } from './progress.js';
 
 const DAILY_HABITS = [
   { id: 'agua', nombre: 'Tomé suficiente agua 💧' },
@@ -77,24 +78,13 @@ export function renderDashboard(container) {
 
   // --- Progreso: antes vivía como su propia pestaña en la barra
   // inferior; la usuaria pidió sacarla de ahí y ponerla como acceso
-  // directo aquí, justo debajo del saludo/check-in -- toda la tarjeta es
-  // un botón que lleva a la pantalla dedicada (progress.js), con datos
-  // reales (racha actual/mejor) como vista previa, nunca inventados.
-  const progresoCard = document.createElement('button');
-  progresoCard.type = 'button';
-  progresoCard.className = 'card';
-  progresoCard.style.cssText = 'display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer';
-  progresoCard.innerHTML = `
-    <span style="font-size:1.6rem">📈</span>
-    <div style="flex:1;min-width:0">
-      <h3>${t('Tu progreso')}</h3>
-      <p class="small muted mt">${state.racha.actual > 0
-        ? t('{n} Días en Ruta seguidos · mejor racha: {m}', { n: state.racha.actual, m: state.racha.mejor || state.racha.actual })
-        : t('Aún no empiezas tu racha — hoy es un buen día.')}</p>
-    </div>
-    <span class="setting-row-chevron">›</span>`;
-  progresoCard.addEventListener('click', () => navigate('progress'));
-  container.appendChild(progresoCard);
+  // directo aquí, justo debajo del saludo/check-in. Tarjeta tipo
+  // carrusel (referencia real: el banner deslizable de Huawei Health,
+  // con puntos de paginación abajo) en vez de una sola tarjeta plana --
+  // cada slide es un vistazo distinto a datos reales (racha, semana,
+  // logros), nunca inventados, y las 3 llevan a la pantalla completa de
+  // Progreso al tocarlas.
+  container.appendChild(renderProgresoCarrusel(state));
 
   // --- Notificaciones: se piden aquí, cuando ya hay una racha que
   // proteger, no enterrado en Ajustes. También descartable. ---
@@ -361,6 +351,75 @@ export function renderDashboard(container) {
   if (tourVisible() && !document.querySelector('.tour-overlay')) {
     iniciarTour(() => renderDashboard(clearAndGet(container)));
   }
+}
+
+// "Tu progreso" -- tarjeta tipo carrusel (referencia real: el banner
+// deslizable de Huawei Health, con puntos de paginación debajo). Cada
+// slide ocupa el ancho completo, se desliza con scroll-snap nativo (sin
+// librería), y los puntos se actualizan solos según cuál slide queda
+// centrado. Todo el contenido es dato real ya existente en el resto de
+// la app (racha, semana, logros) -- ningún número inventado.
+function renderProgresoCarrusel(state) {
+  const wrap = document.createElement('div');
+  wrap.className = 'mt';
+
+  const slides = [
+    {
+      html: `
+        <div style="font-size:1.8rem">🔥</div>
+        <h3 class="mt">${t('Días en Ruta')}</h3>
+        <p class="small mt">${state.racha.actual > 0
+          ? t('{n} seguidos · mejor racha: {m}', { n: state.racha.actual, m: state.racha.mejor || state.racha.actual })
+          : t('Aún no empiezas tu racha — hoy es un buen día.')}</p>`
+    },
+    {
+      html: `
+        <h3>${t('Tu semana')}</h3>
+        <div class="week-strip mt" style="justify-content:center">${weekStrip(state.diasCumplidos, state.diasCongelados)}</div>`
+    },
+    {
+      html: `
+        <div style="font-size:1.8rem">🏆</div>
+        <h3 class="mt">${t('Logros')}</h3>
+        <p class="small mt">${t('{n} de {total} desbloqueados', { n: state.logros.length, total: ACHIEVEMENTS.length })}</p>`
+    }
+  ];
+
+  const carrusel = document.createElement('div');
+  carrusel.className = 'progreso-carrusel';
+  const dots = document.createElement('div');
+  dots.className = 'progreso-dots';
+
+  slides.forEach((s, i) => {
+    const slide = document.createElement('button');
+    slide.type = 'button';
+    slide.className = 'progreso-slide center';
+    slide.innerHTML = s.html;
+    slide.addEventListener('click', () => navigate('progress'));
+    carrusel.appendChild(slide);
+
+    const dot = document.createElement('span');
+    dot.className = 'progreso-dot' + (i === 0 ? ' activo' : '');
+    dots.appendChild(dot);
+  });
+
+  // El punto activo sigue al slide que queda más centrado en el
+  // viewport del carrusel -- no hace falta un índice controlado a mano,
+  // el scroll nativo (con scroll-snap) ya hace todo el trabajo real.
+  let ticking = false;
+  carrusel.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const idx = Math.round(carrusel.scrollLeft / carrusel.clientWidth);
+      dots.querySelectorAll('.progreso-dot').forEach((d, i) => d.classList.toggle('activo', i === idx));
+      ticking = false;
+    });
+  });
+
+  wrap.appendChild(carrusel);
+  wrap.appendChild(dots);
+  return wrap;
 }
 
 // Estado de ánimo de Sana: se deriva 100% de datos que ya existen (último

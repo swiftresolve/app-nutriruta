@@ -909,6 +909,24 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    azulado con la llamita) o uno futuro (vacío, sin marca). */
 .week-cell.perdido .week-dot { background: #DCE2E0; color: var(--ink-soft); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 0 #C3CBC8; }
 
+/* "Tu progreso" en Hoy (dashboard.js) -- tarjeta tipo carrusel, como el
+   banner deslizable de Huawei Health: un slide de ancho completo a la
+   vez, scroll-snap nativo (sin librería) y puntos de paginación debajo
+   que siguen al slide que queda centrado. */
+.progreso-carrusel {
+  display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.progreso-carrusel::-webkit-scrollbar { display: none; }
+.progreso-slide {
+  flex: 0 0 100%; scroll-snap-align: center; border: none; cursor: pointer;
+  padding: 22px 20px; background: linear-gradient(135deg, var(--primary-soft), var(--secondary-soft));
+  color: var(--ink);
+}
+.progreso-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+.progreso-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: background 0.15s ease, width 0.15s ease; }
+.progreso-dot.activo { background: var(--primary); width: 18px; border-radius: 3px; }
+
 /* ===== Mis Rachas: calendario mensual (modal del header) ===== */
 .rachas-hero { text-align: center; }
 .rachas-hero .num { font-size: 2.4rem; font-weight: 800; }
