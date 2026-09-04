@@ -204,7 +204,11 @@ export function renderDashboard(container) {
   const menuCard = document.createElement('div');
   menuCard.className = 'card';
   menuCard.innerHTML = `<div class="spread"><h2>${t('🍽️ Tu ruta de hoy')}</h2></div><div id="menu-path"></div>`;
-  container.appendChild(menuCard);
+  // insertBefore(pasoCard) en vez de appendChild -- pedido explícito de
+  // la usuaria: "Tu ruta de hoy" debe quedar ARRIBA de "Tu paso de hoy",
+  // aunque su contenido (menú, path map, accesos) se siga armando acá
+  // abajo en el código, después de habitCard y los avisos.
+  container.insertBefore(menuCard, pasoCard);
 
   // Hora de inicio real (24h) de cada comida, en el mismo orden que MEALS
   // — ya no es una franja fija igual para todo el mundo: cada quien la
