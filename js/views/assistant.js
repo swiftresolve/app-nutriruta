@@ -66,8 +66,12 @@ export function renderAssistant(container) {
   aviso.textContent = 'No reemplaza a tu médico o nutricionista — ante señales de alarma, busca atención profesional de inmediato.';
   container.appendChild(aviso);
 
+  // "chat-card" (además de "card"): en #app.chat-active (ver navigate()
+  // en app.js) es la ÚNICA parte de la pantalla que hace scroll interno
+  // -- llena siempre el espacio real hasta justo arriba del input, esté
+  // vacía, cargando o llena de mensajes.
   const chatCard = document.createElement('div');
-  chatCard.className = 'card';
+  chatCard.className = 'card chat-card';
   chatCard.innerHTML = '<div class="chat-log" id="chatLog"></div>';
   container.appendChild(chatCard);
 
@@ -77,13 +81,6 @@ export function renderAssistant(container) {
     <textarea id="chatInput" rows="1" maxlength="600" placeholder="Escribe tu pregunta…"></textarea>
     <button class="btn accent" id="chatSend" aria-label="Enviar">➤</button>`;
   container.appendChild(inputRow);
-
-  // inputRow es position:fixed (ver styles.css) -- queda fuera del flujo
-  // normal, así que sin este espaciador el último mensaje del chat
-  // quedaría tapado detrás de él.
-  const spacer = document.createElement('div');
-  spacer.className = 'chat-input-spacer';
-  container.appendChild(spacer);
 
   const log = chatCard.querySelector('#chatLog');
   const quotaEl = chatHeader.querySelector('#chatQuota');

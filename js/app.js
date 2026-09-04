@@ -103,6 +103,13 @@ export function navigate(route, params = {}) {
   // mantiene pegado arriba del teclado. Esta clase la pone JS a mano, con
   // el route ya conocido, así que funciona sin importar el navegador.
   app.classList.toggle('quiz-active', route === 'quiz');
+  // El chat de SuSana necesita el mismo truco que el quiz: #app fijo a la
+  // altura real de pantalla (--vvh) y adentro un flex-column donde SOLO
+  // la tarjeta de mensajes hace scroll -- así la tarjeta siempre llega
+  // hasta justo arriba de la caja de texto, esté vacía, cargando o llena
+  // (antes usaba min-height:40vh, un valor fijo que se quedaba corto y
+  // dejaba un hueco vacío feo entre la tarjeta y el input).
+  app.classList.toggle('chat-active', route === 'assistant');
   nav.querySelectorAll('.nav-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.route === route);
   });

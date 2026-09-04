@@ -238,8 +238,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   display: flex; align-items: center; justify-content: center; gap: 7px;
   background: var(--primary-soft); color: var(--primary-dark);
   border-radius: 12px; padding: 10px 12px; font-weight: 700; font-size: 0.82rem;
+  /* Siempre una sola línea y una altura fija -- sin esto, "Crear
+     manualmente" (más largo que "Crear con IA") podía envolver a una
+     segunda línea en pantallas angostas o con fuente de sistema grande,
+     agrandando el botón en vez de quedarse compacto como el de al lado. */
+  height: 40px;
 }
-.crear-receta-btn .crear-receta-emoji { font-size: 1rem; line-height: 1; }
+.crear-receta-btn span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.crear-receta-btn .crear-receta-emoji { font-size: 1rem; line-height: 1; flex: none; }
 .crear-receta-btn:active { transform: translateY(2px) scale(0.98); }
 .btn.danger { background: var(--red); box-shadow: 0 4px 0 #A8382C, 0 6px 14px rgba(224, 91, 75, 0.2); }
 .btn.danger:active { box-shadow: 0 1px 0 #A8382C, 0 2px 6px rgba(224, 91, 75, 0.16); }
@@ -1341,7 +1347,22 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 .chat-header-info strong { font-size: 1rem; }
 .chat-disclaimer { text-align: center; margin: 8px 4px 14px; }
 .chat-quota { font-size: 0.78rem; color: var(--ink-soft); text-align: center; }
-.chat-log { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 12px; min-height: 40vh; }
+.chat-log { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 12px; }
+/* #app.chat-active (ver navigate() en app.js): igual truco que el quiz
+   -- #app fijo a la altura real de pantalla (--vvh) y adentro un
+   flex-column donde SOLO la tarjeta de mensajes (.chat-card) hace
+   scroll. Así la tarjeta llega SIEMPRE hasta justo arriba de la caja de
+   texto -- vacía, cargando o llena -- en vez del min-height:40vh fijo de
+   antes, que se quedaba corto y dejaba un hueco vacío entre la tarjeta y
+   el input. */
+#app.chat-active { height: var(--vvh, 100dvh); min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+#app.chat-active .chat-header { flex: none; }
+#app.chat-active .chat-disclaimer { flex: none; }
+#app.chat-active .chat-card { flex: 1; min-height: 0; overflow-y: auto; }
+/* El input ya no necesita position:fixed -- es el último elemento del
+   flex-column, siempre pegado justo debajo de la tarjeta que sí scrollea. */
+#app.chat-active .chat-input-row { position: static; left: auto; transform: none; bottom: auto; width: 100%; max-width: none; flex: none; }
+#app.chat-active .chat-msg, #app.chat-active .chat-typing, #app.chat-active .chat-divider { scroll-margin-bottom: 12px; }
 .chat-msg {
   max-width: 84%; padding: 10px 14px; border-radius: 16px; font-size: 0.94rem; line-height: 1.45;
   /* El input del chat es sticky y la nav es flotante: ambos cubren la
