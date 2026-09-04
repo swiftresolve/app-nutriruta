@@ -418,28 +418,69 @@ export function renderSettings(container) {
   peso.className = 'card';
   const ultimo = ultimoPeso();
   peso.innerHTML = `
-    <h2>⚖️ Mi peso (opcional)</h2>
-    <p class="small mb">Solo lo usamos para calcular tu meta de agua personalizada (30–35 mL por kg, el rango estándar de nutrición clínica). Es privado: nadie más lo ve, y puedes borrarlo cuando quieras.</p>
-    <div class="row">
-      <input id="peso-input" type="number" min="30" max="300" step="0.1" placeholder="Ej: 65" value="${user.pesoKg ?? ''}"
-        class="auth-input" style="width:100px;margin:0">
-      <span class="muted small">kg</span>
-      <button class="btn ghost sm" id="peso-guardar">Guardar</button>
+    <h2>⚖️ Sobre ti (opcional)</h2>
+    <p class="small mb">Sexo y peso afinan tu meta de agua personalizada (30–35 mL por kg, el rango estándar de nutrición clínica). Edad y estatura se guardan para uso futuro. Es privado: nadie más lo ve, y puedes borrarlo cuando quieras.</p>
+    <div class="chips" id="sexo-chips" style="margin-bottom:12px">
+      <button type="button" class="chip" data-sexo="mujer">Mujer</button>
+      <button type="button" class="chip" data-sexo="hombre">Hombre</button>
     </div>
+    <div class="row" style="flex-wrap:wrap;gap:16px 24px">
+      <div>
+        <label class="muted small" for="edad-input">Edad</label>
+        <div class="row" style="align-items:center;gap:8px;margin-top:2px">
+          <input id="edad-input" type="number" min="13" max="110" placeholder="Ej: 33" value="${user.edad ?? ''}" class="auth-input" style="width:90px;margin:0">
+          <span class="muted small">años</span>
+        </div>
+      </div>
+      <div>
+        <label class="muted small" for="estatura-input">Estatura</label>
+        <div class="row" style="align-items:center;gap:8px;margin-top:2px">
+          <input id="estatura-input" type="number" min="120" max="230" placeholder="Ej: 165" value="${user.estaturaCm ?? ''}" class="auth-input" style="width:90px;margin:0">
+          <span class="muted small">cm</span>
+        </div>
+      </div>
+      <div>
+        <label class="muted small" for="peso-input">Peso</label>
+        <div class="row" style="align-items:center;gap:8px;margin-top:2px">
+          <input id="peso-input" type="number" min="30" max="300" step="0.1" placeholder="Ej: 65" value="${user.pesoKg ?? ''}" class="auth-input" style="width:90px;margin:0">
+          <span class="muted small">kg</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn ghost sm mt" id="peso-guardar">Guardar</button>
     <p class="small mt" id="peso-meta">${user.pesoKg ? `Tu meta de agua con este peso: <strong>${getWaterGoal()} vasos</strong>.` : 'Sin peso registrado, usamos una meta general de 8 vasos.'}</p>
     <label class="row mt" style="cursor:pointer">
       <input type="checkbox" id="peso-track" ${user.trackearPeso ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--primary)">
       <span class="small">Llevar un registro de mi peso en el tiempo (opcional, verás tu tendencia en Progreso)</span>
     </label>
     ${ultimo ? `<p class="muted small mt">Último registro: ${ultimo.kg} kg el ${ultimo.fecha}.</p>` : ''}`;
+  let sexoElegido = user.sexo || '';
+  peso.querySelectorAll('#sexo-chips .chip').forEach((b) => {
+    b.classList.toggle('selected', b.dataset.sexo === sexoElegido);
+    b.addEventListener('click', () => {
+      sexoElegido = sexoElegido === b.dataset.sexo ? '' : b.dataset.sexo;
+      peso.querySelectorAll('#sexo-chips .chip').forEach((c) => c.classList.toggle('selected', c.dataset.sexo === sexoElegido));
+    });
+  });
   peso.querySelector('#peso-guardar').addEventListener('click', () => {
-    const val = peso.querySelector('#peso-input').value;
-    if (logPeso(val)) {
-      toast('Peso guardado 🌿');
-      navigate('settings');
-    } else {
+    const pesoVal = peso.querySelector('#peso-input').value;
+    if (pesoVal && !logPeso(pesoVal)) {
       toast('Ingresa un peso válido (entre 30 y 300 kg).');
+      return;
     }
+    const edadVal = Number(peso.querySelector('#edad-input').value);
+    const estaturaVal = Number(peso.querySelector('#estatura-input').value);
+    const cur = getState().user;
+    setState({
+      user: {
+        ...cur,
+        sexo: sexoElegido || null,
+        edad: edadVal >= 13 && edadVal <= 110 ? edadVal : null,
+        estaturaCm: estaturaVal >= 120 && estaturaVal <= 230 ? estaturaVal : null
+      }
+    });
+    toast('Guardado 🌿');
+    navigate('settings');
   });
   peso.querySelector('#peso-track').addEventListener('change', (e) => {
     setState({ user: { ...getState().user, trackearPeso: e.target.checked } });

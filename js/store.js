@@ -31,7 +31,10 @@ const DEFAULT_STATE = {
     azucarFreq: 'a_veces',
     alcoholFreq: 'nunca',
     colonPredominante: null,
-    pesoKg: null,           // opcional: solo para calcular la meta de agua
+    pesoKg: null,           // opcional: junto con sexo, afina la meta de agua
+    sexo: null,             // 'mujer' | 'hombre' | null -- opcional, afina la meta de agua (ver getWaterGoal)
+    edad: null,             // opcional, aun sin usarse en ningun calculo -- solo contexto (ver nota en quiz.js)
+    estaturaCm: null,       // opcional, aun sin usarse en ningun calculo -- capturado para uso futuro (ver nota en quiz.js)
     trackearPeso: false,    // opcional y apagado por defecto: registro de peso en el tiempo
     // Hora de inicio (24h) real de cada comida — antes era una franja fija
     // igual para todo el mundo (7/10/12/16/19). Cada quien la ajusta a su
@@ -235,12 +238,17 @@ export function today() {
 
 // --- Meta de agua: 30–35 mL por kg de peso corporal, el rango estándar
 // usado en nutrición clínica (p. ej. guías de la EFSA) — no una marca ni
-// una persona. Con 32.5 mL/kg de punto medio, en vasos de 250 mL.
+// una persona. Sin sexo registrado se usa el punto medio (32.5 mL/kg);
+// con sexo, se usa el extremo del mismo rango que coincide con las
+// metas de ingesta total de agua de la EFSA (más alta para hombres,
+// más baja para mujeres) — sigue siendo el mismo rango de siempre, solo
+// mejor afinado, no una fórmula nueva inventada. En vasos de 250 mL.
 // Sin peso registrado, se usa un valor general de 8 vasos.
 export function getWaterGoal() {
   const kg = state.user.pesoKg;
   if (!kg || kg < 30 || kg > 200) return 8;
-  const vasos = Math.round((kg * 32.5) / 250);
+  const mlPorKg = state.user.sexo === 'hombre' ? 35 : state.user.sexo === 'mujer' ? 30 : 32.5;
+  const vasos = Math.round((kg * mlPorKg) / 250);
   return Math.min(12, Math.max(6, vasos));
 }
 

@@ -158,7 +158,7 @@ export function renderQuiz(container) {
     // Sin valor por defecto: ninguna opción debe verse preseleccionada,
     // la usuaria elige de verdad cada respuesta.
     habitosDificiles: [], motivacion: '', actividad: '', azucarFreq: '', alcoholFreq: '',
-    pesoKg: known.pesoKg || ''
+    pesoKg: known.pesoKg || '', sexo: known.sexo || '', edad: known.edad || '', estaturaCm: known.estaturaCm || ''
   };
   let step = 0;
 
@@ -251,18 +251,53 @@ export function renderQuiz(container) {
       render: (el, onChange) => chips(el, ACTIVITY, answers, false, 'actividad', true, onChange)
     },
     {
-      title: '¿Cuál es tu peso? (opcional)',
-      sub: 'Solo lo usamos para calcular tu meta diaria de agua, personalizada según tu cuerpo (30–35 mL por kg). Puedes dejarlo en blanco y usamos una meta general.',
+      // Como en Fitia ("Sobre ti"), pero con un uso real y distinto al de
+      // ellos: Fitia lo pide para calcular calorías -- NutriRuta decidió a
+      // propósito NO ser un contador de calorías. Aquí sexo+peso afinan la
+      // meta de agua (ver getWaterGoal en store.js, mismo rango clínico de
+      // siempre, solo mejor ajustado). Edad y estatura no alimentan ningún
+      // cálculo todavía -- se guardan para SuSana y usos futuros, nunca
+      // inventados como si ya hicieran algo que no hacen.
+      title: 'Sobre ti (opcional)',
+      sub: 'Con esto afinamos tu meta diaria de agua. Puedes dejar cualquier campo en blanco.',
       render(el) {
         el.innerHTML = `
+          <div class="chips" id="q-sexo-chips" style="margin-bottom:14px">
+            <button type="button" class="chip" data-sexo="mujer">Mujer</button>
+            <button type="button" class="chip" data-sexo="hombre">Hombre</button>
+          </div>
+          <label class="muted small" for="q-edad">Edad</label>
+          <div class="row" style="align-items:center;gap:10px;margin-bottom:12px">
+            <input id="q-edad" type="number" inputmode="numeric" min="13" max="110" placeholder="Ej: 33" class="auth-input" style="width:100px;margin:0">
+            <span class="muted">años</span>
+          </div>
+          <label class="muted small" for="q-estatura">Estatura</label>
+          <div class="row" style="align-items:center;gap:10px;margin-bottom:12px">
+            <input id="q-estatura" type="number" inputmode="numeric" min="120" max="230" placeholder="Ej: 165" class="auth-input" style="width:100px;margin:0">
+            <span class="muted">cm</span>
+          </div>
+          <label class="muted small" for="q-peso">Peso</label>
           <div class="row" style="align-items:center;gap:10px">
-            <input id="q-peso" type="number" inputmode="numeric" min="30" max="300" placeholder="Ej: 65" class="auth-input" style="width:120px;margin:0">
+            <input id="q-peso" type="number" inputmode="numeric" min="30" max="300" placeholder="Ej: 65" class="auth-input" style="width:100px;margin:0">
             <span class="muted">kg</span>
           </div>
           <div class="legal-note">🔒 Es privado, nadie más lo ve, y puedes borrarlo cuando quieras desde Ajustes.</div>`;
-        const input = el.querySelector('#q-peso');
-        input.value = answers.pesoKg;
-        input.addEventListener('input', (e) => { answers.pesoKg = e.target.value; });
+        el.querySelectorAll('#q-sexo-chips .chip').forEach((b) => {
+          b.classList.toggle('selected', b.dataset.sexo === answers.sexo);
+          b.addEventListener('click', () => {
+            answers.sexo = answers.sexo === b.dataset.sexo ? '' : b.dataset.sexo;
+            el.querySelectorAll('#q-sexo-chips .chip').forEach((c) => c.classList.toggle('selected', c.dataset.sexo === answers.sexo));
+          });
+        });
+        const edad = el.querySelector('#q-edad');
+        edad.value = answers.edad;
+        edad.addEventListener('input', (e) => { answers.edad = e.target.value; });
+        const estatura = el.querySelector('#q-estatura');
+        estatura.value = answers.estaturaCm;
+        estatura.addEventListener('input', (e) => { answers.estaturaCm = e.target.value; });
+        const peso = el.querySelector('#q-peso');
+        peso.value = answers.pesoKg;
+        peso.addEventListener('input', (e) => { answers.pesoKg = e.target.value; });
       }
     },
     {
@@ -570,6 +605,9 @@ export function renderQuiz(container) {
         origen: answers.origen,
         origenOtroTexto: answers.origen === 'otro' ? answers.origenOtroTexto.trim().slice(0, 80) : '',
         pesoKg: pesoValido >= 30 && pesoValido <= 300 ? pesoValido : null,
+        sexo: answers.sexo || null,
+        edad: Number(answers.edad) >= 13 && Number(answers.edad) <= 110 ? Number(answers.edad) : null,
+        estaturaCm: Number(answers.estaturaCm) >= 120 && Number(answers.estaturaCm) <= 230 ? Number(answers.estaturaCm) : null,
         trackearPeso: false
       }
     });
