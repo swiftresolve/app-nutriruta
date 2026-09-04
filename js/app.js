@@ -190,7 +190,7 @@ export function header(container) {
         <div class="header-stats">
           <button class="header-stat" id="hs-racha" aria-label="Tus Días en Ruta"><span class="icon streak-flame ${racha > 0 ? 'lit' : 'out'}">🔥</span>${racha}</button>
           <button class="header-stat" id="hs-gemas" aria-label="Tus gemas"><span class="icon">💎</span>${gemas}</button>
-          <button class="header-stat" id="hs-nutricoins" aria-label="Tus NutriCoins"><span class="icon">🪙</span>${nutricoins}</button>
+          <button class="header-stat${nutricoins > 0 ? '' : ' sin-saldo'}" id="hs-nutricoins" aria-label="Tus NutriCoins"><span class="icon">🪙</span><span class="value">${nutricoins}</span></button>
           <button class="header-stat" id="hs-escudos" aria-label="Tus Pausas de Ruta"><span class="icon">🛡️</span>${escudos}</button>
         </div>` : ''}
       <button class="icon-btn plain" data-go="settings" aria-label="${t('Ajustes')}">${GEAR_ICON}</button>

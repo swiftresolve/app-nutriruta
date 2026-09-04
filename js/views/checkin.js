@@ -36,18 +36,11 @@ export function renderCheckinBanner(container, onChange) {
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = `
-    <div class="spread">
-      <span class="small" style="font-weight:700">👋 ¿Cómo vas?</span>
-      <button class="icon-btn" id="ci-cerrar" aria-label="Cerrar">✕</button>
-    </div>
+    <span class="small" style="font-weight:700">👋 ¿Cómo vas?</span>
     <p class="small mt">Dos minutos, para acompañarte mejor. Cuéntanos cuando quieras.</p>
     <button class="btn ghost sm mt" id="ci-abrir">Contarnos cómo voy →</button>`;
   container.appendChild(card);
 
-  card.querySelector('#ci-cerrar').addEventListener('click', () => {
-    postponeCheckin();
-    if (onChange) onChange();
-  });
   card.querySelector('#ci-abrir').addEventListener('click', () => abrirCheckin(onChange));
 }
 

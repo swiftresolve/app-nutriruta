@@ -52,8 +52,7 @@ export function renderDashboard(container) {
   hero.className = 'card';
   hero.innerHTML = `
     <h2>${saludo}${user.nombre ? ', ' + esc(user.nombre) : ''} 🌿</h2>
-    <p class="small">${t('Hoy es un buen día para cuidarte. Progreso, no perfección.')}</p>
-    <div class="chips mt">${user.perfiles.map((p) => `<span class="tag perfil">${PROFILES[p].emoji} ${PROFILES[p].nombre}</span>`).join(' ')}</div>`;
+    <p class="small">${t('Hoy es un buen día para cuidarte. Progreso, no perfección.')}</p>`;
 
   if (checkinBannerVisible()) {
     const fila = document.createElement('div');
@@ -61,11 +60,16 @@ export function renderDashboard(container) {
     fila.style.cssText = 'gap:8px;align-items:stretch';
     hero.style.cssText = 'flex:1;min-width:0';
     fila.appendChild(hero);
+    // display:flex en el envoltorio para que la tarjeta real que arma
+    // renderCheckinBanner (su nieta, no su hija directa del row) también
+    // se estire a la altura completa -- si no, quedaba más baja que
+    // "Buenos días" cuando esta tenía más texto.
     const checkinCol = document.createElement('div');
-    checkinCol.style.cssText = 'flex:1;min-width:0';
+    checkinCol.style.cssText = 'flex:1;min-width:0;display:flex';
     fila.appendChild(checkinCol);
     container.appendChild(fila);
     renderCheckinBanner(checkinCol, () => renderDashboard(clearAndGet(container)));
+    if (checkinCol.firstElementChild) checkinCol.firstElementChild.style.cssText += ';flex:1;width:100%';
   } else {
     container.appendChild(hero);
   }

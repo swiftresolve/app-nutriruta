@@ -193,8 +193,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--primary); color: #fff;
-  border-radius: var(--btn-radius); height: var(--btn-h); padding: 0 20px;
-  font-weight: 700; font-size: 1rem;
+  border-radius: var(--btn-radius); min-height: var(--btn-h); padding: 8px 20px;
+  font-weight: 700; font-size: 1rem; text-align: center;
+  /* min-height (no height) + padding vertical real + line-height propio,
+     en vez de una altura fija -- un texto largo que no cabe en una línea
+     ahora empuja el botón más alto en vez de recortarse o desbordarse. */
+  white-space: normal; overflow-wrap: break-word; line-height: 1.25;
   transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s;
   box-shadow: 0 4px 0 var(--primary-dark), 0 6px 14px rgba(35, 56, 51, 0.12);
 }
@@ -204,7 +208,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .btn.accent:active { box-shadow: 0 1px 0 #D96B4F, 0 2px 6px rgba(255, 138, 107, 0.16); }
 .btn.ghost { background: var(--card); color: var(--primary-dark); border: 1.5px solid var(--primary-soft); box-shadow: none; }
 .btn.ghost:active { box-shadow: none; }
-.btn.sm { height: var(--btn-h-sm); padding: 0 14px; font-size: 0.88rem; border-radius: var(--btn-radius-sm); }
+.btn.sm { min-height: var(--btn-h-sm); padding: 6px 14px; font-size: 0.88rem; border-radius: var(--btn-radius-sm); }
 .btn.danger { background: var(--red); box-shadow: 0 4px 0 #A8382C, 0 6px 14px rgba(224, 91, 75, 0.2); }
 .btn.danger:active { box-shadow: 0 1px 0 #A8382C, 0 2px 6px rgba(224, 91, 75, 0.16); }
 .btn.quiet { background: var(--primary-soft); color: var(--primary-dark); box-shadow: none; }
@@ -573,6 +577,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .header-stat:active { background: var(--primary-soft); }
 .header-stat .icon { font-size: 0.95rem; line-height: 1; }
+/* NutriCoins: dorado siempre que haya saldo (en claro y en oscuro, por
+   eso un color fijo y no una variable de tema), plateado/apagado solo
+   en cero -- el emoji 🪙 no cambia de color solo, así que se opaca con
+   un filtro y el número toma el tono a mano. */
+#hs-nutricoins .value { color: #B8860B; }
+#hs-nutricoins.sin-saldo .icon { filter: grayscale(1) brightness(1.3); }
+#hs-nutricoins.sin-saldo .value { color: var(--ink-soft); }
 .header-tooltip {
   position: absolute; top: calc(100% + 8px); right: -6px; z-index: 90;
   background: var(--card); color: var(--ink); border-radius: 14px;
