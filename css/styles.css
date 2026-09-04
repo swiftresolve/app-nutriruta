@@ -334,13 +334,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 
 /* ===== Chips / options ===== */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-/* Pestañas Recetario/Lista de compras (planner.js) -- nunca deben
-   envolver a una segunda línea (empuja la lupa y todo lo de abajo), pase
-   lo que pase con el tamaño de fuente del teléfono. Responsivo de verdad
-   (sin scroll horizontal): cada chip puede encogerse y su texto se
-   trunca con "…" si de plano no cabe, en vez de desbordar o envolver. */
-.recetario-tabs { flex-wrap: nowrap; }
-.recetario-tabs .chip { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+/* Pestañas Recetario/Lista de compras (planner.js) -- grilla de 2
+   columnas IGUALES (como una fila de Bootstrap: 50%/50% cada una), no
+   flex creciendo por contenido -- así "Lista de compras" (más texto) no
+   termina más ancha que "Recetario". El ancho de columna es siempre un
+   % del contenedor, nunca se agranda ni achica el texto/ícono en sí
+   (no es zoom): si el texto no cabe en su columna, se trunca con "…". */
+.recetario-tabs { display: grid; grid-template-columns: repeat(2, 1fr); flex-wrap: nowrap; }
+.recetario-tabs .chip { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
 .chip {
   border: 1.5px solid transparent; background: var(--card);
   /* Antes 999px (pastilla totalmente redonda) -- misma curvatura que
