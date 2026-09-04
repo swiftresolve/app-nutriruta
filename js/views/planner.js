@@ -165,14 +165,20 @@ export function renderPlanner(container, params = {}) {
   // (botones de crear, filtros, grid) se mueve.
   const tabsRow = document.createElement('div');
   tabsRow.className = 'row mb';
-  tabsRow.style.cssText = 'justify-content:space-between;position:relative';
+  tabsRow.style.cssText = 'position:relative';
   const tabs = document.createElement('div');
   // "chips" normalmente envuelve línea (para las de perfiles/filtros, eso
   // se quiere) -- pero acá "Recetario"/"Lista de compras" deben quedarse
   // SIEMPRE en una sola fila junto a la lupa, sin importar el tamaño de
-  // fuente del teléfono. "recetario-tabs" lo fuerza y agrega scroll
-  // horizontal como red de seguridad en pantallas muy angostas.
+  // fuente del teléfono. "recetario-tabs" fuerza eso y las deja del
+  // MISMO ancho entre sí (grilla de 2 columnas, no flex por contenido) --
+  // para que la grilla reparta ancho real entre las columnas, "tabs"
+  // necesita flex:1 aquí (si no, el contenedor se encoge a su contenido
+  // y 1fr/1fr deja de significar "mitad y mitad"). Sin justify-content:
+  // space-between en tabsRow, la lupa queda pegada justo después,
+  // separada solo por el gap normal de .row, no empujada al borde.
   tabs.className = 'chips recetario-tabs';
+  tabs.style.cssText = 'flex:1;min-width:0';
   tabsRow.appendChild(tabs);
   const searchToggleBtn = document.createElement('button');
   searchToggleBtn.type = 'button';

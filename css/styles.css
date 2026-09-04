@@ -347,7 +347,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    % del contenedor, nunca se agranda ni achica el texto/ícono en sí
    (no es zoom): si el texto no cabe en su columna, se trunca con "…". */
 .recetario-tabs { display: grid; grid-template-columns: repeat(2, 1fr); flex-wrap: nowrap; }
-.recetario-tabs .chip { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+/* width:100% explícito -- un <button> como hijo de grid no siempre se
+   estira solo a la columna completa (el "stretch" por defecto de grid
+   no aplica igual a controles de formulario en todos los navegadores),
+   así que sin esto "Recetario" quedaba angosto por su propio contenido
+   mientras la columna de la grilla ya medía lo mismo que la otra. */
+.recetario-tabs .chip { width: 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
 .chip {
   border: 1.5px solid transparent; background: var(--card);
   /* Antes 999px (pastilla totalmente redonda) -- misma curvatura que
