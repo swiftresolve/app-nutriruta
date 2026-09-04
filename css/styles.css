@@ -29,10 +29,13 @@
   --shadow: 0 6px 20px rgba(35, 56, 51, 0.1), 0 1.5px 4px rgba(35, 56, 51, 0.07);
   --nav-h: 64px;
   --nav-gap: 14px; /* separación de la nav flotante respecto al borde inferior */
-  /* Antes 0.94 -- casi opaca, no se notaba transparencia real detrás
-     (el blur ya estaba, pero el fondo tapaba casi todo el contenido que
-     scrollea debajo). Bajado para que se note de verdad. */
-  --nav-bg: rgba(255, 255, 255, 0.72);
+  /* Antes 0.94, luego 0.72 -- seguía sin notarse sobre bloques de color
+     plano detrás (ej. el banner de "Tengo ansiedad/antojo" en Hoy): sin
+     bordes ni texturas que el blur pueda distorsionar, un tinte muy
+     opaco encima se ve sólido igual, aunque técnicamente sea
+     transparente. Bajado más para que el color de lo que hay detrás se
+     note SIEMPRE, tenga o no textura. */
+  --nav-bg: rgba(255, 255, 255, 0.52);
   --nav-border: rgba(255, 255, 255, 0.7);
 }
 
@@ -58,7 +61,7 @@
     --ink: #EAF3EF;
     --ink-soft: #92A9A0;
     --shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.3);
-    --nav-bg: rgba(23, 40, 31, 0.68);
+    --nav-bg: rgba(23, 40, 31, 0.5);
     --nav-border: rgba(255, 255, 255, 0.08);
     /* Gris claro y apagado, no blanco -- un borde casi blanco (el
        --border del tema claro) se ve durísimo contra tarjetas oscuras. */
@@ -75,7 +78,7 @@
   --ink: #EAF3EF;
   --ink-soft: #92A9A0;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.3);
-  --nav-bg: rgba(23, 40, 31, 0.68);
+  --nav-bg: rgba(23, 40, 31, 0.5);
   --nav-border: rgba(255, 255, 255, 0.08);
   --border: #3A4A44;
   --brand-text: #EAF3EF;
