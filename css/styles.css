@@ -103,6 +103,12 @@ body {
   color: var(--ink);
   line-height: 1.5;
   min-height: 100vh;
+  /* Nunca debe haber scroll horizontal -- si algún elemento se pasa de
+     ancho por error, que se recorte ahí, no que corra toda la página
+     (eso fue lo que rompió el menú inferior: al quedar la página más
+     ancha que la pantalla, los elementos centrados con left:50% quedaban
+     fuera de la parte visible hasta scrollear). */
+  overflow-x: hidden;
 }
 
 #app {
@@ -532,9 +538,16 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 
 /* ===== Header ===== */
-.app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; }
-.app-header .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary-dark); font-size: 1.2rem; flex: none; }
+.app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; min-width: 0; }
+.app-header .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary-dark); font-size: 1.2rem; flex: none; min-width: 0; }
 .app-header .brand svg { width: 26px; height: 26px; border-radius: 6px; flex: none; }
+/* Con racha+gemas+NutriCoins+escudos+ajustes a la derecha, en pantallas
+   angostas no cabe también la palabra "NutriRuta" completa sin generar
+   scroll horizontal -- se esconde y queda solo el logo, como hacen la
+   mayoría de apps con las 4 estadísticas del header. */
+@media (max-width: 400px) {
+  .app-header .brand-text { display: none; }
+}
 .icon-btn {
   font-size: 1.2rem; width: 40px; height: 40px; border-radius: 50%; flex: none;
   display: flex; align-items: center; justify-content: center; background: var(--card);
@@ -548,11 +561,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .icon-btn.plain:active { box-shadow: none; }
 
 /* Racha + escudos, arriba a la derecha (persistentes, como Duolingo) */
-.header-stats { display: flex; align-items: center; gap: 2px; }
+.header-stats { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; }
 .header-stat {
-  position: relative; display: flex; align-items: center; gap: 3px;
-  font-weight: 800; font-size: 0.9rem; color: var(--ink);
-  padding: 5px 8px; border-radius: 12px; transition: background 0.15s;
+  position: relative; display: flex; align-items: center; gap: 2px;
+  font-weight: 800; font-size: 0.82rem; color: var(--ink); white-space: nowrap;
+  padding: 5px 5px; border-radius: 12px; transition: background 0.15s;
 }
 .header-stat:active { background: var(--primary-soft); }
 .header-stat .icon { font-size: 1.05rem; line-height: 1; }
