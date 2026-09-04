@@ -32,10 +32,12 @@ function iniciarRutiBienvenida(el, size) {
 }
 
 // Estallido de confeti sobre toda la pantalla (ej. al terminar de armar
-// el plan) -- solo papelitos de colores cayendo, nada de emoji. Se
-// dibuja en un overlay fixed aparte (no dentro del contenedor del
-// quiz), así sigue viéndose completo aunque la pantalla debajo cambie
-// o navegue antes de que termine de caer. Respeta "reducir movimiento".
+// el plan) -- solo papelitos de colores, nada de emoji. Sale disparado
+// desde el centro hacia afuera en todas direcciones, como un fuego
+// artificial (no cae desde arriba). Se dibuja en un overlay fixed
+// aparte (no dentro del contenedor del quiz), así sigue viéndose
+// completo aunque la pantalla debajo cambie o navegue antes de que
+// termine. Respeta "reducir movimiento".
 const CONFETI_COLORES = ['#2BB5A0', '#7CC96A', '#FFC94A', '#FF7A5C', '#5AA9E6'];
 function lanzarConfeti() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -45,17 +47,23 @@ function lanzarConfeti() {
   for (let i = 0; i < N; i++) {
     const p = document.createElement('span');
     p.className = 'confeti-pieza';
-    const izquierda = Math.random() * 100;
-    const retraso = Math.random() * 0.4;
-    const duracion = 2.2 + Math.random() * 1.3;
-    const giro = Math.random() * 360;
+    const angulo = Math.random() * 2 * Math.PI;
+    // Distancia aleatoria en vez de fija: un radio parejo se ve como un
+    // anillo hueco, no una explosión -- con rango se llena el centro
+    // también, más creíble como estallido real.
+    const distancia = 60 + Math.random() * 260;
+    const dx = Math.cos(angulo) * distancia;
+    const dy = Math.sin(angulo) * distancia;
+    const retraso = Math.random() * 0.15;
+    const duracion = 0.8 + Math.random() * 0.6;
+    const giro = 360 + Math.random() * 720;
     const color = CONFETI_COLORES[i % CONFETI_COLORES.length];
     const ancho = 6 + Math.random() * 5;
-    p.style.cssText = `left:${izquierda}%; --duracion:${duracion}s; animation-delay:${retraso}s; background:${color}; width:${ancho}px; height:${ancho * 0.4}px; transform:rotate(${giro}deg);`;
+    p.style.cssText = `--dx:${dx.toFixed(0)}px; --dy:${dy.toFixed(0)}px; --giro:${giro.toFixed(0)}deg; --duracion:${duracion}s; animation-delay:${retraso}s; background:${color}; width:${ancho}px; height:${ancho * 0.4}px;`;
     capa.appendChild(p);
   }
   document.body.appendChild(capa);
-  setTimeout(() => capa.remove(), 4000);
+  setTimeout(() => capa.remove(), 2200);
 }
 
 // Logos reales (no emoji genérico) para las redes que sí tienen un ícono

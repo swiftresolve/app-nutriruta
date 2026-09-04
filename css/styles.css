@@ -513,18 +513,19 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 
 /* Confeti (ver lanzarConfeti en quiz.js): overlay fijo de toda la
-   pantalla, cada papelito cae desde arriba girando y se desvanece al
-   final. Solo colores/formas, sin emoji. */
+   pantalla, sale disparado desde el centro hacia afuera (--dx/--dy, uno
+   distinto por papelito) como un fuego artificial, girando y
+   desvaneciéndose. Solo colores/formas, sin emoji. */
 .confeti-capa {
   position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 999;
 }
 .confeti-pieza {
-  position: absolute; top: -14px; border-radius: 2px;
-  animation: confeti-caer var(--duracion, 2.6s) cubic-bezier(.22,.61,.36,1) forwards;
+  position: absolute; top: 50%; left: 50%; border-radius: 2px;
+  animation: confeti-estallar var(--duracion, 1.1s) cubic-bezier(.15,.7,.3,1) forwards;
 }
-@keyframes confeti-caer {
-  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(112vh) rotate(600deg); opacity: 0; }
+@keyframes confeti-estallar {
+  0% { transform: translate(-50%, -50%) rotate(0deg); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) rotate(var(--giro, 480deg)); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .confeti-pieza { animation: none; display: none; }
