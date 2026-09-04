@@ -30,10 +30,16 @@ function weekStrip(diasCumplidos, diasCongelados = []) {
     const cumplido = set.has(iso);
     const congelado = congelados.has(iso);
     const esHoy = iso === hoyISO;
+    // Día pasado, sin cumplir y sin Pausa de Ruta que lo cubriera: se
+    // marca como "perdido" -- visualmente parecido a un día congelado
+    // (mismo círculo), pero con una equis gris adentro en vez de la
+    // llamita de hielo, para distinguir "se rompió la racha" de "una
+    // Pausa la protegió".
+    const perdido = !cumplido && !congelado && !esHoy && iso < hoyISO;
     celdas.push(`
-      <div class="week-cell${cumplido ? ' done' : ''}${congelado ? ' frozen' : ''}${esHoy ? ' today' : ''}">
+      <div class="week-cell${cumplido ? ' done' : ''}${congelado ? ' frozen' : ''}${perdido ? ' perdido' : ''}${esHoy ? ' today' : ''}">
         <span class="week-day">${DIAS_CORTOS[d.getDay()]}</span>
-        <span class="week-dot">${congelado ? frozenFlameIcon(18) : cumplido ? '✓' : ''}</span>
+        <span class="week-dot">${congelado ? frozenFlameIcon(18) : cumplido ? '✓' : perdido ? '✕' : ''}</span>
       </div>`);
   }
   return celdas.join('');

@@ -6,7 +6,8 @@ import { getState, setState, resetState, getPlan, isPremium, planExpired, planEx
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
 import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
-import { navigate, header, openModal, toast, abrirComprarNutricoins } from '../app.js';
+import { navigate, header, openModal, toast, abrirComprarNutricoins, GEAR_ICON } from '../app.js';
+import { iniciarTour } from './tour.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
 // Fila de ajuste (ícono + etiqueta + valor + flecha), estilo lista de
@@ -45,18 +46,25 @@ function abrirSelector(titulo, opciones, valorActual, onElegir) {
 }
 
 // ---------- Menú principal (hub) ----------
-const SETTINGS_SECCIONES = [
-  { id: 'cuenta', icon: '👤', label: 'Mi cuenta' },
-  { id: 'sobre-ti', icon: '⚖️', label: 'Sobre ti' },
-  { id: 'salud', icon: '🩺', label: 'Salud y alimentación' },
-  { id: 'comidas', icon: '⏰', label: 'Horario de comidas' },
-  { id: 'interfaz', icon: '🌎', label: 'Interfaz y preferencias' },
-  { id: 'notificaciones', icon: '🔔', label: 'Notificaciones', condicion: () => pushSupported() },
-  { id: 'referidos', icon: '🎁', label: 'Referidos y NutriCoins' },
-  { id: 'resena', icon: '🌿', label: 'Califica tu experiencia' },
-  { id: 'datos', icon: '⚙️', label: 'Cuenta y datos' },
-  { id: 'legal', icon: '⚖️', label: 'Legal' }
-];
+// Función, no arreglo fijo a nivel de módulo -- construirlo al cargar el
+// archivo intentaba leer GEAR_ICON antes de que app.js terminara de
+// inicializarlo (import circular real: app.js importa renderSettings de
+// aquí, y aquí se importa GEAR_ICON de app.js). Llamarla recién al
+// pintar el hub evita el "Cannot access before initialization".
+function settingsSecciones() {
+  return [
+    { id: 'cuenta', icon: '👤', label: 'Mi cuenta' },
+    { id: 'sobre-ti', icon: '⚖️', label: 'Sobre ti' },
+    { id: 'salud', icon: '🩺', label: 'Salud y alimentación' },
+    { id: 'comidas', icon: '⏰', label: 'Horario de comidas' },
+    { id: 'interfaz', icon: '🌎', label: 'Interfaz y preferencias' },
+    { id: 'notificaciones', icon: '🔔', label: 'Notificaciones', condicion: () => pushSupported() },
+    { id: 'referidos', icon: '🎁', label: 'Referidos y NutriCoins' },
+    { id: 'resena', icon: '🌿', label: 'Califica tu experiencia' },
+    { id: 'datos', icon: GEAR_ICON, label: 'Cuenta y datos' },
+    { id: 'legal', icon: '⚖️', label: 'Legal' }
+  ];
+}
 
 const SECCION_BUILDERS = {
   'cuenta': pintarCuenta,
@@ -131,7 +139,7 @@ export function renderSettings(container, params = {}) {
 
   const menu = document.createElement('div');
   menu.className = 'card mt';
-  for (const s of SETTINGS_SECCIONES) {
+  for (const s of settingsSecciones()) {
     if (s.condicion && !s.condicion()) continue;
     menu.appendChild(filaAjuste(s.icon, s.label, '', () => navigate('settings', { seccion: s.id })));
   }
@@ -841,12 +849,26 @@ function pintarInterfaz(container) {
 function pintarDatos(container) {
   const actions = document.createElement('div');
   actions.className = 'card';
-  actions.innerHTML = '<h2>⚙️ Cuenta y datos</h2>';
+  actions.innerHTML = `<h2>${GEAR_ICON} Cuenta y datos</h2>`;
   const redoBtn = document.createElement('button');
   redoBtn.className = 'btn ghost full mb';
   redoBtn.textContent = '📝 Rehacer el quiz inicial';
   redoBtn.addEventListener('click', () => navigate('quiz'));
   actions.appendChild(redoBtn);
+
+  // Repetir el minitutorial guiado (ver views/tour.js) -- se llama a
+  // iniciarTour() directo, sin pasar por tourVisible() (esa función solo
+  // deja verlo a cuentas sin ningún día completado; aquí es un repaso
+  // deliberado, debe funcionar sin importar cuánto tiempo lleve usando
+  // la app).
+  const tourBtn = document.createElement('button');
+  tourBtn.className = 'btn ghost full mb';
+  tourBtn.textContent = '🧭 Ver el tutorial de nuevo';
+  tourBtn.addEventListener('click', () => {
+    navigate('dashboard');
+    if (!document.querySelector('.tour-overlay')) iniciarTour();
+  });
+  actions.appendChild(tourBtn);
 
   // Exportar datos: descarga un JSON con todo lo que guarda tu cuenta --
   // el mismo respaldo del que habla Privacidad ("puedes borrar tus

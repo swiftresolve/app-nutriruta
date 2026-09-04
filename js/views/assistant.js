@@ -70,8 +70,6 @@ export function renderAssistant(container) {
   const input = inputRow.querySelector('#chatInput');
   const sendBtn = inputRow.querySelector('#chatSend');
 
-  let limitReached = false;
-
   // .chat-log no tiene scroll propio (crece con la página completa), así que
   // "hacer scroll" real es desplazar el elemento nuevo a la vista, no mover
   // log.scrollTop (eso no hacía nada — era la causa de que las respuestas
@@ -97,12 +95,11 @@ export function renderAssistant(container) {
     return b;
   }
 
-  function setQuota(used, limit) {
-    quotaEl.textContent = `${used}/${limit} mensajes este mes`;
-    limitReached = used >= limit;
-    sendBtn.disabled = limitReached;
-    input.disabled = limitReached;
-    if (limitReached) input.placeholder = 'Alcanzaste tu límite de este mes.';
+  // Sin cuota rígida (decisión explícita: la competencia tampoco limita
+  // el número de consultas) -- solo un contador informativo, nunca
+  // bloquea el envío.
+  function setQuota(used) {
+    quotaEl.textContent = `${used} mensaje${used === 1 ? '' : 's'} este mes`;
   }
 
   async function loadHistory() {
@@ -114,7 +111,7 @@ export function renderAssistant(container) {
       } else {
         for (const m of data.history) addBubble(m.role, m.content);
       }
-      setQuota(data.usedCount, data.limit);
+      setQuota(data.usedCount);
     } catch (e) {
       addBubble('system', 'No pudimos cargar tu historial. Revisa tu conexión.');
     }
@@ -122,7 +119,7 @@ export function renderAssistant(container) {
 
   async function send() {
     const text = input.value.trim();
-    if (!text || limitReached) return;
+    if (!text) return;
     input.value = '';
     input.style.height = 'auto';
     addBubble('user', text);
@@ -140,21 +137,18 @@ export function renderAssistant(container) {
       const data = await askGuide(text);
       typing.remove();
       const reply = addBubble('assistant', data.reply);
-      setQuota(data.usedCount, data.limit);
+      setQuota(data.usedCount);
       // El divisor solo marca "hasta aquí llegó lo nuevo" mientras esta
       // respuesta sigue siendo la más reciente; deja de tener sentido en
       // cuanto la usuaria manda la siguiente pregunta.
       setTimeout(() => divider.remove(), 4000);
       scrollToView(reply);
+      sendBtn.disabled = false;
+      input.disabled = false;
     } catch (e) {
       typing.remove();
       divider.remove();
-      if (e.code === 'cuota_agotada') {
-        const fecha = e.resetDate ? new Date(e.resetDate).toLocaleDateString('es', { day: 'numeric', month: 'long' }) : 'el próximo mes';
-        const nombre = getState().user?.nombre;
-        addBubble('assistant', `Por hoy llegamos hasta aquí${nombre ? ', ' + nombre : ''} — ya usamos tus 25 mensajes de este mes 💚 Ha sido un gusto acompañarte. Nos vemos de nuevo el ${fecha}; mientras tanto sigo aquí en la app, en tu menú y tu progreso de cada día. ¡Cuídate mucho!`);
-        setQuota(25, 25);
-      } else if (e.code === 'premium_requerido') {
+      if (e.code === 'premium_requerido') {
         toast('Tu plan Premium ya no está activo.');
         navigate('plans');
       } else {
@@ -191,7 +185,7 @@ function abrirPersonalizarSuSana() {
       const tonoActual = SUSANA_TONOS.find((t) => t.id === (user.tonoSusana || 'calida')) || SUSANA_TONOS[0];
       const memorias = user.memorias || [];
       wrap.innerHTML = `
-        <h2>⚙️ Personalizar a ${susanaName()}</h2>
+        <h2>${GEAR_ICON} Personalizar a ${susanaName()}</h2>
         <p class="small muted mt">Define el tono con el que te habla. Nunca usa culpa ni regaños, solo cambia el estilo.</p>
         <div class="chips mt" id="pz-tonos">
           ${SUSANA_TONOS.map((t) => `<button type="button" class="chip${t.id === tonoActual.id ? ' selected' : ''}" data-tono="${t.id}">${t.emoji} ${t.nombre}</button>`).join('')}

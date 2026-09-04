@@ -8,8 +8,9 @@
 //    la service_role key (la tabla no tiene políticas RLS para clientes:
 //    ver migración ai_assistant_conversations). El navegador nunca puede
 //    insertar mensajes falsos ni leer el historial de otra persona.
-//  - Cuota dura de 25 mensajes por mes por usuaria, verificada aquí en
-//    el servidor (nunca confiar solo en el cliente para esto).
+//  - Sin cuota mensual (decisión explícita: la competencia tampoco
+//    limita el número de consultas). usedCount se sigue contando y
+//    devolviendo, solo como dato informativo para la pantalla.
 //  - Modelo: Claude Haiku (el más económico) y max_tokens bajo, porque
 //    esto es una guía breve, no un ensayo.
 //  - El contexto que se le pasa al modelo (buildContext) SOLO contiene datos
@@ -24,7 +25,6 @@
 //    no hay razon para aceptar llamadas desde cualquier origen.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const MONTHLY_LIMIT = 25;
 const MAX_MESSAGE_LEN = 600;
 const MODEL = 'claude-haiku-4-5-20251001';
 const PLAN_DAYS: Record<string, number> = { mensual: 33, anual: 368 };
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
       .limit(60);
     if (error) return json({ error: 'No se pudo cargar el historial' }, 500);
     const usedCount = await countThisMonth(admin, user.id);
-    return json({ history: history ?? [], usedCount, limit: MONTHLY_LIMIT });
+    return json({ history: history ?? [], usedCount });
   }
 
   // --- Enviar un mensaje nuevo ---
@@ -125,12 +125,11 @@ Deno.serve(async (req) => {
     return json({ error: 'premium_requerido', message: 'SuSana es una función Premium.' }, 403);
   }
 
+  // Sin cuota rígida mensual -- decisión explícita de la usuaria (la
+  // competencia tampoco limita el número de consultas). usedCount se
+  // sigue contando y devolviendo, ahora solo como dato informativo para
+  // la pantalla ("N mensajes este mes"), nunca para bloquear el envío.
   const usedCount = await countThisMonth(admin, user.id);
-  if (usedCount >= MONTHLY_LIMIT) {
-    const now = new Date();
-    const reset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-    return json({ error: 'cuota_agotada', message: 'Usaste tus 25 mensajes de este mes.', resetDate: reset.toISOString(), usedCount, limit: MONTHLY_LIMIT }, 429);
-  }
 
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
   if (!apiKey) return json({ error: 'SuSana aún no está configurada. Vuelve pronto.' }, 503);
@@ -188,7 +187,7 @@ Deno.serve(async (req) => {
   ]);
   if (insertError) console.error('No se pudo guardar la conversación:', insertError);
 
-  return json({ reply, usedCount: usedCount + 1, limit: MONTHLY_LIMIT });
+  return json({ reply, usedCount: usedCount + 1 });
 });
 
 // Filtro liviano contra ruido puro (solo espacios, un solo carácter repetido,
