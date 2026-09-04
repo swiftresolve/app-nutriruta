@@ -223,12 +223,6 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .btn.ghost { background: var(--card); color: var(--primary-dark); border: 1.5px solid var(--primary-soft); box-shadow: none; }
 .btn.ghost:active { box-shadow: none; }
 .btn.sm { min-height: var(--btn-h-sm); padding: 6px 14px; font-size: 0.88rem; border-radius: var(--btn-radius-sm); }
-/* Accesos de "Tu ruta de hoy" (dashboard.js) -- grilla real de 2
-   columnas iguales, no una fila que envuelve. width:100% + una sola
-   línea con "…" para que ningún botón crezca de alto por texto más
-   largo que el de al lado (mismo alto SIEMPRE los 4). */
-.dashboard-menu-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.dashboard-menu-actions .btn { width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: var(--btn-h-sm); }
 /* Filtros de Recetas (Ordenar/Comida/Preferidos): dropdown/botón chico y
    sutil a propósito -- no la piel de .btn (quedaba grueso, con sombra y
    texto de dos líneas, muy pesado para un filtro secundario). appearance:

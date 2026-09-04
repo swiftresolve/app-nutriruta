@@ -274,24 +274,10 @@ export function renderDashboard(container) {
     });
   });
 
-  // Grilla de 2 columnas iguales, mismo ancho y alto entre los botones
-  // (feedback real de la usuaria sobre esta misma fila). "Ver lista de
-  // compras" y "Mi Diario" se quitaron de aquí: ahora viven como botones
-  // propios en el carrusel de "Tu progreso" arriba, y quedarían
-  // repetidos si se dejaban también acá.
-  const menuActions = document.createElement('div');
-  menuActions.className = 'dashboard-menu-actions mt';
-  const kitchenBtn = document.createElement('button');
-  kitchenBtn.className = 'btn ghost sm';
-  kitchenBtn.textContent = t('🔍 ¿Qué tienes en casa?');
-  kitchenBtn.addEventListener('click', () => openKitchenSearchModal((recipe) => openRecipe(recipe)));
-  menuActions.appendChild(kitchenBtn);
-  const weekBtn = document.createElement('button');
-  weekBtn.className = 'btn ghost sm';
-  weekBtn.textContent = t('📅 Ver la semana');
-  weekBtn.addEventListener('click', () => navigate('weekMenu'));
-  menuActions.appendChild(weekBtn);
-  menuCard.appendChild(menuActions);
+  // La fila de accesos ("¿Qué tienes en casa?"/"Ver la semana") se quitó
+  // de acá -- ahora viven como botones propios en el carrusel de "Tu
+  // progreso" arriba ("En casa"/"Semana"), y quedarían repetidos si se
+  // dejaban también en esta tarjeta.
 
   // --- Botón SOS ---
   const sosBtn = document.createElement('button');
@@ -333,7 +319,9 @@ function renderProgresoCarrusel(state, container) {
     { icon: '💧', label: t('Agua'), valor: `${agua.vasos}/${agua.meta}`, onTap: () => abrirModalAgua(container), id: 'tour-agua' },
     { icon: '🎖️', label: t('Logros'), valor: `${state.logros.length}/${ACHIEVEMENTS.length}`, onTap: () => abrirModalLogros(state) },
     { icon: '🛒', label: t('Lista'), onTap: () => navigate('planner', { tab: 'compras' }) },
-    { icon: '📔', label: t('Diario'), onTap: () => navigate('diary') }
+    { icon: '📔', label: t('Diario'), onTap: () => navigate('diary') },
+    { icon: '🔍', label: t('En casa'), onTap: () => openKitchenSearchModal((recipe) => openRecipe(recipe)) },
+    { icon: '📅', label: t('Semana'), onTap: () => navigate('weekMenu') }
   ];
 
   const carrusel = document.createElement('div');
