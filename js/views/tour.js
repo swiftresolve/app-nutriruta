@@ -32,12 +32,12 @@ function crearPasos(sexo) {
     texto: 'Se ganan solo con constancia (cada día completado, cada semana de tu plan) -- nunca se compran con dinero. Sirven para comprar Pausas de Ruta extra.'
   },
   {
-    target: '#hs-escudos', titulo: '🛡️ Pausas de Ruta',
-    texto: 'Si un día no puedes cumplir, una Pausa cubre ese día sin romper tu racha -- se gana 1 cada 7 Días en Ruta, o se compra con gemas. Nunca te castiga por un mal día.'
-  },
-  {
     target: '#hs-nutricoins', titulo: '🪙 NutriCoins',
     texto: 'A diferencia de las gemas, estos sí se compran con dinero real -- para extras puntuales (como preguntas de más a SuSana). Nunca reemplazan tu constancia ni compran Pausas de Ruta.'
+  },
+  {
+    target: '#hs-escudos', titulo: '🛡️ Pausas de Ruta',
+    texto: 'Si un día no puedes cumplir, una Pausa cubre ese día sin romper tu racha -- se gana 1 cada 7 Días en Ruta, o se compra con gemas. Nunca te castiga por un mal día.'
   },
   {
     target: '#tour-paso', titulo: '🌱 Tu paso de hoy',
