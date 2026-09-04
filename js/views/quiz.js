@@ -128,9 +128,11 @@ const MOTIVATION = [
 ];
 
 const ACTIVITY = [
-  { id: 'bajo', nombre: 'Bajo (casi no me muevo)' },
-  { id: 'medio', nombre: 'Medio (camino / algo de ejercicio)' },
-  { id: 'alto', nombre: 'Alto (ejercicio frecuente)' }
+  { id: 'nulo', nombre: 'No hago ejercicio', emoji: '🚫' },
+  { id: 'bajo', nombre: '1-2 días por semana', emoji: '🔥' },
+  { id: 'medio', nombre: '3-4 días por semana', emoji: '🔥' },
+  { id: 'alto', nombre: '5-6 días por semana', emoji: '🔥' },
+  { id: 'diario', nombre: 'Diario', emoji: '🔥' }
 ];
 
 const FREQ_OPTIONS = [
@@ -244,7 +246,15 @@ export function renderQuiz(container) {
       title: '¿Tienes alguna condición conocida?',
       sub: 'Solo si te la han mencionado en un chequeo. Puedes elegir varias.',
       completo: () => answers.condiciones.length > 0,
-      render: (el, onChange) => chips(el, CONDITIONS, answers.condiciones, true, undefined, false, onChange)
+      render(el, onChange) {
+        chips(el, CONDITIONS, answers.condiciones, true, undefined, false, onChange);
+        // Descargo puntual justo aquí -- a diferencia del aviso legal
+        // completo (que sí sería redundante repetir en todo el quiz, ya
+        // vive en Ajustes -> Legal), esta es la pregunta de mayor
+        // sensibilidad médica del quiz y sí amerita su propia línea corta
+        // en el momento exacto en que se pide ese dato.
+        el.insertAdjacentHTML('beforeend', '<div class="legal-note mt">NutriRuta no reemplaza la atención médica ni diagnostica. Consulta siempre a tu profesional de salud.</div>');
+      }
     },
     {
       title: '¿Qué alimentos no consumes?',
@@ -804,7 +814,7 @@ export function renderQuiz(container) {
     if (answers.alcoholFreq === 'frecuente' || answers.alcoholFreq === 'muy_frecuente') prioridades.push('Reducir el alcohol de forma gradual (tu hígado lo agradecerá)');
     if (answers.habitosDificiles.includes('poca_agua')) prioridades.push('Llegar a tu meta diaria de agua');
     prioridades.push('Proteína en el desayuno todos los días');
-    if (answers.actividad === 'bajo') prioridades.push('Caminar 30 minutos, 5 días a la semana');
+    if (answers.actividad === 'nulo' || answers.actividad === 'bajo') prioridades.push('Caminar 30 minutos, 5 días a la semana');
 
     armandoPlan(main, prioridades.slice(0, 3), () => mostrarResultado(main, rest, prioridades.slice(0, 3)));
   }
