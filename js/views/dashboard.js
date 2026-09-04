@@ -5,7 +5,7 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
@@ -322,32 +322,22 @@ export function renderDashboard(container) {
   }
 }
 
-// "Tu progreso" -- NO tarjetas: fila de botones circulares deslizable,
-// como "Tu Plan Fit"/"Música"/"Cursos" en el video de referencia (mismo
-// lenguaje visual que ya usa el carrusel de divisiones en Liga --
-// ícono + etiqueta corta abajo, sin fondo de tarjeta ni sombra grande).
-// Cada botón es un vistazo a un dato real ya existente (racha, semana,
-// logros) -- ningún número inventado -- y lleva a la pantalla completa
-// de Progreso al tocarlo.
+// Carrusel de accesos rápidos del dashboard -- fila de botones
+// circulares deslizable, mismo lenguaje visual que "Tu Plan Fit"/
+// "Música"/"Cursos" del video de referencia (Huawei Health) y que el
+// carrusel de divisiones de Liga (ícono + etiqueta corta, sin fondo de
+// tarjeta). El primero es el botón "Progreso" -- el mismo que antes
+// vivía en la barra inferior, movido tal cual acá, sin partirlo en
+// varios: al tocarlo abre la pantalla completa de siempre (gráficas,
+// proyección, logros...), sin modal. Los que siguen se van agregando a
+// la derecha uno por uno según los vaya pidiendo la usuaria -- por ahora
+// solo "Agua" (antes era una tarjeta fija en el dashboard, ver
+// abrirModalAgua).
 function renderProgresoCarrusel(state, container) {
-  // Días cumplidos dentro de los últimos 7 (terminando hoy) -- mismo
-  // rango que weekStrip() pinta en la pantalla completa de Progreso.
-  const cumplidos = new Set(state.diasCumplidos);
-  let diasEstaSemana = 0;
-  for (let i = 0; i < 7; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    if (cumplidos.has(d.toISOString().slice(0, 10))) diasEstaSemana++;
-  }
-
   const agua = getWater();
 
-  // "Agua" es el único que no navega a Progreso -- abre su propio modal
-  // (antes era una tarjeta fija en el dashboard, ver abrirModalAgua).
   const botones = [
-    { icon: '🔥', label: t('Racha'), valor: `${state.racha.actual}`, onTap: () => navigate('progress') },
-    { icon: '📅', label: t('Semana'), valor: `${diasEstaSemana}/7`, onTap: () => navigate('progress') },
-    { icon: '🏆', label: t('Logros'), valor: `${state.logros.length}/${ACHIEVEMENTS.length}`, onTap: () => navigate('progress') },
+    { icon: '📈', label: t('Progreso'), onTap: () => navigate('progress') },
     { icon: '💧', label: t('Agua'), valor: `${agua.vasos}/${agua.meta}`, onTap: () => abrirModalAgua(container), id: 'tour-agua' }
   ];
 
