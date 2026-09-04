@@ -170,6 +170,14 @@ export const GEAR_ICON = `<svg viewBox="0 0 40 40" width="22" height="22" style=
   </g>
 </svg>`;
 
+// Lupa de línea (sin relleno) -- misma familia visual que GEAR_ICON: un
+// solo color, trazo limpio, nada de emoji con su propio look fijo por
+// dispositivo.
+export const SEARCH_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" style="display:block" fill="none">
+  <circle cx="10.5" cy="10.5" r="6.5" stroke="var(--primary-dark)" stroke-width="2"/>
+  <path d="M15.5 15.5 L21 21" stroke="var(--primary-dark)" stroke-width="2" stroke-linecap="round"/>
+</svg>`;
+
 // Cabecera común de las vistas principales. Cuando ya hay cuenta activa,
 // muestra racha y escudos arriba a la derecha (persistentes, como el
 // marcador de racha de Duolingo) — tocar cualquiera abre el detalle.

@@ -2,13 +2,13 @@
 import { getState, setState, isPremium, toggleFavorita } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
-import { header, navigate, toast } from '../app.js';
+import { header, navigate, toast, SEARCH_ICON } from '../app.js';
 import { openRecipe } from './dashboard.js';
 
 const ORDENES = [
-  { id: 'recomendadas', label: '🌿 Recomendadas para ti' },
+  { id: 'recomendadas', label: '🌿 Recomendadas' },
   { id: 'nombre', label: '🔤 Nombre (A-Z)' },
-  { id: 'rapido', label: '⚡ Más rápidas primero' }
+  { id: 'rapido', label: '⚡ Más rápidas' }
 ];
 
 // Recetas visibles en el plan gratuito (el resto se muestra bloqueado).
@@ -37,9 +37,25 @@ export function renderPlanner(container, params = {}) {
   let soloFavoritas = false;
   let rango = 'hoy';
   let busqueda = '';
+  // El buscador vive detrás de una lupa (no siempre visible) -- el
+  // espacio que ocupaba antes ahora es de "Crear con IA"/"Crear
+  // manualmente" por defecto, y se convierte en el buscador solo
+  // mientras está activo.
+  let mostrarBusqueda = false;
 
+  const tabsRow = document.createElement('div');
+  tabsRow.className = 'row mb';
+  tabsRow.style.cssText = 'justify-content:space-between';
   const tabs = document.createElement('div');
-  tabs.className = 'chips mb';
+  tabs.className = 'chips';
+  tabsRow.appendChild(tabs);
+  const searchToggleBtn = document.createElement('button');
+  searchToggleBtn.type = 'button';
+  searchToggleBtn.className = 'icon-btn plain';
+  searchToggleBtn.setAttribute('aria-label', 'Buscar recetas');
+  searchToggleBtn.innerHTML = SEARCH_ICON;
+  searchToggleBtn.addEventListener('click', () => { mostrarBusqueda = !mostrarBusqueda; drawBody(); });
+  tabsRow.appendChild(searchToggleBtn);
   const body = document.createElement('div');
 
   function drawTabs() {
@@ -51,6 +67,8 @@ export function renderPlanner(container, params = {}) {
       b.addEventListener('click', () => { tab = id; drawTabs(); drawBody(); });
       tabs.appendChild(b);
     }
+    // La búsqueda solo aplica al recetario, no a la lista de compras.
+    searchToggleBtn.style.display = tab === 'recetas' ? '' : 'none';
   }
 
   function drawBody() {
@@ -71,15 +89,40 @@ export function renderPlanner(container, params = {}) {
   function drawRecipes() {
     const { user, favoritas } = getState();
 
-    const search = document.createElement('div');
-    search.className = 'mb';
-    search.innerHTML = `
-      <input id="recetas-buscar" type="search" inputmode="search" placeholder="🔍 Buscar por nombre o ingrediente (ej: pollo, avena)"
-        style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border);font:inherit;box-sizing:border-box;background:var(--card);color:var(--ink)">`;
-    const searchInput = search.querySelector('#recetas-buscar');
-    searchInput.value = busqueda;
-    searchInput.addEventListener('input', (e) => { busqueda = e.target.value; drawBody(); searchAfterDraw(); });
-    body.appendChild(search);
+    if (mostrarBusqueda) {
+      const search = document.createElement('div');
+      search.className = 'row mb';
+      search.style.cssText = 'align-items:center;gap:8px';
+      search.innerHTML = `
+        <input id="recetas-buscar" type="search" inputmode="search" placeholder="Buscar por nombre o ingrediente…"
+          style="flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border);font:inherit;box-sizing:border-box;background:var(--card);color:var(--ink)">
+        <button type="button" class="icon-btn plain" id="cerrar-buscar" aria-label="Cerrar búsqueda"><span style="font-size:1.1rem">✕</span></button>`;
+      const searchInput = search.querySelector('#recetas-buscar');
+      searchInput.value = busqueda;
+      searchInput.addEventListener('input', (e) => { busqueda = e.target.value; drawBody(); searchAfterDraw(); });
+      search.querySelector('#cerrar-buscar').addEventListener('click', () => { mostrarBusqueda = false; busqueda = ''; drawBody(); });
+      body.appendChild(search);
+    } else {
+      // Espacio que antes ocupaba el buscador -- por defecto, las dos
+      // formas de agregar una receta propia (como en Fitia), del mismo
+      // tamaño una junto a la otra. Nunca muestran calorías ni macros,
+      // igual que el resto del recetario.
+      const crear = document.createElement('div');
+      crear.className = 'row mb';
+      crear.style.cssText = 'gap:8px;align-items:stretch';
+      crear.innerHTML = `
+        <button type="button" class="card center crear-receta-btn" id="crear-ia" style="flex:1;min-width:0;cursor:pointer">
+          <span style="font-size:1.3rem">✨</span>
+          <p class="small mt" style="font-weight:700">Crear con IA</p>
+        </button>
+        <button type="button" class="card center crear-receta-btn" id="crear-manual" style="flex:1;min-width:0;cursor:pointer">
+          <span style="font-size:1.3rem">➕</span>
+          <p class="small mt" style="font-weight:700">Crear manualmente</p>
+        </button>`;
+      crear.querySelector('#crear-ia').addEventListener('click', () => toast('Muy pronto vas a poder crear recetas con IA 🌿'));
+      crear.querySelector('#crear-manual').addEventListener('click', () => toast('Muy pronto vas a poder crear tus propias recetas ✏️'));
+      body.appendChild(crear);
+    }
 
     const note = document.createElement('p');
     note.className = 'muted small center mt mb';
@@ -96,13 +139,13 @@ export function renderPlanner(container, params = {}) {
     filters.className = 'mb';
     filters.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px';
     filters.innerHTML = `
-      <select class="btn ghost sm filtro-select" id="sel-ordenar" aria-label="Ordenar por" style="min-width:0">
+      <select class="filtro-select" id="sel-ordenar" aria-label="Ordenar por">
         ${ORDENES.map((o) => `<option value="${o.id}" ${orden === o.id ? 'selected' : ''}>${o.label}</option>`).join('')}
       </select>
-      <select class="btn ghost sm filtro-select" id="sel-comida" aria-label="Filtrar por comida" style="min-width:0">
+      <select class="filtro-select" id="sel-comida" aria-label="Filtrar por comida">
         ${MEAL_OPTS.map((o) => `<option value="${o.id}" ${mealFilter === o.id ? 'selected' : ''}>${o.emoji} ${o.nombre}</option>`).join('')}
       </select>
-      <button type="button" class="btn ${soloFavoritas ? '' : 'ghost'} sm" id="btn-preferidos" style="min-width:0"><span class="filtro-txt">⭐ Preferidos</span></button>`;
+      <button type="button" class="filtro-select${soloFavoritas ? ' selected' : ''}" id="btn-preferidos"><span class="filtro-txt">⭐ Preferidos</span></button>`;
     filters.querySelectorAll('.filtro-txt').forEach((s) => {
       s.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%';
     });
@@ -316,6 +359,6 @@ export function renderPlanner(container, params = {}) {
 
   drawTabs();
   drawBody();
-  container.appendChild(tabs);
+  container.appendChild(tabsRow);
   container.appendChild(body);
 }
