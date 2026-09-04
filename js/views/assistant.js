@@ -144,7 +144,10 @@ export function renderAssistant(container) {
     sendBtn.disabled = true;
     input.disabled = true;
 
-    const divider = addDivider('Nuevo mensaje');
+    // El divisor "Nuevo mensaje" se agrega recién cuando la respuesta
+    // llega, justo antes de pintarla -- antes aparecía ARRIBA de los
+    // puntos de "escribiendo", como si ya hubiera algo nuevo que ver
+    // cuando en realidad SuSana seguía pensando.
     const typing = document.createElement('div');
     typing.className = 'chat-typing';
     typing.innerHTML = '<span></span><span></span><span></span>';
@@ -155,6 +158,7 @@ export function renderAssistant(container) {
       const data = await askGuide(text, conversationId);
       conversationId = data.conversationId;
       typing.remove();
+      const divider = addDivider('Nuevo mensaje');
       const reply = addBubble('assistant', data.reply);
       setQuota(data.usedCount);
       // El divisor solo marca "hasta aquí llegó lo nuevo" mientras esta
@@ -166,7 +170,6 @@ export function renderAssistant(container) {
       input.disabled = false;
     } catch (e) {
       typing.remove();
-      divider.remove();
       if (e.code === 'premium_requerido') {
         toast('Tu plan Premium ya no está activo.');
         navigate('plans');

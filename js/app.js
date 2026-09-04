@@ -45,6 +45,15 @@ function actualizarVvh() {
   const vv = window.visualViewport;
   document.documentElement.style.setProperty('--vvh', `${(vv ? vv.height : window.innerHeight)}px`);
   app.style.transform = vv && vv.offsetTop ? `translateY(${vv.offsetTop}px)` : '';
+  // El teclado abierto se detecta por la diferencia entre el alto real de
+  // layout y el visual (--vvh ya la refleja). #app reserva espacio abajo
+  // para la bottom-nav (padding-bottom en la regla base) -- con el
+  // teclado abierto esa nav queda tapada igual, así que ese padding se
+  // veía como un hueco vacío feo entre el input del chat y el teclado
+  // (reportado por la usuaria en SuSana). Con el teclado abierto se
+  // quita ese padding -- el input queda pegado al teclado.
+  const teclaAbierto = vv ? (window.innerHeight - vv.height) > 120 : false;
+  app.classList.toggle('keyboard-open', teclaAbierto);
 }
 actualizarVvh();
 window.visualViewport?.addEventListener('resize', actualizarVvh);

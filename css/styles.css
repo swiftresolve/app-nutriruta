@@ -696,6 +696,33 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .liga-rank { flex: none; width: 26px; text-align: center; font-weight: 800; color: var(--ink-soft); }
 .liga-yo { background: var(--primary-soft); border-radius: 10px; padding-left: 8px; padding-right: 8px; }
 .liga-yo label { font-weight: 700; color: var(--primary-dark); }
+.liga-sin-borde { border-bottom: none; }
+.liga-dummy { opacity: 0.55; }
+/* Carrusel de divisiones (liga.js) -- tira horizontal deslizable, como
+   Duolingo: la actual resaltada y centrada, las bloqueadas (niveles por
+   encima del propio) atenuadas con candado en vez del emoji real, para
+   que se sienta "por desbloquear" sin inventar nada sobre ellas. */
+.liga-carrusel {
+  display: flex; gap: 18px; overflow-x: auto; padding: 8px 40% 14px;
+  scroll-snap-type: x proximity; scrollbar-width: none;
+}
+.liga-carrusel::-webkit-scrollbar { display: none; }
+.liga-tier {
+  flex: none; scroll-snap-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 64px; opacity: 0.55; transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.liga-tier-icon {
+  width: 52px; height: 52px; border-radius: 50%; font-size: 1.6rem;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card); box-shadow: var(--shadow);
+}
+.liga-tier-nombre { font-size: 0.68rem; font-weight: 700; color: var(--ink-soft); text-align: center; }
+.liga-tier-actual { opacity: 1; transform: scale(1.15); }
+.liga-tier-actual .liga-tier-icon { background: linear-gradient(135deg, var(--primary-soft), var(--secondary-soft)); box-shadow: 0 4px 14px rgba(43,181,160,0.35); }
+.liga-tier-actual .liga-tier-nombre { color: var(--primary-dark); }
+.liga-tier-bloqueada { opacity: 0.35; }
+.liga-tier-bloqueada .liga-tier-icon { filter: grayscale(1); }
 /* Checkbox propio en vez del nativo del navegador (se veía distinto en cada
    SO y sin ningún relieve) — cuadrado redondeado con check 3D al marcar. */
 .habit input[type="checkbox"] {
@@ -1377,6 +1404,11 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    flex-column, siempre pegado justo debajo de la tarjeta que sí scrollea. */
 #app.chat-active .chat-input-row { position: static; left: auto; transform: none; bottom: auto; width: 100%; max-width: none; flex: none; }
 #app.chat-active .chat-msg, #app.chat-active .chat-typing, #app.chat-active .chat-divider { scroll-margin-bottom: 12px; }
+/* Con el teclado abierto (ver actualizarVvh() en app.js) la bottom-nav
+   queda tapada de todas formas, así que el padding que #app le reserva
+   abajo (regla base) ya no tiene sentido -- sin quitarlo, quedaba un
+   hueco vacío feo entre el input del chat y el teclado. */
+#app.chat-active.keyboard-open { padding-bottom: 16px; }
 .chat-msg {
   max-width: 84%; padding: 10px 14px; border-radius: 16px; font-size: 0.94rem; line-height: 1.45;
   /* El input del chat es sticky y la nav es flotante: ambos cubren la
