@@ -35,7 +35,6 @@ export function checkinBannerVisible() {
 export function renderCheckinBanner(container, onChange) {
   const card = document.createElement('div');
   card.className = 'card';
-  card.style.borderLeft = '4px solid var(--secondary)';
   card.innerHTML = `
     <div class="spread">
       <span class="small" style="font-weight:700">👋 ¿Cómo vas?</span>

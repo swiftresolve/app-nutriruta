@@ -42,24 +42,37 @@ export function renderDashboard(container) {
   const saludo = t(hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches');
   const mood = sanaMood(state);
 
-  // --- Saludo, en una sola tarjeta condensada (racha/escudos ya viven
-  // de forma persistente arriba a la derecha, en el header) ---
+  // --- Saludo + Check-in, a dos columnas cuando ambas existen (si no hay
+  // check-in pendiente, el saludo se queda solo, a ancho completo) ---
+  // flex:1;min-width:0 en cada columna es lo que evita que el chip de
+  // perfiles largo o cualquier texto empuje el ancho de la página --
+  // sin min-width:0 un hijo flex nunca se encoge más que su contenido,
+  // y eso fue justo lo que rompió el header con NutriCoins.
   const hero = document.createElement('div');
   hero.className = 'card';
   hero.innerHTML = `
     <h2>${saludo}${user.nombre ? ', ' + esc(user.nombre) : ''} 🌿</h2>
     <p class="small">${t('Hoy es un buen día para cuidarte. Progreso, no perfección.')}</p>
     <div class="chips mt">${user.perfiles.map((p) => `<span class="tag perfil">${PROFILES[p].emoji} ${PROFILES[p].nombre}</span>`).join(' ')}</div>`;
-  container.appendChild(hero);
+
+  if (checkinBannerVisible()) {
+    const fila = document.createElement('div');
+    fila.className = 'row';
+    fila.style.cssText = 'gap:8px;align-items:stretch';
+    hero.style.cssText = 'flex:1;min-width:0';
+    fila.appendChild(hero);
+    const checkinCol = document.createElement('div');
+    checkinCol.style.cssText = 'flex:1;min-width:0';
+    fila.appendChild(checkinCol);
+    container.appendChild(fila);
+    renderCheckinBanner(checkinCol, () => renderDashboard(clearAndGet(container)));
+  } else {
+    container.appendChild(hero);
+  }
 
   // --- Primeros pasos: checklist de onboarding, solo cuentas nuevas ---
   if (primerosPasosVisible()) {
     renderPrimerosPasos(container, () => renderDashboard(clearAndGet(container)));
-  }
-
-  // --- Check-in: tarjeta descartable, nunca modal automático ---
-  if (checkinBannerVisible()) {
-    renderCheckinBanner(container, () => renderDashboard(clearAndGet(container)));
   }
 
   // --- Notificaciones: se piden aquí, cuando ya hay una racha que

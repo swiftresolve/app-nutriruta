@@ -538,14 +538,18 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 
 /* ===== Header ===== */
-.app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; min-width: 0; }
-.app-header .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary-dark); font-size: 1.2rem; flex: none; min-width: 0; }
-.app-header .brand svg { width: 26px; height: 26px; border-radius: 6px; flex: none; }
-/* Con racha+gemas+NutriCoins+escudos+ajustes a la derecha, en pantallas
-   angostas no cabe también la palabra "NutriRuta" completa sin generar
-   scroll horizontal -- se esconde y queda solo el logo, como hacen la
-   mayoría de apps con las 4 estadísticas del header. */
-@media (max-width: 400px) {
+.app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 6px; min-width: 0; }
+.app-header .brand { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--primary-dark); font-size: 1.05rem; flex: none; min-width: 0; }
+.app-header .brand svg { width: 22px; height: 22px; border-radius: 6px; flex: none; }
+/* El engranaje de Ajustes específicamente (no otros .icon-btn de la app,
+   como el de cerrar del check-in) un poco más chico -- entre racha,
+   gemas, NutriCoins y escudos ya no sobra espacio en pantallas angostas. */
+.app-header .icon-btn { width: 32px; height: 32px; font-size: 1rem; }
+/* Red de seguridad solo para pantallas muy angostas (ej. iPhone SE 1a
+   gen, 320px) donde ni comprimiendo más el header alcanza a caber todo
+   -- en cualquier teléfono normal de hoy (360px+) "NutriRuta" se ve
+   completo. */
+@media (max-width: 340px) {
   .app-header .brand-text { display: none; }
 }
 .icon-btn {
@@ -561,14 +565,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .icon-btn.plain:active { box-shadow: none; }
 
 /* Racha + escudos, arriba a la derecha (persistentes, como Duolingo) */
-.header-stats { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; }
+.header-stats { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; }
 .header-stat {
   position: relative; display: flex; align-items: center; gap: 2px;
-  font-weight: 800; font-size: 0.82rem; color: var(--ink); white-space: nowrap;
-  padding: 5px 5px; border-radius: 12px; transition: background 0.15s;
+  font-weight: 800; font-size: 0.78rem; color: var(--ink); white-space: nowrap;
+  padding: 4px 4px; border-radius: 12px; transition: background 0.15s;
 }
 .header-stat:active { background: var(--primary-soft); }
-.header-stat .icon { font-size: 1.05rem; line-height: 1; }
+.header-stat .icon { font-size: 0.95rem; line-height: 1; }
 .header-tooltip {
   position: absolute; top: calc(100% + 8px); right: -6px; z-index: 90;
   background: var(--card); color: var(--ink); border-radius: 14px;
