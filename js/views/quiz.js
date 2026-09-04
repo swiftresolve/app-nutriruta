@@ -2,8 +2,9 @@
 import { getState, setState, esc, today } from '../store.js';
 import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
-import { navigate, openModal } from '../app.js';
+import { navigate, openModal, toast } from '../app.js';
 import { rutiMascot } from '../mascot.js';
+import { validarCodigoReferido } from '../supabase-client.js';
 
 // Respeta el modo minimalista ("Ocultar Ruti" en Ajustes) — la app sigue
 // funcionando igual, solo deja de dibujarla.
@@ -590,6 +591,49 @@ export function renderQuiz(container) {
     if (!sharedWrap) el.appendChild(wrap);
   }
 
+  // Mismo mecanismo que "Canjear código" en Ajustes (ver settings.js) --
+  // valida que el código exista y no sea el propio, y lo guarda en
+  // user.referidoPor (la fila real en `referidos` se crea recién al
+  // activar el plan anual, ver hotmart-webhook). Repetido aquí porque en
+  // este punto del flujo (justo antes de crear la cuenta) todavía no hay
+  // sesión -- no tendría sentido navegar a Ajustes solo para esto.
+  function abrirCanjearCodigo() {
+    openModal((modal, closeFn) => {
+      modal.insertAdjacentHTML('beforeend', `
+        <h2>🎟️ ¿Tienes el código de un amigo?</h2>
+        <p class="small muted mb">Actívalo después con el plan anual.</p>
+        <input type="text" id="q-canjear-input" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em" maxlength="6" placeholder="CÓDIGO">
+        <p class="small" id="q-canjear-error" style="color:var(--red);min-height:1.2em" role="alert"></p>
+        <button type="button" class="btn full" id="q-canjear-btn">Canjear</button>`);
+      const input = modal.querySelector('#q-canjear-input');
+      const errEl = modal.querySelector('#q-canjear-error');
+      const btn = modal.querySelector('#q-canjear-btn');
+      input.addEventListener('input', () => {
+        input.value = input.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
+      });
+      btn.addEventListener('click', async () => {
+        const codigo = input.value.trim();
+        errEl.textContent = '';
+        if (codigo.length < 6) { errEl.textContent = 'Escribe el código completo (6 caracteres).'; return; }
+        btn.disabled = true; btn.textContent = 'Verificando…';
+        try {
+          const valido = await validarCodigoReferido(codigo);
+          if (valido) {
+            setState({ user: { ...getState().user, referidoPor: codigo } });
+            closeFn();
+          } else {
+            errEl.textContent = 'Ese código no existe. Revísalo con tu amigo.';
+          }
+        } catch (e) {
+          errEl.textContent = e.message && e.message.includes('propio') ? 'Ese es tu propio código 😉' : 'No se pudo verificar. Intenta de nuevo.';
+        } finally {
+          btn.disabled = false; btn.textContent = 'Canjear';
+        }
+      });
+      input.focus();
+    });
+  }
+
   function abrirModalOtro(el, arr, textos, onChange, repintar) {
     openModal((modal, closeFn) => {
       modal.insertAdjacentHTML('beforeend', `
@@ -962,6 +1006,21 @@ export function renderQuiz(container) {
         chipWrap.querySelectorAll('.chip').forEach((c, i) => c.classList.toggle('selected', opciones[i].dias === elegido));
       });
       chipWrap.appendChild(b);
+    }
+    // "¿Tienes el código de un amigo?": antes solo se capturaba en
+    // silencio con "?ref=CODIGO" en un link compartido, o se podía
+    // escribir después en Ajustes -- quien recibió el código de palabra
+    // (no por link) nunca lo veía durante el registro, como sí hace
+    // Fitia (su "Canjear código" aparece en la pantalla justo antes de
+    // crear la cuenta). Se agrega aquí, en la última pantalla del quiz
+    // antes de crear la cuenta. Si ya llegó por un link compartido
+    // (?ref=), no se pisa ni se vuelve a preguntar.
+    if (!getState().user.referidoPor) {
+      const canjearP = document.createElement('p');
+      canjearP.className = 'center small mt';
+      canjearP.innerHTML = '<button type="button" class="link-btn" id="q-canjear-codigo">¿Tienes el código de un amigo?</button>';
+      canjearP.querySelector('#q-canjear-codigo').addEventListener('click', () => abrirCanjearCodigo());
+      view.querySelector('.quiz-nav').appendChild(canjearP);
     }
     continuarBtn.addEventListener('click', () => {
       const cur = getState().user;
