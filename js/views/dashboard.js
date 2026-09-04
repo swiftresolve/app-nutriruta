@@ -75,6 +75,27 @@ export function renderDashboard(container) {
     container.appendChild(hero);
   }
 
+  // --- Progreso: antes vivía como su propia pestaña en la barra
+  // inferior; la usuaria pidió sacarla de ahí y ponerla como acceso
+  // directo aquí, justo debajo del saludo/check-in -- toda la tarjeta es
+  // un botón que lleva a la pantalla dedicada (progress.js), con datos
+  // reales (racha actual/mejor) como vista previa, nunca inventados.
+  const progresoCard = document.createElement('button');
+  progresoCard.type = 'button';
+  progresoCard.className = 'card';
+  progresoCard.style.cssText = 'display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer';
+  progresoCard.innerHTML = `
+    <span style="font-size:1.6rem">📈</span>
+    <div style="flex:1;min-width:0">
+      <h3>${t('Tu progreso')}</h3>
+      <p class="small muted mt">${state.racha.actual > 0
+        ? t('{n} Días en Ruta seguidos · mejor racha: {m}', { n: state.racha.actual, m: state.racha.mejor || state.racha.actual })
+        : t('Aún no empiezas tu racha — hoy es un buen día.')}</p>
+    </div>
+    <span class="setting-row-chevron">›</span>`;
+  progresoCard.addEventListener('click', () => navigate('progress'));
+  container.appendChild(progresoCard);
+
   // --- Notificaciones: se piden aquí, cuando ya hay una racha que
   // proteger, no enterrado en Ajustes. También descartable. ---
   if (notifPromptVisible()) {

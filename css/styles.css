@@ -29,7 +29,10 @@
   --shadow: 0 6px 20px rgba(35, 56, 51, 0.1), 0 1.5px 4px rgba(35, 56, 51, 0.07);
   --nav-h: 64px;
   --nav-gap: 14px; /* separación de la nav flotante respecto al borde inferior */
-  --nav-bg: rgba(255, 255, 255, 0.94);
+  /* Antes 0.94 -- casi opaca, no se notaba transparencia real detrás
+     (el blur ya estaba, pero el fondo tapaba casi todo el contenido que
+     scrollea debajo). Bajado para que se note de verdad. */
+  --nav-bg: rgba(255, 255, 255, 0.72);
   --nav-border: rgba(255, 255, 255, 0.7);
 }
 
@@ -55,7 +58,7 @@
     --ink: #EAF3EF;
     --ink-soft: #92A9A0;
     --shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.3);
-    --nav-bg: rgba(23, 40, 31, 0.88);
+    --nav-bg: rgba(23, 40, 31, 0.68);
     --nav-border: rgba(255, 255, 255, 0.08);
     /* Gris claro y apagado, no blanco -- un borde casi blanco (el
        --border del tema claro) se ve durísimo contra tarjetas oscuras. */
@@ -72,7 +75,7 @@
   --ink: #EAF3EF;
   --ink-soft: #92A9A0;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.3);
-  --nav-bg: rgba(23, 40, 31, 0.88);
+  --nav-bg: rgba(23, 40, 31, 0.68);
   --nav-border: rgba(255, 255, 255, 0.08);
   --border: #3A4A44;
   --brand-text: #EAF3EF;
