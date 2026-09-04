@@ -549,6 +549,13 @@ export function otorgarGemas(n) {
   setState({ gemas: (state.gemas || 0) + n });
 }
 
+// Recetas marcadas con la estrella en el Recetario (ver planner.js).
+export function toggleFavorita(recipeId) {
+  const favoritas = state.favoritas || [];
+  const nuevas = favoritas.includes(recipeId) ? favoritas.filter((id) => id !== recipeId) : [...favoritas, recipeId];
+  setState({ favoritas: nuevas });
+}
+
 function updateStreak() {
   const t = today();
   if (!dayCompleted()) return;

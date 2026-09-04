@@ -703,7 +703,7 @@ function pintarComidas(container) {
           ${sugeridas.map((h) => `<button type="button" class="chip small hora-chip${horaComidas[m.id] === h ? ' selected' : ''}" data-meal="${m.id}" data-hora="${h}">${labelHora(h)}</button>`).join('')}
           <button type="button" class="chip small hora-otro${esOtra ? ' selected' : ''}" data-meal="${m.id}">Otro</button>
         </div>
-        <select class="hora-sel mt" data-meal="${m.id}" style="${esOtra ? '' : 'display:none;'}padding:8px;border-radius:10px;border:1.5px solid #D8E6E2;font:inherit">
+        <select class="hora-sel mt" data-meal="${m.id}" style="${esOtra ? '' : 'display:none;'}padding:8px;border-radius:10px;border:1.5px solid var(--border);font:inherit;background:var(--card);color:var(--ink)">
           ${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${horaComidas[m.id] === h ? 'selected' : ''}>${h === 0 ? '12:00 am' : h < 12 ? `${h}:00 am` : h === 12 ? '12:00 pm' : `${h - 12}:00 pm`}</option>`).join('')}
         </select>
       </div>`;

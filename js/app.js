@@ -190,7 +190,7 @@ export function header(container) {
         <div class="header-stats">
           <button class="header-stat" id="hs-racha" aria-label="Tus Días en Ruta"><span class="icon streak-flame ${racha > 0 ? 'lit' : 'out'}">🔥</span>${racha}</button>
           <button class="header-stat" id="hs-gemas" aria-label="Tus gemas"><span class="icon">💎</span>${gemas}</button>
-          <button class="header-stat${nutricoins > 0 ? '' : ' sin-saldo'}" id="hs-nutricoins" aria-label="Tus NutriCoins"><span class="icon">🪙</span><span class="value">${nutricoins}</span></button>
+          <button class="header-stat${nutricoins > 0 ? '' : ' sin-saldo'}" id="hs-nutricoins" aria-label="Tus NutriCoins">${coinIcon(nutricoins > 0 ? ORO_NUTRICOINS : PLATA_NUTRICOINS, 15)}<span class="value">${nutricoins}</span></button>
           <button class="header-stat" id="hs-escudos" aria-label="Tus Pausas de Ruta"><span class="icon">🛡️</span>${escudos}</button>
         </div>` : ''}
       <button class="icon-btn plain" data-go="settings" aria-label="${t('Ajustes')}">${GEAR_ICON}</button>
@@ -347,6 +347,24 @@ export function openModal(contentBuilder) {
   return closeFn;
 }
 
+// Ícono de moneda propio (no el emoji 🪙): en varios teléfonos (sobre todo
+// Android) esa emoji se dibuja en un tono grisáceo/plateado según la
+// fuente del sistema -- el "dorado siempre, plateado solo en cero" que
+// pidió la usuaria no se puede lograr recoloreando un emoji con CSS
+// (color: no afecta emojis, son glifos con su propio color fijo). Un SVG
+// propio sí se puede pintar del color que sea, siempre igual en cualquier
+// dispositivo.
+function coinIcon(color, size = 16) {
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" style="display:inline-block;vertical-align:-3px;flex:none">
+    <circle cx="12" cy="12" r="10" fill="${color}"/>
+    <circle cx="12" cy="12" r="10" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>
+    <circle cx="12" cy="12" r="7.2" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+    <text x="12" y="16.3" text-anchor="middle" font-size="11" font-weight="800" fill="rgba(255,255,255,0.9)" font-family="inherit">$</text>
+  </svg>`;
+}
+const ORO_NUTRICOINS = '#D4A017';
+const PLATA_NUTRICOINS = '#9AA5A0';
+
 // Paquetes de NutriCoins -- MAQUETA (ver nota abajo). Precios en COP,
 // provisionales: hay que reemplazarlos por los reales una vez existan los
 // productos de compra única en Hotmart. Vive en app.js (no en
@@ -364,8 +382,8 @@ export function abrirComprarNutricoins() {
   openModal((modal) => {
     const nutricoins = getState().nutricoins || 0;
     modal.insertAdjacentHTML('beforeend', `
-      <h2>🪙 Tus NutriCoins</h2>
-      <p class="num mt" style="margin:2px 0 0">${nutricoins}</p>
+      <h2>Tus NutriCoins</h2>
+      <p class="num mt" style="margin:2px 0 0;display:flex;align-items:center;gap:8px">${coinIcon(ORO_NUTRICOINS, 26)}${nutricoins}</p>
       <p class="small muted mt">Se usan para extras puntuales -- nunca para saltarte hábitos ni comprar Pausas de Ruta, eso sigue siendo solo con constancia.</p>
       <p class="small mt" style="font-weight:600">Comprar NutriCoins</p>
       <div class="farol-grid mt">
@@ -374,7 +392,7 @@ export function abrirComprarNutricoins() {
             ${p.popular ? '<span class="farol-badge">Popular</span>' : ''}
             <span class="farol-cant">${p.cant.toLocaleString('es')}</span>
             <span class="small muted">NutriCoins</span>
-            <span class="farol-emoji">🪙</span>
+            <span class="farol-emoji">${coinIcon(ORO_NUTRICOINS, 34)}</span>
             <span class="farol-precio">$${p.precio.toLocaleString('es')}</span>
           </button>`).join('')}
       </div>

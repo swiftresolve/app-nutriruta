@@ -1,9 +1,15 @@
 // Recetario + lista de compras.
-import { getState, setState, isPremium } from '../store.js';
+import { getState, setState, isPremium, toggleFavorita } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
 import { header, navigate, toast } from '../app.js';
 import { openRecipe } from './dashboard.js';
+
+const ORDENES = [
+  { id: 'recomendadas', label: '🌿 Recomendadas para ti' },
+  { id: 'nombre', label: '🔤 Nombre (A-Z)' },
+  { id: 'rapido', label: '⚡ Más rápidas primero' }
+];
 
 // Recetas visibles en el plan gratuito (el resto se muestra bloqueado).
 const FREE_RECIPE_LIMIT = 12;
@@ -27,6 +33,8 @@ export function renderPlanner(container, params = {}) {
   header(container);
   let tab = params.tab || 'recetas';
   let mealFilter = 'todas';
+  let orden = 'recomendadas';
+  let soloFavoritas = false;
   let rango = 'hoy';
   let busqueda = '';
 
@@ -61,38 +69,67 @@ export function renderPlanner(container, params = {}) {
   }
 
   function drawRecipes() {
-    const { user } = getState();
+    const { user, favoritas } = getState();
 
     const search = document.createElement('div');
     search.className = 'mb';
     search.innerHTML = `
       <input id="recetas-buscar" type="search" inputmode="search" placeholder="🔍 Buscar por nombre o ingrediente (ej: pollo, avena)"
-        style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid #D8E6E2;font:inherit;box-sizing:border-box">`;
+        style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border);font:inherit;box-sizing:border-box;background:var(--card);color:var(--ink)">`;
     const searchInput = search.querySelector('#recetas-buscar');
     searchInput.value = busqueda;
     searchInput.addEventListener('input', (e) => { busqueda = e.target.value; drawBody(); searchAfterDraw(); });
     body.appendChild(search);
 
+    // Barra de filtros: 3 controles del mismo tamaño en una sola línea
+    // (Ordenar / Comida / Preferidos). Ordenar y Comida son <select>
+    // nativos con la piel de .btn (dropdown real del sistema al tocar, no
+    // un modal de pantalla completa) -- Preferidos sigue siendo un botón
+    // simple porque solo alterna encendido/apagado, no elige entre varias.
+    const MEAL_OPTS = [{ id: 'todas', nombre: 'Todas', emoji: '✨' }, ...MEALS];
     const filters = document.createElement('div');
-    filters.className = 'chips mb';
-    const opts = [{ id: 'todas', nombre: 'Todas', emoji: '✨' }, ...MEALS];
-    for (const o of opts) {
-      const b = document.createElement('button');
-      b.className = 'chip small' + (mealFilter === o.id ? ' selected' : '');
-      b.textContent = `${o.emoji} ${o.nombre}`;
-      b.addEventListener('click', () => { mealFilter = o.id; drawBody(); });
-      filters.appendChild(b);
-    }
+    filters.className = 'mb';
+    filters.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px';
+    filters.innerHTML = `
+      <select class="btn ghost sm filtro-select" id="sel-ordenar" aria-label="Ordenar por">
+        ${ORDENES.map((o) => `<option value="${o.id}" ${orden === o.id ? 'selected' : ''}>${o.label}</option>`).join('')}
+      </select>
+      <select class="btn ghost sm filtro-select" id="sel-comida" aria-label="Filtrar por comida">
+        ${MEAL_OPTS.map((o) => `<option value="${o.id}" ${mealFilter === o.id ? 'selected' : ''}>${o.emoji} ${o.nombre}</option>`).join('')}
+      </select>
+      <button type="button" class="btn ${soloFavoritas ? '' : 'ghost'} sm" id="btn-preferidos" style="min-width:0"><span class="filtro-txt">⭐ Preferidos</span></button>`;
+    filters.querySelectorAll('.filtro-txt').forEach((s) => {
+      s.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%';
+    });
+    filters.querySelector('#sel-ordenar').addEventListener('change', (e) => { orden = e.target.value; drawBody(); });
+    filters.querySelector('#sel-comida').addEventListener('change', (e) => { mealFilter = e.target.value; drawBody(); });
+    filters.querySelector('#btn-preferidos').addEventListener('click', () => {
+      soloFavoritas = !soloFavoritas;
+      drawBody();
+    });
     body.appendChild(filters);
+
+    const note = document.createElement('p');
+    note.className = 'muted small center mt';
+    note.textContent = 'El semáforo se calcula según tus perfiles activos: verde = recomendado, amarillo = con moderación.';
+    body.appendChild(note);
 
     let list = RECIPES
       .filter((r) => mealFilter === 'todas' || r.comida === mealFilter)
       .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
-      .filter((r) => matchesSearch(r, busqueda));
-    // Primero lo más afín a tu diagnóstico (mismo criterio que arma el menú
-    // del día) — así lo gratis y lo que aparece primero al explorar es lo
-    // más relevante para ti, no un orden fijo del archivo.
-    list = rankRecipes(list, user.perfiles);
+      .filter((r) => matchesSearch(r, busqueda))
+      .filter((r) => !soloFavoritas || (favoritas || []).includes(r.id));
+
+    if (orden === 'nombre') {
+      list = [...list].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    } else if (orden === 'rapido') {
+      list = [...list].sort((a, b) => (b.etiquetas?.includes('rapido') ? 1 : 0) - (a.etiquetas?.includes('rapido') ? 1 : 0));
+    } else {
+      // Primero lo más afín a tu diagnóstico (mismo criterio que arma el
+      // menú del día) — así lo gratis y lo que aparece primero al explorar
+      // es lo más relevante para ti, no un orden fijo del archivo.
+      list = rankRecipes(list, user.perfiles);
+    }
 
     if (!list.length) {
       const empty = document.createElement('div');
@@ -104,12 +141,13 @@ export function renderPlanner(container, params = {}) {
     const meal = MEALS.reduce((m, x) => (m[x.id] = x, m), {});
 
     // Separa visualmente lo que de verdad está pensado para tu diagnóstico
-    // (aparece en el "apto" de alguno de tus perfiles activos) de lo demás
-    // — el orden ya viene priorizado por rankRecipes, aquí solo se traza la
-    // línea entre un grupo y otro. El índice de bloqueo (FREE_RECIPE_LIMIT)
+    // de lo demás -- solo tiene sentido con el orden "Recomendadas"
+    // (rankRecipes ya las prioriza); con Nombre o Más rápidas la usuaria
+    // eligió ver todo en un único orden propio, así que va en un solo
+    // grupo sin la división. El índice de bloqueo (FREE_RECIPE_LIMIT)
     // sigue contando de corrido sobre toda la lista combinada.
-    const recomendadas = list.filter((r) => r.apto.some((p) => user.perfiles.includes(p)));
-    const otras = list.filter((r) => !r.apto.some((p) => user.perfiles.includes(p)));
+    const recomendadas = orden === 'recomendadas' ? list.filter((r) => r.apto.some((p) => user.perfiles.includes(p))) : list;
+    const otras = orden === 'recomendadas' ? list.filter((r) => !r.apto.some((p) => user.perfiles.includes(p))) : [];
     let globalIndex = 0;
 
     function renderGroup(items, label) {
@@ -128,9 +166,11 @@ export function renderPlanner(container, params = {}) {
         const light = trafficLight(r, user.perfiles);
         const shown = displayRecipe(r, user.exclusiones);
         const tags = (r.etiquetas || []).slice(0, 2).map((t) => `<span class="recipe-tag">${TAG_LABELS[t] || t}</span>`).join('');
+        const esFavorita = (favoritas || []).includes(r.id);
         const item = document.createElement('button');
         item.className = 'recipe-card' + (locked ? ' locked' : '');
         item.innerHTML = `
+          <span class="recipe-fav" aria-label="${esFavorita ? 'Quitar de preferidos' : 'Marcar como preferida'}">${esFavorita ? '⭐' : '☆'}</span>
           <div class="recipe-plate">
             ${HOT_MEALS.has(r.comida) ? '<span class="steam"><span></span><span></span><span></span></span>' : ''}
             ${shown.emoji}
@@ -140,6 +180,11 @@ export function renderPlanner(container, params = {}) {
           <div class="recipe-title">${shown.nombre}</div>
           <div class="recipe-desc${locked ? ' lesson-blur' : ''}">${r.descripcion}</div>
           ${locked ? '<div class="recipe-lock">🔒 Premium</div>' : `<div class="recipe-tags">${tags}</div>`}`;
+        item.querySelector('.recipe-fav').addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleFavorita(r.id);
+          drawBody();
+        });
         item.addEventListener('click', () => locked ? navigate('plans') : openRecipe(r));
         grid.appendChild(item);
       }
@@ -148,11 +193,6 @@ export function renderPlanner(container, params = {}) {
 
     renderGroup(recomendadas, recomendadas.length && otras.length ? '🌿 Recomendadas para tu perfil' : null);
     renderGroup(otras, recomendadas.length && otras.length ? 'Otras recetas' : null);
-
-    const note = document.createElement('p');
-    note.className = 'muted small center mt';
-    note.textContent = 'El semáforo se calcula según tus perfiles activos: verde = recomendado, amarillo = con moderación.';
-    body.appendChild(note);
   }
 
   const CATEGORIA_EMOJI = { Frutas: '🍎', Verduras: '🥦', Proteínas: '🍗', Granos: '🌾', Lácteos: '🥛', Otros: '🧂' };
