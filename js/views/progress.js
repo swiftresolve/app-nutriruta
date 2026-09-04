@@ -28,6 +28,10 @@ export function renderProgress(container) {
   // plan lo dejaba inaccesible para siempre, aunque la vista sí tiene un
   // cierre armado para ese estado. Se queda, con su propia variante de
   // completado.
+  const planesGrid = document.createElement('div');
+  planesGrid.className = 'progress-plans-grid';
+  container.appendChild(planesGrid);
+
   const { emergencia } = getState();
   const diasCompletados7 = (emergencia?.completados || []).length;
   const emergCard = document.createElement('div');
@@ -50,7 +54,7 @@ export function renderProgress(container) {
       <button class="link-btn small">${t('Empezar hoy mismo →')}</button>`;
   }
   emergCard.querySelector('.link-btn').addEventListener('click', () => navigate('emergency'));
-  container.appendChild(emergCard);
+  planesGrid.appendChild(emergCard);
 
   // --- Misión 12 semanas ---
   const { mision } = getState();
@@ -71,7 +75,7 @@ export function renderProgress(container) {
       <button class="link-btn small">${isPremium() ? t('Empezar mi misión →') : t('Conocer la misión →')}</button>`;
   }
   misionCard.querySelector('.link-btn').addEventListener('click', () => navigate('mission'));
-  container.appendChild(misionCard);
+  planesGrid.appendChild(misionCard);
 
   // --- Aprende: antes su propio tab en el menú inferior, ese lugar ahora
   // lo ocupa SuSana (el "Coach", ver index.html) -- se reubica aquí como
