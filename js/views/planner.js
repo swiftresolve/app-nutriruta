@@ -81,6 +81,11 @@ export function renderPlanner(container, params = {}) {
     searchInput.addEventListener('input', (e) => { busqueda = e.target.value; drawBody(); searchAfterDraw(); });
     body.appendChild(search);
 
+    const note = document.createElement('p');
+    note.className = 'muted small center mt mb';
+    note.textContent = 'El semáforo se calcula según tus perfiles activos: verde = recomendado, amarillo = con moderación.';
+    body.appendChild(note);
+
     // Barra de filtros: 3 controles del mismo tamaño en una sola línea
     // (Ordenar / Comida / Preferidos). Ordenar y Comida son <select>
     // nativos con la piel de .btn (dropdown real del sistema al tocar, no
@@ -108,11 +113,6 @@ export function renderPlanner(container, params = {}) {
       drawBody();
     });
     body.appendChild(filters);
-
-    const note = document.createElement('p');
-    note.className = 'muted small center mt';
-    note.textContent = 'El semáforo se calcula según tus perfiles activos: verde = recomendado, amarillo = con moderación.';
-    body.appendChild(note);
 
     let list = RECIPES
       .filter((r) => mealFilter === 'todas' || r.comida === mealFilter)
