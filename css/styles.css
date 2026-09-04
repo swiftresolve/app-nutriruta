@@ -214,6 +214,15 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .btn.ghost { background: var(--card); color: var(--primary-dark); border: 1.5px solid var(--primary-soft); box-shadow: none; }
 .btn.ghost:active { box-shadow: none; }
 .btn.sm { min-height: var(--btn-h-sm); padding: 6px 14px; font-size: 0.88rem; border-radius: var(--btn-radius-sm); }
+/* <select> con piel de .btn (filtros de Recetas: Ordenar/Comida) -- sin
+   esto, el navegador le mete su propio look nativo (alto, padding y
+   fuente propios, distintos por SO/navegador), y quedaba de un tamaño
+   totalmente distinto al botón de Preferidos de al lado, aunque los 3
+   estuvieran en la misma grilla de columnas iguales. */
+.filtro-select {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  width: 100%; text-align: center; text-align-last: center;
+}
 .btn.danger { background: var(--red); box-shadow: 0 4px 0 #A8382C, 0 6px 14px rgba(224, 91, 75, 0.2); }
 .btn.danger:active { box-shadow: 0 1px 0 #A8382C, 0 2px 6px rgba(224, 91, 75, 0.16); }
 .btn.quiet { background: var(--primary-soft); color: var(--primary-dark); box-shadow: none; }

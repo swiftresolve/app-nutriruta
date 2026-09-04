@@ -91,10 +91,10 @@ export function renderPlanner(container, params = {}) {
     filters.className = 'mb';
     filters.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px';
     filters.innerHTML = `
-      <select class="btn ghost sm filtro-select" id="sel-ordenar" aria-label="Ordenar por">
+      <select class="btn ghost sm filtro-select" id="sel-ordenar" aria-label="Ordenar por" style="min-width:0">
         ${ORDENES.map((o) => `<option value="${o.id}" ${orden === o.id ? 'selected' : ''}>${o.label}</option>`).join('')}
       </select>
-      <select class="btn ghost sm filtro-select" id="sel-comida" aria-label="Filtrar por comida">
+      <select class="btn ghost sm filtro-select" id="sel-comida" aria-label="Filtrar por comida" style="min-width:0">
         ${MEAL_OPTS.map((o) => `<option value="${o.id}" ${mealFilter === o.id ? 'selected' : ''}>${o.emoji} ${o.nombre}</option>`).join('')}
       </select>
       <button type="button" class="btn ${soloFavoritas ? '' : 'ghost'} sm" id="btn-preferidos" style="min-width:0"><span class="filtro-txt">⭐ Preferidos</span></button>`;
