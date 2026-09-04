@@ -1,4 +1,4 @@
-// Liga semanal de gemas: grupos aleatorios de hasta 20 usuarias del mismo
+// Liga semanal de gemas: grupos aleatorios de hasta 20 usuarios del mismo
 // nivel, ranking por gemas ganadas ESTA semana (state.ligaGemasSemana,
 // otorgada donde ya se otorgan gemas -- ver otorgarGemas en store.js).
 // Los primeros 6 suben de nivel, los últimos 8 bajan, el resto se queda
@@ -42,8 +42,8 @@ const TOTAL_GRUPO = 20;
 // mitad. Gemas en 0: son relleno visual, nunca "compiten" de verdad ni
 // le quitan el cupo a nadie real.
 const NOMBRES_DUMMY = [
-  'Caminante', 'Viajera', 'Andarina', 'Nómada', 'Trotamundos', 'Peregrina',
-  'Exploradora', 'Senderista', 'Rutera', 'Aventurera', 'Marchante', 'Vagabunda'
+  'Caminante', 'Viajero', 'Andarina', 'Nómada', 'Trotamundos', 'Peregrino',
+  'Exploradora', 'Senderista', 'Rutero', 'Aventurera', 'Marchante', 'Vagabundo'
 ];
 function rellenarConDummies(participantes) {
   if (participantes.length >= TOTAL_GRUPO) return participantes;
