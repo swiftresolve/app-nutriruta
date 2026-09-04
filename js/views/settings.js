@@ -4,10 +4,9 @@
 // { seccion })), en vez de mostrar todas las tarjetas apiladas de una vez.
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, calcularIMC, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
-import { SUSANA_TONOS } from '../data/susanaTonos.js';
 import { MEALS } from '../data/recipes.js';
 import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
-import { navigate, header, openModal, toast } from '../app.js';
+import { navigate, header, openModal, toast, abrirComprarNutricoins } from '../app.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
 // Fila de ajuste (ícono + etiqueta + valor + flecha), estilo lista de
@@ -45,50 +44,12 @@ function abrirSelector(titulo, opciones, valorActual, onElegir) {
   });
 }
 
-// Paquetes de NutriCoins -- MAQUETA (ver nota en el llamador). Precios en
-// COP, provisionales: hay que reemplazarlos por los reales una vez existan
-// los productos de compra única en Hotmart.
-const PAQUETES_NUTRICOINS = [
-  { cant: 100, precio: 3900 },
-  { cant: 500, precio: 16900 },
-  { cant: 1000, precio: 29900, popular: true },
-  { cant: 2500, precio: 59900 }
-];
-
-function abrirComprarNutricoins() {
-  openModal((modal) => {
-    const nutricoins = getState().nutricoins || 0;
-    modal.insertAdjacentHTML('beforeend', `
-      <h2>🪙 Tus NutriCoins</h2>
-      <p class="num mt" style="margin:2px 0 0">${nutricoins}</p>
-      <p class="small muted mt">Se usan para extras puntuales -- nunca para saltarte hábitos ni comprar Pausas de Ruta, eso sigue siendo solo con constancia.</p>
-      <p class="small mt" style="font-weight:600">Comprar NutriCoins</p>
-      <div class="farol-grid mt">
-        ${PAQUETES_NUTRICOINS.map((p, i) => `
-          <button type="button" class="farol-pack${p.popular ? ' popular' : ''}" data-i="${i}">
-            ${p.popular ? '<span class="farol-badge">Popular</span>' : ''}
-            <span class="farol-cant">${p.cant.toLocaleString('es')}</span>
-            <span class="small muted">NutriCoins</span>
-            <span class="farol-emoji">🪙</span>
-            <span class="farol-precio">$${p.precio.toLocaleString('es')}</span>
-          </button>`).join('')}
-      </div>
-      <p class="small muted mt">Los paquetes y precios todavía son provisionales -- esta pantalla es una maqueta mientras se conecta el cobro real.</p>`);
-    modal.querySelectorAll('.farol-pack').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        toast('Muy pronto vas a poder comprar NutriCoins aquí mismo 🪙');
-      });
-    });
-  });
-}
-
 // ---------- Menú principal (hub) ----------
 const SETTINGS_SECCIONES = [
   { id: 'cuenta', icon: '👤', label: 'Mi cuenta' },
   { id: 'sobre-ti', icon: '⚖️', label: 'Sobre ti' },
   { id: 'salud', icon: '🩺', label: 'Salud y alimentación' },
-  { id: 'comidas', icon: '⏰', label: 'Tus comidas' },
-  { id: 'susana', icon: '💬', label: 'SuSana' },
+  { id: 'comidas', icon: '⏰', label: 'Horario de comidas' },
   { id: 'interfaz', icon: '🌎', label: 'Interfaz y preferencias' },
   { id: 'notificaciones', icon: '🔔', label: 'Notificaciones', condicion: () => pushSupported() },
   { id: 'referidos', icon: '🎁', label: 'Referidos y NutriCoins' },
@@ -102,7 +63,6 @@ const SECCION_BUILDERS = {
   'sobre-ti': pintarSobreTi,
   'salud': pintarSalud,
   'comidas': pintarComidas,
-  'susana': pintarSusana,
   'interfaz': pintarInterfaz,
   'notificaciones': pintarNotificaciones,
   'referidos': pintarReferidos,
@@ -127,8 +87,42 @@ export function renderSettings(container, params = {}) {
     return;
   }
 
+  // Resumen de cuenta: dos tarjetas lado a lado (foto a la izquierda,
+  // nombre + plan a la derecha) arriba del menú -- un vistazo rápido de
+  // quién eres sin tener que entrar a "Mi cuenta". Tocar cualquiera de
+  // las dos abre esa sección, igual que las filas de abajo.
+  const { user } = getState();
+  const inicialResumen = esc((user.nombre || 'N').trim().charAt(0).toUpperCase() || 'N');
+  const resumen = document.createElement('div');
+  resumen.className = 'row';
+  resumen.style.cssText = 'gap:10px;align-items:stretch';
+  resumen.innerHTML = `
+    <div class="card center" id="resumen-foto" style="flex:1;min-width:0;cursor:pointer;padding:14px">
+      <span class="avatar-upload" style="pointer-events:none">
+        <img id="resumen-avatar-img" alt="" hidden>
+        <span id="resumen-avatar-fallback">${inicialResumen}</span>
+      </span>
+    </div>
+    <div class="card" id="resumen-info" style="flex:1;min-width:0;cursor:pointer;padding:14px;display:flex;flex-direction:column;justify-content:center">
+      <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(user.nombre || 'Sin nombre')}</strong>
+      <span class="small muted mt" id="resumen-plan">Cargando…</span>
+    </div>`;
+  const irACuenta = () => navigate('settings', { seccion: 'cuenta' });
+  resumen.querySelector('#resumen-foto').addEventListener('click', irACuenta);
+  resumen.querySelector('#resumen-info').addEventListener('click', irACuenta);
+  const resumenPlan = resumen.querySelector('#resumen-plan');
+  resumenPlan.textContent = planExpired() ? 'Premium vencido' : isPremium() ? `✨ Premium ${getPlan().periodo}` : 'Plan gratuito';
+  getSession().then((s) => {
+    if (!s) return;
+    const img = resumen.querySelector('#resumen-avatar-img');
+    const fallback = resumen.querySelector('#resumen-avatar-fallback');
+    img.src = avatarUrlFor(s.user.id);
+    img.onload = () => { img.hidden = false; fallback.hidden = true; };
+  });
+  container.appendChild(resumen);
+
   const menu = document.createElement('div');
-  menu.className = 'card';
+  menu.className = 'card mt';
   for (const s of SETTINGS_SECCIONES) {
     if (s.condicion && !s.condicion()) continue;
     menu.appendChild(filaAjuste(s.icon, s.label, '', () => navigate('settings', { seccion: s.id })));
@@ -686,7 +680,7 @@ function pintarComidas(container) {
   };
   const labelHora = (h) => h === 0 ? '12 am' : h < 12 ? `${h} am` : h === 12 ? '12 pm' : `${h - 12} pm`;
   horarios.innerHTML = `
-    <h2>⏰ Tus comidas</h2>
+    <h2>⏰ Horario de comidas</h2>
     <p class="small mb">Cuáles quieres en tu día y a qué hora sueles comer, de verdad — así "Tu ruta de hoy" arma el menú correcto y sabe cuál comida es "Ahora".</p>
     ${MEALS.map((m) => {
       const sugeridas = HORAS_SUGERIDAS[m.id] || [];
@@ -835,57 +829,6 @@ function pintarInterfaz(container) {
   container.appendChild(prefsToggles);
 }
 
-// ---------- SuSana (tono + contexto) ----------
-function pintarSusana(container) {
-  const { user } = getState();
-  // Tono de SuSana: cómo te habla, no qué te dice — nunca rompe la regla
-  // de no usar culpa (ver ai-assistant), solo cambia el estilo. Misma
-  // lista que usan el quiz y "Personalizar a SuSana" (ver
-  // data/susanaTonos.js) -- con una frase de ejemplo en vivo, como el
-  // selector de tono de Fitia Coach, para que se note el cambio de una.
-  const tono = document.createElement('div');
-  tono.className = 'card';
-  const opcionesTono = SUSANA_TONOS.map((t) => ({ id: t.id, label: `${t.emoji} ${t.nombre} — ${t.desc}` }));
-  tono.innerHTML = '<h2>💬 Cómo te habla SuSana</h2><p class="small mb">Nunca usa culpa ni regaños, solo cambia el estilo.</p>';
-  let tonoActual = SUSANA_TONOS.find((t) => t.id === (user.tonoSusana || 'calida')) || SUSANA_TONOS[0];
-  const tonoRow = filaAjuste('💬', 'Tono', tonoActual.nombre, () => {
-    abrirSelector('Cómo te habla SuSana', opcionesTono, tonoActual.id, (id) => {
-      setState({ user: { ...getState().user, tonoSusana: id } });
-      tonoActual = SUSANA_TONOS.find((t) => t.id === id) || SUSANA_TONOS[0];
-      tonoRow.querySelector('.setting-row-value').textContent = tonoActual.nombre;
-      tonoPreview.textContent = `"${tonoActual.ejemplo}"`;
-    });
-  });
-  tono.appendChild(tonoRow);
-  const tonoPreview = document.createElement('p');
-  tonoPreview.className = 'small muted mt';
-  tonoPreview.style.fontStyle = 'italic';
-  tonoPreview.textContent = `"${tonoActual.ejemplo}"`;
-  tono.appendChild(tonoPreview);
-  const CONTEXTO_MAX = 300;
-  const contextoWrap = document.createElement('div');
-  contextoWrap.className = 'mt';
-  contextoWrap.innerHTML = `
-    <label class="small" style="font-weight:600">Algo de contexto para SuSana</label>
-    <p class="small muted" style="margin-top:2px">Ej. "no hago ejercicio hace meses" o "estoy en un momento de mucho estrés". Se suma a tu perfil de siempre, nunca lo reemplaza.</p>
-    <textarea id="ctx-susana" class="auth-input" rows="2" maxlength="${CONTEXTO_MAX}" placeholder="Escribe aquí…" style="margin-top:6px">${esc(user.contextoSusana || '')}</textarea>
-    <div class="row" style="justify-content:space-between;margin-top:6px">
-      <span class="small muted" id="ctx-susana-count"></span>
-      <button type="button" class="btn ghost sm" id="ctx-susana-guardar">Guardar</button>
-    </div>`;
-  tono.appendChild(contextoWrap);
-  const ctxInput = contextoWrap.querySelector('#ctx-susana');
-  const ctxCount = contextoWrap.querySelector('#ctx-susana-count');
-  const actualizarContador = () => { ctxCount.textContent = `${ctxInput.value.length}/${CONTEXTO_MAX}`; };
-  actualizarContador();
-  ctxInput.addEventListener('input', actualizarContador);
-  contextoWrap.querySelector('#ctx-susana-guardar').addEventListener('click', () => {
-    setState({ user: { ...getState().user, contextoSusana: ctxInput.value.trim() } });
-    toast('Guardado 🌿');
-  });
-  container.appendChild(tono);
-}
-
 // ---------- Cuenta y datos ----------
 function pintarDatos(container) {
   const actions = document.createElement('div');
@@ -896,6 +839,28 @@ function pintarDatos(container) {
   redoBtn.textContent = '📝 Rehacer el quiz inicial';
   redoBtn.addEventListener('click', () => navigate('quiz'));
   actions.appendChild(redoBtn);
+
+  // Exportar datos: descarga un JSON con todo lo que guarda tu cuenta --
+  // el mismo respaldo del que habla Privacidad ("puedes borrar tus
+  // datos..."), aquí como copia que te puedes llevar antes de borrar,
+  // cambiar de cuenta o solo para tenerla.
+  const exportBtn = document.createElement('button');
+  exportBtn.className = 'btn ghost full mb';
+  exportBtn.textContent = '📤 Exportar mis datos';
+  exportBtn.addEventListener('click', () => {
+    const datos = getState();
+    const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nutriruta-mis-datos-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('Descarga lista 📤');
+  });
+  actions.appendChild(exportBtn);
 
   const wipeBtn = document.createElement('button');
   wipeBtn.className = 'btn danger full';

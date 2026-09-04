@@ -3,8 +3,10 @@
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, eliminarMemoria, MEMORIA_MAX } from '../store.js';
 import { fetchGuideHistory, askGuide } from '../supabase-client.js';
-import { header, navigate, toast, susanaName, openModal } from '../app.js';
+import { header, navigate, toast, susanaName, openModal, GEAR_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
+
+const CONTEXTO_MAX = 300;
 
 export function renderAssistant(container) {
   if (!isPremium()) {
@@ -35,7 +37,7 @@ export function renderAssistant(container) {
       <strong>${susanaName()}</strong>
       <span class="small muted" id="chatQuota">Cargando…</span>
     </div>
-    <button type="button" class="icon-btn" id="chatPersonalizar" aria-label="Personalizar a SuSana">⚙️</button>`;
+    <button type="button" class="icon-btn plain" id="chatPersonalizar" aria-label="Personalizar a SuSana">${GEAR_ICON}</button>`;
   container.appendChild(chatHeader);
   chatHeader.querySelector('#chatPersonalizar').addEventListener('click', () => abrirPersonalizarSuSana());
 
@@ -199,7 +201,16 @@ function abrirPersonalizarSuSana() {
           <span class="setting-row-icon">🧠</span>
           <span class="setting-row-label">Memorias (${memorias.length}/${MEMORIA_MAX})</span>
           <span class="setting-row-chevron">›</span>
-        </button>`;
+        </button>
+        <div class="mt" style="border-top:1px solid var(--border);padding-top:12px">
+          <label class="small" style="font-weight:600">Algo de contexto para SuSana</label>
+          <p class="small muted" style="margin-top:2px">Ej. "no hago ejercicio hace meses" o "estoy en un momento de mucho estrés". Se suma a tu perfil de siempre, nunca lo reemplaza.</p>
+          <textarea id="pz-contexto" class="auth-input" rows="2" maxlength="${CONTEXTO_MAX}" placeholder="Escribe aquí…" style="margin-top:6px">${esc(user.contextoSusana || '')}</textarea>
+          <div class="row" style="justify-content:space-between;margin-top:6px">
+            <span class="small muted" id="pz-contexto-count"></span>
+            <button type="button" class="btn ghost sm" id="pz-contexto-guardar">Guardar</button>
+          </div>
+        </div>`;
 
       wrap.querySelectorAll('#pz-tonos .chip').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -211,6 +222,16 @@ function abrirPersonalizarSuSana() {
       // dos modales con su propio ciclo de vida cada uno; al cerrar
       // Memorias, un toque en el engranaje vuelve a traer esta pantalla.
       wrap.querySelector('#pz-memorias').addEventListener('click', () => { closeFn(); abrirMemorias(); });
+
+      const ctxInput = wrap.querySelector('#pz-contexto');
+      const ctxCount = wrap.querySelector('#pz-contexto-count');
+      const actualizarContador = () => { ctxCount.textContent = `${ctxInput.value.length}/${CONTEXTO_MAX}`; };
+      actualizarContador();
+      ctxInput.addEventListener('input', actualizarContador);
+      wrap.querySelector('#pz-contexto-guardar').addEventListener('click', () => {
+        setState({ user: { ...getState().user, contextoSusana: ctxInput.value.trim() } });
+        toast('Guardado 🌿');
+      });
     }
 
     pintar();

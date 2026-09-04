@@ -150,33 +150,24 @@ function attachStatTooltip(btn, html, { onRender, duracion = 3500 } = {}) {
   });
 }
 
-// Ícono de ajustes: reemplaza el emoji ⚙️ (en la mayoría de fuentes se
-// dibuja en perspectiva/inclinado) por un engranaje propio, de frente.
-// Segunda versión: el gris industrial de la primera no encajaba con la
-// marca — ahora usa el verde agua de la app (--primary/--primary-dark,
-// mismo degradado que ya usan .btn y .avatar-upload), un aro hueco en vez
-// de disco sólido (más "cog" reconocible, menos "tuerca oscura") y un
-// brillo suave arriba-izquierda para el volumen, sin inclinar el dibujo.
-const GEAR_ICON = `<svg viewBox="0 0 40 40" width="23" height="23" style="display:block">
-  <defs>
-    <linearGradient id="gear-face" x1="0.15" y1="0.1" x2="0.85" y2="0.9">
-      <stop offset="0%" stop-color="#4FD3BC"/>
-      <stop offset="100%" stop-color="#1E8A7A"/>
-    </linearGradient>
-  </defs>
-  <g fill="url(#gear-face)">
-    <rect x="17" y="0.5" width="6" height="8" rx="2.4"/>
-    <rect x="17" y="31.5" width="6" height="8" rx="2.4"/>
-    <rect x="0.5" y="17" width="8" height="6" rx="2.4"/>
-    <rect x="31.5" y="17" width="8" height="6" rx="2.4"/>
-    <rect x="17" y="0.5" width="6" height="8" rx="2.4" transform="rotate(45 20 20)"/>
-    <rect x="17" y="31.5" width="6" height="8" rx="2.4" transform="rotate(45 20 20)"/>
-    <rect x="0.5" y="17" width="8" height="6" rx="2.4" transform="rotate(45 20 20)"/>
-    <rect x="31.5" y="17" width="8" height="6" rx="2.4" transform="rotate(45 20 20)"/>
-    <circle cx="20" cy="20" r="12.5"/>
+// Ícono de ajustes: tuerca simple de un solo color, sin degradado ni
+// brillo, sin el círculo de fondo del botón (queda "suelta" en el header,
+// como en Fitia). Dientes = 8 rects idénticos rotados cada 45°, así queda
+// perfectamente simétrica por construcción, nunca "chueca" a mano. El
+// centro es un agujero real (fill-rule evenodd), no un círculo blanco
+// encima -- así se ve bien sin importar el fondo detrás.
+export const GEAR_ICON = `<svg viewBox="0 0 40 40" width="22" height="22" style="display:block">
+  <g fill="var(--primary-dark)">
+    <rect x="17" y="1" width="6" height="8" rx="2"/>
+    <rect x="17" y="1" width="6" height="8" rx="2" transform="rotate(45 20 20)"/>
+    <rect x="17" y="1" width="6" height="8" rx="2" transform="rotate(90 20 20)"/>
+    <rect x="17" y="1" width="6" height="8" rx="2" transform="rotate(135 20 20)"/>
+    <rect x="17" y="1" width="6" height="8" rx="2" transform="rotate(180 20 20)"/>
+    <rect x="17" y="1" width="6" height="8" rx="2" transform="rotate(225 20 20)"/>
+    <rect x="17" y="1" width="6" height="8" rx="2" transform="rotate(270 20 20)"/>
+    <rect x="17" y="1" width="6" height="8" rx="2" transform="rotate(315 20 20)"/>
+    <path fill-rule="evenodd" d="M20 8a12 12 0 1 0 0 24 12 12 0 0 0 0-24Zm0 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z"/>
   </g>
-  <circle cx="20" cy="20" r="6.5" fill="#fff"/>
-  <ellipse cx="15.5" cy="14.5" rx="5.5" ry="3.4" fill="#fff" opacity="0.3" transform="rotate(-35 15.5 14.5)"/>
 </svg>`;
 
 // Cabecera común de las vistas principales. Cuando ya hay cuenta activa,
@@ -190,6 +181,7 @@ export function header(container) {
   const racha = state.racha?.actual || 0;
   const escudos = state.escudos || 0;
   const gemas = state.gemas || 0;
+  const nutricoins = state.nutricoins || 0;
 
   h.innerHTML = `
     <span class="brand"><svg viewBox="0 0 512 512"><defs><linearGradient id="nrleaf" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#7CC96A"/><stop offset="1" stop-color="#3E9E52"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="#2BB5A0"/><g fill="none" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="13"><ellipse cx="256" cy="396" rx="148" ry="36"/><ellipse cx="256" cy="396" rx="86" ry="21"/></g><path d="M256 68 C168 68 100 136 100 222 C100 316 202 398 256 434 C310 398 412 316 412 222 C412 136 344 68 256 68 Z" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linejoin="round"/><g transform="translate(252 210) scale(0.55) translate(-256 -288)"><path d="M256 416c-72-48-136-102-136-176 0-45 34-80 78-80 28 0 48 13 58 32 10-19 30-32 58-32 44 0 78 35 78 80 0 74-64 128-136 176z" fill="#FFFFFF"/></g><g transform="translate(288 210) rotate(35)"><path d="M0 -40 C26 -24 28 10 0 40 C-28 10 -26 -24 0 -40 Z" fill="url(#nrleaf)"/><path d="M0 36 L-9 60" stroke="#3E9E52" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M0 -30 L0 32 M0 -16 L13 -25 M0 -16 L-13 -25 M0 2 L15 -7 M0 2 L-15 -7 M0 18 L12 9 M0 18 L-12 9" stroke="#FFFFFF" stroke-width="3.5" fill="none" stroke-linecap="round"/></g></svg>NutriRuta</span>
@@ -198,14 +190,16 @@ export function header(container) {
         <div class="header-stats">
           <button class="header-stat" id="hs-racha" aria-label="Tus Días en Ruta"><span class="icon streak-flame ${racha > 0 ? 'lit' : 'out'}">🔥</span>${racha}</button>
           <button class="header-stat" id="hs-gemas" aria-label="Tus gemas"><span class="icon">💎</span>${gemas}</button>
+          <button class="header-stat" id="hs-nutricoins" aria-label="Tus NutriCoins"><span class="icon">🪙</span>${nutricoins}</button>
           <button class="header-stat" id="hs-escudos" aria-label="Tus Pausas de Ruta"><span class="icon">🛡️</span>${escudos}</button>
         </div>` : ''}
-      <button class="icon-btn" data-go="settings" aria-label="${t('Ajustes')}">${GEAR_ICON}</button>
+      <button class="icon-btn plain" data-go="settings" aria-label="${t('Ajustes')}">${GEAR_ICON}</button>
     </div>`;
   h.querySelector('[data-go]').addEventListener('click', () => navigate('settings'));
 
   if (mostrarStats) {
     h.querySelector('#hs-racha').addEventListener('click', (e) => { e.stopPropagation(); abrirMisRachas(); });
+    h.querySelector('#hs-nutricoins').addEventListener('click', (e) => { e.stopPropagation(); abrirComprarNutricoins(); });
     attachStatTooltip(h.querySelector('#hs-gemas'), `
       <strong>💎 ${gemas} gemas</strong>
       <p class="small muted mt" style="margin-top:4px">Ganas ${GEMAS_POR_DIA} 💎 cada día que completas, y más al terminar un día del Plan de 7 días o una semana de la Misión.</p>
@@ -351,6 +345,46 @@ export function openModal(contentBuilder) {
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
   return closeFn;
+}
+
+// Paquetes de NutriCoins -- MAQUETA (ver nota abajo). Precios en COP,
+// provisionales: hay que reemplazarlos por los reales una vez existan los
+// productos de compra única en Hotmart. Vive en app.js (no en
+// views/settings.js) para que el header (arriba) también pueda abrirla
+// directamente al tocar el ícono 🪙, sin crear un import circular con
+// settings.js (que ya importa varias cosas de aquí).
+const PAQUETES_NUTRICOINS = [
+  { cant: 100, precio: 3900 },
+  { cant: 500, precio: 16900 },
+  { cant: 1000, precio: 29900, popular: true },
+  { cant: 2500, precio: 59900 }
+];
+
+export function abrirComprarNutricoins() {
+  openModal((modal) => {
+    const nutricoins = getState().nutricoins || 0;
+    modal.insertAdjacentHTML('beforeend', `
+      <h2>🪙 Tus NutriCoins</h2>
+      <p class="num mt" style="margin:2px 0 0">${nutricoins}</p>
+      <p class="small muted mt">Se usan para extras puntuales -- nunca para saltarte hábitos ni comprar Pausas de Ruta, eso sigue siendo solo con constancia.</p>
+      <p class="small mt" style="font-weight:600">Comprar NutriCoins</p>
+      <div class="farol-grid mt">
+        ${PAQUETES_NUTRICOINS.map((p, i) => `
+          <button type="button" class="farol-pack${p.popular ? ' popular' : ''}" data-i="${i}">
+            ${p.popular ? '<span class="farol-badge">Popular</span>' : ''}
+            <span class="farol-cant">${p.cant.toLocaleString('es')}</span>
+            <span class="small muted">NutriCoins</span>
+            <span class="farol-emoji">🪙</span>
+            <span class="farol-precio">$${p.precio.toLocaleString('es')}</span>
+          </button>`).join('')}
+      </div>
+      <p class="small muted mt">Los paquetes y precios todavía son provisionales -- esta pantalla es una maqueta mientras se conecta el cobro real.</p>`);
+    modal.querySelectorAll('.farol-pack').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        toast('Muy pronto vas a poder comprar NutriCoins aquí mismo 🪙');
+      });
+    });
+  });
 }
 
 // Service worker (registrado aquí para cumplir la CSP sin scripts inline).
