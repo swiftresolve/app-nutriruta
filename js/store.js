@@ -75,7 +75,8 @@ const DEFAULT_STATE = {
   diasCongelados: [],           // fechas ISO cubiertas por una Pausa de Ruta (racha "congelada", no rota)
   reflexionesHabitos: {},        // { fecha: texto } — la frase real que se pide al completar el 3er hábito del día
   comidasRegistradas: {},          // { 'fecha|mealId': { alimentos: [texto], fuente: 'foto'|'voz'|'texto', hora } } — lo que la usuaria dijo que REALMENTE comió, no la sugerencia del menú
-  favoritas: []                   // ids de RECIPES marcadas con la estrella en el Recetario (ver planner.js)
+  favoritas: [],                  // ids de RECIPES marcadas con la estrella en el Recetario (ver planner.js)
+  misRecetas: []                  // recetas creadas a mano por la usuaria (ver agregarRecetaPropia)
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
@@ -554,6 +555,33 @@ export function toggleFavorita(recipeId) {
   const favoritas = state.favoritas || [];
   const nuevas = favoritas.includes(recipeId) ? favoritas.filter((id) => id !== recipeId) : [...favoritas, recipeId];
   setState({ favoritas: nuevas });
+}
+
+// Recetas creadas a mano por la usuaria ("Crear manualmente" en el
+// Recetario) -- viven aparte de RECIPES (el catálogo curado), nunca piden
+// calorías ni macros, mismo criterio que el resto de NutriRuta. Los
+// ingredientes/pasos son texto libre, no la estructura con sustituciones
+// del catálogo curado -- por eso no pasan por isRecipeAvailable/
+// matchesSearch/trafficLight (esas funciones esperan esa estructura).
+export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingredientes, pasos, porciones, tiempoMin }) {
+  const receta = {
+    id: `propia-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    nombre: String(nombre || '').trim().slice(0, 80),
+    comida,
+    emoji: (emoji || '🍽️').trim().slice(0, 4) || '🍽️',
+    descripcion: String(descripcion || '').trim().slice(0, 200),
+    porciones: Math.min(20, Math.max(1, Number(porciones) || 1)),
+    tiempoMin: Math.min(240, Math.max(0, Number(tiempoMin) || 0)),
+    ingredientes: (ingredientes || []).map((s) => s.trim()).filter(Boolean).slice(0, 20),
+    pasos: (pasos || []).map((s) => s.trim()).filter(Boolean).slice(0, 15),
+    creada: today()
+  };
+  setState({ misRecetas: [...(state.misRecetas || []), receta] });
+  return receta;
+}
+
+export function eliminarRecetaPropia(id) {
+  setState({ misRecetas: (state.misRecetas || []).filter((r) => r.id !== id) });
 }
 
 function updateStreak() {

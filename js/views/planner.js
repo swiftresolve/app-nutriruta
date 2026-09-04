@@ -1,8 +1,8 @@
 // Recetario + lista de compras.
-import { getState, setState, isPremium, toggleFavorita } from '../store.js';
+import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
-import { header, navigate, toast, SEARCH_ICON } from '../app.js';
+import { header, navigate, toast, openModal, SEARCH_ICON } from '../app.js';
 import { openRecipe } from './dashboard.js';
 
 const ORDENES = [
@@ -28,6 +28,108 @@ const TAG_LABELS = {
   antojo_salado_saludable: '🧂 Antojo sano'
 };
 const HOT_MEALS = new Set(['desayuno', 'almuerzo', 'cena']);
+
+// "Crear manualmente" -- formulario simple: nombre, comida, ingredientes y
+// pasos en texto libre. A propósito SIN calorías ni macros, igual que el
+// resto del recetario -- este es contenido de la usuaria, no algo que
+// NutriRuta valide, así que tampoco se le pone semáforo ni "apto para".
+function abrirFormularioReceta(onGuardada) {
+  openModal((modal, closeFn) => {
+    let comidaElegida = MEALS[0].id;
+    modal.insertAdjacentHTML('beforeend', `
+      <h2>✏️ Crear receta</h2>
+      <p class="small muted mt">Sin calorías ni macros -- solo lo que de verdad necesitas para prepararla.</p>
+      <label class="muted small mt" style="display:block;font-weight:600">Nombre</label>
+      <input id="rp-nombre" type="text" maxlength="80" placeholder="Ej: Tostadas con aguacate y huevo" class="auth-input">
+      <label class="muted small mt" style="display:block;font-weight:600">¿Para cuál comida?</label>
+      <div class="chips mt" id="rp-comida"></div>
+      <label class="muted small mt" style="display:block;font-weight:600">Descripción breve (opcional)</label>
+      <input id="rp-desc" type="text" maxlength="200" placeholder="Ej: Rápida, ideal para las mañanas ocupadas" class="auth-input">
+      <div class="row mt" style="gap:12px">
+        <div style="flex:1">
+          <label class="muted small" style="display:block;font-weight:600">Porciones</label>
+          <input id="rp-porciones" type="number" min="1" max="20" value="1" class="auth-input">
+        </div>
+        <div style="flex:1">
+          <label class="muted small" style="display:block;font-weight:600">Tiempo (min)</label>
+          <input id="rp-tiempo" type="number" min="0" max="240" value="15" class="auth-input">
+        </div>
+      </div>
+      <label class="muted small mt" style="display:block;font-weight:600">Ingredientes</label>
+      <p class="small muted" style="margin-top:2px">Uno por línea.</p>
+      <textarea id="rp-ingredientes" class="auth-input" rows="4" placeholder="2 huevos
+1 aguacate
+2 tostadas integrales"></textarea>
+      <label class="muted small mt" style="display:block;font-weight:600">Pasos</label>
+      <p class="small muted" style="margin-top:2px">Uno por línea.</p>
+      <textarea id="rp-pasos" class="auth-input" rows="4" placeholder="Tostar el pan
+Machacar el aguacate
+Freír los huevos"></textarea>
+      <button type="button" class="btn full mt" id="rp-guardar">Guardar receta</button>`);
+
+    const chipsEl = modal.querySelector('#rp-comida');
+    for (const m of MEALS) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip small' + (m.id === comidaElegida ? ' selected' : '');
+      b.textContent = `${m.emoji} ${m.nombre}`;
+      b.addEventListener('click', () => {
+        comidaElegida = m.id;
+        chipsEl.querySelectorAll('.chip').forEach((c) => c.classList.toggle('selected', c === b));
+      });
+      chipsEl.appendChild(b);
+    }
+
+    modal.querySelector('#rp-guardar').addEventListener('click', () => {
+      const nombre = modal.querySelector('#rp-nombre').value.trim();
+      if (!nombre) { toast('Escribe un nombre para tu receta.'); return; }
+      const ingredientes = modal.querySelector('#rp-ingredientes').value.split('\n');
+      const pasos = modal.querySelector('#rp-pasos').value.split('\n');
+      agregarRecetaPropia({
+        nombre,
+        comida: comidaElegida,
+        descripcion: modal.querySelector('#rp-desc').value.trim(),
+        porciones: modal.querySelector('#rp-porciones').value,
+        tiempoMin: modal.querySelector('#rp-tiempo').value,
+        ingredientes,
+        pasos
+      });
+      closeFn();
+      toast('¡Receta guardada! 🌿');
+      if (onGuardada) onGuardada();
+    });
+  });
+}
+
+// Detalle de una receta propia -- mucho más simple que openRecipe()
+// (dashboard.js), que espera la estructura del catálogo curado
+// (sustituciones, "apto para", etc.) que estas recetas no tienen.
+function abrirRecetaPropia(receta, onEliminada) {
+  const meal = MEALS.find((m) => m.id === receta.comida);
+  openModal((modal, closeFn) => {
+    modal.insertAdjacentHTML('beforeend', `
+      <div class="center">
+        <div style="font-size:2.6rem">${esc(receta.emoji)}</div>
+        <h2 class="mt">${esc(receta.nombre)}</h2>
+        <p class="small muted mt">${meal ? `${meal.emoji} ${esc(meal.nombre)}` : ''} · Tuya</p>
+        <p class="small muted">🍽️ ${receta.porciones || 1} porción${(receta.porciones || 1) === 1 ? '' : 'es'} · ⏱️ ${receta.tiempoMin || 0} min</p>
+      </div>
+      ${receta.descripcion ? `<p class="mt">${esc(receta.descripcion)}</p>` : ''}
+      ${receta.ingredientes.length ? `
+        <h3 class="mt">🧺 Ingredientes</h3>
+        <ul class="mt" style="padding-left:20px">${receta.ingredientes.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>` : ''}
+      ${receta.pasos.length ? `
+        <h3 class="mt">👩‍🍳 Pasos</h3>
+        <ol class="mt" style="padding-left:20px">${receta.pasos.map((p) => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}
+      <button type="button" class="btn danger full mt" id="rp-eliminar">🗑️ Eliminar receta</button>`);
+    modal.querySelector('#rp-eliminar').addEventListener('click', () => {
+      eliminarRecetaPropia(receta.id);
+      closeFn();
+      toast('Receta eliminada.');
+      if (onEliminada) onEliminada();
+    });
+  });
+}
 
 export function renderPlanner(container, params = {}) {
   header(container);
@@ -120,7 +222,7 @@ export function renderPlanner(container, params = {}) {
           <p class="small mt" style="font-weight:700">Crear manualmente</p>
         </button>`;
       crear.querySelector('#crear-ia').addEventListener('click', () => toast('Muy pronto vas a poder crear recetas con IA 🌿'));
-      crear.querySelector('#crear-manual').addEventListener('click', () => toast('Muy pronto vas a poder crear tus propias recetas ✏️'));
+      crear.querySelector('#crear-manual').addEventListener('click', () => abrirFormularioReceta(() => drawBody()));
       body.appendChild(crear);
     }
 
@@ -236,6 +338,52 @@ export function renderPlanner(container, params = {}) {
 
     renderGroup(recomendadas, recomendadas.length && otras.length ? '🌿 Recomendadas para tu perfil' : null);
     renderGroup(otras, recomendadas.length && otras.length ? 'Otras recetas' : null);
+
+    renderMisRecetas();
+  }
+
+  // "Tus recetas" -- las que la usuaria creó a mano. Van aparte del
+  // catálogo curado (comparten filtro de comida/búsqueda/favoritos, pero
+  // con texto libre en vez de la estructura de ingredientes del catálogo,
+  // así que el match es simple .includes en vez de matchesSearch).
+  function renderMisRecetas() {
+    const { misRecetas, favoritas } = getState();
+    const propias = (misRecetas || [])
+      .filter((r) => mealFilter === 'todas' || r.comida === mealFilter)
+      .filter((r) => !busqueda || r.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+      .filter((r) => !soloFavoritas || (favoritas || []).includes(r.id));
+    if (!propias.length) return;
+
+    const divider = document.createElement('div');
+    divider.className = 'recipe-section-divider';
+    divider.innerHTML = '<span>📝 Tus recetas</span>';
+    body.appendChild(divider);
+
+    const grid = document.createElement('div');
+    grid.className = 'recipe-grid';
+    const meal = MEALS.reduce((m, x) => (m[x.id] = x, m), {});
+    for (const r of propias) {
+      const esFavorita = (favoritas || []).includes(r.id);
+      const item = document.createElement('button');
+      item.className = 'recipe-card';
+      item.innerHTML = `
+        <span class="recipe-fav" aria-label="${esFavorita ? 'Quitar de preferidos' : 'Marcar como preferida'}">${esFavorita ? '⭐' : '☆'}</span>
+        <div class="recipe-plate">
+          ${esc(r.emoji)}
+          <span class="garnish">${meal[r.comida]?.emoji || ''}</span>
+        </div>
+        <div class="recipe-title">${esc(r.nombre)}</div>
+        <div class="recipe-desc">${esc(r.descripcion || 'Receta tuya')}</div>
+        <div class="recipe-tags"><span class="recipe-tag">✏️ Tuya</span></div>`;
+      item.querySelector('.recipe-fav').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFavorita(r.id);
+        drawBody();
+      });
+      item.addEventListener('click', () => abrirRecetaPropia(r, () => drawBody()));
+      grid.appendChild(item);
+    }
+    body.appendChild(grid);
   }
 
   const CATEGORIA_EMOJI = { Frutas: '🍎', Verduras: '🥦', Proteínas: '🍗', Granos: '🌾', Lácteos: '🥛', Otros: '🧂' };
