@@ -1,7 +1,7 @@
 // Mi progreso: rachas, logros, gráficas, historial de antojos, diario de
 // síntomas, y los accesos a Plan de 7 días/Misión/Aprender (movidos aquí
 // desde el dashboard diario — ver dashboard.js).
-import { getState, ACHIEVEMENTS, logSintoma, sintomaPattern, esc, today, getWaterGoal, isPremium, maxEscudos, sanaApertura } from '../store.js';
+import { getState, logSintoma, sintomaPattern, esc, today, getWaterGoal, isPremium, maxEscudos, sanaApertura } from '../store.js';
 import { SYMPTOM_TYPES, SYMPTOM_CAUSES } from '../data/profiles.js';
 import { MISSION } from '../data/mission.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
@@ -47,7 +47,7 @@ function weekStrip(diasCumplidos, diasCongelados = []) {
 
 export function renderProgress(container) {
   header(container);
-  const { racha, diasCumplidos, diasCongelados, logros, antojos, sintomas, checkins, user, escudos, energiaRuta, kmRuta } = getState();
+  const { racha, diasCumplidos, diasCongelados, antojos, sintomas, checkins, user, escudos, energiaRuta, kmRuta } = getState();
 
   // Brote de Ruta (la planta) + Ruti (la nutria), lado a lado — se cuidan
   // juntos el mismo jardín, no son el mismo personaje.
@@ -203,20 +203,10 @@ export function renderProgress(container) {
     Los cambios sostenidos por 12 semanas pueden reflejarse en tus próximos exámenes. Recuerda revisarlos siempre con tu profesional de salud.</p>`;
   container.appendChild(impact);
 
-  // Logros
-  const badges = document.createElement('div');
-  badges.className = 'card';
-  badges.innerHTML = '<h2>🏆 Logros</h2><div class="badges mt"></div>';
-  const grid = badges.querySelector('.badges');
-  for (const a of ACHIEVEMENTS) {
-    const unlocked = logros.includes(a.id);
-    const b = document.createElement('div');
-    b.className = 'badge' + (unlocked ? '' : ' locked');
-    b.title = a.desc;
-    b.innerHTML = `<div class="emoji">${a.emoji}</div><span class="small"><strong>${a.nombre}</strong></span>`;
-    grid.appendChild(b);
-  }
-  container.appendChild(badges);
+  // Logros: ya no vive aquí -- tiene su propio modal desde el botón
+  // "Logros" del carrusel en Hoy (ver abrirModalLogros en dashboard.js),
+  // pedido explícito de la usuaria para no repetir la misma tarjeta dos
+  // veces en la app.
 
   // --- Testimonios compartidos (si el usuario autorizó alguno) ---
   const compartidos = checkins.filter((c) => c.compartir === true);
