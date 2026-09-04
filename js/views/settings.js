@@ -1,6 +1,7 @@
 // Ajustes: cuenta, perfiles, exclusiones, quiz, datos y sección legal.
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, calcularIMC, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
+import { SUSANA_TONOS } from '../data/susanaTonos.js';
 import { MEALS } from '../data/recipes.js';
 import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
 import { navigate, header, openModal, toast } from '../app.js';
@@ -646,25 +647,29 @@ export function renderSettings(container) {
   container.appendChild(prefsCard);
 
   // Tono de SuSana: cómo te habla, no qué te dice — nunca rompe la regla
-  // de no usar culpa (ver ai-assistant), solo cambia el estilo.
+  // de no usar culpa (ver ai-assistant), solo cambia el estilo. Misma
+  // lista que usan el quiz y "Personalizar a SuSana" (ver
+  // data/susanaTonos.js) -- con una frase de ejemplo en vivo, como el
+  // selector de tono de Fitia Coach, para que se note el cambio de una.
   const tono = document.createElement('div');
   tono.className = 'card';
-  const TONOS = [
-    { id: 'calida', label: '💛 Cálida — cercana y suave, el tono de siempre' },
-    { id: 'motivadora', label: '🌟 Motivadora — más entusiasta, celebra cada avance' },
-    { id: 'directa', label: '🎯 Directa — va al punto, menos rodeos' }
-  ];
+  const opcionesTono = SUSANA_TONOS.map((t) => ({ id: t.id, label: `${t.emoji} ${t.nombre} — ${t.desc}` }));
   tono.innerHTML = '<h2>💬 Cómo te habla SuSana</h2><p class="small mb">Nunca usa culpa ni regaños, solo cambia el estilo.</p>';
-  let tonoActual = TONOS.find((t) => t.id === (user.tonoSusana || 'calida'));
-  const tonoLabel = (t) => t.label.split(' — ')[0].replace(/^\S+\s/, '');
-  const tonoRow = filaAjuste('💬', 'Tono', tonoLabel(tonoActual), () => {
-    abrirSelector('Cómo te habla SuSana', TONOS, tonoActual.id, (id) => {
+  let tonoActual = SUSANA_TONOS.find((t) => t.id === (user.tonoSusana || 'calida')) || SUSANA_TONOS[0];
+  const tonoRow = filaAjuste('💬', 'Tono', tonoActual.nombre, () => {
+    abrirSelector('Cómo te habla SuSana', opcionesTono, tonoActual.id, (id) => {
       setState({ user: { ...getState().user, tonoSusana: id } });
-      tonoActual = TONOS.find((t) => t.id === id) || TONOS[0];
-      tonoRow.querySelector('.setting-row-value').textContent = tonoLabel(tonoActual);
+      tonoActual = SUSANA_TONOS.find((t) => t.id === id) || SUSANA_TONOS[0];
+      tonoRow.querySelector('.setting-row-value').textContent = tonoActual.nombre;
+      tonoPreview.textContent = `"${tonoActual.ejemplo}"`;
     });
   });
   tono.appendChild(tonoRow);
+  const tonoPreview = document.createElement('p');
+  tonoPreview.className = 'small muted mt';
+  tonoPreview.style.fontStyle = 'italic';
+  tonoPreview.textContent = `"${tonoActual.ejemplo}"`;
+  tono.appendChild(tonoPreview);
   const CONTEXTO_MAX = 300;
   const contextoWrap = document.createElement('div');
   contextoWrap.className = 'mt';

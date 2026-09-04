@@ -43,6 +43,7 @@ const DEFAULT_STATE = {
     comidasActivas: {},     // { [mealId]: false } solo para las desactivadas -- ausente = incluida (ver mealsActivas en menu.js)
     tonoSusana: 'calida',   // 'calida' | 'motivadora' | 'directa' — cómo le habla SuSana, ver ai-assistant
     contextoSusana: '',     // texto libre opcional, ej. "no hago ejercicio hace meses" — contexto extra que SuSana suma al de siempre (perfiles/síntomas/racha), nunca lo reemplaza
+    memorias: [],           // { id, texto, fecha } — datos puntuales que ella le pidió a SuSana recordar (ver assistant.js), se suman al contexto de ai-assistant
     referidoPor: null,      // código de quien la invitó (capturado de "?ref=" en app.js), ver hotmart-webhook/referral-check
     unidades: 'metrico',    // 'metrico' | 'imperial' — ver textoConCantidad en menu.js
     idiomaInterfaz: 'es'    // 'es' | 'en' — ver i18n.js (t()). Las recetas siguen solo en español por ahora.
@@ -353,6 +354,27 @@ export function logPeso(kg) {
 
 export function ultimoPeso() {
   return state.pesos.length ? state.pesos[state.pesos.length - 1] : null;
+}
+
+// --- Memorias de SuSana: notas puntuales que la usuaria le pide recordar
+// (ver assistant.js), se suman al contexto real que arma ai-assistant en
+// cada respuesta -- no son solo decorativas como en Fitia. Tope de 10 para
+// que el contexto que viaja al modelo no crezca sin límite.
+export const MEMORIA_MAX = 10;
+
+export function agregarMemoria(texto) {
+  const limpio = String(texto || '').trim().slice(0, 200);
+  if (!limpio) return false;
+  const memorias = state.user.memorias || [];
+  if (memorias.length >= MEMORIA_MAX) return false;
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  setState({ user: { ...state.user, memorias: [...memorias, { id, texto: limpio, fecha: today() }] } });
+  return true;
+}
+
+export function eliminarMemoria(id) {
+  const memorias = (state.user.memorias || []).filter((m) => m.id !== id);
+  setState({ user: { ...state.user, memorias } });
 }
 
 // --- Archivo diario para las gráficas de progreso ---
