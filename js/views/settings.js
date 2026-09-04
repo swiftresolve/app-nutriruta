@@ -1,4 +1,7 @@
 // Ajustes: cuenta, perfiles, exclusiones, quiz, datos y sección legal.
+// Estructura: un menú (hub) con una fila por sección -- tocar una fila
+// navega a su propia página con su contenido adentro (navigate('settings',
+// { seccion })), en vez de mostrar todas las tarjetas apiladas de una vez.
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, calcularIMC, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
@@ -10,7 +13,8 @@ import { pushSupported, currentSubscription, enablePush, disablePush } from '../
 // Fila de ajuste (ícono + etiqueta + valor + flecha), estilo lista de
 // configuración compacta -- abre un selector chico al tocarla en vez de
 // mostrar todas las opciones expandidas como chips. Reutilizable para
-// cualquier preferencia de valor único (tema, idioma, unidades...).
+// cualquier preferencia de valor único (tema, idioma, unidades...) y para
+// las filas del menú principal de Ajustes (sin valor, solo navegan).
 function filaAjuste(icono, etiqueta, valorTexto, onTap) {
   const row = document.createElement('button');
   row.type = 'button';
@@ -78,11 +82,68 @@ function abrirComprarNutricoins() {
   });
 }
 
-export function renderSettings(container) {
-  header(container);
-  const { user } = getState();
+// ---------- Menú principal (hub) ----------
+const SETTINGS_SECCIONES = [
+  { id: 'cuenta', icon: '👤', label: 'Mi cuenta' },
+  { id: 'sobre-ti', icon: '⚖️', label: 'Sobre ti' },
+  { id: 'salud', icon: '🩺', label: 'Salud y alimentación' },
+  { id: 'comidas', icon: '⏰', label: 'Tus comidas' },
+  { id: 'susana', icon: '💬', label: 'SuSana' },
+  { id: 'interfaz', icon: '🌎', label: 'Interfaz y preferencias' },
+  { id: 'notificaciones', icon: '🔔', label: 'Notificaciones', condicion: () => pushSupported() },
+  { id: 'referidos', icon: '🎁', label: 'Referidos y NutriCoins' },
+  { id: 'resena', icon: '🌿', label: 'Califica tu experiencia' },
+  { id: 'datos', icon: '⚙️', label: 'Cuenta y datos' },
+  { id: 'legal', icon: '⚖️', label: 'Legal' }
+];
 
-  // Cuenta y plan
+const SECCION_BUILDERS = {
+  'cuenta': pintarCuenta,
+  'sobre-ti': pintarSobreTi,
+  'salud': pintarSalud,
+  'comidas': pintarComidas,
+  'susana': pintarSusana,
+  'interfaz': pintarInterfaz,
+  'notificaciones': pintarNotificaciones,
+  'referidos': pintarReferidos,
+  'resena': pintarResena,
+  'datos': pintarDatos,
+  'legal': pintarLegal
+};
+
+export function renderSettings(container, params = {}) {
+  header(container);
+
+  const seccion = params.seccion;
+  if (seccion) {
+    const builder = SECCION_BUILDERS[seccion];
+    if (!builder) { navigate('settings'); return; }
+    const back = document.createElement('button');
+    back.className = 'link-btn small';
+    back.textContent = '← Ajustes';
+    back.addEventListener('click', () => navigate('settings'));
+    container.appendChild(back);
+    builder(container);
+    return;
+  }
+
+  const menu = document.createElement('div');
+  menu.className = 'card';
+  for (const s of SETTINGS_SECCIONES) {
+    if (s.condicion && !s.condicion()) continue;
+    menu.appendChild(filaAjuste(s.icon, s.label, '', () => navigate('settings', { seccion: s.id })));
+  }
+  container.appendChild(menu);
+
+  const ver = document.createElement('p');
+  ver.className = 'muted small center mt';
+  ver.textContent = 'NutriRuta v2.1 · Hecha con 💚 para tu bienestar';
+  container.appendChild(ver);
+}
+
+// ---------- Mi cuenta ----------
+function pintarCuenta(container) {
+  const { user } = getState();
   const account = document.createElement('div');
   account.className = 'card';
   const plan = getPlan();
@@ -169,7 +230,10 @@ export function renderSettings(container) {
     account.appendChild(adminLink);
   });
   container.appendChild(account);
+}
 
+// ---------- Referidos y NutriCoins ----------
+function pintarReferidos(container) {
   // Referidos: compartir el código propio. El bono (30 días de Premium)
   // solo se otorga a quien COMPARTE el código -- no a quien lo usa -- si
   // la persona referida activa el plan ANUAL y no lo cancela/reembolsa en
@@ -274,7 +338,10 @@ export function renderSettings(container) {
     canjearBtn.textContent = 'Canjear';
   });
   container.appendChild(canjear);
+}
 
+// ---------- Califica tu experiencia ----------
+function pintarResena(container) {
   // Calificación (visible en vivo en nutriruta.com — vista pública, nunca
   // expone correo ni datos de la cuenta, solo calificación + mini reseña).
   const resena = document.createElement('div');
@@ -283,7 +350,7 @@ export function renderSettings(container) {
     <h2>🌿 Califica tu experiencia</h2>
     <p class="small mt">Tu calificación y reseña pueden mostrarse en nutriruta.com para ayudar a otras personas a decidir — nunca tu correo ni datos de tu cuenta.</p>
     <div class="row mt" id="resena-hojas" style="gap:4px"></div>
-    <textarea id="resena-texto" maxlength="300" rows="3" placeholder="Cuéntanos brevemente qué te ha parecido (opcional)"
+    <textarea id="resena-texto" maxlength="300" rows="3" placeholder="Cuéntanos brevemente qué te ha parecido"
       class="auth-input" style="resize:vertical"></textarea>
     <button class="btn full mt" id="resena-guardar" disabled>Guardar calificación</button>
     <p class="small muted mt" id="resena-estado"></p>`;
@@ -337,111 +404,91 @@ export function renderSettings(container) {
     guardarBtn.disabled = false;
     guardarBtn.textContent = 'Guardar calificación';
   });
+}
 
-  // Notificaciones push
-  if (pushSupported()) {
-    const notif = document.createElement('div');
-    notif.className = 'card';
-    notif.innerHTML = `
-      <h2>🔔 Notificaciones</h2>
-      <p class="small mt">Avisos para acompañarte durante el día. Tú decides cuáles recibir — nada de spam.</p>
-      <p class="small mt" id="notif-estado">Consultando…</p>
-      <button class="btn full mt" id="notif-btn" disabled>Cargando…</button>
-      <div id="notif-prefs" style="display:none">
-        <p class="small mt" style="font-weight:600">Qué avisos quieres recibir:</p>
-        <label class="habit"><input type="checkbox" data-pref="plan"><span>🏁 Tu plan y tu Ruta <span class="muted small">(día nuevo, check-in, recordatorio suave)</span></span></label>
-        <label class="habit"><input type="checkbox" data-pref="comidas"><span>🍽️ Horas de tus comidas <span class="muted small">(a la hora sugerida de cada una)</span></span></label>
-        <label class="habit"><input type="checkbox" data-pref="agua"><span>💧 Recordatorios de agua <span class="muted small">(según tu meta personalizada)</span></span></label>
-        <button class="btn ghost sm mt" id="notif-test">🔔 Enviar notificación de prueba</button>
-      </div>`;
-    container.appendChild(notif);
-    const estadoEl = notif.querySelector('#notif-estado');
-    const btn = notif.querySelector('#notif-btn');
-    const prefsBox = notif.querySelector('#notif-prefs');
+// ---------- Notificaciones ----------
+function pintarNotificaciones(container) {
+  if (!pushSupported()) return;
+  const notif = document.createElement('div');
+  notif.className = 'card';
+  notif.innerHTML = `
+    <h2>🔔 Notificaciones</h2>
+    <p class="small mt">Avisos para acompañarte durante el día. Tú decides cuáles recibir — nada de spam.</p>
+    <p class="small mt" id="notif-estado">Consultando…</p>
+    <button class="btn full mt" id="notif-btn" disabled>Cargando…</button>
+    <div id="notif-prefs" style="display:none">
+      <p class="small mt" style="font-weight:600">Qué avisos quieres recibir:</p>
+      <label class="habit"><input type="checkbox" data-pref="plan"><span>🏁 Tu plan y tu Ruta <span class="muted small">(día nuevo, check-in, recordatorio suave)</span></span></label>
+      <label class="habit"><input type="checkbox" data-pref="comidas"><span>🍽️ Horas de tus comidas <span class="muted small">(a la hora sugerida de cada una)</span></span></label>
+      <label class="habit"><input type="checkbox" data-pref="agua"><span>💧 Recordatorios de agua <span class="muted small">(según tu meta personalizada)</span></span></label>
+      <button class="btn ghost sm mt" id="notif-test">🔔 Enviar notificación de prueba</button>
+    </div>`;
+  container.appendChild(notif);
+  const estadoEl = notif.querySelector('#notif-estado');
+  const btn = notif.querySelector('#notif-btn');
+  const prefsBox = notif.querySelector('#notif-prefs');
 
-    function pintarPrefs() {
-      const prefs = getState().notifPrefs || {};
-      notif.querySelectorAll('[data-pref]').forEach((chk) => {
-        chk.checked = prefs[chk.dataset.pref] !== false;
-      });
-    }
+  function pintarPrefs() {
+    const prefs = getState().notifPrefs || {};
     notif.querySelectorAll('[data-pref]').forEach((chk) => {
-      chk.addEventListener('change', () => {
-        const prefs = { ...(getState().notifPrefs || {}) };
-        prefs[chk.dataset.pref] = chk.checked;
-        setState({ notifPrefs: prefs });
-        toast(chk.checked ? 'Aviso activado ✅' : 'Aviso desactivado');
-      });
-    });
-
-    notif.querySelector('#notif-test').addEventListener('click', async () => {
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        await reg.showNotification('🌿 NutriRuta', {
-          body: '¡Perfecto! Así se verán tus avisos en este dispositivo.',
-          icon: './icons/icon-192.png',
-          badge: './icons/icon-192.png'
-        });
-      } catch (e) {
-        toast('No se pudo mostrar la prueba. Revisa los permisos de notificación.');
-      }
-    });
-
-    async function pintarEstadoNotif() {
-      const sub = await currentSubscription();
-      const activas = !!sub && Notification.permission === 'granted';
-      estadoEl.textContent = activas ? '✅ Activadas en este dispositivo.' : 'Aún no están activadas en este dispositivo.';
-      btn.textContent = activas ? 'Desactivar' : 'Activar notificaciones';
-      btn.className = activas ? 'btn ghost full mt' : 'btn full mt';
-      btn.disabled = false;
-      prefsBox.style.display = activas ? 'block' : 'none';
-      if (activas) pintarPrefs();
-    }
-    pintarEstadoNotif();
-
-    btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      try {
-        const sub = await currentSubscription();
-        if (sub) {
-          await disablePush();
-          toast('Notificaciones desactivadas.');
-        } else {
-          await enablePush();
-          toast('¡Notificaciones activadas! 🔔');
-        }
-      } catch (e) {
-        toast(e.message || 'No se pudo cambiar el estado de las notificaciones.');
-      }
-      pintarEstadoNotif();
+      chk.checked = prefs[chk.dataset.pref] !== false;
     });
   }
+  notif.querySelectorAll('[data-pref]').forEach((chk) => {
+    chk.addEventListener('change', () => {
+      const prefs = { ...(getState().notifPrefs || {}) };
+      prefs[chk.dataset.pref] = chk.checked;
+      setState({ notifPrefs: prefs });
+      toast(chk.checked ? 'Aviso activado ✅' : 'Aviso desactivado');
+    });
+  });
 
-  // Sonido + Ruti: antes una tarjeta entera por cada interruptor (mucho
-  // encabezado repetido para un solo toggle cada una) -- agrupadas en una
-  // sola tarjeta de preferencias, mismo patrón que "Funciones Inteligentes"
-  // de Fitia (varios toggles juntos, no uno por tarjeta).
-  const prefsToggles = document.createElement('div');
-  prefsToggles.className = 'card';
-  prefsToggles.innerHTML = `
-    <h2>🔊 Sonido y Ruti</h2>
-    <label class="habit">
-      <input type="checkbox" id="sonido-toggle" ${getState().sonidoActivado !== false ? 'checked' : ''}>
-      <span>🔊 Sonido al marcar hábitos, agua o "Tu paso de hoy"</span>
-    </label>
-    <label class="habit" style="border-bottom:none">
-      <input type="checkbox" id="ruti-oculto-toggle" ${getState().rutiOculto ? 'checked' : ''}>
-      <span>🦦 Ocultar a Ruti (modo minimalista)</span>
-    </label>`;
-  prefsToggles.querySelector('#sonido-toggle').addEventListener('change', (e) => {
-    setState({ sonidoActivado: e.target.checked });
-    toast(e.target.checked ? 'Sonido activado 🔊' : 'Sonido desactivado');
+  notif.querySelector('#notif-test').addEventListener('click', async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification('🌿 NutriRuta', {
+        body: '¡Perfecto! Así se verán tus avisos en este dispositivo.',
+        icon: './icons/icon-192.png',
+        badge: './icons/icon-192.png'
+      });
+    } catch (e) {
+      toast('No se pudo mostrar la prueba. Revisa los permisos de notificación.');
+    }
   });
-  prefsToggles.querySelector('#ruti-oculto-toggle').addEventListener('change', (e) => {
-    setState({ rutiOculto: e.target.checked });
-    toast(e.target.checked ? 'Ruti ya no aparecerá en la app' : '¡Ruti está de vuelta! 🦦');
+
+  async function pintarEstadoNotif() {
+    const sub = await currentSubscription();
+    const activas = !!sub && Notification.permission === 'granted';
+    estadoEl.textContent = activas ? '✅ Activadas en este dispositivo.' : 'Aún no están activadas en este dispositivo.';
+    btn.textContent = activas ? 'Desactivar' : 'Activar notificaciones';
+    btn.className = activas ? 'btn ghost full mt' : 'btn full mt';
+    btn.disabled = false;
+    prefsBox.style.display = activas ? 'block' : 'none';
+    if (activas) pintarPrefs();
+  }
+  pintarEstadoNotif();
+
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      const sub = await currentSubscription();
+      if (sub) {
+        await disablePush();
+        toast('Notificaciones desactivadas.');
+      } else {
+        await enablePush();
+        toast('¡Notificaciones activadas! 🔔');
+      }
+    } catch (e) {
+      toast(e.message || 'No se pudo cambiar el estado de las notificaciones.');
+    }
+    pintarEstadoNotif();
   });
-  container.appendChild(prefsToggles);
+}
+
+// ---------- Salud y alimentación (perfiles + colon irritable + exclusiones) ----------
+function pintarSalud(container) {
+  const { user } = getState();
 
   // Perfiles activos — lista de una sola columna (antes eran chips que se
   // amontonaban sin orden claro al haber varios activos a la vez).
@@ -465,12 +512,72 @@ export function renderSettings(container) {
   }
   container.appendChild(perf);
 
-  // Peso (opcional, apagado por defecto): solo se usa para calcular tu meta de agua.
+  // Colon irritable: síntoma predominante (solo si el perfil está activo)
+  if (user.perfiles.includes('colon_irritable')) {
+    const colon = document.createElement('div');
+    colon.className = 'card';
+    colon.innerHTML = '<h2>🌱 Tu colon irritable</h2><p class="small mb">¿Qué predomina en tus síntomas?</p><div class="chips"></div>';
+    const colonChips = colon.querySelector('.chips');
+    const opciones = [
+      { id: 'diarrea', nombre: 'Diarrea' },
+      { id: 'estrenimiento', nombre: 'Estreñimiento' },
+      { id: 'mixto', nombre: 'Mixto' }
+    ];
+    for (const o of opciones) {
+      const b = document.createElement('button');
+      b.className = 'chip' + (user.colonPredominante === o.id ? ' selected' : '');
+      b.textContent = o.nombre;
+      b.addEventListener('click', () => {
+        setState({ user: { ...getState().user, colonPredominante: o.id } });
+        colonChips.querySelectorAll('.chip').forEach((c) => c.classList.toggle('selected', c === b));
+      });
+      colonChips.appendChild(b);
+    }
+    container.appendChild(colon);
+  }
+
+  // Exclusiones
+  const excl = document.createElement('div');
+  excl.className = 'card';
+  excl.innerHTML = '<h2>🚫 Alimentos que no consumo</h2><p class="small mb">Filtramos recetas y proponemos sustituciones.</p><div class="chips"></div>';
+  const exclChips = excl.querySelector('.chips');
+  // "Ninguno" es solo para el quiz (evita que el paso quede vacío en la
+  // BD) -- en Ajustes no hace falta, aquí ya se ve directo si hay chips
+  // marcados o no.
+  for (const e of EXCLUSIONS.filter((x) => x.id !== 'ninguna')) {
+    const b = document.createElement('button');
+    b.className = 'chip' + (user.exclusiones.includes(e.id) ? ' selected' : '');
+    b.textContent = `${e.emoji} ${e.nombre}`;
+    b.addEventListener('click', () => {
+      const cur = getState().user;
+      const has = cur.exclusiones.includes(e.id);
+      const exclusiones = has ? cur.exclusiones.filter((x) => x !== e.id) : [...cur.exclusiones, e.id];
+      setState({ user: { ...cur, exclusiones } });
+      b.classList.toggle('selected');
+    });
+    exclChips.appendChild(b);
+  }
+  excl.insertAdjacentHTML('beforeend', `
+    <label class="muted small mt" for="excl-otro" style="display:block">¿Algo más que no comas? (separa varios con coma)</label>
+    <input id="excl-otro" type="text" placeholder="Ej: cilantro, champiñones" maxlength="200" class="auth-input">`);
+  const exclOtroInput = excl.querySelector('#excl-otro');
+  exclOtroInput.value = (user.exclusionesOtro || []).join(', ');
+  exclOtroInput.addEventListener('change', (e) => {
+    const exclusionesOtro = e.target.value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 10);
+    setState({ user: { ...getState().user, exclusionesOtro } });
+    toast('Guardado 🌿');
+  });
+  container.appendChild(excl);
+}
+
+// ---------- Sobre ti (peso, sexo, edad, estatura, IMC) ----------
+function pintarSobreTi(container) {
+  const { user } = getState();
   const peso = document.createElement('div');
   peso.className = 'card';
   const ultimo = ultimoPeso();
   peso.innerHTML = `
-    <h2>⚖️ Sobre ti (opcional)</h2>
+    <h2>⚖️ Sobre ti</h2>
     <p class="small mb">Sexo y peso afinan tu meta de agua personalizada (30–35 mL por kg, el rango estándar de nutrición clínica). Edad y estatura se guardan para uso futuro. Es privado: nadie más lo ve, y puedes borrarlo cuando quieras.</p>
     <div class="chips" id="sexo-chips" style="margin-bottom:12px">
       <button type="button" class="chip" data-sexo="mujer">Mujer</button>
@@ -512,7 +619,7 @@ export function renderSettings(container) {
     })()}
     <label class="row mt" style="cursor:pointer">
       <input type="checkbox" id="peso-track" ${user.trackearPeso ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--primary)">
-      <span class="small">Llevar un registro de mi peso en el tiempo (opcional, verás tu tendencia en Progreso)</span>
+      <span class="small">Llevar un registro de mi peso en el tiempo (verás tu tendencia en Progreso)</span>
     </label>
     ${ultimo ? `<p class="muted small mt">Último registro: ${ultimo.kg} kg el ${ultimo.fecha}.</p>` : ''}`;
   let sexoElegido = user.sexo || '';
@@ -541,13 +648,17 @@ export function renderSettings(container) {
       }
     });
     toast('Guardado 🌿');
-    navigate('settings');
+    navigate('settings', { seccion: 'sobre-ti' });
   });
   peso.querySelector('#peso-track').addEventListener('change', (e) => {
     setState({ user: { ...getState().user, trackearPeso: e.target.checked } });
   });
   container.appendChild(peso);
+}
 
+// ---------- Tus comidas (horarios) ----------
+function pintarComidas(container) {
+  const { user } = getState();
   // Horario real de tus comidas: antes era una franja fija igual para
   // todo el mundo (7am/10am/12pm/4pm/7pm) — ahora cada quien la ajusta a
   // su rutina real, y "Tu ruta de hoy" usa esto para saber cuál estación
@@ -632,17 +743,21 @@ export function renderSettings(container) {
       const cur = getState().user;
       const nuevo = { ...(cur.comidasActivas || {}), [chk.dataset.meal]: chk.checked };
       setState({ user: { ...cur, comidasActivas: nuevo } });
-      navigate('settings');
+      navigate('settings', { seccion: 'comidas' });
     });
   });
   container.appendChild(horarios);
+}
 
+// ---------- Interfaz y preferencias (tema, idioma, unidades, sonido, Ruti) ----------
+function pintarInterfaz(container) {
+  const { user } = getState();
   // Tema + Interfaz y Unidades — filas de lista compacta (ícono + valor +
   // flecha) que abren un selector chico al tocarlas, en vez de chips
   // grandes apiladas: mismo patrón que usan apps de referencia (Fitia) y
   // consistente con las demás filas de la app (.habit). setTema/setState
-  // aplican el cambio al instante; navigate('settings') solo refresca la
-  // fila para mostrar el nuevo valor.
+  // aplican el cambio al instante; solo se actualiza la fila donde estás
+  // parada, nunca se navega a ningún lado.
   const TEMAS = [
     { id: 'sistema', label: 'Sistema del dispositivo' },
     { id: 'claro', label: 'Claro' },
@@ -658,10 +773,6 @@ export function renderSettings(container) {
   prefsCard.className = 'card';
   prefsCard.innerHTML = '<h2>🌎 Interfaz y preferencias</h2>';
 
-  // Elegir una opción actualiza la fila donde estás parada, no navega a
-  // ningún lado -- antes cada selector llamaba navigate('settings'), que
-  // redibuja toda la pantalla desde cero y salta el scroll hasta arriba
-  // (se sentía como "cambiar de pantalla" al elegir Apariencia).
   let temaActual = TEMAS.find((t) => t.id === getTema()) || TEMAS[0];
   const temaRow = filaAjuste('🎨', 'Tema', temaActual.label, () => {
     abrirSelector('Tema', TEMAS, temaActual.id, (id) => {
@@ -697,6 +808,36 @@ export function renderSettings(container) {
   prefsCard.appendChild(unidadRow);
   container.appendChild(prefsCard);
 
+  // Sonido + Ruti: antes una tarjeta entera por cada interruptor (mucho
+  // encabezado repetido para un solo toggle cada una) -- agrupadas en una
+  // sola tarjeta de preferencias, mismo patrón que "Funciones Inteligentes"
+  // de Fitia (varios toggles juntos, no uno por tarjeta).
+  const prefsToggles = document.createElement('div');
+  prefsToggles.className = 'card';
+  prefsToggles.innerHTML = `
+    <h2>🔊 Sonido y Ruti</h2>
+    <label class="habit">
+      <input type="checkbox" id="sonido-toggle" ${getState().sonidoActivado !== false ? 'checked' : ''}>
+      <span>🔊 Sonido al marcar hábitos, agua o "Tu paso de hoy"</span>
+    </label>
+    <label class="habit" style="border-bottom:none">
+      <input type="checkbox" id="ruti-oculto-toggle" ${getState().rutiOculto ? 'checked' : ''}>
+      <span>🦦 Ocultar a Ruti (modo minimalista)</span>
+    </label>`;
+  prefsToggles.querySelector('#sonido-toggle').addEventListener('change', (e) => {
+    setState({ sonidoActivado: e.target.checked });
+    toast(e.target.checked ? 'Sonido activado 🔊' : 'Sonido desactivado');
+  });
+  prefsToggles.querySelector('#ruti-oculto-toggle').addEventListener('change', (e) => {
+    setState({ rutiOculto: e.target.checked });
+    toast(e.target.checked ? 'Ruti ya no aparecerá en la app' : '¡Ruti está de vuelta! 🦦');
+  });
+  container.appendChild(prefsToggles);
+}
+
+// ---------- SuSana (tono + contexto) ----------
+function pintarSusana(container) {
+  const { user } = getState();
   // Tono de SuSana: cómo te habla, no qué te dice — nunca rompe la regla
   // de no usar culpa (ver ai-assistant), solo cambia el estilo. Misma
   // lista que usan el quiz y "Personalizar a SuSana" (ver
@@ -725,7 +866,7 @@ export function renderSettings(container) {
   const contextoWrap = document.createElement('div');
   contextoWrap.className = 'mt';
   contextoWrap.innerHTML = `
-    <label class="small" style="font-weight:600">Algo de contexto para SuSana (opcional)</label>
+    <label class="small" style="font-weight:600">Algo de contexto para SuSana</label>
     <p class="small muted" style="margin-top:2px">Ej. "no hago ejercicio hace meses" o "estoy en un momento de mucho estrés". Se suma a tu perfil de siempre, nunca lo reemplaza.</p>
     <textarea id="ctx-susana" class="auth-input" rows="2" maxlength="${CONTEXTO_MAX}" placeholder="Escribe aquí…" style="margin-top:6px">${esc(user.contextoSusana || '')}</textarea>
     <div class="row" style="justify-content:space-between;margin-top:6px">
@@ -743,65 +884,10 @@ export function renderSettings(container) {
     toast('Guardado 🌿');
   });
   container.appendChild(tono);
+}
 
-  // Colon irritable: síntoma predominante (solo si el perfil está activo)
-  if (user.perfiles.includes('colon_irritable')) {
-    const colon = document.createElement('div');
-    colon.className = 'card';
-    colon.innerHTML = '<h2>🌱 Tu colon irritable</h2><p class="small mb">¿Qué predomina en tus síntomas?</p><div class="chips"></div>';
-    const colonChips = colon.querySelector('.chips');
-    const opciones = [
-      { id: 'diarrea', nombre: 'Diarrea' },
-      { id: 'estrenimiento', nombre: 'Estreñimiento' },
-      { id: 'mixto', nombre: 'Mixto' }
-    ];
-    for (const o of opciones) {
-      const b = document.createElement('button');
-      b.className = 'chip' + (user.colonPredominante === o.id ? ' selected' : '');
-      b.textContent = o.nombre;
-      b.addEventListener('click', () => {
-        setState({ user: { ...getState().user, colonPredominante: o.id } });
-        colonChips.querySelectorAll('.chip').forEach((c) => c.classList.toggle('selected', c === b));
-      });
-      colonChips.appendChild(b);
-    }
-    container.appendChild(colon);
-  }
-
-  // Exclusiones
-  const excl = document.createElement('div');
-  excl.className = 'card';
-  excl.innerHTML = '<h2>🚫 Alimentos que no consumo</h2><p class="small mb">Filtramos recetas y proponemos sustituciones.</p><div class="chips"></div>';
-  const exclChips = excl.querySelector('.chips');
-  // "Ninguno" es solo para el quiz (evita que el paso quede vacío en la
-  // BD) -- en Ajustes no hace falta, aquí ya se ve directo si hay chips
-  // marcados o no.
-  for (const e of EXCLUSIONS.filter((x) => x.id !== 'ninguna')) {
-    const b = document.createElement('button');
-    b.className = 'chip' + (user.exclusiones.includes(e.id) ? ' selected' : '');
-    b.textContent = `${e.emoji} ${e.nombre}`;
-    b.addEventListener('click', () => {
-      const cur = getState().user;
-      const has = cur.exclusiones.includes(e.id);
-      const exclusiones = has ? cur.exclusiones.filter((x) => x !== e.id) : [...cur.exclusiones, e.id];
-      setState({ user: { ...cur, exclusiones } });
-      b.classList.toggle('selected');
-    });
-    exclChips.appendChild(b);
-  }
-  excl.insertAdjacentHTML('beforeend', `
-    <label class="muted small mt" for="excl-otro" style="display:block">¿Algo más que no comas? (separa varios con coma)</label>
-    <input id="excl-otro" type="text" placeholder="Ej: cilantro, champiñones" maxlength="200" class="auth-input">`);
-  const exclOtroInput = excl.querySelector('#excl-otro');
-  exclOtroInput.value = (user.exclusionesOtro || []).join(', ');
-  exclOtroInput.addEventListener('change', (e) => {
-    const exclusionesOtro = e.target.value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 10);
-    setState({ user: { ...getState().user, exclusionesOtro } });
-    toast('Guardado 🌿');
-  });
-  container.appendChild(excl);
-
-  // Acciones
+// ---------- Cuenta y datos ----------
+function pintarDatos(container) {
   const actions = document.createElement('div');
   actions.className = 'card';
   actions.innerHTML = '<h2>⚙️ Cuenta y datos</h2>';
@@ -832,8 +918,10 @@ export function renderSettings(container) {
   }));
   actions.appendChild(wipeBtn);
   container.appendChild(actions);
+}
 
-  // Legal
+// ---------- Legal ----------
+function pintarLegal(container) {
   const legal = document.createElement('div');
   legal.className = 'card';
   legal.innerHTML = '<h2>⚖️ Legal</h2>';
@@ -852,11 +940,6 @@ export function renderSettings(container) {
     legal.appendChild(b);
   }
   container.appendChild(legal);
-
-  const ver = document.createElement('p');
-  ver.className = 'muted small center mt';
-  ver.textContent = 'NutriRuta v2.1 · Hecha con 💚 para tu bienestar';
-  container.appendChild(ver);
 }
 
 const TERMS = `
