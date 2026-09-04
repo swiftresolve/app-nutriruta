@@ -19,7 +19,6 @@ import { renderNotifPrompt, notifPromptVisible } from './notifPrompt.js';
 import { openMealLogModal } from './mealLogModal.js';
 import { openMealSwapModal } from './mealSwapModal.js';
 import { openKitchenSearchModal } from './kitchenSearchModal.js';
-import { weekStrip } from './progress.js';
 
 const DAILY_HABITS = [
   { id: 'agua', nombre: 'Tomé suficiente agua 💧' },
@@ -84,7 +83,7 @@ export function renderDashboard(container) {
   // cada slide es un vistazo distinto a datos reales (racha, semana,
   // logros), nunca inventados, y las 3 llevan a la pantalla completa de
   // Progreso al tocarlas.
-  container.appendChild(renderProgresoCarrusel(state));
+  container.appendChild(renderProgresoCarrusel(state, container));
 
   // --- Notificaciones: se piden aquí, cuando ya hay una racha que
   // proteger, no enterrado en Ajustes. También descartable. ---
@@ -178,39 +177,9 @@ export function renderDashboard(container) {
   }
   container.appendChild(habitCard);
 
-  // --- Agua ---
-  const agua = getWater();
-  const waterCard = document.createElement('div');
-  waterCard.id = 'tour-agua';
-  waterCard.className = 'card';
-  waterCard.innerHTML = `
-    <div class="spread"><h2>${t('💧 Agua')}</h2><span class="muted small">${agua.vasos}/${agua.meta} ${t('vasos')}</span></div>
-    <div class="water-glasses"></div>`;
-  const glassesEl = waterCard.querySelector('.water-glasses');
-  for (let i = 0; i < agua.meta; i++) {
-    const g = document.createElement('button');
-    g.className = 'glass' + (i < agua.vasos ? ' filled' : '');
-    // SVG propio en vez del emoji 🥤: el emoji lo pinta cada sistema con su
-    // propio color fijo (rojo/naranja en la mayoría), no se puede recolorear
-    // por CSS. Con currentColor sí queda celeste, coherente con la paleta.
-    g.innerHTML = '<svg viewBox="0 0 24 28" width="22" height="26"><path d="M4 2h16l-1.6 22.5a2 2 0 0 1-2 1.5H7.6a2 2 0 0 1-2-1.5L4 2z" fill="currentColor"/><path d="M4 8.5c2 1.4 4 1.4 6 0s4-1.4 6 0 4 1.4 6 0" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.4"/></svg>';
-    g.setAttribute('aria-label', t('Vaso {n}', { n: i + 1 }));
-    g.addEventListener('click', () => {
-      const nuevo = i < agua.vasos ? i : i + 1;
-      if (nuevo > agua.vasos) {
-        const rect = g.getBoundingClientRect();
-        habitCheckPop(rect.left + rect.width / 2, rect.top + rect.height / 2);
-        playWaterSound();
-      }
-      const rachaAntes = getState().racha.actual;
-      const { escudoUsado } = setWater(nuevo);
-      if (nuevo >= agua.meta) toast(t('¡Meta de agua cumplida! 💧🎉'));
-      celebrarSiSubioRacha(rachaAntes, escudoUsado);
-      renderDashboard(clearAndGet(container));
-    });
-    glassesEl.appendChild(g);
-  }
-  container.appendChild(waterCard);
+  // --- Agua: ahora vive en un modal (ver abrirModalAgua), que se abre
+  // desde su propio botón en el carrusel de "Tu progreso" -- ya no ocupa
+  // una tarjeta fija en el dashboard.
 
   // --- Aviso de patrón de antojos (función Premium) ---
   const patron = isPremium() ? cravingPattern() : null;
@@ -353,73 +322,100 @@ export function renderDashboard(container) {
   }
 }
 
-// "Tu progreso" -- tarjeta tipo carrusel (referencia real: el banner
-// deslizable de Huawei Health, con puntos de paginación debajo). Cada
-// slide ocupa el ancho completo, se desliza con scroll-snap nativo (sin
-// librería), y los puntos se actualizan solos según cuál slide queda
-// centrado. Todo el contenido es dato real ya existente en el resto de
-// la app (racha, semana, logros) -- ningún número inventado.
-function renderProgresoCarrusel(state) {
-  const wrap = document.createElement('div');
-  wrap.className = 'mt';
+// "Tu progreso" -- NO tarjetas: fila de botones circulares deslizable,
+// como "Tu Plan Fit"/"Música"/"Cursos" en el video de referencia (mismo
+// lenguaje visual que ya usa el carrusel de divisiones en Liga --
+// ícono + etiqueta corta abajo, sin fondo de tarjeta ni sombra grande).
+// Cada botón es un vistazo a un dato real ya existente (racha, semana,
+// logros) -- ningún número inventado -- y lleva a la pantalla completa
+// de Progreso al tocarlo.
+function renderProgresoCarrusel(state, container) {
+  // Días cumplidos dentro de los últimos 7 (terminando hoy) -- mismo
+  // rango que weekStrip() pinta en la pantalla completa de Progreso.
+  const cumplidos = new Set(state.diasCumplidos);
+  let diasEstaSemana = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    if (cumplidos.has(d.toISOString().slice(0, 10))) diasEstaSemana++;
+  }
 
-  const slides = [
-    {
-      html: `
-        <div style="font-size:1.8rem">🔥</div>
-        <h3 class="mt">${t('Días en Ruta')}</h3>
-        <p class="small mt">${state.racha.actual > 0
-          ? t('{n} seguidos · mejor racha: {m}', { n: state.racha.actual, m: state.racha.mejor || state.racha.actual })
-          : t('Aún no empiezas tu racha — hoy es un buen día.')}</p>`
-    },
-    {
-      html: `
-        <h3>${t('Tu semana')}</h3>
-        <div class="week-strip mt" style="justify-content:center">${weekStrip(state.diasCumplidos, state.diasCongelados)}</div>`
-    },
-    {
-      html: `
-        <div style="font-size:1.8rem">🏆</div>
-        <h3 class="mt">${t('Logros')}</h3>
-        <p class="small mt">${t('{n} de {total} desbloqueados', { n: state.logros.length, total: ACHIEVEMENTS.length })}</p>`
-    }
+  const agua = getWater();
+
+  // "Agua" es el único que no navega a Progreso -- abre su propio modal
+  // (antes era una tarjeta fija en el dashboard, ver abrirModalAgua).
+  const botones = [
+    { icon: '🔥', label: t('Racha'), valor: `${state.racha.actual}`, onTap: () => navigate('progress') },
+    { icon: '📅', label: t('Semana'), valor: `${diasEstaSemana}/7`, onTap: () => navigate('progress') },
+    { icon: '🏆', label: t('Logros'), valor: `${state.logros.length}/${ACHIEVEMENTS.length}`, onTap: () => navigate('progress') },
+    { icon: '💧', label: t('Agua'), valor: `${agua.vasos}/${agua.meta}`, onTap: () => abrirModalAgua(container), id: 'tour-agua' }
   ];
 
   const carrusel = document.createElement('div');
-  carrusel.className = 'progreso-carrusel';
-  const dots = document.createElement('div');
-  dots.className = 'progreso-dots';
+  carrusel.className = 'progreso-botones mt';
+  for (const b of botones) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'progreso-boton';
+    if (b.id) btn.id = b.id;
+    btn.innerHTML = `
+      <span class="progreso-boton-icon">${b.icon}</span>
+      <span class="progreso-boton-label">${esc(b.label)}</span>
+      ${b.valor ? `<span class="progreso-boton-valor">${esc(b.valor)}</span>` : ''}`;
+    btn.addEventListener('click', b.onTap);
+    carrusel.appendChild(btn);
+  }
+  return carrusel;
+}
 
-  slides.forEach((s, i) => {
-    const slide = document.createElement('button');
-    slide.type = 'button';
-    slide.className = 'progreso-slide center';
-    slide.innerHTML = s.html;
-    slide.addEventListener('click', () => navigate('progress'));
-    carrusel.appendChild(slide);
+// Modal de agua -- antes era una tarjeta fija en el dashboard, ahora se
+// abre desde su botón en el carrusel de "Tu progreso" (pedido explícito
+// de la usuaria: liberar espacio del dashboard). Misma lógica de
+// siempre (tocar un vaso lo llena, tocar uno ya lleno vacía desde ahí
+// en adelante), solo que ahora en grilla de columnas fijas en vez de una
+// fila que envolvía de forma dispareja -- "filas pares", ordenadas.
+function abrirModalAgua(container) {
+  openModal((modal, closeFn) => {
+    // wrap propio -- openModal ya agregó su botón "✕" como hijo directo
+    // de `modal` antes de llamar acá; pintar() se llama de nuevo en cada
+    // vaso tocado, y modal.innerHTML= lo habría borrado (bug real que se
+    // encontró probando: el botón de cerrar desaparecía al primer tap).
+    const wrap = document.createElement('div');
+    modal.appendChild(wrap);
 
-    const dot = document.createElement('span');
-    dot.className = 'progreso-dot' + (i === 0 ? ' activo' : '');
-    dots.appendChild(dot);
+    function pintar() {
+      const agua = getWater();
+      wrap.innerHTML = `
+        <div class="spread"><h2>${t('💧 Agua')}</h2><span class="muted small">${agua.vasos}/${agua.meta} ${t('vasos')}</span></div>
+        <div class="water-glasses mt"></div>`;
+      const glassesEl = wrap.querySelector('.water-glasses');
+      for (let i = 0; i < agua.meta; i++) {
+        const g = document.createElement('button');
+        g.className = 'glass' + (i < agua.vasos ? ' filled' : '');
+        g.innerHTML = '<svg viewBox="0 0 24 28" width="22" height="26"><path d="M4 2h16l-1.6 22.5a2 2 0 0 1-2 1.5H7.6a2 2 0 0 1-2-1.5L4 2z" fill="currentColor"/><path d="M4 8.5c2 1.4 4 1.4 6 0s4-1.4 6 0 4 1.4 6 0" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.4"/></svg>';
+        g.setAttribute('aria-label', t('Vaso {n}', { n: i + 1 }));
+        g.addEventListener('click', () => {
+          const nuevo = i < agua.vasos ? i : i + 1;
+          if (nuevo > agua.vasos) {
+            const rect = g.getBoundingClientRect();
+            habitCheckPop(rect.left + rect.width / 2, rect.top + rect.height / 2);
+            playWaterSound();
+          }
+          const rachaAntes = getState().racha.actual;
+          const { escudoUsado } = setWater(nuevo);
+          if (nuevo >= agua.meta) toast(t('¡Meta de agua cumplida! 💧🎉'));
+          celebrarSiSubioRacha(rachaAntes, escudoUsado);
+          pintar();
+          // El modal vive en <body>, fuera de `container` -- redibujar el
+          // dashboard detrás no lo toca, y así el botón "Agua" del
+          // carrusel refleja el conteo nuevo sin esperar a cerrar el modal.
+          renderDashboard(clearAndGet(container));
+        });
+        glassesEl.appendChild(g);
+      }
+    }
+    pintar();
   });
-
-  // El punto activo sigue al slide que queda más centrado en el
-  // viewport del carrusel -- no hace falta un índice controlado a mano,
-  // el scroll nativo (con scroll-snap) ya hace todo el trabajo real.
-  let ticking = false;
-  carrusel.addEventListener('scroll', () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      const idx = Math.round(carrusel.scrollLeft / carrusel.clientWidth);
-      dots.querySelectorAll('.progreso-dot').forEach((d, i) => d.classList.toggle('activo', i === idx));
-      ticking = false;
-    });
-  });
-
-  wrap.appendChild(carrusel);
-  wrap.appendChild(dots);
-  return wrap;
 }
 
 // Estado de ánimo de Sana: se deriva 100% de datos que ya existen (último

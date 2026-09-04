@@ -687,7 +687,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .susana-name .sana { color: var(--primary-dark); }
 
 /* ===== Water tracker ===== */
-.water-glasses { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+/* Grilla real de columnas fijas -- antes era flex+wrap, que según el
+   ancho disponible podía envolver en filas dispares (ej. 5+3). Con
+   columnas fijas los vasos siempre quedan alineados en filas parejas,
+   pedido real de la usuaria (ahora vive en el modal de agua, ver
+   abrirModalAgua en dashboard.js). */
+.water-glasses { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px; justify-items: center; }
 .glass { color: var(--secondary); opacity: 0.35; transition: opacity 0.15s, transform 0.1s; padding: 2px; background: none; border: none; cursor: pointer; }
 .glass.filled { opacity: 1; }
 .glass:active { transform: scale(1.2); }
@@ -909,23 +914,25 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    azulado con la llamita) o uno futuro (vacío, sin marca). */
 .week-cell.perdido .week-dot { background: #DCE2E0; color: var(--ink-soft); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 0 #C3CBC8; }
 
-/* "Tu progreso" en Hoy (dashboard.js) -- tarjeta tipo carrusel, como el
-   banner deslizable de Huawei Health: un slide de ancho completo a la
-   vez, scroll-snap nativo (sin librería) y puntos de paginación debajo
-   que siguen al slide que queda centrado. */
-.progreso-carrusel {
-  display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
-  border-radius: var(--radius); box-shadow: var(--shadow);
+/* "Tu progreso" en Hoy (dashboard.js) -- NO tarjetas: fila de botones
+   circulares deslizable, mismo lenguaje visual que el carrusel de
+   divisiones de Liga (.liga-tier) -- ícono + etiqueta corta, sin fondo
+   de tarjeta ni sombra grande, como los botones "Tu Plan Fit"/"Música"
+   del video de referencia (Huawei Health). */
+.progreso-botones { display: flex; gap: 18px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px; }
+.progreso-botones::-webkit-scrollbar { display: none; }
+.progreso-boton {
+  flex: none; border: none; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 68px;
 }
-.progreso-carrusel::-webkit-scrollbar { display: none; }
-.progreso-slide {
-  flex: 0 0 100%; scroll-snap-align: center; border: none; cursor: pointer;
-  padding: 22px 20px; background: linear-gradient(135deg, var(--primary-soft), var(--secondary-soft));
-  color: var(--ink);
+.progreso-boton-icon {
+  width: 52px; height: 52px; border-radius: 50%; font-size: 1.5rem;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card); box-shadow: var(--shadow);
 }
-.progreso-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
-.progreso-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: background 0.15s ease, width 0.15s ease; }
-.progreso-dot.activo { background: var(--primary); width: 18px; border-radius: 3px; }
+.progreso-boton:active .progreso-boton-icon { transform: scale(0.94); }
+.progreso-boton-label { font-size: 0.72rem; font-weight: 700; color: var(--ink-soft); }
+.progreso-boton-valor { font-size: 0.8rem; font-weight: 800; color: var(--primary-dark); }
 
 /* ===== Mis Rachas: calendario mensual (modal del header) ===== */
 .rachas-hero { text-align: center; }

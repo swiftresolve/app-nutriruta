@@ -49,7 +49,7 @@ function crearPasos(sexo) {
   },
   {
     target: '#tour-agua', titulo: '💧 Tu agua',
-    texto: 'Registra cada vaso aquí, a tu ritmo -- tu meta se ajusta sola según tu peso y sexo, si los guardaste en Ajustes.'
+    texto: 'Toca aquí para registrar cada vaso, a tu ritmo -- tu meta se ajusta sola según tu peso y sexo, si los guardaste en Ajustes.'
   },
   {
     target: '[data-route="planner"]', titulo: '🥗 Recetas',
