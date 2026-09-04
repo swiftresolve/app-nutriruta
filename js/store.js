@@ -66,6 +66,7 @@ const DEFAULT_STATE = {
   pasoHechos: [],               // fechas ISO en que se marcó "Tu paso de hoy" como hecho
   escudos: 0,                   // Pausas de Ruta disponibles (máx maxEscudos())
   gemas: 0,                     // moneda simple: se gana al completar el día/semana, se gasta en escudos extra
+  ligaGemasSemana: 0,            // gemas ganadas ESTA semana (ver Liga, liga.js) -- el servidor la resetea a 0 cada domingo (liga_rotar_semana); el cliente solo suma, nunca la lee para decidir nivel/grupo (eso vive en profiles.liga_nivel/liga_grupo_id, columnas propias fuera de este JSONB)
   nutricoins: 450,               // moneda que SÍ se compra con dinero (ver "Comprar NutriCoins" en Ajustes) -- nunca compra Pausas de Ruta ni nada que reemplace constancia real, solo extras (preguntas de más a SuSana, cosas así). Gemas y NutriCoins conviven pero no se mezclan. Toda cuenta arranca con 450 de regalo.
   energiaRuta: 0,                // acumulado histórico: constancia y cuidado de hábitos, no calorías ni peso
   kmRuta: 0,                     // acompaña a energiaRuta, mismo espíritu ("cuánto ha recorrido tu Ruta")
@@ -547,7 +548,7 @@ export function comprarEscudo() {
 // Para hitos que no pasan por updateStreak() (día del Plan de 7 días,
 // semana de la Misión) — mismos hitos que ya celebran confeti, ninguno nuevo.
 export function otorgarGemas(n) {
-  setState({ gemas: (state.gemas || 0) + n });
+  setState({ gemas: (state.gemas || 0) + n, ligaGemasSemana: (state.ligaGemasSemana || 0) + n });
 }
 
 // Recetas marcadas con la estrella en el Recetario (ver planner.js).
@@ -626,7 +627,8 @@ function updateStreak() {
 
   const mejor = Math.max(actual, state.racha.mejor);
   const gemas = (state.gemas || 0) + GEMAS_POR_DIA;
-  setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t }, escudos, gemas, diasCongelados });
+  const ligaGemasSemana = (state.ligaGemasSemana || 0) + GEMAS_POR_DIA;
+  setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t }, escudos, gemas, ligaGemasSemana, diasCongelados });
   return escudoUsado;
 }
 

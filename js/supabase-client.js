@@ -277,6 +277,28 @@ export async function checkIsAdmin() {
   return data === true;
 }
 
+// --- Liga semanal de gemas ---
+// liga_estado() (SECURITY DEFINER) une a la usuaria a un grupo si aún no
+// tiene uno para esta semana (liga_unirme lazy) y devuelve hasta 20
+// filas {user_id, nombre, gemas_semana, es_yo} de SU grupo, ordenadas
+// por gemas descendente. liga_grupo_id/liga_nivel viven en columnas
+// propias de profiles (no en el state JSONB) para que el cliente no
+// pueda tocarlas -- se leen aparte, con la misma política RLS de
+// "leer mi propia fila" que ya usa el resto de la app.
+export async function fetchLigaEstado() {
+  const { data, error } = await supabase.rpc('liga_estado');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchMiNivelLiga() {
+  const session = await getSession();
+  if (!session) return 1;
+  const { data, error } = await supabase.from('profiles').select('liga_nivel').eq('id', session.user.id).maybeSingle();
+  if (error) return 1;
+  return data?.liga_nivel ?? 1;
+}
+
 // Código propio de referido (se crea la primera vez que se pide, ver
 // mi_codigo_referido() en la migración add_referidos).
 export async function miCodigoReferido() {

@@ -691,6 +691,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .habit:last-child { border-bottom: none; }
 .habit label { flex: 1; }
 .habit.done label { text-decoration: line-through; color: var(--ink-soft); }
+/* Liga semanal (liga.js) -- fila de ranking sobre el mismo look de
+   .habit, sin checkbox. */
+.liga-rank { flex: none; width: 26px; text-align: center; font-weight: 800; color: var(--ink-soft); }
+.liga-yo { background: var(--primary-soft); border-radius: 10px; padding-left: 8px; padding-right: 8px; }
+.liga-yo label { font-weight: 700; color: var(--primary-dark); }
 /* Checkbox propio en vez del nativo del navegador (se veía distinto en cada
    SO y sin ningún relieve) — cuadrado redondeado con check 3D al marcar. */
 .habit input[type="checkbox"] {
@@ -727,13 +732,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .lesson-blur { filter: blur(3.5px); user-select: none; -webkit-user-select: none; }
 
 /* ===== Recetario: grilla de tarjetas con "plato" 3D ===== */
-.recipe-section-divider {
+.recipe-section-divider, .section-divider {
   display: flex; align-items: center; gap: 10px; margin: 18px 2px 10px;
   font-size: 0.78rem; font-weight: 800; letter-spacing: 0.02em; color: var(--primary-dark);
   text-transform: uppercase;
 }
-.recipe-section-divider::before, .recipe-section-divider::after { content: ''; flex: 1; height: 1.5px; background: #DCEAE6; }
-.recipe-section-divider span { white-space: nowrap; }
+.recipe-section-divider::before, .recipe-section-divider::after,
+.section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1.5px; background: #DCEAE6; }
+.recipe-section-divider span, .section-divider span { white-space: nowrap; }
 /* auto-fit en vez de un breakpoint fijo: la tarjeta (plato de 92px +
    padding) cabe cómoda en 2 columnas desde ~300px de ancho real, pero el
    breakpoint fijo de 380px las colapsaba a 1 columna en la mayoría de

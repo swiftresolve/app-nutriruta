@@ -21,6 +21,7 @@ import { renderResetPassword } from './views/resetPassword.js';
 import { renderAdmin } from './views/admin.js';
 import { renderWeekMenu } from './views/weekMenu.js';
 import { renderDiary } from './views/diary.js';
+import { renderLiga } from './views/liga.js';
 
 const app = document.getElementById('app');
 const nav = document.getElementById('bottom-nav');
@@ -67,7 +68,8 @@ const ROUTES = {
   resetPassword: renderResetPassword,
   admin: renderAdmin,
   weekMenu: renderWeekMenu,
-  diary: renderDiary
+  diary: renderDiary,
+  liga: renderLiga
 };
 
 // 'quiz' es público: ahora se responde ANTES de crear cuenta (ver spec de

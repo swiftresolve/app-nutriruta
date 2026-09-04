@@ -32,6 +32,7 @@ const EN = {
   'Recetas': 'Recipes',
   'SOS': 'SOS',
   'Progreso': 'Progress',
+  'Liga': 'League',
   'Aprende': 'Learn',
 
   // --- Header / ajustes ---
