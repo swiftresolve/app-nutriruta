@@ -315,13 +315,13 @@ function renderProgresoCarrusel(state, container) {
   const agua = getWater();
 
   const botones = [
-    { icon: '📈', label: t('Progreso'), onTap: () => navigate('progress') },
     { icon: '💧', label: t('Agua'), valor: `${agua.vasos}/${agua.meta}`, onTap: () => abrirModalAgua(container), id: 'tour-agua' },
-    { icon: '🎖️', label: t('Logros'), valor: `${state.logros.length}/${ACHIEVEMENTS.length}`, onTap: () => abrirModalLogros(state) },
+    { icon: '📅', label: t('Semana'), onTap: () => navigate('weekMenu') },
     { icon: '🛒', label: t('Lista'), onTap: () => navigate('planner', { tab: 'compras' }) },
+    { icon: '📈', label: t('Progreso'), onTap: () => navigate('progress') },
     { icon: '📔', label: t('Diario'), onTap: () => navigate('diary') },
-    { icon: '🔍', label: t('En casa'), onTap: () => openKitchenSearchModal((recipe) => openRecipe(recipe)) },
-    { icon: '📅', label: t('Semana'), onTap: () => navigate('weekMenu') }
+    { icon: '🎖️', label: t('Logros'), valor: `${state.logros.length}/${ACHIEVEMENTS.length}`, onTap: () => abrirModalLogros(state) },
+    { icon: '🔍', label: t('En casa'), onTap: () => openKitchenSearchModal((recipe) => openRecipe(recipe)) }
   ];
 
   const carrusel = document.createElement('div');
