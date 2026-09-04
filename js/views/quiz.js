@@ -293,7 +293,7 @@ export function renderQuiz(container) {
       // siempre, solo mejor ajustado). Edad y estatura no alimentan ningún
       // cálculo todavía -- se guardan para SuSana y usos futuros, nunca
       // inventados como si ya hicieran algo que no hacen.
-      title: 'Sobre ti (opcional)',
+      title: 'Sobre ti',
       sub: 'Con esto afinamos tu meta diaria de agua. Puedes dejar cualquier campo en blanco.',
       // Misma estructura de fila (ícono + etiqueta + valor + flecha) que ya
       // usa Ajustes para Tema/Idioma/Unidades (.setting-row), en vez de
