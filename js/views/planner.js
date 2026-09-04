@@ -167,7 +167,12 @@ export function renderPlanner(container, params = {}) {
   tabsRow.className = 'row mb';
   tabsRow.style.cssText = 'justify-content:space-between;position:relative';
   const tabs = document.createElement('div');
-  tabs.className = 'chips';
+  // "chips" normalmente envuelve línea (para las de perfiles/filtros, eso
+  // se quiere) -- pero acá "Recetario"/"Lista de compras" deben quedarse
+  // SIEMPRE en una sola fila junto a la lupa, sin importar el tamaño de
+  // fuente del teléfono. "recetario-tabs" lo fuerza y agrega scroll
+  // horizontal como red de seguridad en pantallas muy angostas.
+  tabs.className = 'chips recetario-tabs';
   tabsRow.appendChild(tabs);
   const searchToggleBtn = document.createElement('button');
   searchToggleBtn.type = 'button';

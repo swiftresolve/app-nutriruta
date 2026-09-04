@@ -92,20 +92,73 @@ Deno.serve(async (req) => {
 
   const action = String(payload.action ?? 'send');
 
-  // --- Traer historial (para pintar el chat al abrir la pantalla) ---
+  // --- Lista de conversaciones (menú hamburguesa "Historial de SuSana")
+  // -- una fila por conversation_id, con el primer mensaje como título
+  // (igual que Fitia Coach) y la fecha para agruparlas ("Hoy", etc. lo
+  // agrupa el cliente). Trae hasta 50 conversaciones, más recientes primero.
+  if (action === 'list_conversations') {
+    const { data: rows, error } = await admin
+      .from('ai_conversations')
+      .select('conversation_id, role, content, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+    if (error) return json({ error: 'No se pudo cargar tu historial' }, 500);
+    const porConversacion = new Map<string, { title: string; created_at: string; updated_at: string }>();
+    for (const r of rows ?? []) {
+      const existente = porConversacion.get(r.conversation_id);
+      if (!existente) {
+        porConversacion.set(r.conversation_id, {
+          title: r.role === 'user' ? r.content : 'Nueva conversación',
+          created_at: r.created_at,
+          updated_at: r.created_at
+        });
+      } else {
+        existente.updated_at = r.created_at;
+      }
+    }
+    const conversations = [...porConversacion.entries()]
+      .map(([conversation_id, v]) => ({ conversation_id, ...v }))
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+      .slice(0, 50);
+    return json({ conversations });
+  }
+
+  // --- Traer historial de UNA conversación (para pintar el chat al
+  // abrirla) -- sin conversation_id, trae la más reciente de la usuaria;
+  // si nunca ha hablado con SuSana, genera una nueva (vacía) para que
+  // el primer mensaje empiece a llenarla.
   if (action === 'history') {
+    let conversationId = payload.conversationId ? String(payload.conversationId) : null;
+    if (!conversationId) {
+      const { data: ultima } = await admin
+        .from('ai_conversations')
+        .select('conversation_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      conversationId = ultima?.conversation_id ?? crypto.randomUUID();
+    }
     const { data: history, error } = await admin
       .from('ai_conversations')
       .select('role, content, created_at')
       .eq('user_id', user.id)
+      .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
-      .limit(60);
+      .limit(200);
     if (error) return json({ error: 'No se pudo cargar el historial' }, 500);
     const usedCount = await countThisMonth(admin, user.id);
-    return json({ history: history ?? [], usedCount });
+    return json({ history: history ?? [], usedCount, conversationId });
+  }
+
+  // --- Nueva conversación (ícono de lápiz en el historial) -- solo
+  // genera el id; la fila real se crea al mandar el primer mensaje.
+  if (action === 'new_conversation') {
+    return json({ conversationId: crypto.randomUUID() });
   }
 
   // --- Enviar un mensaje nuevo ---
+  const conversationId = payload.conversationId ? String(payload.conversationId) : crypto.randomUUID();
   const message = String(payload.message ?? '').trim();
   if (!message) return json({ error: 'Escribe una pregunta.' }, 400);
   if (message.length > MAX_MESSAGE_LEN) return json({ error: `Máximo ${MAX_MESSAGE_LEN} caracteres.` }, 400);
@@ -140,11 +193,13 @@ Deno.serve(async (req) => {
   const contexto = buildContext(state);
   const tono = TONOS[state.user?.tonoSusana] ?? TONOS.calida;
 
-  // Historial reciente para continuidad de la conversación.
+  // Historial reciente para continuidad de la conversación -- SOLO de esta
+  // conversación (conversation_id), no de todas las que tenga la usuaria.
   const { data: recent } = await admin
     .from('ai_conversations')
     .select('role, content')
     .eq('user_id', user.id)
+    .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
     .limit(HISTORY_WINDOW);
   const history = (recent ?? []).reverse().map((m) => ({ role: m.role, content: m.content }));
@@ -182,12 +237,12 @@ Deno.serve(async (req) => {
 
   // Solo se registra (y cuenta contra la cuota) si la llamada fue exitosa.
   const { error: insertError } = await admin.from('ai_conversations').insert([
-    { user_id: user.id, role: 'user', content: message },
-    { user_id: user.id, role: 'assistant', content: reply }
+    { user_id: user.id, conversation_id: conversationId, role: 'user', content: message },
+    { user_id: user.id, conversation_id: conversationId, role: 'assistant', content: reply }
   ]);
   if (insertError) console.error('No se pudo guardar la conversación:', insertError);
 
-  return json({ reply, usedCount: usedCount + 1 });
+  return json({ reply, usedCount: usedCount + 1, conversationId });
 });
 
 // Filtro liviano contra ruido puro (solo espacios, un solo carácter repetido,

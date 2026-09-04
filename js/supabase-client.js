@@ -191,10 +191,26 @@ export async function fetchMissionIndex() {
 // Todo pasa por la Edge Function: valida Premium vigente y la cuota
 // mensual en el servidor, y es la única vía con permiso de escribir en
 // ai_conversations (la tabla no tiene políticas RLS para clientes).
-export async function fetchGuideHistory() {
-  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'history' } });
+export async function fetchGuideHistory(conversationId) {
+  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'history', conversationId } });
   if (error) throw error;
   return data;
+}
+
+// Menú hamburguesa "Historial de SuSana" -- una fila por conversación,
+// título = su primer mensaje (igual que Fitia Coach).
+export async function listGuideConversations() {
+  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'list_conversations' } });
+  if (error) throw error;
+  return data.conversations;
+}
+
+// Ícono de lápiz del historial -- solo pide un id nuevo, la fila real se
+// crea recién cuando se manda el primer mensaje (ver askGuide).
+export async function newGuideConversation() {
+  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'new_conversation' } });
+  if (error) throw error;
+  return data.conversationId;
 }
 
 // --- Crear con IA (Recetario) ---
@@ -287,8 +303,8 @@ export async function adminSetPlan(userId, plan, periodo = null) {
   if (error) throw error;
 }
 
-export async function askGuide(message) {
-  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'send', message } });
+export async function askGuide(message, conversationId) {
+  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'send', message, conversationId } });
   if (error) {
     // supabase-js expone el cuerpo de error en error.context (un Response ya
     // parcialmente leído por el SDK); hay que clonarlo antes de leerlo de nuevo,

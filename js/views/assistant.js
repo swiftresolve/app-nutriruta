@@ -2,9 +2,14 @@
 // Cuota, verificación de plan y la llamada a la IA viven en el servidor
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, eliminarMemoria, MEMORIA_MAX } from '../store.js';
-import { fetchGuideHistory, askGuide } from '../supabase-client.js';
+import { fetchGuideHistory, askGuide, listGuideConversations, newGuideConversation } from '../supabase-client.js';
 import { header, navigate, toast, susanaName, openModal, GEAR_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
+
+// Ícono de menú hamburguesa -- 3 líneas simples, mismo lenguaje visual
+// que el resto de íconos propios de la app (GEAR_ICON, SEARCH_ICON en
+// app.js): trazo sin relleno, no emoji.
+const MENU_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`;
 
 const CONTEXTO_MAX = 300;
 
@@ -29,9 +34,12 @@ export function renderAssistant(container) {
   // propio header de SuSana (avatar + nombre) queda fijo arriba
   // (position:sticky, ver .chat-header en styles.css) mientras el chat
   // hace scroll debajo.
+  let conversationId = null;
+
   const chatHeader = document.createElement('div');
   chatHeader.className = 'chat-header';
   chatHeader.innerHTML = `
+    <button type="button" class="icon-btn plain" id="chatHistorial" aria-label="Historial de conversaciones">${MENU_ICON}</button>
     <span class="sana-avatar chat-header-avatar">🌿</span>
     <div class="chat-header-info">
       <strong>${susanaName()}</strong>
@@ -40,6 +48,18 @@ export function renderAssistant(container) {
     <button type="button" class="icon-btn plain" id="chatPersonalizar" aria-label="Personalizar a SuSana">${GEAR_ICON}</button>`;
   container.appendChild(chatHeader);
   chatHeader.querySelector('#chatPersonalizar').addEventListener('click', () => abrirPersonalizarSuSana());
+  chatHeader.querySelector('#chatHistorial').addEventListener('click', () => {
+    abrirHistorialSuSana(conversationId, {
+      onElegir: (id) => loadHistory(id),
+      onNueva: async () => {
+        const nueva = await newGuideConversation();
+        conversationId = nueva;
+        log.innerHTML = '';
+        addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`);
+        setQuota(0);
+      }
+    });
+  });
 
   const aviso = document.createElement('p');
   aviso.className = 'small muted chat-disclaimer';
@@ -102,9 +122,10 @@ export function renderAssistant(container) {
     quotaEl.textContent = `${used} mensaje${used === 1 ? '' : 's'} este mes`;
   }
 
-  async function loadHistory() {
+  async function loadHistory(idAAbrir) {
     try {
-      const data = await fetchGuideHistory();
+      const data = await fetchGuideHistory(idAAbrir);
+      conversationId = data.conversationId;
       log.innerHTML = '';
       if (!data.history.length) {
         addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`);
@@ -134,7 +155,8 @@ export function renderAssistant(container) {
     scrollToView(typing);
 
     try {
-      const data = await askGuide(text);
+      const data = await askGuide(text, conversationId);
+      conversationId = data.conversationId;
       typing.remove();
       const reply = addBubble('assistant', data.reply);
       setQuota(data.usedCount);
@@ -270,5 +292,72 @@ function abrirMemorias() {
     }
 
     pintar();
+  });
+}
+
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+// "Hoy" / "Ayer" / "31 de agosto" -- mismo criterio de agrupar por fecha
+// que el resto de la app (ver etiquetaFecha en diary.js), acá aplicado a
+// conversaciones en vez de días con foto.
+function etiquetaFecha(fechaISO) {
+  const fecha = new Date(fechaISO);
+  const hoy = new Date();
+  const ayer = new Date(hoy);
+  ayer.setDate(ayer.getDate() - 1);
+  const mismoDia = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  if (mismoDia(fecha, hoy)) return 'Hoy';
+  if (mismoDia(fecha, ayer)) return 'Ayer';
+  return `${fecha.getDate()} de ${MESES[fecha.getMonth()]}`;
+}
+
+// Menú hamburguesa del chat: "Historial de SuSana" -- lista de
+// conversaciones agrupadas por fecha (como Fitia Coach), con un botón
+// para empezar una nueva. Tocar una fila cierra el modal y carga esa
+// conversación en el chat que ya está abierto (no navega a otra pantalla).
+function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
+  openModal((modal, closeFn) => {
+    modal.insertAdjacentHTML('beforeend', `
+      <div class="spread">
+        <h2>Historial de ${susanaName()}</h2>
+        <button type="button" class="icon-btn plain" id="hist-nueva" aria-label="Nueva conversación">✏️</button>
+      </div>
+      <div class="mt" id="hist-lista"><p class="small muted center">Cargando…</p></div>`);
+
+    modal.querySelector('#hist-nueva').addEventListener('click', async () => {
+      closeFn();
+      await onNueva();
+    });
+
+    listGuideConversations()
+      .then((conversations) => {
+        const cont = modal.querySelector('#hist-lista');
+        if (!conversations.length) {
+          cont.innerHTML = '<p class="small muted center">Aún no tienes conversaciones.</p>';
+          return;
+        }
+        cont.innerHTML = '';
+        let grupoActual = null;
+        for (const c of conversations) {
+          const grupo = etiquetaFecha(c.updated_at);
+          if (grupo !== grupoActual) {
+            grupoActual = grupo;
+            const divider = document.createElement('p');
+            divider.className = 'small muted mt';
+            divider.style.fontWeight = '700';
+            divider.textContent = grupo;
+            cont.appendChild(divider);
+          }
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'habit selector-opcion' + (c.conversation_id === conversationIdActual ? ' selected' : '');
+          row.innerHTML = `<label style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.title.slice(0, 60))}</label>`;
+          row.addEventListener('click', () => { closeFn(); onElegir(c.conversation_id); });
+          cont.appendChild(row);
+        }
+      })
+      .catch(() => {
+        modal.querySelector('#hist-lista').innerHTML = '<p class="small muted center">No pudimos cargar tu historial.</p>';
+      });
   });
 }
