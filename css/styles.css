@@ -335,12 +335,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 /* ===== Chips / options ===== */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 /* Pestañas Recetario/Lista de compras (planner.js) -- nunca deben
-   envolver a una segunda línea (empuja la lupa y todo lo de abajo),
-   pase lo que pase con el tamaño de fuente del teléfono. Si de verdad no
-   caben, scrollean horizontal en vez de envolver. */
-.recetario-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-.recetario-tabs::-webkit-scrollbar { display: none; }
-.recetario-tabs .chip { flex: none; white-space: nowrap; }
+   envolver a una segunda línea (empuja la lupa y todo lo de abajo), pase
+   lo que pase con el tamaño de fuente del teléfono. Responsivo de verdad
+   (sin scroll horizontal): cada chip puede encogerse y su texto se
+   trunca con "…" si de plano no cabe, en vez de desbordar o envolver. */
+.recetario-tabs { flex-wrap: nowrap; }
+.recetario-tabs .chip { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .chip {
   border: 1.5px solid transparent; background: var(--card);
   /* Antes 999px (pastilla totalmente redonda) -- misma curvatura que
