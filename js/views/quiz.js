@@ -260,44 +260,16 @@ export function renderQuiz(container) {
       // inventados como si ya hicieran algo que no hacen.
       title: 'Sobre ti (opcional)',
       sub: 'Con esto afinamos tu meta diaria de agua. Puedes dejar cualquier campo en blanco.',
+      // Misma estructura de fila (ícono + etiqueta + valor + flecha) que ya
+      // usa Ajustes para Tema/Idioma/Unidades (.setting-row), en vez de
+      // campos de texto sueltos -- toca la fila, se abre un selector chico,
+      // igual al patrón real de "Sobre ti" en Fitia (una fila por dato,
+      // "Seleccionar" hasta que se elige, luego muestra el valor).
       render(el) {
         el.innerHTML = `
-          <div class="chips" id="q-sexo-chips" style="margin-bottom:14px">
-            <button type="button" class="chip" data-sexo="mujer">Mujer</button>
-            <button type="button" class="chip" data-sexo="hombre">Hombre</button>
-          </div>
-          <label class="muted small" for="q-edad">Edad</label>
-          <div class="row" style="align-items:center;gap:10px;margin-bottom:12px">
-            <input id="q-edad" type="number" inputmode="numeric" min="13" max="110" placeholder="Ej: 33" class="auth-input" style="width:100px;margin:0">
-            <span class="muted">años</span>
-          </div>
-          <label class="muted small" for="q-estatura">Estatura</label>
-          <div class="row" style="align-items:center;gap:10px;margin-bottom:12px">
-            <input id="q-estatura" type="number" inputmode="numeric" min="120" max="230" placeholder="Ej: 165" class="auth-input" style="width:100px;margin:0">
-            <span class="muted">cm</span>
-          </div>
-          <label class="muted small" for="q-peso">Peso</label>
-          <div class="row" style="align-items:center;gap:10px">
-            <input id="q-peso" type="number" inputmode="numeric" min="30" max="300" placeholder="Ej: 65" class="auth-input" style="width:100px;margin:0">
-            <span class="muted">kg</span>
-          </div>
+          <div id="sobre-ti-filas"></div>
           <div class="legal-note">🔒 Es privado, nadie más lo ve, y puedes borrarlo cuando quieras desde Ajustes.</div>`;
-        el.querySelectorAll('#q-sexo-chips .chip').forEach((b) => {
-          b.classList.toggle('selected', b.dataset.sexo === answers.sexo);
-          b.addEventListener('click', () => {
-            answers.sexo = answers.sexo === b.dataset.sexo ? '' : b.dataset.sexo;
-            el.querySelectorAll('#q-sexo-chips .chip').forEach((c) => c.classList.toggle('selected', c.dataset.sexo === answers.sexo));
-          });
-        });
-        const edad = el.querySelector('#q-edad');
-        edad.value = answers.edad;
-        edad.addEventListener('input', (e) => { answers.edad = e.target.value; });
-        const estatura = el.querySelector('#q-estatura');
-        estatura.value = answers.estaturaCm;
-        estatura.addEventListener('input', (e) => { answers.estaturaCm = e.target.value; });
-        const peso = el.querySelector('#q-peso');
-        peso.value = answers.pesoKg;
-        peso.addEventListener('input', (e) => { answers.pesoKg = e.target.value; });
+        pintarSobreTiFilas(el.querySelector('#sobre-ti-filas'));
       }
     },
     {
@@ -327,6 +299,157 @@ export function renderQuiz(container) {
       input.value = answers.origenOtroTexto;
       input.addEventListener('input', (e) => { answers.origenOtroTexto = e.target.value; });
     }
+  }
+
+  // Filas de "Sobre ti": ícono + etiqueta + valor actual ("Seleccionar"
+  // si aún no se eligió) + flecha -- se repinta después de cada cambio,
+  // igual que el resto de los "pintar*" de este archivo.
+  const SOBRE_TI_CAMPOS = [
+    { key: 'sexo', icono: '👤', label: 'Sexo' },
+    { key: 'edad', icono: '🎂', label: 'Edad', sufijo: ' años' },
+    { key: 'estaturaCm', icono: '📏', label: 'Estatura', sufijo: ' cm' },
+    { key: 'pesoKg', icono: '⚖️', label: 'Peso', sufijo: ' kg' }
+  ];
+  function pintarSobreTiFilas(el) {
+    el.innerHTML = SOBRE_TI_CAMPOS.map((c) => {
+      const valor = answers[c.key];
+      const texto = valor
+        ? (c.key === 'sexo' ? (valor === 'mujer' ? 'Mujer' : 'Hombre') : `${valor}${c.sufijo}`)
+        : 'Seleccionar';
+      return `
+        <button type="button" class="setting-row" data-campo="${c.key}">
+          <span class="setting-row-icon">${c.icono}</span>
+          <span class="setting-row-label">${c.label}</span>
+          <span class="setting-row-value" style="${valor ? '' : 'color:var(--primary)'}">${texto}</span>
+          <span class="setting-row-chevron">›</span>
+        </button>`;
+    }).join('');
+    el.querySelectorAll('.setting-row').forEach((row) => {
+      row.addEventListener('click', () => abrirSobreTiCampo(row.dataset.campo, el));
+    });
+  }
+
+  function abrirSobreTiCampo(campo, el) {
+    if (campo === 'sexo') {
+      openModal((modal, closeFn) => {
+        modal.insertAdjacentHTML('beforeend', '<h2>Sexo</h2><div class="mt" id="sexo-opciones"></div>');
+        const cont = modal.querySelector('#sexo-opciones');
+        for (const op of [{ id: 'mujer', label: 'Mujer' }, { id: 'hombre', label: 'Hombre' }]) {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'habit selector-opcion' + (op.id === answers.sexo ? ' selected' : '');
+          row.innerHTML = `<label>${op.label}</label>${op.id === answers.sexo ? '<span>✓</span>' : ''}`;
+          row.addEventListener('click', () => {
+            answers.sexo = answers.sexo === op.id ? '' : op.id;
+            closeFn();
+            pintarSobreTiFilas(el);
+          });
+          cont.appendChild(row);
+        }
+      });
+      return;
+    }
+    abrirRuletaNumero(campo, el);
+  }
+
+  // Selector tipo ruleta (scroll-snap nativo) para Edad/Estatura/Peso --
+  // el mismo gesto de "deslizar y el número del centro queda elegido"
+  // que usa Fitia para estos mismos 3 campos, en vez de un input de
+  // texto suelto. Peso admite kg/lbs (se guarda siempre en kg, que es
+  // lo que usa el resto de la app -- ver getWaterGoal en store.js).
+  const RULETA_ALTO = 44;
+  function abrirRuletaNumero(campo, el) {
+    const config = {
+      edad: { titulo: 'Edad', min: 13, max: 110, sufijo: 'años', unidades: null },
+      estaturaCm: { titulo: 'Estatura', min: 120, max: 230, sufijo: 'cm', unidades: null },
+      pesoKg: { titulo: 'Peso', min: 30, max: 300, sufijo: 'kg', unidades: ['kg', 'lbs'] }
+    }[campo];
+    const KG_A_LBS = 2.20462;
+
+    openModal((modal, closeFn) => {
+      let unidad = config.unidades ? config.unidades[0] : null;
+      let valorEnPantalla = null; // en la unidad que se está mostrando ahora mismo
+
+      modal.insertAdjacentHTML('beforeend', `
+        <h2 class="center">${config.titulo}</h2>
+        ${config.unidades ? `
+        <div class="ruleta-unidades">
+          ${config.unidades.map((u, i) => `<button type="button" class="chip${i === 0 ? ' selected' : ''}" data-unidad="${u}">${u}</button>`).join('')}
+        </div>` : ''}
+        <div class="ruleta-wrap">
+          <div class="ruleta-resalto"></div>
+          <div class="ruleta-scroll" id="ruleta-scroll"></div>
+        </div>
+        <button type="button" class="btn full mt" id="ruleta-guardar">Guardar</button>`);
+
+      const scrollEl = modal.querySelector('#ruleta-scroll');
+
+      const aUnidad = (kg, u) => u === 'lbs' ? Math.round(kg * KG_A_LBS) : Math.round(kg);
+      const aKg = (v, u) => u === 'lbs' ? Math.round(v / KG_A_LBS) : Math.round(v);
+      const rango = () => config.unidades && unidad === 'lbs'
+        ? { min: Math.round(config.min * KG_A_LBS), max: Math.round(config.max * KG_A_LBS) }
+        : { min: config.min, max: config.max };
+
+      function pintarItems() {
+        const { min, max } = rango();
+        let html = '<div class="ruleta-pad"></div>';
+        for (let v = min; v <= max; v++) html += `<div class="ruleta-item" data-val="${v}">${v}</div>`;
+        html += '<div class="ruleta-pad"></div>';
+        scrollEl.innerHTML = html;
+      }
+
+      function marcarCentro() {
+        const { min } = rango();
+        const idx = Math.round(scrollEl.scrollTop / RULETA_ALTO);
+        scrollEl.querySelectorAll('.ruleta-item').forEach((it, i) => {
+          const centro = i === idx;
+          it.classList.toggle('centrado', centro);
+          it.innerHTML = centro ? `${it.dataset.val}<span class="ruleta-sufijo">${unidad || config.sufijo}</span>` : it.dataset.val;
+        });
+        valorEnPantalla = min + idx;
+      }
+
+      function irA(valor) {
+        const { min } = rango();
+        scrollEl.scrollTop = (valor - min) * RULETA_ALTO;
+        marcarCentro();
+      }
+
+      let scrollTimer;
+      scrollEl.addEventListener('scroll', () => {
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(marcarCentro, 60);
+      });
+
+      pintarItems();
+      const inicial = answers[campo]
+        ? (config.unidades ? aUnidad(Number(answers[campo]), unidad) : Number(answers[campo]))
+        : Math.round((config.min + config.max) / 2);
+      // El scroll inicial se difiere un frame: justo al insertar el HTML
+      // el navegador todavía no terminó de calcular el layout (scrollHeight
+      // sigue en 0), así que un scrollTop asignado en el mismo tick se
+      // ignora silenciosamente y siempre arranca en el primer ítem.
+      requestAnimationFrame(() => irA(inicial));
+
+      if (config.unidades) {
+        modal.querySelectorAll('.ruleta-unidades .chip').forEach((b) => {
+          b.addEventListener('click', () => {
+            if (b.dataset.unidad === unidad) return;
+            const valorKgActual = aKg(valorEnPantalla, unidad);
+            unidad = b.dataset.unidad;
+            modal.querySelectorAll('.ruleta-unidades .chip').forEach((c) => c.classList.toggle('selected', c === b));
+            pintarItems();
+            irA(aUnidad(valorKgActual, unidad));
+          });
+        });
+      }
+
+      modal.querySelector('#ruleta-guardar').addEventListener('click', () => {
+        answers[campo] = config.unidades ? aKg(valorEnPantalla, unidad) : valorEnPantalla;
+        closeFn();
+        pintarSobreTiFilas(el);
+      });
+    });
   }
 
   // "¿Qué quieres lograr?": las metas predefinidas (GOALS) y las que la
