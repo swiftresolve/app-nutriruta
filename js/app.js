@@ -403,7 +403,22 @@ if ('serviceWorker' in navigator) {
     refrescando = true;
     window.location.reload();
   });
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      // register() por sí solo no siempre revisa si hay una versión nueva
+      // -- el navegador lo hace "cuando le parece" (a veces tarda varias
+      // aperturas en notar el cambio, causando bugs reales de "ya lo
+      // arreglé pero se sigue viendo viejo"). update() fuerza la
+      // comparación contra el servidor ahora mismo, y de nuevo cada vez
+      // que se vuelve a esta pestaña/app (abrir la PWA de nuevo, por
+      // ejemplo) -- entre eso y el fetch "red primero" para el código de
+      // la app (ver sw.js), un despliegue nuevo debería verse casi de
+      // inmediato, no varias recargas después.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update();
+      });
+    });
+  });
 }
 
 // Arranque: verificar sesión JWT antes de entrar.

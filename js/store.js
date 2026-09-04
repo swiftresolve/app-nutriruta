@@ -74,7 +74,8 @@ const DEFAULT_STATE = {
   rutiOculto: false,            // modo minimalista: oculta la ilustración de Ruti donde aparece
   diasCongelados: [],           // fechas ISO cubiertas por una Pausa de Ruta (racha "congelada", no rota)
   reflexionesHabitos: {},        // { fecha: texto } — la frase real que se pide al completar el 3er hábito del día
-  comidasRegistradas: {}          // { 'fecha|mealId': { alimentos: [texto], fuente: 'foto'|'voz'|'texto', hora } } — lo que la usuaria dijo que REALMENTE comió, no la sugerencia del menú
+  comidasRegistradas: {},          // { 'fecha|mealId': { alimentos: [texto], fuente: 'foto'|'voz'|'texto', hora } } — lo que la usuaria dijo que REALMENTE comió, no la sugerencia del menú
+  favoritas: []                   // ids de RECIPES marcadas con la estrella en el Recetario (ver planner.js)
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).

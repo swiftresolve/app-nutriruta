@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-e8a49a2b9d';
+const CACHE = 'nutriruta-ce6fce9140';
 const ASSETS = [
   './',
   './index.html',
@@ -70,6 +70,34 @@ self.addEventListener('fetch', (e) => {
   const cacheable = url.origin === location.origin || url.hostname === 'esm.sh';
   if (!cacheable) return;
 
+  // Código de la app (HTML/JS/CSS del propio origen): red primero, y solo
+  // si falla (sin conexión) se cae al caché. Antes era caché-primero para
+  // TODO, lo que significaba que un despliegue nuevo podía quedar
+  // invisible durante varias recargas hasta que el navegador decidiera
+  // por su cuenta revisar si había una versión nueva de este mismo
+  // archivo -- causó varios bugs reales de "ya lo arreglé pero se sigue
+  // viendo viejo" en esta sesión. Con red primero, apenas se despliega
+  // algo nuevo se ve de inmediato con conexión; sin conexión sigue
+  // funcionando igual que antes, desde el caché.
+  const esCodigoDeLaApp = url.origin === location.origin &&
+    (/\.(js|css|html)$/.test(url.pathname) || url.pathname === '/' || url.pathname.endsWith('/'));
+
+  if (esCodigoDeLaApp) {
+    e.respondWith(
+      fetch(e.request).then((res) => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
+        return res;
+      }).catch(() => caches.match(e.request).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Todo lo demás (imágenes, fuentes, video, el SDK externo): caché
+  // primero, como antes -- son archivos que casi nunca cambian, y cargan
+  // más rápido así.
   e.respondWith(
     caches.match(e.request).then((cached) => {
       if (cached) return cached;

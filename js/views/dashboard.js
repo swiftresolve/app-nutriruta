@@ -5,7 +5,7 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
@@ -89,7 +89,13 @@ export function renderDashboard(container) {
   // --- Tu paso de hoy: la tarjeta principal del día, con Sana como voz ---
   const paso = pasoDeHoy();
   const pasoHecho = pasoHechoHoy();
-  const pasoRachaActual = pasoRacha();
+  // Antes usaba pasoRacha() -- una racha PARALELA, calculada solo sobre
+  // los días que se tocó "Ya lo hice" aquí, que podía desincronizarse de
+  // la racha real (arriba en el header): alguien completaba su día por
+  // hábitos sin marcar este botón puntual, y los dos números no
+  // coincidían. Ahora muestra la misma racha de siempre, un solo número
+  // en toda la app.
+  const pasoRachaActual = state.racha.actual;
   const pasoCard = document.createElement('div');
   pasoCard.className = 'card';
   pasoCard.style.background = 'linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))';
