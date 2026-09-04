@@ -504,26 +504,63 @@ export function renderSettings(container) {
   // otro sin haber tocado nada (ver mismo criterio en mealsActivas, menu.js).
   const comidasActivas = user.comidasActivas || {};
   const estaActiva = (id) => comidasActivas[id] !== false;
+  // Selector rápido de horarios: 3 horas típicas por comida + "Otro" en
+  // vez de un <select> con las 24 horas del día -- toca una vez para el
+  // caso común, y solo abre la lista completa si de verdad la hora no
+  // está entre las sugeridas (mismo patrón que usa Fitia).
+  const HORAS_SUGERIDAS = {
+    desayuno: [7, 8, 9], media_manana: [9, 10, 11], almuerzo: [12, 13, 14],
+    media_tarde: [16, 17, 18], cena: [18, 19, 20]
+  };
+  const labelHora = (h) => h === 0 ? '12 am' : h < 12 ? `${h} am` : h === 12 ? '12 pm' : `${h - 12} pm`;
   horarios.innerHTML = `
     <h2>⏰ Tus comidas</h2>
     <p class="small mb">Cuáles quieres en tu día y a qué hora sueles comer, de verdad — así "Tu ruta de hoy" arma el menú correcto y sabe cuál comida es "Ahora".</p>
-    ${MEALS.map((m) => `
-      <div class="row spread mt" style="align-items:center">
-        <label class="row" style="align-items:center;gap:8px;cursor:pointer">
+    ${MEALS.map((m) => {
+      const sugeridas = HORAS_SUGERIDAS[m.id] || [];
+      const esOtra = !sugeridas.includes(horaComidas[m.id]);
+      return `
+      <div class="mt">
+        <label class="row" style="align-items:center;gap:8px;cursor:pointer;margin-bottom:8px">
           <input type="checkbox" class="comida-activa" data-meal="${m.id}" ${estaActiva(m.id) ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--primary)">
           <span class="small">${esc(m.emoji)} ${esc(m.nombre)}</span>
         </label>
-        <select class="hora-sel" data-meal="${m.id}" ${estaActiva(m.id) ? '' : 'disabled'} style="padding:8px;border-radius:10px;border:1.5px solid #D8E6E2;font:inherit">
+        <div class="chips" ${estaActiva(m.id) ? '' : 'style="opacity:0.5;pointer-events:none"'}>
+          ${sugeridas.map((h) => `<button type="button" class="chip small hora-chip${horaComidas[m.id] === h ? ' selected' : ''}" data-meal="${m.id}" data-hora="${h}">${labelHora(h)}</button>`).join('')}
+          <button type="button" class="chip small hora-otro${esOtra ? ' selected' : ''}" data-meal="${m.id}">Otro</button>
+        </div>
+        <select class="hora-sel mt" data-meal="${m.id}" style="${esOtra ? '' : 'display:none;'}padding:8px;border-radius:10px;border:1.5px solid #D8E6E2;font:inherit">
           ${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${horaComidas[m.id] === h ? 'selected' : ''}>${h === 0 ? '12:00 am' : h < 12 ? `${h}:00 am` : h === 12 ? '12:00 pm' : `${h - 12}:00 pm`}</option>`).join('')}
         </select>
-      </div>`).join('')}`;
-  horarios.querySelectorAll('.hora-sel').forEach((sel) => {
-    sel.addEventListener('change', () => {
-      const cur = getState().user;
-      const nuevo = { ...DEFAULT_HORA_COMIDAS, ...(cur.horaComidas || {}), [sel.dataset.meal]: Number(sel.value) };
-      setState({ user: { ...cur, horaComidas: nuevo } });
-      toast('Horario actualizado 🌿');
+      </div>`;
+    }).join('')}`;
+  function guardarHora(mealId, hora) {
+    const cur = getState().user;
+    const nuevo = { ...DEFAULT_HORA_COMIDAS, ...(cur.horaComidas || {}), [mealId]: hora };
+    setState({ user: { ...cur, horaComidas: nuevo } });
+    toast('Horario actualizado 🌿');
+  }
+  horarios.querySelectorAll('.hora-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const meal = chip.dataset.meal;
+      horarios.querySelectorAll(`.hora-chip[data-meal="${meal}"], .hora-otro[data-meal="${meal}"]`).forEach((c) => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      horarios.querySelector(`.hora-sel[data-meal="${meal}"]`).style.display = 'none';
+      guardarHora(meal, Number(chip.dataset.hora));
     });
+  });
+  horarios.querySelectorAll('.hora-otro').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const meal = btn.dataset.meal;
+      horarios.querySelectorAll(`.hora-chip[data-meal="${meal}"], .hora-otro[data-meal="${meal}"]`).forEach((c) => c.classList.remove('selected'));
+      btn.classList.add('selected');
+      const sel = horarios.querySelector(`.hora-sel[data-meal="${meal}"]`);
+      sel.style.display = '';
+      sel.focus();
+    });
+  });
+  horarios.querySelectorAll('.hora-sel').forEach((sel) => {
+    sel.addEventListener('change', () => guardarHora(sel.dataset.meal, Number(sel.value)));
   });
   horarios.querySelectorAll('.comida-activa').forEach((chk) => {
     chk.addEventListener('change', () => {
