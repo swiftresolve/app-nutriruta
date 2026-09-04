@@ -280,75 +280,126 @@ export function header(container) {
 
 const MONTH_LETRAS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const MONTH_NOMBRES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const DIAS_CORTOS_RACHA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+
+// Tira de los últimos 7 días (terminando hoy), un cuadrito por día — a
+// simple vista de un vistazo, además del calendario del mes completo.
+function weekStrip(diasCumplidos, diasCongelados = []) {
+  const set = new Set(diasCumplidos);
+  const congelados = new Set(diasCongelados);
+  const hoyISO = new Date().toISOString().slice(0, 10);
+  const celdas = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const cumplido = set.has(iso);
+    const congelado = congelados.has(iso);
+    const esHoy = iso === hoyISO;
+    // Día pasado, sin cumplir y sin Pausa de Ruta que lo cubriera: se
+    // marca como "perdido" -- visualmente parecido a un día congelado
+    // (mismo círculo), pero con una equis gris adentro en vez de la
+    // llamita de hielo, para distinguir "se rompió la racha" de "una
+    // Pausa la protegió".
+    const perdido = !cumplido && !congelado && !esHoy && iso < hoyISO;
+    celdas.push(`
+      <div class="week-cell${cumplido ? ' done' : ''}${congelado ? ' frozen' : ''}${perdido ? ' perdido' : ''}${esHoy ? ' today' : ''}">
+        <span class="week-day">${DIAS_CORTOS_RACHA[d.getDay()]}</span>
+        <span class="week-dot">${congelado ? frozenFlameIcon(18) : cumplido ? '✓' : perdido ? '✕' : ''}</span>
+      </div>`);
+  }
+  return celdas.join('');
+}
+
+// Contenido de racha compartido entre el modal "Mis Rachas" (header) y la
+// tarjeta de racha de la pantalla Progreso -- antes cada uno tenía su
+// propia versión y se iban desalineando (uno mostraba gemas ganadas, el
+// otro no; uno tenía calendario del mes, el otro solo la tira de 7 días).
+// Ahora ambos usan exactamente este mismo bloque, con el calendario
+// completo (más información que una tira de 7 días) y el mensaje de
+// compromiso cumplido, para que nunca queden desiguales.
+export function rachaDetailHtml(month, year, { size = 56 } = {}) {
+  const state = getState();
+  const { racha, user, escudos, gemas, energiaRuta, kmRuta, diasCumplidos, diasCongelados } = state;
+  const etapa = broteStage(racha.actual);
+  const diasEsteMes = diasCumplidos.filter((d) => d.slice(0, 7) === today().slice(0, 7)).length;
+  const hoy = new Date();
+  const esMesActual = year === hoy.getFullYear() && month === hoy.getMonth();
+  const celdas = diasDelMes(year, month);
+
+  const compromisoHtml = user.compromisoDias ? `
+    <div class="mt">
+      <div class="spread small" style="font-weight:700">
+        <span>Tu compromiso: ${user.compromisoDias} días</span>
+        <span>${Math.min(racha.actual, user.compromisoDias)}/${user.compromisoDias}</span>
+      </div>
+      <div class="quiz-progress" style="margin:6px 0 0">
+        <div style="width:${Math.min(100, Math.round((racha.actual / user.compromisoDias) * 100))}%"></div>
+      </div>
+      ${racha.actual >= user.compromisoDias ? '<p class="small mt" style="color:var(--primary-dark);font-weight:700">¡Cumpliste tu compromiso! 🎉 Sigue cuando quieras.</p>' : ''}
+    </div>` : '';
+
+  return `
+    <div class="rachas-hero mt">
+      <div class="row" style="gap:12px; align-items:center; justify-content:center">
+        ${broteBadge(etapa, { size, premium: isPremium() })}
+        <p class="num" style="margin:0">${racha.actual} <span class="streak-flame ${racha.actual > 0 ? 'lit' : 'out'}">🔥</span></p>
+      </div>
+      <p class="mt"><strong>Días en Ruta</strong></p>
+      <p class="small muted">Tu Brote de Ruta está creciendo con cada paso.</p>
+      <p class="small muted"><strong>${etapa.label}</strong> — Ruti está orgullosa de tu constancia.</p>
+      <div class="week-strip mt">${weekStrip(diasCumplidos, diasCongelados)}</div>
+    </div>
+    <div class="rachas-stats mt">
+      <div><span class="n">${racha.mejor}</span><span class="l">Mejor Ruta</span></div>
+      <div><span class="n">${diasEsteMes}</span><span class="l">Este mes</span></div>
+      <div><span class="n">${escudos}/${maxEscudos()}</span><span class="l">Pausas</span></div>
+    </div>
+    ${compromisoHtml}
+    <div class="month-nav mt">
+      <button class="mr-prev" aria-label="Mes anterior">‹</button>
+      <strong>${MONTH_NOMBRES[month]} ${year}</strong>
+      <button class="mr-next" aria-label="Mes siguiente" ${esMesActual ? 'disabled' : ''}>›</button>
+    </div>
+    <div class="month-grid mt">
+      ${MONTH_LETRAS.map((l) => `<span class="month-head">${l}</span>`).join('')}
+      ${celdas.map((c) => `
+        <div class="month-cell${c.fueraDeMes ? ' fuera' : ''}${c.esHoy ? ' hoy' : ''}${c.cumplido ? ' cumplido' : c.congelado ? ' congelado' : c.pctHabitos > 0 ? ' parcial' : ''}">
+          <span class="month-dot">${c.congelado && !c.cumplido ? frozenFlameIcon(18) : c.dia}</span>
+        </div>`).join('')}
+    </div>
+    <p class="small muted mt center">🛡️ Pausas de Ruta: te acompañan cuando necesitas descansar sin romper tu racha. Se gana 1 cada 7 Días en Ruta.</p>
+    <p class="small muted center">⚡ Energía de Ruta: ${energiaRuta || 0} · ${kmRuta || 0} km recorridos · 💎 ${gemas} gemas ganadas.</p>`;
+}
 
 // "Mis Rachas": calendario mensual completo al tocar la llama del header,
 // en vez del tooltip corto que tenía antes -- inspirado en la pantalla
 // de rachas de Fitia, pero con datos reales de NutriRuta (Brote de Ruta,
 // Pausas en vez de rachas que se rompen de golpe, gemas) en lugar de su
-// métrica de "días perfectos" atada a calorías, que no aplica aquí.
+// métrica de "días perfectos" atada a calorías, que no aplica aquí. Único
+// lugar de la app donde se ve la racha en detalle -- ya no se repite en
+// Progreso, que ahora solo tiene un acceso directo a este mismo modal.
 function abrirMisRachas() {
   const hoy = new Date();
   let year = hoy.getFullYear();
   let month = hoy.getMonth();
 
-  openModal((modal) => {
+  openModal((modal, closeFn) => {
     const wrap = document.createElement('div');
     modal.appendChild(wrap);
 
     function pintar() {
-      const state = getState();
-      const { racha, user, escudos, gemas, energiaRuta, kmRuta, diasCumplidos } = state;
-      const etapa = broteStage(racha.actual);
-      const diasEsteMes = diasCumplidos.filter((d) => d.slice(0, 7) === today().slice(0, 7)).length;
-      const esMesActual = year === hoy.getFullYear() && month === hoy.getMonth();
-      const celdas = diasDelMes(year, month);
-
-      const compromisoHtml = user.compromisoDias ? `
-        <div class="mt">
-          <div class="spread small" style="font-weight:700">
-            <span>Tu compromiso: ${user.compromisoDias} días</span>
-            <span>${Math.min(racha.actual, user.compromisoDias)}/${user.compromisoDias}</span>
-          </div>
-          <div class="quiz-progress" style="margin:6px 0 0">
-            <div style="width:${Math.min(100, Math.round((racha.actual / user.compromisoDias) * 100))}%"></div>
-          </div>
-        </div>` : '';
-
       wrap.innerHTML = `
         <h2 class="center">🔥 Mis Rachas</h2>
-        <div class="rachas-hero mt">
-          ${broteBadge(etapa, { size: 56, premium: isPremium() })}
-          <p class="num mt" style="margin:4px 0 0">${racha.actual} <span class="streak-flame ${racha.actual > 0 ? 'lit' : 'out'}">🔥</span></p>
-          <p class="small muted">${etapa.label} — tu Brote de Ruta crece con tu constancia.</p>
-        </div>
-        <div class="rachas-stats mt">
-          <div><span class="n">${racha.mejor}</span><span class="l">Mejor Ruta</span></div>
-          <div><span class="n">${diasEsteMes}</span><span class="l">Este mes</span></div>
-          <div><span class="n">${escudos}/${maxEscudos()}</span><span class="l">Pausas</span></div>
-        </div>
-        ${compromisoHtml}
-        <div class="month-nav mt">
-          <button id="mr-prev" aria-label="Mes anterior">‹</button>
-          <strong>${MONTH_NOMBRES[month]} ${year}</strong>
-          <button id="mr-next" aria-label="Mes siguiente" ${esMesActual ? 'disabled' : ''}>›</button>
-        </div>
-        <div class="month-grid mt">
-          ${MONTH_LETRAS.map((l) => `<span class="month-head">${l}</span>`).join('')}
-          ${celdas.map((c) => `
-            <div class="month-cell${c.fueraDeMes ? ' fuera' : ''}${c.esHoy ? ' hoy' : ''}${c.cumplido ? ' cumplido' : c.congelado ? ' congelado' : c.pctHabitos > 0 ? ' parcial' : ''}">
-              <span class="month-dot">${c.congelado && !c.cumplido ? frozenFlameIcon(18) : c.dia}</span>
-            </div>`).join('')}
-        </div>
-        <p class="small muted mt">🛡️ Pausas de Ruta: te acompañan cuando necesitas descansar sin romper tu racha. Se gana 1 cada 7 Días en Ruta.</p>
-        <p class="small muted">🧭 Energía de Ruta: ${energiaRuta || 0} · ${kmRuta || 0} km recorridos · 💎 ${gemas} gemas ganadas.</p>
+        ${rachaDetailHtml(month, year, { size: 56 })}
         <button class="btn ghost full mt" id="mr-ver-progreso">Ver todo mi progreso →</button>`;
 
-      wrap.querySelector('#mr-prev').addEventListener('click', () => {
+      wrap.querySelector('.mr-prev').addEventListener('click', () => {
         month -= 1;
         if (month < 0) { month = 11; year -= 1; }
         pintar();
       });
-      const nextBtn = wrap.querySelector('#mr-next');
+      const nextBtn = wrap.querySelector('.mr-next');
       if (!nextBtn.disabled) {
         nextBtn.addEventListener('click', () => {
           month += 1;
@@ -357,13 +408,43 @@ function abrirMisRachas() {
         });
       }
       wrap.querySelector('#mr-ver-progreso').addEventListener('click', () => {
-        document.querySelector('.modal-backdrop')?.remove();
+        closeFn();
         navigate('progress');
       });
     }
 
     pintar();
   });
+}
+
+// Bloqueo de scroll del fondo mientras hay una modal abierta -- antes
+// tocar/hacer scroll "a través" del backdrop movía la pantalla de atrás
+// (position:fixed del backdrop no basta por sí solo, sobre todo en
+// móvil). Con contador por si una modal abre otra (p.ej. comprar Pausa de
+// Ruta desde un tooltip que a su vez está sobre una modal).
+let modalLockCount = 0;
+function lockBodyScroll() {
+  if (modalLockCount === 0) {
+    const scrollY = window.scrollY;
+    document.body.dataset.modalScrollY = String(scrollY);
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+  }
+  modalLockCount++;
+}
+function unlockBodyScroll() {
+  modalLockCount = Math.max(0, modalLockCount - 1);
+  if (modalLockCount === 0) {
+    const scrollY = parseInt(document.body.dataset.modalScrollY || '0', 10);
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    delete document.body.dataset.modalScrollY;
+    window.scrollTo(0, scrollY);
+  }
 }
 
 // Modal reutilizable.
@@ -376,13 +457,20 @@ export function openModal(contentBuilder) {
   close.className = 'modal-close';
   close.setAttribute('aria-label', 'Cerrar');
   close.textContent = '✕';
-  const closeFn = () => backdrop.remove();
+  let closed = false;
+  const closeFn = () => {
+    if (closed) return;
+    closed = true;
+    backdrop.remove();
+    unlockBodyScroll();
+  };
   close.addEventListener('click', closeFn);
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeFn(); });
   modal.appendChild(close);
   contentBuilder(modal, closeFn);
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
+  lockBodyScroll();
   return closeFn;
 }
 

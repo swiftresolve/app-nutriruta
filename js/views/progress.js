@@ -1,85 +1,26 @@
 // Mi progreso: rachas, logros, gráficas, historial de antojos, diario de
 // síntomas, y los accesos a Plan de 7 días/Misión/Aprender (movidos aquí
 // desde el dashboard diario — ver dashboard.js).
-import { getState, logSintoma, sintomaPattern, esc, today, getWaterGoal, isPremium, maxEscudos, sanaApertura } from '../store.js';
+import { getState, logSintoma, sintomaPattern, esc, today, getWaterGoal, isPremium, sanaApertura } from '../store.js';
 import { SYMPTOM_TYPES, SYMPTOM_CAUSES } from '../data/profiles.js';
 import { MISSION } from '../data/mission.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { header, openModal, toast, navigate, susanaName } from '../app.js';
 import { t } from '../i18n.js';
 import { barChart, lineChart } from '../charts.js';
-import { broteStage, broteBadge } from '../ruti.js';
-import { frozenFlameIcon } from '../streakAnim.js';
 
 const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 let rangoActivo = 'semana';
 
-// Tira de los últimos 7 días (terminando hoy), un cuadrito por día — a
-// simple vista de un vistazo, no solo el número de racha.
-function weekStrip(diasCumplidos, diasCongelados = []) {
-  const set = new Set(diasCumplidos);
-  const congelados = new Set(diasCongelados);
-  const hoyISO = new Date().toISOString().slice(0, 10);
-  const celdas = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const iso = d.toISOString().slice(0, 10);
-    const cumplido = set.has(iso);
-    const congelado = congelados.has(iso);
-    const esHoy = iso === hoyISO;
-    // Día pasado, sin cumplir y sin Pausa de Ruta que lo cubriera: se
-    // marca como "perdido" -- visualmente parecido a un día congelado
-    // (mismo círculo), pero con una equis gris adentro en vez de la
-    // llamita de hielo, para distinguir "se rompió la racha" de "una
-    // Pausa la protegió".
-    const perdido = !cumplido && !congelado && !esHoy && iso < hoyISO;
-    celdas.push(`
-      <div class="week-cell${cumplido ? ' done' : ''}${congelado ? ' frozen' : ''}${perdido ? ' perdido' : ''}${esHoy ? ' today' : ''}">
-        <span class="week-day">${DIAS_CORTOS[d.getDay()]}</span>
-        <span class="week-dot">${congelado ? frozenFlameIcon(18) : cumplido ? '✓' : perdido ? '✕' : ''}</span>
-      </div>`);
-  }
-  return celdas.join('');
-}
-
 export function renderProgress(container) {
   header(container);
-  const { racha, diasCumplidos, diasCongelados, antojos, sintomas, checkins, user, escudos, energiaRuta, kmRuta } = getState();
+  const { antojos, sintomas, checkins, user } = getState();
 
-  // Brote de Ruta (la planta) + Ruti (la nutria), lado a lado — se cuidan
-  // juntos el mismo jardín, no son el mismo personaje.
-  const etapa = broteStage(racha.actual);
-  const diasEsteMes = diasCumplidos.filter((d) => d.slice(0, 7) === today().slice(0, 7)).length;
-  const compromisoHtml = user.compromisoDias ? `
-    <div class="mt">
-      <div class="spread small" style="font-weight:700">
-        <span>Tu compromiso: ${user.compromisoDias} días</span>
-        <span>${Math.min(racha.actual, user.compromisoDias)}/${user.compromisoDias}</span>
-      </div>
-      <div class="quiz-progress" style="margin:6px 0 0">
-        <div style="width:${Math.min(100, Math.round((racha.actual / user.compromisoDias) * 100))}%"></div>
-      </div>
-      ${racha.actual >= user.compromisoDias ? '<p class="small mt" style="color:var(--primary-dark);font-weight:700">¡Cumpliste tu compromiso! 🎉 Sigue cuando quieras.</p>' : ''}
-    </div>` : '';
-  const streak = document.createElement('div');
-  streak.className = 'card streak-hero';
-  streak.innerHTML = `
-    <div class="row" style="gap:12px; align-items:center; justify-content:center">
-      ${broteBadge(etapa, { size: 64, premium: isPremium() })}
-      <div class="num" style="margin:0">${racha.actual} <span class="streak-flame ${racha.actual > 0 ? 'lit' : 'out'}">🔥</span></div>
-    </div>
-    <p class="mt"><strong>Días en Ruta</strong></p>
-    <p class="small mt">Tu Brote de Ruta está creciendo con cada paso.</p>
-    <p class="small mt"><strong>${etapa.label}</strong> — Ruti está orgullosa de tu constancia.</p>
-    <div class="week-strip mt">${weekStrip(diasCumplidos, diasCongelados)}</div>
-    ${compromisoHtml}
-    <p class="small muted mt">Mejor Ruta: ${racha.mejor} días · Días en Ruta este mes: ${diasEsteMes}</p>
-    <p class="small muted mt">🛡️ Pausas de Ruta: ${escudos}/${maxEscudos()} — te acompañan cuando necesitas descansar. Se gana 1 cada 7 Días en Ruta.</p>
-    <p class="small muted mt">🧭 Energía de Ruta: ${energiaRuta || 0} · ${kmRuta || 0} km recorridos — se suma con cada hábito que cuidas, nunca baja sola.</p>`;
-  container.appendChild(streak);
+  // La racha ya no se repite aquí -- vive solo en el modal "Mis Rachas"
+  // (rachaDetailHtml en app.js), al que se llega tocando la llamita 🔥
+  // del header, visible también en esta misma pantalla.
 
   // --- Plan de 7 días (gratis, respuesta inmediata) ---
   // Antes esta tarjeta desaparecía del todo al llegar a 7/7 -- y como es
