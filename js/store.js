@@ -66,6 +66,7 @@ const DEFAULT_STATE = {
   pasoHechos: [],               // fechas ISO en que se marcó "Tu paso de hoy" como hecho
   escudos: 0,                   // Pausas de Ruta disponibles (máx maxEscudos())
   gemas: 0,                     // moneda simple: se gana al completar el día/semana, se gasta en escudos extra
+  faroles: 0,                   // moneda que SÍ se compra con dinero (ver "Comprar Faroles" en Ajustes) -- nunca compra Pausas de Ruta ni nada que reemplace constancia real, solo extras (preguntas de más a SuSana, cosas así). Gemas y Faroles conviven pero no se mezclan.
   energiaRuta: 0,                // acumulado histórico: constancia y cuidado de hábitos, no calorías ni peso
   kmRuta: 0,                     // acompaña a energiaRuta, mismo espíritu ("cuánto ha recorrido tu Ruta")
   primerosPasos: { cerrado: false, minimizado: false }, // checklist de onboarding, solo cuentas nuevas
