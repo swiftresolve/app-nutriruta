@@ -1,5 +1,5 @@
 // Ajustes: cuenta, perfiles, exclusiones, quiz, datos y sección legal.
-import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
+import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, calcularIMC, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
 import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
@@ -449,6 +449,15 @@ export function renderSettings(container) {
     </div>
     <button class="btn ghost sm mt" id="peso-guardar">Guardar</button>
     <p class="small mt" id="peso-meta">${user.pesoKg ? `Tu meta de agua con este peso: <strong>${getWaterGoal()} vasos</strong>.` : 'Sin peso registrado, usamos una meta general de 8 vasos.'}</p>
+    ${(() => {
+      const imc = calcularIMC(user.pesoKg, user.estaturaCm);
+      // Con peso + estatura, ademas de la meta de agua, tambien sirve
+      // como referencia real si uno de tus objetivos es bajar de peso --
+      // formula estandar de la OMS, no inventada, pero con su
+      // advertencia real: no distingue musculo de grasa, es solo una
+      // referencia, nunca un diagnostico.
+      return imc ? `<p class="small mt">Tu IMC: <strong>${imc.valor}</strong> (${imc.categoria}). Es solo una referencia general -- no distingue masa muscular de grasa, no es un diagnóstico.</p>` : '';
+    })()}
     <label class="row mt" style="cursor:pointer">
       <input type="checkbox" id="peso-track" ${user.trackearPeso ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--primary)">
       <span class="small">Llevar un registro de mi peso en el tiempo (opcional, verás tu tendencia en Progreso)</span>
@@ -597,30 +606,43 @@ export function renderSettings(container) {
   prefsCard.className = 'card';
   prefsCard.innerHTML = '<h2>🌎 Interfaz y preferencias</h2>';
 
-  const temaActual = TEMAS.find((t) => t.id === getTema()) || TEMAS[0];
-  prefsCard.appendChild(filaAjuste('🎨', 'Tema', temaActual.label, () => {
-    abrirSelector('Tema', TEMAS, temaActual.id, (id) => { setTema(id); navigate('settings'); });
-  }));
+  // Elegir una opción actualiza la fila donde estás parada, no navega a
+  // ningún lado -- antes cada selector llamaba navigate('settings'), que
+  // redibuja toda la pantalla desde cero y salta el scroll hasta arriba
+  // (se sentía como "cambiar de pantalla" al elegir Apariencia).
+  let temaActual = TEMAS.find((t) => t.id === getTema()) || TEMAS[0];
+  const temaRow = filaAjuste('🎨', 'Tema', temaActual.label, () => {
+    abrirSelector('Tema', TEMAS, temaActual.id, (id) => {
+      setTema(id);
+      temaActual = TEMAS.find((t) => t.id === id) || TEMAS[0];
+      temaRow.querySelector('.setting-row-value').textContent = temaActual.label;
+    });
+  });
+  prefsCard.appendChild(temaRow);
 
-  const idiomaActual = IDIOMAS_INTERFAZ.find((i) => i.id === (user.idiomaInterfaz || 'es'));
-  prefsCard.appendChild(filaAjuste('🗣️', 'Idioma de interfaz', idiomaActual.label, () => {
+  let idiomaActual = IDIOMAS_INTERFAZ.find((i) => i.id === (user.idiomaInterfaz || 'es'));
+  const idiomaRow = filaAjuste('🗣️', 'Idioma de interfaz', idiomaActual.label, () => {
     abrirSelector('Idioma de interfaz', IDIOMAS_INTERFAZ, idiomaActual.id, (id) => {
       setState({ user: { ...getState().user, idiomaInterfaz: id } });
-      navigate('settings');
+      idiomaActual = IDIOMAS_INTERFAZ.find((i) => i.id === id) || IDIOMAS_INTERFAZ[0];
+      idiomaRow.querySelector('.setting-row-value').textContent = idiomaActual.label;
     });
-  }));
+  });
+  prefsCard.appendChild(idiomaRow);
 
   prefsCard.appendChild(filaAjuste('🍽️', 'Idioma de alimentos', 'Español', () => {
     toast('English para las recetas llega pronto — por ahora solo están en español.');
   }));
 
-  const unidadActual = UNIDADES.find((u) => u.id === (user.unidades || 'metrico'));
-  prefsCard.appendChild(filaAjuste('📏', 'Unidades', unidadActual.label, () => {
+  let unidadActual = UNIDADES.find((u) => u.id === (user.unidades || 'metrico'));
+  const unidadRow = filaAjuste('📏', 'Unidades', unidadActual.label, () => {
     abrirSelector('Unidades', UNIDADES, unidadActual.id, (id) => {
       setState({ user: { ...getState().user, unidades: id } });
-      navigate('settings');
+      unidadActual = UNIDADES.find((u) => u.id === id) || UNIDADES[0];
+      unidadRow.querySelector('.setting-row-value').textContent = unidadActual.label;
     });
-  }));
+  });
+  prefsCard.appendChild(unidadRow);
   container.appendChild(prefsCard);
 
   // Tono de SuSana: cómo te habla, no qué te dice — nunca rompe la regla
@@ -633,13 +655,16 @@ export function renderSettings(container) {
     { id: 'directa', label: '🎯 Directa — va al punto, menos rodeos' }
   ];
   tono.innerHTML = '<h2>💬 Cómo te habla SuSana</h2><p class="small mb">Nunca usa culpa ni regaños, solo cambia el estilo.</p>';
-  const tonoActual = TONOS.find((t) => t.id === (user.tonoSusana || 'calida'));
-  tono.appendChild(filaAjuste('💬', 'Tono', tonoActual.label.split(' — ')[0].replace(/^\S+\s/, ''), () => {
+  let tonoActual = TONOS.find((t) => t.id === (user.tonoSusana || 'calida'));
+  const tonoLabel = (t) => t.label.split(' — ')[0].replace(/^\S+\s/, '');
+  const tonoRow = filaAjuste('💬', 'Tono', tonoLabel(tonoActual), () => {
     abrirSelector('Cómo te habla SuSana', TONOS, tonoActual.id, (id) => {
       setState({ user: { ...getState().user, tonoSusana: id } });
-      navigate('settings');
+      tonoActual = TONOS.find((t) => t.id === id) || TONOS[0];
+      tonoRow.querySelector('.setting-row-value').textContent = tonoLabel(tonoActual);
     });
-  }));
+  });
+  tono.appendChild(tonoRow);
   const CONTEXTO_MAX = 300;
   const contextoWrap = document.createElement('div');
   contextoWrap.className = 'mt';

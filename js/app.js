@@ -1,8 +1,9 @@
 // Router mínimo + arranque con puerta de autenticación.
-import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo } from './store.js';
+import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo, diasDelMes, today } from './store.js';
 import { t } from './i18n.js';
 import { getSession, supabase } from './supabase-client.js';
 import { broteStage, broteBadge } from './ruti.js';
+import { frozenFlameIcon } from './streakAnim.js';
 import { renderAuth } from './views/auth.js';
 import { renderQuiz } from './views/quiz.js';
 import { renderDashboard } from './views/dashboard.js';
@@ -204,15 +205,7 @@ export function header(container) {
   h.querySelector('[data-go]').addEventListener('click', () => navigate('settings'));
 
   if (mostrarStats) {
-    const etapa = broteStage(racha);
-    const mejor = state.racha?.mejor || 0;
-    attachStatTooltip(h.querySelector('#hs-racha'), `
-      <div class="row" style="gap:8px; align-items:center">
-        ${broteBadge(etapa, { size: 34, premium: isPremium() })}
-        <strong>🔥 ${racha} Día${racha === 1 ? '' : 's'} en Ruta</strong>
-      </div>
-      <p class="small muted mt" style="margin-top:4px">${etapa.label} — tu Brote de Ruta crece con tu constancia.</p>
-      <p class="small muted" style="margin-top:2px">Mejor Ruta: ${mejor} día${mejor === 1 ? '' : 's'}</p>`);
+    h.querySelector('#hs-racha').addEventListener('click', (e) => { e.stopPropagation(); abrirMisRachas(); });
     attachStatTooltip(h.querySelector('#hs-gemas'), `
       <strong>💎 ${gemas} gemas</strong>
       <p class="small muted mt" style="margin-top:4px">Ganas ${GEMAS_POR_DIA} 💎 cada día que completas, y más al terminar un día del Plan de 7 días o una semana de la Misión.</p>
@@ -250,6 +243,94 @@ export function header(container) {
   }
 
   container.appendChild(h);
+}
+
+const MONTH_LETRAS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+const MONTH_NOMBRES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+// "Mis Rachas": calendario mensual completo al tocar la llama del header,
+// en vez del tooltip corto que tenía antes -- inspirado en la pantalla
+// de rachas de Fitia, pero con datos reales de NutriRuta (Brote de Ruta,
+// Pausas en vez de rachas que se rompen de golpe, gemas) en lugar de su
+// métrica de "días perfectos" atada a calorías, que no aplica aquí.
+function abrirMisRachas() {
+  const hoy = new Date();
+  let year = hoy.getFullYear();
+  let month = hoy.getMonth();
+
+  openModal((modal) => {
+    const wrap = document.createElement('div');
+    modal.appendChild(wrap);
+
+    function pintar() {
+      const state = getState();
+      const { racha, user, escudos, gemas, energiaRuta, kmRuta, diasCumplidos } = state;
+      const etapa = broteStage(racha.actual);
+      const diasEsteMes = diasCumplidos.filter((d) => d.slice(0, 7) === today().slice(0, 7)).length;
+      const esMesActual = year === hoy.getFullYear() && month === hoy.getMonth();
+      const celdas = diasDelMes(year, month);
+
+      const compromisoHtml = user.compromisoDias ? `
+        <div class="mt">
+          <div class="spread small" style="font-weight:700">
+            <span>Tu compromiso: ${user.compromisoDias} días</span>
+            <span>${Math.min(racha.actual, user.compromisoDias)}/${user.compromisoDias}</span>
+          </div>
+          <div class="quiz-progress" style="margin:6px 0 0">
+            <div style="width:${Math.min(100, Math.round((racha.actual / user.compromisoDias) * 100))}%"></div>
+          </div>
+        </div>` : '';
+
+      wrap.innerHTML = `
+        <h2 class="center">🔥 Mis Rachas</h2>
+        <div class="rachas-hero mt">
+          ${broteBadge(etapa, { size: 56, premium: isPremium() })}
+          <p class="num mt" style="margin:4px 0 0">${racha.actual} <span class="streak-flame ${racha.actual > 0 ? 'lit' : 'out'}">🔥</span></p>
+          <p class="small muted">${etapa.label} — tu Brote de Ruta crece con tu constancia.</p>
+        </div>
+        <div class="rachas-stats mt">
+          <div><span class="n">${racha.mejor}</span><span class="l">Mejor Ruta</span></div>
+          <div><span class="n">${diasEsteMes}</span><span class="l">Este mes</span></div>
+          <div><span class="n">${escudos}/${maxEscudos()}</span><span class="l">Pausas</span></div>
+        </div>
+        ${compromisoHtml}
+        <div class="month-nav mt">
+          <button id="mr-prev" aria-label="Mes anterior">‹</button>
+          <strong>${MONTH_NOMBRES[month]} ${year}</strong>
+          <button id="mr-next" aria-label="Mes siguiente" ${esMesActual ? 'disabled' : ''}>›</button>
+        </div>
+        <div class="month-grid mt">
+          ${MONTH_LETRAS.map((l) => `<span class="month-head">${l}</span>`).join('')}
+          ${celdas.map((c) => `
+            <div class="month-cell${c.fueraDeMes ? ' fuera' : ''}${c.esHoy ? ' hoy' : ''}${c.cumplido ? ' cumplido' : c.congelado ? ' congelado' : c.pctHabitos > 0 ? ' parcial' : ''}">
+              <span class="month-dot">${c.congelado && !c.cumplido ? frozenFlameIcon(18) : c.dia}</span>
+            </div>`).join('')}
+        </div>
+        <p class="small muted mt">🛡️ Pausas de Ruta: te acompañan cuando necesitas descansar sin romper tu racha. Se gana 1 cada 7 Días en Ruta.</p>
+        <p class="small muted">🧭 Energía de Ruta: ${energiaRuta || 0} · ${kmRuta || 0} km recorridos · 💎 ${gemas} gemas ganadas.</p>
+        <button class="btn ghost full mt" id="mr-ver-progreso">Ver todo mi progreso →</button>`;
+
+      wrap.querySelector('#mr-prev').addEventListener('click', () => {
+        month -= 1;
+        if (month < 0) { month = 11; year -= 1; }
+        pintar();
+      });
+      const nextBtn = wrap.querySelector('#mr-next');
+      if (!nextBtn.disabled) {
+        nextBtn.addEventListener('click', () => {
+          month += 1;
+          if (month > 11) { month = 0; year += 1; }
+          pintar();
+        });
+      }
+      wrap.querySelector('#mr-ver-progreso').addEventListener('click', () => {
+        document.querySelector('.modal-backdrop')?.remove();
+        navigate('progress');
+      });
+    }
+
+    pintar();
+  });
 }
 
 // Modal reutilizable.

@@ -1,5 +1,5 @@
 // Quiz inicial de personalización (onboarding).
-import { getState, setState, esc, today } from '../store.js';
+import { getState, setState, esc, today, calcularIMC } from '../store.js';
 import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
 import { navigate, openModal, toast } from '../app.js';
@@ -974,6 +974,20 @@ export function renderQuiz(container) {
             <h3>Tus primeros pasos 👣</h3>
             <ul class="steps check mt">${prioridades.map((p) => `<li>${p}</li>`).join('')}</ul>
           </div>
+          ${(() => {
+            // Solo si "Bajar de peso" es una de sus metas -- con peso +
+            // estatura, el IMC es una referencia real y comprobada
+            // (fórmula estándar de la OMS) para ese objetivo específico,
+            // no para todo el mundo sin venir al caso.
+            if (!answers.objetivos.includes('peso')) return '';
+            const imc = calcularIMC(Number(answers.pesoKg), Number(answers.estaturaCm));
+            if (!imc) return '';
+            return `<div class="card">
+              <h3>⚖️ Tu IMC</h3>
+              <p class="mt"><strong>${imc.valor}</strong> — ${imc.categoria}</p>
+              <p class="small muted mt">Es solo una referencia general (fórmula estándar de la OMS): no distingue masa muscular de grasa, y no es un diagnóstico.</p>
+            </div>`;
+          })()}
           <div class="legal-note">La información que diste nos ayuda a personalizar tu experiencia. Esta app es una guía de autoayuda y no reemplaza la atención de un profesional de salud.</div>
         </div>
       </div>

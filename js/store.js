@@ -237,6 +237,59 @@ export function today() {
   return localDateStr(new Date());
 }
 
+// Rejilla de un mes completo (empieza en lunes, 6 semanas fijas) para el
+// calendario de "Mis Rachas" -- cada celda trae si ese día se cumplió,
+// si estaba cubierto por una Pausa de Ruta, y qué % de hábitos se
+// completó ese día (de historialDiario) para poder pintar intensidad,
+// no solo un punto binario como hace Fitia.
+export function diasDelMes(year, month) {
+  const { diasCumplidos, diasCongelados, historialDiario } = getState();
+  const cumplidos = new Set(diasCumplidos);
+  const congelados = new Set(diasCongelados || []);
+  const porFecha = new Map(historialDiario.map((h) => [h.fecha, h]));
+  const hoyISO = today();
+  const primerDia = new Date(year, month, 1);
+  const inicioOffset = (primerDia.getDay() + 6) % 7; // lunes=0
+  const inicio = new Date(year, month, 1 - inicioOffset);
+  const celdas = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(inicio);
+    d.setDate(inicio.getDate() + i);
+    const iso = localDateStr(d);
+    const h = porFecha.get(iso);
+    celdas.push({
+      iso,
+      dia: d.getDate(),
+      fueraDeMes: d.getMonth() !== month,
+      esHoy: iso === hoyISO,
+      esFuturo: iso > hoyISO,
+      cumplido: cumplidos.has(iso),
+      congelado: congelados.has(iso),
+      pctHabitos: h ? Math.round((h.habitosCompletados / (h.habitosTotal || 5)) * 100) : null
+    });
+  }
+  return celdas;
+}
+
+// --- IMC (Índice de Masa Corporal): fórmula estándar de la OMS,
+// peso(kg) / estatura(m)², con las mismas 4 categorías que usa la OMS.
+// Es información real y de uso clínico común, no una fórmula inventada
+// -- pero sí una medida limitada (no distingue masa muscular de grasa),
+// por eso quien la use en la app debe mostrarla junto a esa advertencia,
+// nunca como diagnóstico ni como única señal de salud. Solo se calcula
+// si hay peso Y estatura reales (ninguno inventado ni asumido).
+export function calcularIMC(pesoKg, estaturaCm) {
+  if (!pesoKg || !estaturaCm) return null;
+  const m = estaturaCm / 100;
+  const valor = pesoKg / (m * m);
+  let categoria;
+  if (valor < 18.5) categoria = 'Bajo peso';
+  else if (valor < 25) categoria = 'Normal';
+  else if (valor < 30) categoria = 'Sobrepeso';
+  else categoria = 'Obesidad';
+  return { valor: Math.round(valor * 10) / 10, categoria };
+}
+
 // --- Meta de agua: 30–35 mL por kg de peso corporal, el rango estándar
 // usado en nutrición clínica (p. ej. guías de la EFSA) — no una marca ni
 // una persona. Sin sexo registrado se usa el punto medio (32.5 mL/kg);

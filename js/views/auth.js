@@ -149,9 +149,24 @@ export function renderAuth(container, params = {}) {
       // parpadee si la red responde muy rápido, se ve intencional en vez
       // de un glitch.
       if (mode === 'signup') {
+        // El círculo punteado se dibuja primero (mismo trazo que el resto
+        // de la app); cuando termina, un punto la recorre en bucle -- el
+        // mismo gesto de "ruta recorriéndose" que ya usa la landing.
         container.innerHTML = `
-          <div class="card center" style="margin-top:25vh">
-            <div style="font-size:3rem">🌿</div>
+          <div class="card center" style="margin-top:22vh">
+            <div class="creando-ring">
+              <svg viewBox="0 0 100 100">
+                <circle class="creando-ring-track" cx="50" cy="50" r="42"/>
+                <path id="creando-circulo" d="M50,8 A42,42 0 1,1 49.9,8.001" fill="none" stroke="none"/>
+                <circle class="creando-ring-draw" cx="50" cy="50" r="42"/>
+                <circle class="creando-ring-dot" r="4" opacity="0">
+                  <animate attributeName="opacity" from="0" to="1" begin="1.1s" dur="0.01s" fill="freeze"/>
+                  <animateMotion dur="2.2s" repeatCount="indefinite" begin="1.1s">
+                    <mpath href="#creando-circulo"/>
+                  </animateMotion>
+                </circle>
+              </svg>
+            </div>
             <h2 class="mt">Creando tu cuenta…</h2>
             <p class="small muted mt">Espera un momento</p>
           </div>`;
