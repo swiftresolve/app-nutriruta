@@ -36,7 +36,6 @@ export function renderProgress(container) {
   const diasCompletados7 = (emergencia?.completados || []).length;
   const emergCard = document.createElement('div');
   emergCard.className = 'card';
-  emergCard.style.borderLeft = '4px solid var(--accent)';
   if (diasCompletados7 >= 7) {
     emergCard.innerHTML = `
       <div class="spread"><h3>${t('🏁 Plan de 7 días')}</h3><span class="tag verde">${t('Completado')}</span></div>
@@ -60,7 +59,6 @@ export function renderProgress(container) {
   const { mision } = getState();
   const misionCard = document.createElement('div');
   misionCard.className = 'card';
-  misionCard.style.borderLeft = '4px solid var(--primary)';
   if (mision && mision.inicio) {
     const done = (mision.completadas || []).length;
     const activa = isPremium();
