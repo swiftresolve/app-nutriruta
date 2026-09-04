@@ -270,25 +270,13 @@ export function renderDashboard(container) {
     });
   });
 
-  // Grilla de 2 columnas iguales -- antes era una fila que envolvía
-  // (.row.wrap) y los 4 botones quedaban con anchos distintos según su
-  // propio texto ("Ver lista de compras" mucho más largo que "Mi
-  // Diario"), rompiendo la fila de forma dispareja. Ahora siempre son 2
-  // filas de 2, mismo ancho y alto entre los 4 (feedback real de la
-  // usuaria) -- fila 1: lista de compras + diario, fila 2: qué tienes en
-  // casa + ver la semana.
+  // Grilla de 2 columnas iguales, mismo ancho y alto entre los botones
+  // (feedback real de la usuaria sobre esta misma fila). "Ver lista de
+  // compras" y "Mi Diario" se quitaron de aquí: ahora viven como botones
+  // propios en el carrusel de "Tu progreso" arriba, y quedarían
+  // repetidos si se dejaban también acá.
   const menuActions = document.createElement('div');
   menuActions.className = 'dashboard-menu-actions mt';
-  const shopBtn = document.createElement('button');
-  shopBtn.className = 'btn ghost sm';
-  shopBtn.textContent = t('🛒 Ver lista de compras');
-  shopBtn.addEventListener('click', () => navigate('planner', { tab: 'compras' }));
-  menuActions.appendChild(shopBtn);
-  const diaryBtn = document.createElement('button');
-  diaryBtn.className = 'btn ghost sm';
-  diaryBtn.textContent = t('📔 Mi Diario');
-  diaryBtn.addEventListener('click', () => navigate('diary'));
-  menuActions.appendChild(diaryBtn);
   const kitchenBtn = document.createElement('button');
   kitchenBtn.className = 'btn ghost sm';
   kitchenBtn.textContent = t('🔍 ¿Qué tienes en casa?');
