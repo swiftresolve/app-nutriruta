@@ -1,6 +1,7 @@
 // Quiz inicial de personalización (onboarding).
 import { getState, setState, esc, today } from '../store.js';
 import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
+import { MEALS } from '../data/recipes.js';
 import { navigate, openModal } from '../app.js';
 import { rutiMascot } from '../mascot.js';
 
@@ -158,7 +159,8 @@ export function renderQuiz(container) {
     // Sin valor por defecto: ninguna opción debe verse preseleccionada,
     // la usuaria elige de verdad cada respuesta.
     habitosDificiles: [], motivacion: '', actividad: '', azucarFreq: '', alcoholFreq: '',
-    pesoKg: known.pesoKg || '', sexo: known.sexo || '', edad: known.edad || '', estaturaCm: known.estaturaCm || ''
+    pesoKg: known.pesoKg || '', sexo: known.sexo || '', edad: known.edad || '', estaturaCm: known.estaturaCm || '',
+    contextoSusana: known.contextoSusana || '', comidasIncluidas: []
   };
   let step = 0;
 
@@ -251,6 +253,12 @@ export function renderQuiz(container) {
       render: (el, onChange) => chips(el, ACTIVITY, answers, false, 'actividad', true, onChange)
     },
     {
+      title: '¿Qué comidas quieres incluir en tu día?',
+      sub: 'Elige las que quieres ver en tu menú diario (ej. si ayunas, puedes dejar fuera el desayuno).',
+      completo: () => answers.comidasIncluidas.length > 0,
+      render: (el, onChange) => chips(el, MEALS, answers.comidasIncluidas, true, undefined, false, onChange)
+    },
+    {
       // Como en Fitia ("Sobre ti"), pero con un uso real y distinto al de
       // ellos: Fitia lo pide para calcular calorías -- NutriRuta decidió a
       // propósito NO ser un contador de calorías. Aquí sexo+peso afinan la
@@ -283,6 +291,25 @@ export function renderQuiz(container) {
       sub: 'Cerveza, vino, licores… Si no tomas, elige "Nunca".',
       completo: () => !!answers.alcoholFreq,
       render: (el, onChange) => chips(el, FREQ_OPTIONS, answers, false, 'alcoholFreq', true, onChange)
+    },
+    {
+      // Mismo campo que ya existía en Ajustes (contextoSusana) -- se
+      // agrega aquí también, al final, como la última pregunta libre del
+      // quiz, para no obligar a nadie a ir a buscarlo después.
+      title: '¿Hay algo más que debamos saber? (opcional)',
+      sub: 'Se lo sumamos al contexto que ya tiene SuSana sobre ti, nunca lo reemplaza.',
+      render(el) {
+        const max = 300;
+        el.innerHTML = `
+          <textarea id="q-contexto" class="auth-input" rows="4" maxlength="${max}" placeholder="Ej. &quot;no hago ejercicio hace meses&quot; o &quot;estoy en un momento de mucho estrés&quot;"></textarea>
+          <p class="small muted mt" id="q-contexto-count"></p>`;
+        const input = el.querySelector('#q-contexto');
+        input.value = answers.contextoSusana;
+        const count = el.querySelector('#q-contexto-count');
+        const actualizar = () => { count.textContent = `${input.value.length}/${max}`; };
+        actualizar();
+        input.addEventListener('input', (e) => { answers.contextoSusana = e.target.value; actualizar(); });
+      }
     }
   ];
 
@@ -731,6 +758,14 @@ export function renderQuiz(container) {
         sexo: answers.sexo || null,
         edad: Number(answers.edad) >= 13 && Number(answers.edad) <= 110 ? Number(answers.edad) : null,
         estaturaCm: Number(answers.estaturaCm) >= 120 && Number(answers.estaturaCm) <= 230 ? Number(answers.estaturaCm) : null,
+        // Se guarda solo lo DESACTIVADO ({ [id]: false }) -- ausente en el
+        // objeto significa "incluida" (ver mealsActivas en menu.js), así
+        // una comida nueva que se agregue a MEALS en el futuro no queda
+        // excluida por accidente en cuentas ya creadas.
+        comidasActivas: Object.fromEntries(
+          MEALS.filter((m) => !answers.comidasIncluidas.includes(m.id)).map((m) => [m.id, false])
+        ),
+        contextoSusana: answers.contextoSusana.trim().slice(0, 300),
         trackearPeso: false
       }
     });

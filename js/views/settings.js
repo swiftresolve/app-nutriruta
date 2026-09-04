@@ -498,13 +498,22 @@ export function renderSettings(container) {
   // `user`) -- se completa con DEFAULT_HORA_COMIDAS por comida, nunca se
   // deja vacío (eso mostraría 12:00 am seleccionado, que no es el default real).
   const horaComidas = { ...DEFAULT_HORA_COMIDAS, ...(user.horaComidas || {}) };
+  // comidasActivas: sin este campo guardado (cuenta creada antes de que
+  // existiera, o `activas[id]` simplemente ausente) se asume incluida --
+  // sin esto, cuentas viejas perderían comidas de su menú de un día para
+  // otro sin haber tocado nada (ver mismo criterio en mealsActivas, menu.js).
+  const comidasActivas = user.comidasActivas || {};
+  const estaActiva = (id) => comidasActivas[id] !== false;
   horarios.innerHTML = `
-    <h2>⏰ Horario de tus comidas</h2>
-    <p class="small mb">A qué hora sueles comer, de verdad — así "Tu ruta de hoy" sabe cuál comida es "Ahora".</p>
+    <h2>⏰ Tus comidas</h2>
+    <p class="small mb">Cuáles quieres en tu día y a qué hora sueles comer, de verdad — así "Tu ruta de hoy" arma el menú correcto y sabe cuál comida es "Ahora".</p>
     ${MEALS.map((m) => `
       <div class="row spread mt" style="align-items:center">
-        <span class="small">${esc(m.emoji)} ${esc(m.nombre)}</span>
-        <select class="hora-sel" data-meal="${m.id}" style="padding:8px;border-radius:10px;border:1.5px solid #D8E6E2;font:inherit">
+        <label class="row" style="align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" class="comida-activa" data-meal="${m.id}" ${estaActiva(m.id) ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--primary)">
+          <span class="small">${esc(m.emoji)} ${esc(m.nombre)}</span>
+        </label>
+        <select class="hora-sel" data-meal="${m.id}" ${estaActiva(m.id) ? '' : 'disabled'} style="padding:8px;border-radius:10px;border:1.5px solid #D8E6E2;font:inherit">
           ${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${horaComidas[m.id] === h ? 'selected' : ''}>${h === 0 ? '12:00 am' : h < 12 ? `${h}:00 am` : h === 12 ? '12:00 pm' : `${h - 12}:00 pm`}</option>`).join('')}
         </select>
       </div>`).join('')}`;
@@ -514,6 +523,18 @@ export function renderSettings(container) {
       const nuevo = { ...DEFAULT_HORA_COMIDAS, ...(cur.horaComidas || {}), [sel.dataset.meal]: Number(sel.value) };
       setState({ user: { ...cur, horaComidas: nuevo } });
       toast('Horario actualizado 🌿');
+    });
+  });
+  horarios.querySelectorAll('.comida-activa').forEach((chk) => {
+    chk.addEventListener('change', () => {
+      // Al menos una comida activa siempre -- desactivarlas todas dejaría
+      // "Tu ruta de hoy" vacía sin ninguna explicación.
+      const activasAhora = MEALS.filter((m) => m.id === chk.dataset.meal ? chk.checked : estaActiva(m.id));
+      if (!activasAhora.length) { toast('Debes mantener al menos una comida activa.'); chk.checked = true; return; }
+      const cur = getState().user;
+      const nuevo = { ...(cur.comidasActivas || {}), [chk.dataset.meal]: chk.checked };
+      setState({ user: { ...cur, comidasActivas: nuevo } });
+      navigate('settings');
     });
   });
   container.appendChild(horarios);

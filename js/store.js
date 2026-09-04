@@ -40,6 +40,7 @@ const DEFAULT_STATE = {
     // igual para todo el mundo (7/10/12/16/19). Cada quien la ajusta a su
     // rutina real en Ajustes; estos valores son el default si nunca la toca.
     horaComidas: { ...DEFAULT_HORA_COMIDAS },
+    comidasActivas: {},     // { [mealId]: false } solo para las desactivadas -- ausente = incluida (ver mealsActivas en menu.js)
     tonoSusana: 'calida',   // 'calida' | 'motivadora' | 'directa' — cómo le habla SuSana, ver ai-assistant
     contextoSusana: '',     // texto libre opcional, ej. "no hago ejercicio hace meses" — contexto extra que SuSana suma al de siempre (perfiles/síntomas/racha), nunca lo reemplaza
     referidoPor: null,      // código de quien la invitó (capturado de "?ref=" en app.js), ver hotmart-webhook/referral-check

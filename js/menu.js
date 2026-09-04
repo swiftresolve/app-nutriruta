@@ -110,10 +110,10 @@ function daySeed(dateStr) {
 // Menú del día: por comida, elige entre los mejores candidatos rotando por fecha
 // y aplicando el desplazamiento manual ("cambiar receta").
 export function dailyMenu(dateStr = today()) {
-  const { menuOverrides } = getState();
+  const { menuOverrides, user } = getState();
   const seed = daySeed(dateStr);
   const menu = [];
-  for (const meal of MEALS) {
+  for (const meal of mealsActivas(user)) {
     const options = candidatesFor(meal.id);
     if (!options.length) { menu.push({ meal, recipe: null }); continue; }
     const pool = options.slice(0, Math.min(4, options.length)); // rotar entre los 4 mejores
@@ -122,6 +122,18 @@ export function dailyMenu(dateStr = today()) {
     menu.push({ meal, recipe: pool[idx] });
   }
   return menu;
+}
+
+// Comidas que la usuaria eligió incluir en su día (quiz "¿Qué comidas
+// quieres incluir?", editable después en Ajustes) -- por defecto las 5,
+// para no romper cuentas creadas antes de que existiera esta opción
+// (comidasActivas quedaría undefined, nunca debe leerse como "todas
+// apagadas"). Exportada porque dashboard.js necesita esta misma lista
+// (no solo el menú ya filtrado) para alinear las horas de inicio con
+// cada fila que sí se muestra.
+export function mealsActivas(user) {
+  const activas = user?.comidasActivas;
+  return MEALS.filter((m) => !activas || activas[m.id] !== false);
 }
 
 // Sin targetIndex: rota a la siguiente opción (comportamiento anterior).

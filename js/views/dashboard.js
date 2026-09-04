@@ -6,9 +6,8 @@
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, pasoRacha, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS } from '../store.js';
-import { MEALS } from '../data/recipes.js';
 import { PROFILES } from '../data/profiles.js';
-import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad } from '../menu.js';
+import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast } from '../app.js';
 import { t } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
@@ -212,7 +211,12 @@ export function renderDashboard(container) {
   // cae en DEFAULT_HORA_COMIDAS por comida -- nunca en 0, que rompería la
   // ventana de "ahora" (todo el día caería en la última comida).
   const horasUsuario = getState().user.horaComidas || {};
-  const HORAS_INICIO_COMIDA = MEALS.map((m) => Number.isFinite(horasUsuario[m.id]) ? horasUsuario[m.id] : DEFAULT_HORA_COMIDAS[m.id]);
+  // mealsActivas(), no MEALS -- si la usuaria desactivó alguna comida en el
+  // quiz/Ajustes, dailyMenu() ya la excluye del menú de abajo; este arreglo
+  // tiene que tener el mismo orden y largo para que el índice `i` de cada
+  // fila siga apuntando a la comida correcta (si no, "Ahora" quedaría mal
+  // calculado en cuanto faltara una comida).
+  const HORAS_INICIO_COMIDA = mealsActivas(getState().user).map((m) => Number.isFinite(horasUsuario[m.id]) ? horasUsuario[m.id] : DEFAULT_HORA_COMIDAS[m.id]);
   const horaActual = new Date().getHours();
   const menuHoy = dailyMenu();
   const menuItems = menuHoy.map(({ meal, recipe }, i) => {
