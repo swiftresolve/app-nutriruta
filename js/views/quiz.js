@@ -136,6 +136,15 @@ const ACTIVITY = [
   { id: 'diario', nombre: 'Diario', emoji: '🔥' }
 ];
 
+// Mismas 3 opciones que ya existen como ajuste (settings.js, TONOS) --
+// no cambia lo que SuSana dice, solo el estilo (nunca usa culpa en
+// ningún tono, ver ai-assistant).
+const SUSANA_TONOS = [
+  { id: 'calida', nombre: 'Cálida — cercana y suave, el tono de siempre', emoji: '💛' },
+  { id: 'motivadora', nombre: 'Motivadora — más entusiasta, celebra cada avance', emoji: '🌟' },
+  { id: 'directa', nombre: 'Directa — va al punto, menos rodeos', emoji: '🎯' }
+];
+
 const FREQ_OPTIONS = [
   { id: 'nunca', nombre: 'Nunca' },
   { id: 'casi_nunca', nombre: 'Casi nunca' },
@@ -171,7 +180,7 @@ export function renderQuiz(container) {
     // la usuaria elige de verdad cada respuesta.
     habitosDificiles: [], motivacion: '', actividad: '', azucarFreq: '', alcoholFreq: '',
     pesoKg: known.pesoKg || '', sexo: known.sexo || '', edad: known.edad || '', estaturaCm: known.estaturaCm || '',
-    contextoSusana: known.contextoSusana || '', comidasIncluidas: []
+    contextoSusana: known.contextoSusana || '', comidasIncluidas: [], tonoSusana: known.tonoSusana || 'calida'
   };
   let step = 0;
 
@@ -331,7 +340,16 @@ export function renderQuiz(container) {
       render: (el, onChange) => chips(el, FREQ_OPTIONS, answers, false, 'alcoholFreq', true, onChange)
     },
     {
-      // Mismo campo que ya existía en Ajustes (contextoSusana) -- se
+      // Ya existe como ajuste (settings.js, TONOS) -- ya viene con un
+      // default razonable ('calida'), así que aquí se muestra
+      // preseleccionado igual que en Ajustes, no en blanco: es una
+      // preferencia de estilo con un valor por defecto real, no una
+      // respuesta que deba forzarse a elegir desde cero.
+      title: '¿Cómo quieres que te hable SuSana?',
+      sub: 'Nunca usa culpa ni regaños, solo cambia el estilo. Puedes cambiarlo cuando quieras.',
+      render: (el, onChange) => chips(el, SUSANA_TONOS, answers, false, 'tonoSusana', true, onChange)
+    },
+    {
       // agrega aquí también, al final, como la última pregunta libre del
       // quiz, para no obligar a nadie a ir a buscarlo después.
       title: '¿Hay algo más que debamos saber? (opcional)',
@@ -848,6 +866,7 @@ export function renderQuiz(container) {
           MEALS.filter((m) => !answers.comidasIncluidas.includes(m.id)).map((m) => [m.id, false])
         ),
         contextoSusana: answers.contextoSusana.trim().slice(0, 300),
+        tonoSusana: answers.tonoSusana,
         trackearPeso: false
       }
     });
