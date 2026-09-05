@@ -178,6 +178,20 @@ function attachStatTooltip(btn, html, { onRender, duracion = 3500 } = {}) {
     tip.className = 'header-tooltip';
     tip.innerHTML = typeof html === 'function' ? html() : html;
     btn.appendChild(tip);
+    // La burbuja se ancla por defecto al borde derecho de SU PROPIO botón
+    // (ver CSS) -- para el de racha o gemas, más a la izquierda dentro del
+    // grupo de stats, eso la hacía desbordarse fuera de pantalla por la
+    // izquierda. Se corrige después de pintarla, corriéndola lo justo para
+    // que quede siempre dentro del viewport (con margen), sin tocar el caso
+    // que ya funcionaba bien (el de escudos, pegado al borde derecho).
+    requestAnimationFrame(() => {
+      const margen = 10;
+      const rect = tip.getBoundingClientRect();
+      let corrimiento = 0;
+      if (rect.left < margen) corrimiento = margen - rect.left;
+      else if (rect.right > window.innerWidth - margen) corrimiento = (window.innerWidth - margen) - rect.right;
+      if (corrimiento) tip.style.transform = `translateX(${corrimiento}px)`;
+    });
     const cerrar = () => { tip.remove(); document.removeEventListener('click', fuera); };
     const timer = setTimeout(cerrar, duracion);
     const fuera = (ev) => { if (!btn.contains(ev.target)) { clearTimeout(timer); cerrar(); } };

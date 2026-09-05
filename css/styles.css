@@ -722,18 +722,24 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    la regla CSS. Mismos tonos que ORO_NUTRICOINS/PLATA_NUTRICOINS en JS. */
 #hs-nutricoins .value { color: #D4A017; }
 #hs-nutricoins.sin-saldo .value { color: var(--ink-soft); }
+/* Antes anclada por el borde derecho de CADA botón (right:-6px) -- para
+   uno angosto y más a la izquierda del grupo (gemas), la burbuja (mucho
+   más ancha que el botón) quedaba visualmente lejos del ícono que se
+   tocó. Ahora se centra bajo el botón por defecto; app.js la corre lo
+   justo con JS solo si así se saldría de la pantalla (el caso del botón
+   de Pausas, pegado al borde derecho). */
 .header-tooltip {
-  position: absolute; top: calc(100% + 8px); right: -6px; z-index: 90;
-  background: var(--card); color: var(--ink); border-radius: 14px;
-  box-shadow: 0 10px 28px rgba(35, 56, 51, 0.2); padding: 12px 14px;
+  position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 90;
+  background: var(--modal-bg); color: var(--ink); border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px;
   width: max-content; max-width: 240px; text-align: left; white-space: normal;
   animation: tooltip-in 0.18s cubic-bezier(.34,1.56,.64,1);
 }
 .header-tooltip::after {
-  content: ''; position: absolute; bottom: 100%; right: 16px;
-  border: 6px solid transparent; border-bottom-color: var(--card);
+  content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  border: 6px solid transparent; border-bottom-color: var(--modal-bg);
 }
-@keyframes tooltip-in { from { opacity: 0; transform: translateY(-6px) scale(0.95); } to { opacity: 1; transform: none; } }
+@keyframes tooltip-in { from { opacity: 0; transform: translateX(-50%) translateY(-6px) scale(0.95); } to { opacity: 1; transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) {
   .header-tooltip { animation: none; }
 }
