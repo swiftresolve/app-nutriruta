@@ -554,7 +554,7 @@ export function renderQuiz(container) {
   // usuaria escribe a mano (objetivosOtro) comparten UNA sola grilla de
   // 2 columnas -- si estuvieran en dos grillas separadas, cada una
   // centraría su propio último ítem si le tocaba número impar, y se veía
-  // un salto raro (ej. "Menos ansiedad por comida" sola y centrada,
+  // un salto raro (ej. "Ansiedad al comer" sola y centrada,
   // aunque justo debajo ya seguían dos tags en columnas). Con una sola
   // grilla, el checkerboard de columnas continúa sin cortes y solo se
   // centra el último de verdad, cuando el total combinado es impar.

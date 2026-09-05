@@ -92,12 +92,27 @@ export function buscarPorIngredientes(texto) {
 }
 
 // Recetas disponibles para una comida, ordenadas por afinidad al usuario.
+// Si tiene perfiles de salud activos, prioriza SOLO las que de verdad
+// ayudan a esa condición (recipe.apto) en vez de cualquiera que no esté
+// en rojo -- antes "no rojo" dejaba pasar recetas neutras (sin etiquetar
+// para su perfil) junto a las realmente indicadas, sin distinguirlas.
+// Si el catálogo no alcanza 4 para esa comida+perfil, se completa con el
+// resto (nunca deja una comida sin sugerencia). Usada también por
+// dailyMenu()/alternativesFor()/swapMeal() -- cambiarla aquí, en la raíz,
+// mantiene el menú del día y el botón de "cambiar comida" consistentes
+// entre sí (ambos rotan sobre el mismo pool).
 export function candidatesFor(mealId) {
   const { user } = getState();
-  return RECIPES
+  const perfiles = user.perfiles || [];
+  const disponibles = RECIPES
     .filter((r) => r.comida === mealId && isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
-    .filter((r) => trafficLight(r, user.perfiles) !== 'rojo')
-    .sort((a, b) => score(b, user.perfiles) - score(a, user.perfiles));
+    .filter((r) => trafficLight(r, perfiles) !== 'rojo');
+
+  if (perfiles.length) {
+    const queAyudan = disponibles.filter((r) => (r.apto || []).some((p) => perfiles.includes(p)));
+    if (queAyudan.length >= 4) return queAyudan.sort((a, b) => score(b, perfiles) - score(a, perfiles));
+  }
+  return disponibles.sort((a, b) => score(b, perfiles) - score(a, perfiles));
 }
 
 // Semilla determinística por fecha para variar el menú día a día.
