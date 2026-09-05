@@ -639,12 +639,12 @@ function updateStreak() {
 }
 
 // --- Antojos (SOS) ---
-export function logCraving(tipo, resultado) {
+export function logCraving(tipo, resultado, hambre = null) {
   const ahora = new Date();
   const antojos = [...state.antojos, {
     fecha: today(),
     hora: `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`,
-    tipo, resultado
+    tipo, resultado, hambre
   }];
   setState({ antojos });
   if (resultado === 'alternativa') sumarEnergiaRuta(2, 1); // "Completar SOS Antojo"

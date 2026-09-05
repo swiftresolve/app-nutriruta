@@ -23,6 +23,7 @@ const CRAVING_TYPES = [
 export function renderSOS(container) {
   let step = 0;
   let tipo = null;
+  let hambre = null;
   // Limpieza del paso que se está por abandonar -- hoy solo la usa la
   // respiración (cancelar el ciclo pendiente y cortar el sonido en curso
   // si se sale a mitad de un inhala/exhala, con Continuar o Atrás).
@@ -109,7 +110,10 @@ export function renderSOS(container) {
         <div class="breath-wrap"><div class="breath-circle" id="breath">Toca<br>para empezar</div></div>
         <p class="small muted" id="breath-label">&nbsp;</p>
       </div>`;
-    const next = botonContinuar(navEl, { disabled: true, texto: 'Continuar' });
+    // Nunca deshabilitado -- la respiración es una ayuda opcional, no un
+    // requisito para avanzar (pedido explícito de la usuaria: nunca se
+    // le dijo que bloqueara el botón hasta terminar el ciclo).
+    const next = botonContinuar(navEl, { texto: 'Continuar' });
     const circle = body.querySelector('#breath');
     const label = body.querySelector('#breath-label');
     let breathing = false;
@@ -129,7 +133,6 @@ export function renderSOS(container) {
           circle.innerHTML = '<span class="breath-done"><span class="breath-done-emoji">🌿</span>¡Bien hecho!</span>';
           label.textContent = '¿Cómo te sientes ahora?';
           breathing = false;
-          next.disabled = false;
           return;
         }
         cycle++;
@@ -148,13 +151,37 @@ export function renderSOS(container) {
     });
   }
 
-  // Paso 3: hambre física vs emocional -- reflexión, sin selección forzada.
+  // Paso 3: hambre física vs emocional -- pregunta real con respuesta, no
+  // solo texto informativo (antes no dejaba elegir nada, se "respondía
+  // sola"). La respuesta se guarda junto al resto del registro del antojo,
+  // igual que el tipo -- ver logCraving en store.js.
+  const HAMBRE_TIPOS = [
+    { id: 'fisica', nombre: '🍽️ Fue física' },
+    { id: 'emocional', nombre: '💭 Fue emocional' },
+    { id: 'no_se', nombre: '🤔 No estoy segura' }
+  ];
   function pintarHambre(body, navEl) {
     body.innerHTML = `
       <h2>¿Hambre física o emocional?</h2>
-      <p><strong>Hambre física:</strong> llegó poco a poco y aceptarías cualquier comida.</p>
-      <p class="mt"><strong>Hambre emocional:</strong> llegó de golpe y pide algo muy específico.</p>`;
-    botonContinuar(navEl);
+      <p><strong>Física:</strong> llegó poco a poco y aceptarías cualquier comida.</p>
+      <p class="mt"><strong>Emocional:</strong> llegó de golpe y pide algo muy específico.</p>
+      <p class="mt small muted">Elige lo que más se parezca a lo que sientes ahora:</p>
+      <div class="chips chips-1col mt"></div>`;
+    const wrap = body.querySelector('.chips');
+    const next = botonContinuar(navEl, { disabled: !hambre });
+    for (const h of HAMBRE_TIPOS) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (hambre === h.id ? ' selected' : '');
+      b.textContent = h.nombre;
+      b.addEventListener('click', () => {
+        hambre = h.id;
+        wrap.querySelectorAll('.chip').forEach((c) => c.classList.remove('selected'));
+        b.classList.add('selected');
+        next.disabled = false;
+      });
+      wrap.appendChild(b);
+    }
   }
 
   // Paso 4: alternativas -- misma tarjeta que el Recetario (plato, aro de
@@ -208,13 +235,13 @@ export function renderSOS(container) {
       <button type="button" class="btn full mt" id="sos-ok">✅ Usé una alternativa saludable</button>
       <button type="button" class="btn ghost full mt" id="sos-cedio">🤍 Esta vez cedí al antojo</button>`;
     body.querySelector('#sos-ok').addEventListener('click', () => {
-      logCraving(tipo || 'no_se', 'alternativa');
+      logCraving(tipo || 'no_se', 'alternativa', hambre);
       checkAchievements();
       navigate('dashboard');
       toast('💚 Registrado. ¡Cada vez que eliges distinto, reentrenas tu hábito!');
     });
     body.querySelector('#sos-cedio').addEventListener('click', () => {
-      logCraving(tipo || 'no_se', 'cedio');
+      logCraving(tipo || 'no_se', 'cedio', hambre);
       navigate('dashboard');
       toast('Está bien. Progreso, no perfección. Mañana seguimos 💛');
     });

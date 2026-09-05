@@ -9,6 +9,7 @@
   --accent-soft: #FFE9E2;
   --bg: #F7FAF9;
   --card: #FFFFFF;
+  --card-glass: rgba(255, 255, 255, 0.9); /* tarjetas de receta: transparencia muy leve, mismo espíritu que --nav-bg */
   --ink: #233833;
   --ink-soft: #5C7570;
   --green: #3BAE5C;
@@ -58,6 +59,7 @@
     --accent-soft: #3A2620;
     --bg: #10201B;
     --card: #17281F;
+    --card-glass: rgba(23, 40, 31, 0.88);
     --ink: #EAF3EF;
     --ink-soft: #92A9A0;
     --shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.3);
@@ -75,6 +77,7 @@
   --accent-soft: #3A2620;
   --bg: #10201B;
   --card: #17281F;
+  --card-glass: rgba(23, 40, 31, 0.88);
   --ink: #EAF3EF;
   --ink-soft: #92A9A0;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.3);
@@ -809,7 +812,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .recipe-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; }
 .recipe-card {
   position: relative;
-  background: var(--card); border-radius: 18px; box-shadow: var(--shadow);
+  /* Transparencia muy leve, mismo espíritu que el menú inferior (--nav-bg)
+     -- pero bastante más opaca (0.9/0.88 vs 0.5), porque acá el texto
+     dentro de la tarjeta necesita seguir leyéndose claro. */
+  background: var(--card-glass); border-radius: 18px; box-shadow: var(--shadow);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   padding: 14px 12px 12px; text-align: center; width: 100%;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
@@ -1260,14 +1267,20 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .sos-breath-step .step-body { flex: none; width: 100%; }
 .sos-breath-screen h2 { margin-bottom: 2px; }
-.sos-breath-screen .breath-wrap { padding: 34px 0; }
+/* Espacio reservado arriba/abajo del círculo: debe alcanzar para su
+   crecimiento al inhalar (scale 1.35 sobre 190px = ~33px de más por
+   lado) MÁS el brillo (box-shadow), que no lo detiene el padding del
+   wrap por ser solo pintura fuera de la caja -- por eso el brillo se
+   mantiene angosto (blur ≤18px) en vez del halo grande de antes (60px),
+   que sí se montaba sobre el título/la frase de abajo. */
+.sos-breath-screen .breath-wrap { padding: 66px 0; }
 .sos-breath-screen .breath-circle {
   width: 190px; height: 190px; font-size: 1.15rem;
-  box-shadow: 0 0 0 10px rgba(43, 181, 160, 0.12), 0 0 40px rgba(43, 181, 160, 0.18);
+  box-shadow: 0 0 0 8px rgba(43, 181, 160, 0.12), 0 0 14px rgba(43, 181, 160, 0.18);
   transition: transform 3.5s ease-in-out, box-shadow 3.5s ease-in-out;
 }
 .sos-breath-screen .breath-circle.in {
-  box-shadow: 0 0 0 18px rgba(43, 181, 160, 0.16), 0 0 60px rgba(43, 181, 160, 0.28);
+  box-shadow: 0 0 0 12px rgba(43, 181, 160, 0.16), 0 0 18px rgba(43, 181, 160, 0.28);
 }
 .sos-breath-screen .breath-done-emoji { font-size: 2rem; }
 
