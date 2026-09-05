@@ -178,20 +178,41 @@ function attachStatTooltip(btn, html, { onRender, duracion = 3500 } = {}) {
     tip.className = 'header-tooltip';
     tip.innerHTML = typeof html === 'function' ? html() : html;
     btn.appendChild(tip);
-    // La burbuja se ancla por defecto al borde derecho de SU PROPIO botón
-    // (ver CSS) -- para el de racha o gemas, más a la izquierda dentro del
-    // grupo de stats, eso la hacía desbordarse fuera de pantalla por la
-    // izquierda. Se corrige después de pintarla, corriéndola lo justo para
-    // que quede siempre dentro del viewport (con margen), sin tocar el caso
-    // que ya funcionaba bien (el de escudos, pegado al borde derecho).
-    requestAnimationFrame(() => {
+    // Por defecto se centra bajo el botón (ver CSS) -- si eso la saca del
+    // viewport (el de la izquierda, con "gemas"; el derecho, con
+    // "escudos", pegado al borde de la pantalla) se corrige lo justo con
+    // esta función.
+    const corregirPosicion = () => {
+      // Se llama más de una vez (ver abajo) -- tiene que ser idempotente.
+      // Sin este reset, la 2da llamada medía la posición YA corregida por
+      // la 1ra, veía "no se desborda" y borraba esa misma corrección
+      // (volviendo al centrado base, que sí se desborda). Siempre se
+      // vuelve a medir desde cero, nunca sobre el resultado de la vez
+      // anterior.
+      tip.style.transform = '';
       const margen = 10;
+      // window.innerWidth NO sirve de referencia acá: con la burbuja de
+      // "escudos" (pegada al borde derecho) desbordándose, ese mismo
+      // desborde infla innerWidth antes de que se pueda medir, y la
+      // corrección termina calculada contra un ancho que ya no es el real
+      // de la pantalla. screen.width no cambia por el contenido de la
+      // página -- es el ancho físico real, siempre confiable.
+      const anchoReal = window.screen.width || window.innerWidth;
       const rect = tip.getBoundingClientRect();
       let corrimiento = 0;
       if (rect.left < margen) corrimiento = margen - rect.left;
-      else if (rect.right > window.innerWidth - margen) corrimiento = (window.innerWidth - margen) - rect.right;
-      if (corrimiento) tip.style.transform = `translateX(${corrimiento}px)`;
-    });
+      else if (rect.right > anchoReal - margen) corrimiento = (anchoReal - margen) - rect.right;
+      // translateX(-50%) es el centrado base del CSS -- si se pisa con solo
+      // "translateX(Npx)" se pierde ese centrado entero.
+      if (corrimiento) tip.style.transform = `translateX(calc(-50% + ${corrimiento}px))`;
+    };
+    // La animación de entrada (tooltip-in) sigue controlando el transform
+    // mientras corre, así que medir en el primer frame (rAF) da un tamaño/
+    // posición todavía interpolando -- una corrección calculada ahí sale
+    // mal. requestAnimationFrame cubre el caso sin animación (prefers-
+    // reduced-motion), y "animationend" recalcula ya con el layout final.
+    requestAnimationFrame(corregirPosicion);
+    tip.addEventListener('animationend', corregirPosicion, { once: true });
     const cerrar = () => { tip.remove(); document.removeEventListener('click', fuera); };
     const timer = setTimeout(cerrar, duracion);
     const fuera = (ev) => { if (!btn.contains(ev.target)) { clearTimeout(timer); cerrar(); } };
