@@ -171,7 +171,7 @@ export async function downgradeToFree() {
 export async function fetchMissionWeeks() {
   const { data, error } = await supabase
     .from('mission_weeks')
-    .select('n, emoji, titulo, objetivo, acciones, reflexion, gratis')
+    .select('n, emoji, titulo, objetivo, acciones, dias, reflexion, gratis')
     .order('n');
   if (error) throw error;
   return data || [];

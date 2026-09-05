@@ -13,6 +13,7 @@ import { renderProgress } from './views/progress.js';
 import { renderLearn } from './views/learn.js';
 import { renderSettings } from './views/settings.js';
 import { renderMission } from './views/mission.js';
+import { renderMissionWeek } from './views/missionWeek.js';
 import { renderPlans } from './views/plans.js';
 import { renderEmergency } from './views/emergency.js';
 import { renderAssistant } from './views/assistant.js';
@@ -70,6 +71,7 @@ const ROUTES = {
   learn: renderLearn,
   settings: renderSettings,
   mission: renderMission,
+  missionWeek: renderMissionWeek,
   plans: renderPlans,
   emergency: renderEmergency,
   assistant: renderAssistant,

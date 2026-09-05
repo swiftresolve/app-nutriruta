@@ -3,11 +3,10 @@
 // plan del usuario permite (semana 1 gratis; 2–12 con Premium vigente).
 import { MISSION } from '../data/mission.js';
 import { fetchMissionWeeks, fetchMissionIndex } from '../supabase-client.js';
-import { getState, setState, isPremium, planExpired, today, otorgarGemas, GEMAS_POR_DIA, sumarEnergiaRuta } from '../store.js';
-import { header, navigate, toast, openModal } from '../app.js';
+import { getState, setState, isPremium, planExpired, today } from '../store.js';
+import { header, navigate, toast } from '../app.js';
 import { renderPathMap } from '../pathMap.js';
 import { celebrateMilestone } from '../streakAnim.js';
-import { playCelebrateSound } from '../sound.js';
 
 const WEEKS_CACHE_KEY = 'nutriruta-mission-weeks';
 const INDEX_CACHE_KEY = 'nutriruta-mission-index';
@@ -89,7 +88,7 @@ export function renderMission(container) {
           }
           const weeks = await loadWeeks();
           const full = weeks.find((x) => x.n === w.n);
-          if (full) openWeek(full, false);
+          if (full) navigate('missionWeek', { week: full, canComplete: false });
           else toast('No se pudo cargar la semana. Revisa tu conexión.');
         }
       }));
@@ -154,7 +153,7 @@ export function renderMission(container) {
         done, now: isCurrent, locked, nowLabel: 'Actual',
         onClick: () => {
           if (locked) { mostrarSemanaBloqueada(w, inicio); return; }
-          openWeek(w, true, done, () => renderMission(clear(container)));
+          navigate('missionWeek', { week: w, canComplete: true, done });
         }
       };
     });
@@ -196,46 +195,6 @@ function mostrarSemanaBloqueada(week, inicio) {
   const msDesbloqueo = inicio.getTime() + (week.n - 1) * 7 * 86400000;
   const diasFaltan = Math.max(1, Math.ceil((msDesbloqueo - Date.now()) / 86400000));
   celebrateMilestone(`Semana ${week.n} llega en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}`, 'Un cambio a la vez — disfruta la semana actual primero 🌱');
-}
-
-function openWeek(week, canComplete, done = false, onChange) {
-  openModal((modal, close) => {
-    modal.insertAdjacentHTML('beforeend', `
-      <div style="font-size:2.4rem">${week.emoji}</div>
-      <h2>Semana ${week.n}: ${week.titulo}</h2>
-      <p class="mt"><strong>Objetivo:</strong> ${week.objetivo}</p>
-      <h3 class="mt">Acciones de la semana</h3>
-      <ul class="steps">${(week.acciones || []).map((a) => `<li>${a}</li>`).join('')}</ul>
-      <h3 class="mt">Para reflexionar</h3>
-      <p>${week.reflexion}</p>`);
-    if (canComplete) {
-      const btn = document.createElement('button');
-      btn.className = done ? 'btn ghost full mt' : 'btn full mt';
-      btn.textContent = done ? '↩️ Desmarcar semana' : '✅ Marcar semana como completada';
-      btn.addEventListener('click', () => {
-        const { mision } = getState();
-        const completadas = new Set(mision.completadas || []);
-        const completando = !done;
-        done ? completadas.delete(week.n) : completadas.add(week.n);
-        setState({
-          mision: {
-            ...mision, completadas: [...completadas],
-            ultimaCompletadaFecha: completando ? today() : mision.ultimaCompletadaFecha
-          }
-        });
-        close();
-        if (completando) {
-          const gemasSemana = GEMAS_POR_DIA * 3;
-          otorgarGemas(gemasSemana);
-          sumarEnergiaRuta(8, 5); // "Completar misión semanal"
-          playCelebrateSound();
-          celebrateMilestone(`¡Semana ${week.n} completada!`, `${week.titulo} · +${gemasSemana} 💎`);
-        }
-        if (onChange) onChange();
-      });
-      modal.appendChild(btn);
-    }
-  });
 }
 
 function clear(container) { container.innerHTML = ''; return container; }

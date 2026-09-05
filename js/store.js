@@ -764,6 +764,24 @@ export function responderInvitacionTestimonioPlan(compartir) {
   setState({ emergencia: { ...emergencia, compartirReflexiones: compartir, testimonioPlanPreguntado: true } });
 }
 
+// --- Reflexiones de la Misión 12 semanas (mismo patrón que el Plan de 7
+// días, ver arriba) -- una por semana, no por día, porque la unidad de
+// avance de la Misión es la semana completa.
+export function guardarReflexionSemana(semanaN, texto) {
+  const { mision } = state;
+  if (!mision) return;
+  const reflexiones = { ...(mision.reflexiones || {}), [semanaN]: (texto || '').trim().slice(0, 500) };
+  setState({ mision: { ...mision, reflexiones } });
+}
+
+// Misma idea que responderInvitacionTestimonioPlan: se pregunta UNA sola
+// vez, al completar la semana 12 -- el logro más grande de la Misión.
+export function responderInvitacionTestimonioMision(compartir) {
+  const { mision } = state;
+  if (!mision) return;
+  setState({ mision: { ...mision, compartirReflexiones: compartir, testimonioMisionPreguntado: true } });
+}
+
 // --- "Tu paso de hoy": obstáculo + micro-acción, elegido según el patrón de
 // antojos ya detectado (misma franja horaria que usa cravingPattern()). Sin
 // patrón suficiente todavía, usa el pozo 'general'. La elección es
@@ -845,7 +863,8 @@ export const ACHIEVEMENTS = [
   { id: 'sos_superado', emoji: '💚', nombre: 'Antojo superado', desc: 'Usaste una alternativa saludable ante un antojo.' },
   { id: 'sos_5', emoji: '🛡️', nombre: '5 antojos vencidos', desc: 'Cinco veces elegiste la alternativa saludable.' },
   { id: 'detective', emoji: '🔍', nombre: 'Detective de síntomas', desc: 'Registraste 3 síntomas: ya podemos buscar tus patrones.' },
-  { id: 'plan7_completo', emoji: '🎉', nombre: 'Primer paso dado', desc: 'Completaste el plan de 7 días. Empezaste sin esperar.' }
+  { id: 'plan7_completo', emoji: '🎉', nombre: 'Primer paso dado', desc: 'Completaste el plan de 7 días. Empezaste sin esperar.' },
+  { id: 'mision12_completo', emoji: '🏆', nombre: 'Misión cumplida', desc: 'Completaste las 12 semanas de la Misión. Tu nuevo estilo de vida.' }
 ];
 
 function unlock(id) {
@@ -868,5 +887,6 @@ export function checkAchievements() {
   if (superados >= 5 && unlock('sos_5')) nuevos.push('sos_5');
   if (state.sintomas.length >= 3 && unlock('detective')) nuevos.push('detective');
   if ((state.emergencia?.completados || []).length >= 7 && unlock('plan7_completo')) nuevos.push('plan7_completo');
+  if ((state.mision?.completadas || []).length >= 12 && unlock('mision12_completo')) nuevos.push('mision12_completo');
   return nuevos;
 }
