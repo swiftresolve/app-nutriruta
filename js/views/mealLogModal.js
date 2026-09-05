@@ -176,22 +176,48 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
     function pantallaVoz() {
       const Ctor = speechRecognitionCtor();
       modal.innerHTML = `
-        <h2>Dime qué comiste</h2>
+        <button type="button" class="btn ghost sm" id="ml-voz-cancelar">Cancelar</button>
+        <h2 class="mt">Dime qué comiste</h2>
         <div class="center mt">
           <button type="button" id="ml-mic" class="ml-mic-btn" aria-label="Grabar">${MIC_ICON}</button>
         </div>
-        <p class="small muted mt center" id="ml-voz-estado">Toca el micrófono y habla.</p>`;
+        <p class="small muted mt center" id="ml-voz-estado">Toca el micrófono y habla.</p>
+        <button type="button" class="btn ghost full mt" id="ml-voz-a-texto" hidden>Escribir en su lugar</button>`;
       const estado = modal.querySelector('#ml-voz-estado');
       const micBtn = modal.querySelector('#ml-mic');
+      const btnATexto = modal.querySelector('#ml-voz-a-texto');
       const rec = new Ctor();
       rec.lang = 'es-ES';
       rec.interimResults = false;
       rec.maxAlternatives = 1;
-      // Titileo lento mientras "graba" -- señal visual de que sí está
-      // escuchando, no solo el texto de estado de arriba.
-      rec.onstart = () => { estado.textContent = 'Escuchando…'; micBtn.classList.add('grabando'); };
-      rec.onerror = () => { estado.textContent = 'No se pudo escuchar. Intenta de nuevo o usa texto.'; micBtn.classList.remove('grabando'); };
+      modal.querySelector('#ml-voz-cancelar').addEventListener('click', () => { try { rec.abort(); } catch {} pantallaElegir(); });
+      btnATexto.addEventListener('click', () => pantallaTexto());
+      // Si el navegador nunca contesta (ni resultado ni error) se queda
+      // "Escuchando…" para siempre -- pasa de verdad en Brave, que bloquea
+      // por privacidad el servicio de Google detrás de esta API: el
+      // micrófono sí arranca (onstart llega), pero la transcripción nunca
+      // vuelve. Sin este tope, la única salida era cerrar toda la modal.
+      let venceTimeout = null;
+      const limpiarTimeout = () => { clearTimeout(venceTimeout); venceTimeout = null; };
+      rec.onstart = () => {
+        estado.textContent = 'Escuchando…';
+        micBtn.classList.add('grabando');
+        limpiarTimeout();
+        venceTimeout = setTimeout(() => {
+          try { rec.abort(); } catch {}
+          micBtn.classList.remove('grabando');
+          estado.textContent = 'No detectamos audio. Tu navegador puede estar bloqueando el reconocimiento de voz (pasa en Brave) — prueba escribiendo.';
+          btnATexto.hidden = false;
+        }, 8000);
+      };
+      rec.onerror = () => {
+        limpiarTimeout();
+        estado.textContent = 'No se pudo escuchar. Intenta de nuevo o usa texto.';
+        micBtn.classList.remove('grabando');
+        btnATexto.hidden = false;
+      };
       rec.onresult = async (e) => {
+        limpiarTimeout();
         const texto = e.results[0][0].transcript;
         pantallaAnalizando();
         try {
