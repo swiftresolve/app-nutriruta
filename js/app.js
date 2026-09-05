@@ -1,7 +1,7 @@
 // Router mínimo + arranque con puerta de autenticación.
 import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo, diasDelMes, today } from './store.js';
 import { t } from './i18n.js';
-import { getSession, supabase } from './supabase-client.js';
+import { getSession, supabase, avatarUrlFor } from './supabase-client.js';
 import { broteStage, broteBadge } from './ruti.js';
 import { frozenFlameIcon } from './streakAnim.js';
 import { renderAuth } from './views/auth.js';
@@ -613,7 +613,14 @@ if ('serviceWorker' in navigator) {
   if ((isInviteLink || isResetLink) && session) {
     navigate('resetPassword', { modo: isResetLink ? 'reset' : 'invite' });
   } else {
-    if (session) await initCloud();
+    if (session) {
+      await initCloud();
+      // Precarga la foto de perfil apenas hay sesión, no cuando se abre
+      // Ajustes -- así, para cuando la usuaria toca el botón de
+      // configuración, el navegador ya la tiene en caché y no hay el
+      // "parpadeo" de la inicial antes de que aparezca la foto real.
+      new Image().src = avatarUrlFor(session.user.id);
+    }
     // El quiz ya no vive detrás del login: se responde primero (invitada,
     // sin cuenta) y la cuenta se crea al final para guardarlo. Por eso el
     // primer chequeo es "¿ya lo completó?", no "¿tiene sesión?":

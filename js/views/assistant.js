@@ -103,12 +103,19 @@ export function renderAssistant(container) {
     return d;
   }
 
-  function addBubble(role, text) {
+  // scroll=false al cargar historial existente: agregar cada mensaje viejo
+  // con scrollIntoView("smooth") hacía que la pantalla, apenas se abría el
+  // chat, se viera vacía un instante y luego "corriera" mensaje por
+  // mensaje hasta el último -- un salto visible que no debería pasar. El
+  // historial se pinta completo y de una vez, y loadHistory() salta sin
+  // animación al final; solo un mensaje nuevo de verdad (send()) se
+  // desplaza con scroll suave.
+  function addBubble(role, text, { scroll = true } = {}) {
     const b = document.createElement('div');
     b.className = `chat-msg ${role}`;
     b.textContent = text;
     log.appendChild(b);
-    scrollToView(b);
+    if (scroll) scrollToView(b);
     return b;
   }
 
@@ -124,14 +131,18 @@ export function renderAssistant(container) {
       const data = await fetchGuideHistory(idAAbrir);
       conversationId = data.conversationId;
       log.innerHTML = '';
+      let ultimo = null;
       if (!data.history.length) {
-        addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`);
+        ultimo = addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`, { scroll: false });
       } else {
-        for (const m of data.history) addBubble(m.role, m.content);
+        for (const m of data.history) ultimo = addBubble(m.role, m.content, { scroll: false });
       }
       setQuota(data.usedCount);
+      // Un solo salto sin animación al final, después de pintar todo el
+      // historial de una vez -- no un scroll suave por cada mensaje viejo.
+      ultimo?.scrollIntoView({ block: 'end' });
     } catch (e) {
-      addBubble('system', 'No pudimos cargar tu historial. Revisa tu conexión.');
+      addBubble('system', 'No pudimos cargar tu historial. Revisa tu conexión.', { scroll: false });
     }
   }
 
