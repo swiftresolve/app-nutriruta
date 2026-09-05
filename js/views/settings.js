@@ -471,7 +471,7 @@ function pintarNotificaciones(container) {
       await reg.showNotification('🌿 NutriRuta', {
         body: '¡Perfecto! Así se verán tus avisos en este dispositivo.',
         icon: './icons/icon-192.png',
-        badge: './icons/icon-192.png'
+        badge: './icons/badge-96.png'
       });
     } catch (e) {
       toast('No se pudo mostrar la prueba. Revisa los permisos de notificación.');

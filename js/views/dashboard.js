@@ -233,6 +233,19 @@ export function renderDashboard(container) {
     // estación, no solo que abrió la receta sugerida (eso es comidasSeguidas,
     // una señal distinta y más floja que ya existía).
     const registro = comidaRegistrada(meal.id);
+    // Nota de horario real vs. programado -- misma idea que ya usa SuSana
+    // para saber que "desayunó tarde": si lo que registró en esta
+    // estación quedó 2+ horas fuera de su horario configurado, se avisa
+    // en la propia fila en vez de solo saberlo la IA. No cambia el ✓
+    // (eso sigue siendo "lo registró", no "lo registró a tiempo").
+    const notaHorario = (() => {
+      if (!registro) return '';
+      const horaLog = new Date(registro.hora).getHours();
+      const diff = horaLog - horaInicio;
+      if (diff >= 2) return ` · ${t('registrado más tarde de lo programado')}`;
+      if (diff <= -2) return ` · ${t('registrado más temprano de lo programado')}`;
+      return '';
+    })();
     if (!recipe) {
       return { icon: meal.emoji, title: t(meal.nombre), subtitle: t('Sin opciones con tus exclusiones actuales'), now: esAhora, nowLabel: t('Ahora'), done: !!registro };
     }
@@ -244,7 +257,7 @@ export function renderDashboard(container) {
       // comida (meal.emoji) -- antes eran fijos por Desayuno/Almuerzo/etc.
       // y nunca cambiaban al tocar 🔄, aunque la receta sí fuera otra.
       icon: shown.emoji, title: t(meal.nombre),
-      subtitle: registro ? registro.alimentos.join(', ') : shown.nombre,
+      subtitle: registro ? registro.alimentos.join(', ') + notaHorario : shown.nombre,
       now: esAhora, nowLabel: t('Ahora'), done: !!registro,
       onClick: () => {
         // Abrir una comida real del menú de hoy es la señal de "seguí el

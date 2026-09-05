@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-92a4ff1c1a';
+const CACHE = 'nutriruta-c9ddce8b1a';
 const ASSETS = [
   './',
   './index.html',
@@ -39,6 +39,7 @@ const ASSETS = [
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/badge-96.png',
   './img/ruti/saludo.png',
   './img/ruti/feliz.png',
   './img/ruti/curiosa.png',
@@ -121,7 +122,7 @@ self.addEventListener('push', (e) => {
   const options = {
     body: data.body || '',
     icon: './icons/icon-192.png',
-    badge: './icons/icon-192.png',
+    badge: './icons/badge-96.png',
     data: { url: data.url || './' }
   };
   e.waitUntil(self.registration.showNotification(title, options));
