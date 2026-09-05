@@ -1,6 +1,5 @@
 // Motor de menús: filtra por exclusiones, prioriza perfiles y genera el menú del día.
 import { RECIPES, MEALS } from './data/recipes.js';
-import { PROFILES } from './data/profiles.js';
 import { getState, setState, today } from './store.js';
 
 // Grupos presentes en una receta considerando sustituciones.
@@ -171,37 +170,6 @@ export function swapMeal(mealId, dateStr = today(), targetIndex = null) {
   setState({ menuOverrides: { ...menuOverrides, [key]: shift } });
 }
 
-// Motivo real (no inventado) de por qué una receta encaja: perfiles de
-// salud que sí cubre, tomados directo de recipe.apto — nunca un texto
-// genérico de marketing.
-function motivoCompat(recipe, perfiles) {
-  const coincide = (recipe.apto || []).filter((p) => perfiles.includes(p));
-  if (coincide.length) {
-    const nombres = coincide.slice(0, 2).map((p) => PROFILES[p]?.nombre || p);
-    return `Buena opción para ${nombres.join(' y ')}.`;
-  }
-  return 'Dentro de tus preferencias y exclusiones actuales.';
-}
-
-// Alternativas reales para sustituir una comida: la opción actual + hasta
-// 3 alternativas del mismo pool que ya usa dailyMenu() (mismo filtro por
-// perfil/exclusiones/alergias), cada una con un motivo real de por qué
-// encaja — no elige solo por rotación silenciosa como antes.
-export function alternativesFor(mealId, dateStr = today()) {
-  const { user } = getState();
-  const options = candidatesFor(mealId);
-  if (!options.length) return { current: null, currentIndex: -1, alternatives: [] };
-  const pool = options.slice(0, Math.min(4, options.length));
-  const seed = daySeed(dateStr);
-  const mealIdx = MEALS.findIndex((m) => m.id === mealId);
-  const { menuOverrides } = getState();
-  const shift = menuOverrides[`${dateStr}|${mealId}`] || 0;
-  const currentIndex = (seed + mealIdx + shift) % pool.length;
-  const alternatives = pool
-    .map((recipe, index) => ({ recipe, index, motivo: motivoCompat(recipe, user.perfiles) }))
-    .filter((a) => a.index !== currentIndex);
-  return { current: pool[currentIndex], currentIndex, alternatives };
-}
 
 // Nombre y emoji a mostrar para una receta: si el ingrediente que nombra el
 // título está excluido (p. ej. "Tilapia al horno" cuando no se come pescado),

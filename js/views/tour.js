@@ -123,7 +123,13 @@ export function iniciarTour(onFin) {
     // pegado en un paso imposible de mostrar.
     if (paso.target && !el) { i++; pintarPaso(); return; }
 
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // El menú inferior es fixed -- siempre está en pantalla, nunca hace
+    // falta (ni conviene) hacerle scrollIntoView. En móvil, ese scroll de
+    // sobra podía disparar el colapso de la barra de direcciones (cambia
+    // --vvh a mitad de camino) y el menú/la burbuja del tour terminaban
+    // fuera de posición, con sus botones tapados -- bug real reportado,
+    // dejaba el tutorial sin forma de cerrarlo ni continuar.
+    if (el && !el.closest('#bottom-nav')) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     // Espera a que termine el scroll suave antes de medir la posición
     // real -- medir antes daría las coordenadas de ANTES de moverse.

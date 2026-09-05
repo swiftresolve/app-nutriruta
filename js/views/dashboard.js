@@ -17,7 +17,6 @@ import { tourVisible, iniciarTour } from './tour.js';
 import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
 import { renderNotifPrompt, notifPromptVisible } from './notifPrompt.js';
 import { openMealLogModal } from './mealLogModal.js';
-import { openMealSwapModal } from './mealSwapModal.js';
 import { openKitchenSearchModal } from './kitchenSearchModal.js';
 
 const DAILY_HABITS = [
@@ -269,8 +268,12 @@ export function renderDashboard(container) {
     const btn = menuCard.querySelector(`[data-row-idx="${i}"] .swap-btn`);
     if (btn) btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const { exclusiones } = getState().user;
-      openMealSwapModal(meal.id, meal.nombre, exclusiones, () => renderDashboard(clearAndGet(container)));
+      // Vuelve al comportamiento original: actualiza directo a la
+      // siguiente opción del mismo lugar, sin abrir una modal -- pedido
+      // explícito de la usuaria, la modal de alternativas se sentía como
+      // un paso de más para algo que antes era instantáneo.
+      swapMeal(meal.id);
+      renderDashboard(clearAndGet(container));
     });
   });
 
