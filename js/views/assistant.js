@@ -12,6 +12,20 @@ import { SUSANA_TONOS } from '../data/susanaTonos.js';
 const MENU_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`;
 
 const CONTEXTO_MAX = 300;
+// Caché local de la última conversación abierta -- sin esto, cada vez que
+// se entraba al chat se veía "Cargando…" con el chat vacío por un
+// instante mientras llegaba la respuesta del servidor, aunque fuera
+// exactamente la misma conversación de la última vez. Se pinta la
+// versión guardada de inmediato (sin animación ni parpadeo) y de fondo
+// se pide la versión real al servidor, que solo reemplaza el contenido
+// si de verdad cambió algo (mensaje nuevo desde otro dispositivo, etc).
+const CACHE_KEY = 'nutriruta-susana-chat-cache';
+function leerCache() {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch { return null; }
+}
+function guardarCache(conversationId, history, usedCount) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ conversationId, history, usedCount })); } catch { /* localStorage lleno o bloqueado, no es crítico */ }
+}
 
 export function renderAssistant(container) {
   if (!isPremium()) {
@@ -57,6 +71,8 @@ export function renderAssistant(container) {
         log.innerHTML = '';
         addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`);
         setQuota(0);
+        ultimaFirma = null;
+        guardarCache(nueva, [], 0);
       }
     });
   });
@@ -129,21 +145,39 @@ export function renderAssistant(container) {
     quotaEl.textContent = 'Con el contexto de tu salud 🌿';
   }
 
+  // Pinta un historial ya resuelto (de caché o del servidor) en el chat.
+  // No toca el log si el contenido es exactamente el mismo que ya se ve
+  // -- evita un re-render/salto de scroll innecesario cuando la
+  // respuesta real del servidor llega y resulta ser igual a la caché que
+  // ya se había pintado al instante.
+  let ultimaFirma = null;
+  function pintarHistorial(idConv, history, usedCount) {
+    const firma = `${idConv}:${history.length}:${history[history.length - 1]?.content ?? ''}`;
+    if (firma === ultimaFirma) { setQuota(usedCount); return; }
+    ultimaFirma = firma;
+    conversationId = idConv;
+    log.innerHTML = '';
+    let ultimo = null;
+    if (!history.length) {
+      ultimo = addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`, { scroll: false });
+    } else {
+      for (const m of history) ultimo = addBubble(m.role, m.content, { scroll: false });
+    }
+    setQuota(usedCount);
+    ultimo?.scrollIntoView({ block: 'end' });
+  }
+
+  // Caché local: se pinta de inmediato si existe, sin esperar al
+  // servidor -- así la pantalla nunca abre vacía con "Cargando…" cuando
+  // ya se sabe cómo se ve la conversación.
+  const cache = leerCache();
+  if (cache) pintarHistorial(cache.conversationId, cache.history || [], cache.usedCount ?? 0);
+
   async function loadHistory(idAAbrir) {
     try {
       const data = await fetchGuideHistory(idAAbrir);
-      conversationId = data.conversationId;
-      log.innerHTML = '';
-      let ultimo = null;
-      if (!data.history.length) {
-        ultimo = addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`, { scroll: false });
-      } else {
-        for (const m of data.history) ultimo = addBubble(m.role, m.content, { scroll: false });
-      }
-      setQuota(data.usedCount);
-      // Un solo salto sin animación al final, después de pintar todo el
-      // historial de una vez -- no un scroll suave por cada mensaje viejo.
-      ultimo?.scrollIntoView({ block: 'end' });
+      pintarHistorial(data.conversationId, data.history, data.usedCount);
+      guardarCache(data.conversationId, data.history, data.usedCount);
     } catch (e) {
       addBubble('system', 'No pudimos cargar tu historial. Revisa tu conexión.', { scroll: false });
     }
@@ -182,6 +216,10 @@ export function renderAssistant(container) {
       scrollToView(reply);
       sendBtn.disabled = false;
       input.disabled = false;
+      // Actualiza la caché con el intercambio recién enviado -- silencioso,
+      // no vuelve a pintar nada porque la "firma" ya coincide con lo que
+      // se ve en pantalla (ver pintarHistorial).
+      loadHistory(conversationId);
     } catch (e) {
       typing.remove();
       if (e.code === 'premium_requerido') {

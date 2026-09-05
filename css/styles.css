@@ -762,7 +762,10 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .glass:active { transform: scale(1.2); }
 
 /* ===== Habit checklist ===== */
-.habit { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid #EFF5F3; }
+/* var(--border), no un hex fijo -- ese quedaba clarísimo/blanco sobre
+   fondo oscuro (ej. la línea bajo la primera fila del historial de
+   SuSana), se veía muy brusco en modo oscuro. */
+.habit { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--border); }
 .habit:last-child { border-bottom: none; }
 .habit label { flex: 1; }
 .habit.done label { text-decoration: line-through; color: var(--ink-soft); }

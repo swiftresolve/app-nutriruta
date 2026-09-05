@@ -103,21 +103,30 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id)
       .order('created_at', { ascending: true });
     if (error) return json({ error: 'No se pudo cargar tu historial' }, 500);
-    const porConversacion = new Map<string, { title: string; created_at: string; updated_at: string }>();
+    // El primer mensaje ("user") de la conversación es el título -- pero
+    // el insert que guarda cada intercambio mete la fila "user" y la
+    // "assistant" con el mismo created_at exacto (mismo INSERT, mismo
+    // now()), así que el orden entre esas dos filas es ambiguo: a veces
+    // la fila "assistant" salía primero en el resultado y el título
+    // quedaba fijo en "Nueva conversación" para siempre, aunque sí
+    // hubiera un mensaje real. Por eso el título se fija SOLO cuando de
+    // verdad se ve una fila "user" (con tituloFijado), sin importar en
+    // qué orden llegaron las filas con timestamp empatado.
+    const porConversacion = new Map<string, { title: string; created_at: string; updated_at: string; tituloFijado: boolean }>();
     for (const r of rows ?? []) {
-      const existente = porConversacion.get(r.conversation_id);
+      let existente = porConversacion.get(r.conversation_id);
       if (!existente) {
-        porConversacion.set(r.conversation_id, {
-          title: r.role === 'user' ? r.content : 'Nueva conversación',
-          created_at: r.created_at,
-          updated_at: r.created_at
-        });
-      } else {
-        existente.updated_at = r.created_at;
+        existente = { title: 'Nueva conversación', created_at: r.created_at, updated_at: r.created_at, tituloFijado: false };
+        porConversacion.set(r.conversation_id, existente);
+      }
+      existente.updated_at = r.created_at;
+      if (!existente.tituloFijado && r.role === 'user') {
+        existente.title = r.content;
+        existente.tituloFijado = true;
       }
     }
     const conversations = [...porConversacion.entries()]
-      .map(([conversation_id, v]) => ({ conversation_id, ...v }))
+      .map(([conversation_id, v]) => ({ conversation_id, title: v.title, created_at: v.created_at, updated_at: v.updated_at }))
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
       .slice(0, 50);
     return json({ conversations });
@@ -277,6 +286,25 @@ function isPremiumVigente(profile: { plan: string; plan_periodo: string | null; 
   return Date.now() < vence;
 }
 
+// Colombia (UTC-5, sin horario de verano) -- misma zona que usa el resto
+// de la app (ver todayBogota en push-notify) para decidir qué es "hoy".
+function todayBogota(): string {
+  const d = new Date(Date.now() - 5 * 3600 * 1000);
+  return d.toISOString().slice(0, 10);
+}
+
+const MEAL_NOMBRES: Record<string, string> = {
+  desayuno: 'desayuno', media_manana: 'media mañana', almuerzo: 'almuerzo', media_tarde: 'media tarde', cena: 'cena'
+};
+const DEFAULT_HORA_COMIDAS: Record<string, number> = { desayuno: 7, media_manana: 10, almuerzo: 12, media_tarde: 16, cena: 19 };
+
+function horaBogotaTexto(iso: string): string {
+  const h = new Date(new Date(iso).getTime() - 5 * 3600 * 1000).getUTCHours();
+  const m = new Date(new Date(iso).getTime() - 5 * 3600 * 1000).getUTCMinutes();
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+}
+
 function buildContext(state: Record<string, any>): string {
   const user = state.user ?? {};
   const perfiles: string[] = user.perfiles ?? [];
@@ -284,9 +312,34 @@ function buildContext(state: Record<string, any>): string {
   const sintomas = (state.sintomas ?? []).slice(-8);
   const antojos = (state.antojos ?? []).slice(-8);
 
+  // Comidas de HOY que ya registró (foto/voz/texto en "Tu ruta de hoy") --
+  // así SuSana puede hablar de lo que de verdad comió y a qué hora, no
+  // solo del menú sugerido que quizás ni siguió. Compara la hora real
+  // contra la hora que ella misma programó para esa comida (Ajustes →
+  // Horario de comidas), útil para notar patrones sin sonar a regaño.
+  const hoy = todayBogota();
+  const horaComidas = { ...DEFAULT_HORA_COMIDAS, ...(user.horaComidas ?? {}) };
+  const comidasRegistradas = state.comidasRegistradas ?? {};
+  const registrosHoy: string[] = [];
+  for (const mealId of Object.keys(MEAL_NOMBRES)) {
+    const registro = comidasRegistradas[`${hoy}|${mealId}`];
+    if (!registro) continue;
+    const horaProgramadaH = horaComidas[mealId];
+    const horaProgramadaTexto = `${horaProgramadaH === 0 ? 12 : horaProgramadaH > 12 ? horaProgramadaH - 12 : horaProgramadaH}:00 ${horaProgramadaH < 12 ? 'am' : 'pm'}`;
+    const horaRealTexto = horaBogotaTexto(registro.hora);
+    const horaRealNum = new Date(new Date(registro.hora).getTime() - 5 * 3600 * 1000).getUTCHours();
+    const diffHoras = horaRealNum - horaProgramadaH;
+    const notaHora = diffHoras >= 2 ? ` (bastante más tarde de lo programado: ${horaProgramadaTexto})` : diffHoras <= -2 ? ` (más temprano de lo programado: ${horaProgramadaTexto})` : '';
+    const alimentos = Array.isArray(registro.alimentos) ? registro.alimentos.join(', ') : '';
+    registrosHoy.push(`${MEAL_NOMBRES[mealId]} a las ${horaRealTexto}${notaHora}: ${alimentos}`);
+  }
+
   const lines = ['Contexto de esta usuaria (úsalo para personalizar, no lo repitas literal):'];
   lines.push(`- Perfiles de salud activos: ${perfiles.length ? perfiles.join(', ') : 'ninguno indicado'}.`);
   lines.push(`- Alimentos que no consume: ${exclusiones.length ? exclusiones.join(', ') : 'ninguno indicado'}.`);
+  if (registrosHoy.length) {
+    lines.push(`- Lo que ya registró HOY (comida, hora real, y qué comió -- usa esto si pregunta algo relacionado, ej. "vi mi desayuno?" o si algo le duele después de comer):\n  ${registrosHoy.join('\n  ')}`);
+  }
   if (user.colonPredominante) lines.push(`- Colon irritable, síntoma predominante: ${user.colonPredominante}.`);
   if (user.contextoSusana) lines.push(`- Contexto adicional que ella misma escribió sobre su situación: "${String(user.contextoSusana).slice(0, 300)}".`);
   const memorias: Array<{ texto?: string }> = Array.isArray(user.memorias) ? user.memorias : [];
