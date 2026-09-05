@@ -564,7 +564,8 @@ export function toggleFavorita(recipeId) {
 // ingredientes/pasos son texto libre, no la estructura con sustituciones
 // del catálogo curado -- por eso no pasan por isRecipeAvailable/
 // matchesSearch/trafficLight (esas funciones esperan esa estructura).
-export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingredientes, pasos, porciones, tiempoMin, origen }) {
+const ORIGENES_RECETA_PROPIA = ['ia', 'foto', 'enlace', 'manual'];
+export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingredientes, pasos, porciones, tiempoMin, origen, reconstruida }) {
   const receta = {
     id: `propia-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     nombre: String(nombre || '').trim().slice(0, 80),
@@ -575,7 +576,12 @@ export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingred
     tiempoMin: Math.min(240, Math.max(0, Number(tiempoMin) || 0)),
     ingredientes: (ingredientes || []).map((s) => s.trim()).filter(Boolean).slice(0, 20),
     pasos: (pasos || []).map((s) => s.trim()).filter(Boolean).slice(0, 15),
-    origen: origen === 'ia' ? 'ia' : 'manual',
+    origen: ORIGENES_RECETA_PROPIA.includes(origen) ? origen : 'manual',
+    // Solo tiene sentido en origen 'foto': la IA reconstruyó una receta a
+    // partir de la foto de un plato ya preparado (no de una receta escrita),
+    // así que es una estimación -- se muestra con aviso, nunca como fuente
+    // verificada (ver [[feedback-solo-info-comprobada]]).
+    reconstruida: origen === 'foto' && !!reconstruida,
     creada: today()
   };
   setState({ misRecetas: [...(state.misRecetas || []), receta] });

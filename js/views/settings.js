@@ -5,7 +5,7 @@
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, calcularIMC, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
-import { getSession, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
+import { getSession, signIn, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
 import { navigate, header, openModal, toast, abrirComprarNutricoins, GEAR_ICON } from '../app.js';
 import { iniciarTour } from './tour.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
@@ -895,23 +895,72 @@ function pintarDatos(container) {
   const wipeBtn = document.createElement('button');
   wipeBtn.className = 'btn danger full';
   wipeBtn.textContent = '🗑️ Borrar todos mis datos';
-  wipeBtn.addEventListener('click', () => openModal((modal, close) => {
-    modal.insertAdjacentHTML('beforeend', `
-      <h2>¿Borrar todo?</h2>
-      <p class="mt">Se eliminarán tu perfil, progreso, Días en Ruta y registros de este dispositivo. Esta acción no se puede deshacer.</p>`);
-    const yes = document.createElement('button');
-    yes.className = 'btn danger full mt';
-    yes.textContent = 'Sí, borrar todo';
-    yes.addEventListener('click', () => {
-      resetState();
-      pushProfileState({}, '').catch(() => {}); // también vacía la copia en la nube
-      close();
-      navigate('quiz');
-      toast('Datos eliminados. Empecemos de nuevo 🌿');
-    });
-    modal.appendChild(yes);
-  }));
+  wipeBtn.addEventListener('click', async () => {
+    const session = await getSession();
+    // Cuentas por Google (sin contraseña propia) no tienen nada que
+    // verificar aquí -- se salta directo a la advertencia. Solo las
+    // cuentas con contraseña real (identities incluye 'email') pasan por
+    // la reconfirmación.
+    const tieneContrasena = (session?.user?.app_metadata?.providers || []).includes('email');
+    if (tieneContrasena) abrirConfirmarContrasena(session.user.email);
+    else abrirAdvertenciaBorrado();
+  });
   actions.appendChild(wipeBtn);
+
+  // Paso 1 (solo cuentas con contraseña): reconfirmar identidad antes de
+  // mostrar siquiera la advertencia de borrado -- una acción irreversible
+  // no debe quedar a un solo toque si alguien más tiene el teléfono
+  // desbloqueado en la mano.
+  function abrirConfirmarContrasena(email) {
+    openModal((modal, close) => {
+      const wrap = document.createElement('div');
+      modal.appendChild(wrap);
+      wrap.innerHTML = `
+        <h2>Confirma tu contraseña</h2>
+        <p class="mt small muted">Por seguridad, antes de borrar tus datos necesitamos confirmar que eres tú.</p>
+        <input type="password" id="wipe-pass" class="auth-input mt" placeholder="Tu contraseña" autocomplete="current-password">
+        <button type="button" class="btn danger full mt" id="wipe-pass-continuar">Continuar</button>`;
+      const passInput = wrap.querySelector('#wipe-pass');
+      const continuarBtn = wrap.querySelector('#wipe-pass-continuar');
+      continuarBtn.addEventListener('click', async () => {
+        const pass = passInput.value;
+        if (!pass) { toast('Escribe tu contraseña.'); return; }
+        continuarBtn.disabled = true;
+        continuarBtn.textContent = 'Verificando…';
+        const { error } = await signIn(email, pass);
+        if (error) {
+          continuarBtn.disabled = false;
+          continuarBtn.textContent = 'Continuar';
+          toast('Contraseña incorrecta.');
+          return;
+        }
+        close();
+        abrirAdvertenciaBorrado();
+      });
+      passInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') continuarBtn.click(); });
+    });
+  }
+
+  // Paso 2: la advertencia de siempre, ahora solo alcanzable después de
+  // confirmar contraseña (o directo, si la cuenta no tiene una).
+  function abrirAdvertenciaBorrado() {
+    openModal((modal, close) => {
+      modal.insertAdjacentHTML('beforeend', `
+        <h2>¿Borrar todo?</h2>
+        <p class="mt">Se eliminarán tu perfil, progreso, Días en Ruta y registros de este dispositivo. Esta acción no se puede deshacer.</p>`);
+      const yes = document.createElement('button');
+      yes.className = 'btn danger full mt';
+      yes.textContent = 'Sí, borrar todo';
+      yes.addEventListener('click', () => {
+        resetState();
+        pushProfileState({}, '').catch(() => {}); // también vacía la copia en la nube
+        close();
+        navigate('quiz');
+        toast('Datos eliminados. Empecemos de nuevo 🌿');
+      });
+      modal.appendChild(yes);
+    });
+  }
   container.appendChild(actions);
 }
 

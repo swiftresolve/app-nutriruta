@@ -3,7 +3,7 @@ import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eli
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
 import { header, navigate, toast, openModal, SEARCH_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
-import { generarRecetaIA } from '../supabase-client.js';
+import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace } from '../supabase-client.js';
 import { openRecipe } from './dashboard.js';
 
 const ORDENES = [
@@ -29,6 +29,75 @@ const TAG_LABELS = {
   antojo_salado_saludable: '🧂 Antojo sano'
 };
 const HOT_MEALS = new Set(['desayuno', 'almuerzo', 'cena']);
+
+// Comprime/redimensiona la foto en el cliente antes de mandarla a la IA --
+// mismo criterio que toJpegBase64 en mealLogModal.js, no vale la pena
+// compartir un módulo de una sola función tan chica.
+function comprimirFotoReceta(file, maxDim = 1000) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      URL.revokeObjectURL(img.src);
+      resolve({ base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
+    };
+    img.onerror = () => reject(new Error('Imagen inválida.'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// Etiqueta corta según cómo se creó la receta propia -- un solo lugar para
+// las 4 variantes (antes solo distinguía ia/manual).
+// Selector de comida (chip + menú desplegable) reutilizado por los 4 flujos
+// de crear receta con IA (texto/foto/enlace) -- antes solo existía dentro
+// de abrirDescribirRecetaIA, se extrajo para no triplicarlo.
+function montarSelectorComida(modal, btnEl, menuEl, comidaInicial) {
+  let comidaElegida = comidaInicial;
+  function pintarBtnComida() {
+    const m = MEALS.find((x) => x.id === comidaElegida);
+    btnEl.textContent = `${m.emoji} ${m.nombre} ⌄`;
+  }
+  pintarBtnComida();
+  for (const m of MEALS) {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'habit selector-opcion' + (m.id === comidaElegida ? ' selected' : '');
+    row.innerHTML = `<label>${m.emoji} ${m.nombre}</label>${m.id === comidaElegida ? '<span>✓</span>' : ''}`;
+    row.addEventListener('click', () => {
+      comidaElegida = m.id;
+      pintarBtnComida();
+      menuEl.classList.add('hidden');
+      menuEl.querySelectorAll('.selector-opcion').forEach((r) => {
+        r.classList.toggle('selected', r === row);
+        const check = r.querySelector('span');
+        if (r === row && !check) r.insertAdjacentHTML('beforeend', '<span>✓</span>');
+        if (r !== row && check) check.remove();
+      });
+    });
+    menuEl.appendChild(row);
+  }
+  btnEl.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menuEl.classList.toggle('hidden');
+  });
+  modal.addEventListener('click', (e) => {
+    if (e.target !== btnEl && !menuEl.contains(e.target)) menuEl.classList.add('hidden');
+  });
+  return { getComida: () => comidaElegida };
+}
+
+function origenLabel(receta) {
+  if (receta.origen === 'ia') return '✨ Generada con IA';
+  if (receta.origen === 'foto') return receta.reconstruida ? '📷 Reconstruida de una foto' : '📷 Desde una foto';
+  if (receta.origen === 'enlace') return '🔗 Desde un enlace';
+  return '✏️ Tuya';
+}
 
 // "Crear manualmente" -- formulario simple: nombre, comida, ingredientes y
 // pasos en texto libre. A propósito SIN calorías ni macros, igual que el
@@ -112,9 +181,10 @@ function abrirRecetaPropia(receta, onEliminada) {
       <div class="center">
         <div style="font-size:2.6rem">${esc(receta.emoji)}</div>
         <h2 class="mt">${esc(receta.nombre)}</h2>
-        <p class="small muted mt">${meal ? `${meal.emoji} ${esc(meal.nombre)}` : ''} · ${receta.origen === 'ia' ? '✨ Generada con IA' : 'Tuya'}</p>
+        <p class="small muted mt">${meal ? `${meal.emoji} ${esc(meal.nombre)}` : ''} · ${origenLabel(receta)}</p>
         ${receta.tiempoMin ? `<p class="small muted">🍽️ ${receta.porciones || 1} porción${(receta.porciones || 1) === 1 ? '' : 'es'} · ⏱️ ${receta.tiempoMin} min</p>` : ''}
       </div>
+      ${receta.reconstruida ? `<p class="small mt" style="background:var(--accent-soft);border-radius:var(--radius);padding:10px 12px">⚠️ La IA reconstruyó esta receta a partir de la foto del plato, no de una receta escrita -- revisa cantidades y pasos antes de prepararla.</p>` : ''}
       ${receta.descripcion ? `<p class="mt">${esc(receta.descripcion)}</p>` : ''}
       ${receta.ingredientes.length ? `
         <h3 class="mt">🧺 Ingredientes</h3>
@@ -346,38 +416,7 @@ export function renderPlanner(container, params = {}) {
         </div>
         <button type="button" class="btn full" id="ia-generar">Generar ${cantidad === 1 ? 'receta' : 'recetas'} · ${cantidad * COSTO_RECETA_IA} 🪙</button>`);
 
-      const btnComida = modal.querySelector('#ia-comida-btn');
-      const menuComida = modal.querySelector('#ia-comida-menu');
-      function pintarBtnComida() {
-        const m = MEALS.find((x) => x.id === comidaElegida);
-        btnComida.textContent = `${m.emoji} ${m.nombre} ⌄`;
-      }
-      pintarBtnComida();
-      for (const m of MEALS) {
-        const row = document.createElement('button');
-        row.type = 'button';
-        row.className = 'habit selector-opcion' + (m.id === comidaElegida ? ' selected' : '');
-        row.innerHTML = `<label>${m.emoji} ${m.nombre}</label>${m.id === comidaElegida ? '<span>✓</span>' : ''}`;
-        row.addEventListener('click', () => {
-          comidaElegida = m.id;
-          pintarBtnComida();
-          menuComida.classList.add('hidden');
-          menuComida.querySelectorAll('.selector-opcion').forEach((r) => {
-            r.classList.toggle('selected', r === row);
-            const check = r.querySelector('span');
-            if (r === row && !check) r.insertAdjacentHTML('beforeend', '<span>✓</span>');
-            if (r !== row && check) check.remove();
-          });
-        });
-        menuComida.appendChild(row);
-      }
-      btnComida.addEventListener('click', (e) => {
-        e.stopPropagation();
-        menuComida.classList.toggle('hidden');
-      });
-      modal.addEventListener('click', (e) => {
-        if (e.target !== btnComida && !menuComida.contains(e.target)) menuComida.classList.add('hidden');
-      });
+      const { getComida } = montarSelectorComida(modal, modal.querySelector('#ia-comida-btn'), modal.querySelector('#ia-comida-menu'), comidaElegida);
 
       const notasEl = modal.querySelector('#ia-notas');
       const contador = modal.querySelector('#ia-contador');
@@ -388,9 +427,243 @@ export function renderPlanner(container, params = {}) {
       modal.querySelector('#ia-generar').addEventListener('click', () => {
         const notas = notasEl.value.trim();
         closeFn();
-        generarRecetasInline(cantidad, comidaElegida, notas);
+        generarRecetasInline(cantidad, getComida(), notas);
       });
     });
+  }
+
+  // "Crear manualmente" abre esta lista de 3 formas de hacerlo sin IA
+  // generativa de cero (manual/foto/enlace) -- referencia de la usuaria
+  // (captura de Fitia): filas grandes con ícono + título + descripción,
+  // no botones sueltos en el grid del Recetario.
+  function abrirSelectorMetodoCreacion() {
+    openModal((modal, closeFn) => {
+      modal.insertAdjacentHTML('beforeend', `
+        <div class="center">
+          <h2>Elige cómo<br>crear tu receta</h2>
+        </div>
+        <div class="metodo-crear-list mt">
+          <button type="button" class="metodo-crear-row" id="metodo-manual">
+            <span class="metodo-crear-icon">✏️</span>
+            <span class="metodo-crear-text"><strong>Manual</strong><span class="small muted">Agrega ingredientes uno por uno</span></span>
+          </button>
+          <button type="button" class="metodo-crear-row" id="metodo-foto">
+            <span class="metodo-crear-icon">📷</span>
+            <span class="metodo-crear-text"><strong>Desde una foto</strong><span class="small muted">De una receta escrita, o del plato ya preparado</span></span>
+          </button>
+          <button type="button" class="metodo-crear-row" id="metodo-enlace">
+            <span class="metodo-crear-icon">🔗</span>
+            <span class="metodo-crear-text"><strong>Desde un enlace</strong><span class="small muted">Pega el link de una receta real</span></span>
+          </button>
+        </div>`);
+      modal.querySelector('#metodo-manual').addEventListener('click', () => {
+        closeFn();
+        abrirFormularioReceta(() => drawBody());
+      });
+      modal.querySelector('#metodo-foto').addEventListener('click', () => {
+        closeFn();
+        abrirCrearDesdeFoto();
+      });
+      modal.querySelector('#metodo-enlace').addEventListener('click', () => {
+        closeFn();
+        abrirCrearDesdeEnlace();
+      });
+    });
+  }
+
+  // "Desde una foto": cámara en vivo dentro de la app, mismo lenguaje
+  // visual que la cámara de "¿Qué comiste?" (ver pantallaCamara en
+  // mealLogModal.js) -- referencia de la usuaria (video de Fitia): abre
+  // directo a la cámara, sin pantalla previa. La comida se asigna sola
+  // (pestaña activa del Recetario), sin pedirla aparte.
+  function abrirCrearDesdeFoto() {
+    const saldo = getState().nutricoins || 0;
+    if (saldo < COSTO_RECETA_IA) {
+      toast(`Necesitas ${COSTO_RECETA_IA} NutriCoins para generar una receta.`);
+      abrirComprarNutricoins();
+      return;
+    }
+    const comida = mealFilter !== 'todas' ? mealFilter : MEALS[0].id;
+    let stream = null;
+    function detenerCamara() { if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; } }
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.hidden = true;
+    document.body.appendChild(fileInput);
+
+    openModal((modal, closeFn) => {
+      function cerrarTodo() {
+        detenerCamara();
+        modal.parentElement?.classList.remove('cam-fullscreen');
+        fileInput.remove();
+        closeFn();
+      }
+
+      fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        try {
+          const { base64, mediaType } = await comprimirFotoReceta(file);
+          cerrarTodo();
+          generarUnaConIA(comida, 'foto', () => generarRecetaDesdeFoto(comida, base64, mediaType));
+        } catch (err) {
+          toast(err.message || 'No se pudo procesar la foto.');
+          cerrarTodo();
+        }
+      });
+
+      modal.innerHTML = `
+        <div class="camera-top"><button type="button" class="camera-cancelar" id="rf-cam-cancelar">Cancelar</button></div>
+        <p class="camera-instruccion">Toma una foto de una receta escrita, o del plato ya preparado</p>
+        <div class="camera-wrap">
+          <video id="rf-cam-video" autoplay playsinline muted></video>
+          <div class="camera-frame"></div>
+        </div>
+        <div class="camera-controls">
+          <button type="button" class="camera-icon-btn" id="rf-cam-galeria" aria-label="Elegir de la galería">🖼️</button>
+          <button type="button" id="rf-cam-shutter" class="camera-shutter" aria-label="Tomar foto"></button>
+          <span class="camera-icon-btn" style="visibility:hidden" aria-hidden="true"></span>
+        </div>`;
+      // Fullscreen (fondo negro de borde a borde) recién ahora -- modal aún
+      // no tenía padre cuando este callback empezó a correr (openModal lo
+      // engancha al backdrop justo después de esta llamada).
+      setTimeout(() => modal.parentElement?.classList.add('cam-fullscreen'), 0);
+
+      modal.querySelector('#rf-cam-cancelar').addEventListener('click', cerrarTodo);
+      modal.querySelector('#rf-cam-galeria').addEventListener('click', () => {
+        detenerCamara();
+        modal.parentElement?.classList.remove('cam-fullscreen');
+        fileInput.click();
+      });
+
+      const video = modal.querySelector('#rf-cam-video');
+      (async () => {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+          video.srcObject = stream;
+        } catch {
+          modal.parentElement?.classList.remove('cam-fullscreen');
+          toast('No pudimos abrir la cámara. Elige una foto de tu galería.');
+          fileInput.click();
+        }
+      })();
+
+      modal.querySelector('#rf-cam-shutter').addEventListener('click', () => {
+        const w = video.videoWidth, h = video.videoHeight;
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+        canvas.toBlob((blob) => {
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          cerrarTodo();
+          generarUnaConIA(comida, 'foto', () => generarRecetaDesdeFoto(comida, dataUrl.split(',')[1], 'image/jpeg'));
+        }, 'image/jpeg', 0.85);
+      });
+
+      // Si se cierra por otra vía (tocar fuera del backdrop), apaga la
+      // cámara igual -- sin esto la lucecita queda prendida.
+      const obs = new MutationObserver(() => {
+        if (!modal.isConnected) { detenerCamara(); fileInput.remove(); obs.disconnect(); }
+      });
+      obs.observe(document.body, { childList: true });
+    });
+  }
+
+  // "Desde un enlace": pegar la URL de una receta real -- el texto de la
+  // página se descarga y estructura en el servidor (generate-recipe),
+  // nunca en el navegador (CORS/CSP no lo permitirían de todas formas).
+  // Mismo diseño que la referencia de la usuaria: título "Pega un enlace",
+  // input + botón Pegar (portapapeles), aviso de qué enlaces sirven, y un
+  // botón "Importar receta" que se activa solo con algo escrito.
+  function abrirCrearDesdeEnlace() {
+    const saldo = getState().nutricoins || 0;
+    if (saldo < COSTO_RECETA_IA) {
+      toast(`Necesitas ${COSTO_RECETA_IA} NutriCoins para generar una receta.`);
+      abrirComprarNutricoins();
+      return;
+    }
+    const comida = mealFilter !== 'todas' ? mealFilter : MEALS[0].id;
+    openModal((modal, closeFn) => {
+      modal.insertAdjacentHTML('beforeend', `
+        <div class="center">
+          <h2>Pega un enlace</h2>
+        </div>
+        <div class="row mt" style="gap:8px">
+          <input type="url" id="enlace-url" class="auth-input" placeholder="https://www.example.com" inputmode="url" style="margin:0;flex:1;min-width:0">
+          <button type="button" class="btn ghost sm" id="enlace-pegar" style="flex:none">📋 Pegar</button>
+        </div>
+        <p class="small muted mt center">Enlaces soportados: TikTok, Instagram, YouTube Shorts y sitios web.</p>
+        <button type="button" class="btn full mt" id="enlace-generar" disabled>Importar receta · ${COSTO_RECETA_IA} 🪙</button>`);
+
+      const urlInput = modal.querySelector('#enlace-url');
+      const generarBtn = modal.querySelector('#enlace-generar');
+      urlInput.addEventListener('input', () => { generarBtn.disabled = !urlInput.value.trim(); });
+
+      modal.querySelector('#enlace-pegar').addEventListener('click', async () => {
+        try {
+          const texto = await navigator.clipboard.readText();
+          if (texto) {
+            urlInput.value = texto.trim();
+            generarBtn.disabled = !urlInput.value.trim();
+          }
+        } catch {
+          toast('No pudimos leer el portapapeles. Pega el enlace manualmente.');
+        }
+      });
+
+      generarBtn.addEventListener('click', () => {
+        const url = urlInput.value.trim();
+        if (!url) return;
+        closeFn();
+        generarUnaConIA(comida, 'enlace', () => generarRecetaDesdeEnlace(comida, url));
+      });
+    });
+  }
+
+  // Comparte el mismo banner/estado de progreso que generarRecetasInline
+  // (bannerIA, iaEstado/iaCantidad/iaCompletadas), pero para UN resultado
+  // que llega de una sola llamada (foto o enlace) en vez de un lote.
+  async function generarUnaConIA(comida, origen, llamada) {
+    iaEstado = 'generando';
+    iaCantidad = 1;
+    iaCompletadas = 0;
+    drawBody();
+
+    let segPct = 0;
+    clearInterval(iaTimer);
+    iaTimer = setInterval(() => {
+      segPct = Math.min(90, segPct + (90 - segPct) * 0.15 + 1);
+      const fill = body.querySelector('#ia-fill');
+      const label = body.querySelector('#ia-pct');
+      if (fill) fill.style.width = `${Math.round(segPct)}%`;
+      if (label) label.textContent = `${Math.round(segPct)}%`;
+    }, 350);
+
+    try {
+      const receta = await llamada();
+      clearInterval(iaTimer);
+      gastarNutricoins(COSTO_RECETA_IA);
+      const nutricoinsBtn = document.querySelector('#hs-nutricoins');
+      if (nutricoinsBtn) {
+        const saldo = getState().nutricoins || 0;
+        nutricoinsBtn.classList.toggle('sin-saldo', saldo <= 0);
+        nutricoinsBtn.innerHTML = `${coinIcon(saldo > 0 ? ORO_NUTRICOINS : PLATA_NUTRICOINS, 15)}<span class="value">${saldo}</span>`;
+      }
+      const nueva = agregarRecetaPropia({ ...receta, comida, origen });
+      nuevasIds.add(nueva.id);
+      iaCompletadas = 1;
+      iaEstado = 'lista';
+      drawBody();
+    } catch (e) {
+      clearInterval(iaTimer);
+      iaEstado = 'idle';
+      drawBody();
+      if (e.code === 'nutricoins_insuficientes') abrirComprarNutricoins();
+      else toast(e.message || 'No pudimos generar la receta.');
+    }
   }
 
   function generarRecetasInline(cantidad, comida, notas) {
@@ -475,7 +748,7 @@ export function renderPlanner(container, params = {}) {
         <span>Crear manualmente</span>
       </button>`;
     crear.querySelector('#crear-ia').addEventListener('click', abrirSelectorCantidadIA);
-    crear.querySelector('#crear-manual').addEventListener('click', () => abrirFormularioReceta(() => drawBody()));
+    crear.querySelector('#crear-manual').addEventListener('click', abrirSelectorMetodoCreacion);
     body.appendChild(crear);
 
     if (iaEstado !== 'idle') body.appendChild(bannerIA());
@@ -637,7 +910,7 @@ export function renderPlanner(container, params = {}) {
         </div>
         <div class="recipe-title">${esc(r.nombre)}</div>
         <div class="recipe-desc">${esc(r.descripcion || 'Receta tuya')}</div>
-        <div class="recipe-tags"><span class="recipe-tag">${r.origen === 'ia' ? '✨ Generada con IA' : '✏️ Tuya'}</span></div>`;
+        <div class="recipe-tags"><span class="recipe-tag">${origenLabel(r)}</span></div>`;
       item.querySelector('.recipe-fav').addEventListener('click', (e) => {
         e.stopPropagation();
         toggleFavorita(r.id);

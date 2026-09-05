@@ -296,7 +296,10 @@ export function renderQuiz(container) {
       title: '¿Qué comidas quieres incluir en tu día?',
       sub: 'Elige las que quieres ver en tu menú diario (ej. si ayunas, puedes dejar fuera el desayuno).',
       completo: () => answers.comidasIncluidas.length > 0,
-      render: (el, onChange) => chips(el, MEALS, answers.comidasIncluidas, true, undefined, false, onChange)
+      // "Todas" agregado como 6ta opción (antes 5, quedaba una sola en la
+      // última fila ocupando el ancho completo) -- no es una comida real,
+      // solo marca/desmarca las otras 5 (ver opt.selectAll en chips()).
+      render: (el, onChange) => chips(el, [...MEALS, { id: 'todas-comidas', nombre: 'Todas', emoji: '✅', selectAll: true }], answers.comidasIncluidas, true, undefined, false, onChange)
     },
     {
       intro: true,
@@ -415,7 +418,11 @@ export function renderQuiz(container) {
   function abrirSobreTiCampo(campo, el) {
     if (campo === 'sexo') {
       openModal((modal, closeFn) => {
-        modal.insertAdjacentHTML('beforeend', '<h2>Sexo</h2><div class="mt" id="sexo-opciones"></div>');
+        // Modal angosto y centrado -- son solo 2 opciones cortas, el ancho
+        // completo del modal (pensado para formularios largos) dejaba un
+        // hueco vacío enorme a la derecha.
+        modal.style.maxWidth = '280px';
+        modal.insertAdjacentHTML('beforeend', '<h2 class="center">Sexo</h2><div class="mt" id="sexo-opciones" style="display:flex;flex-direction:column;align-items:center;gap:2px"></div>');
         const cont = modal.querySelector('#sexo-opciones');
         for (const op of [{ id: 'mujer', label: 'Mujer' }, { id: 'hombre', label: 'Hombre' }]) {
           const row = document.createElement('button');
@@ -442,14 +449,21 @@ export function renderQuiz(container) {
   // lo que usa el resto de la app -- ver getWaterGoal en store.js).
   const RULETA_ALTO = 44;
   function abrirRuletaNumero(campo, el) {
+    // inicial: valor mostrado la primera vez que se abre (sin respuesta
+    // previa) -- antes era el punto medio del rango (ej. 165 para peso,
+    // 62 para edad), que no representa a nadie realmente. Estos valores
+    // son solo un punto de partida más típico para deslizar desde ahí.
     const config = {
-      edad: { titulo: 'Edad', min: 13, max: 110, sufijo: 'años', unidades: null },
-      estaturaCm: { titulo: 'Estatura', min: 120, max: 230, sufijo: 'cm', unidades: null },
-      pesoKg: { titulo: 'Peso', min: 30, max: 300, sufijo: 'kg', unidades: ['kg', 'lbs'] }
+      edad: { titulo: 'Edad', min: 13, max: 110, inicial: 20, sufijo: 'años', unidades: null },
+      estaturaCm: { titulo: 'Estatura', min: 120, max: 230, inicial: 165, sufijo: 'cm', unidades: null },
+      pesoKg: { titulo: 'Peso', min: 30, max: 300, inicial: 60, sufijo: 'kg', unidades: ['kg', 'lbs'] }
     }[campo];
     const KG_A_LBS = 2.20462;
 
     openModal((modal, closeFn) => {
+      // Mismo criterio que el selector de Sexo: modal angosto, sin el
+      // hueco vacío a los lados de una rueda que ya es angosta de por sí.
+      modal.style.maxWidth = '280px';
       let unidad = config.unidades ? config.unidades[0] : null;
       let valorEnPantalla = null; // en la unidad que se está mostrando ahora mismo
 
@@ -462,10 +476,12 @@ export function renderQuiz(container) {
         <div class="ruleta-wrap">
           <div class="ruleta-resalto"></div>
           <div class="ruleta-scroll" id="ruleta-scroll"></div>
+          <span class="ruleta-sufijo-fijo" id="ruleta-sufijo-fijo">${unidad || config.sufijo}</span>
         </div>
         <button type="button" class="btn full mt" id="ruleta-guardar">Guardar</button>`);
 
       const scrollEl = modal.querySelector('#ruleta-scroll');
+      const sufijoFijoEl = modal.querySelector('#ruleta-sufijo-fijo');
 
       const aUnidad = (kg, u) => u === 'lbs' ? Math.round(kg * KG_A_LBS) : Math.round(kg);
       const aKg = (v, u) => u === 'lbs' ? Math.round(v / KG_A_LBS) : Math.round(v);
@@ -485,9 +501,7 @@ export function renderQuiz(container) {
         const { min } = rango();
         const idx = Math.round(scrollEl.scrollTop / RULETA_ALTO);
         scrollEl.querySelectorAll('.ruleta-item').forEach((it, i) => {
-          const centro = i === idx;
-          it.classList.toggle('centrado', centro);
-          it.innerHTML = centro ? `${it.dataset.val}<span class="ruleta-sufijo">${unidad || config.sufijo}</span>` : it.dataset.val;
+          it.classList.toggle('centrado', i === idx);
         });
         valorEnPantalla = min + idx;
       }
@@ -507,7 +521,7 @@ export function renderQuiz(container) {
       pintarItems();
       const inicial = answers[campo]
         ? (config.unidades ? aUnidad(Number(answers[campo]), unidad) : Number(answers[campo]))
-        : Math.round((config.min + config.max) / 2);
+        : config.inicial;
       // El scroll inicial se difiere un frame: justo al insertar el HTML
       // el navegador todavía no terminó de calcular el layout (scrollHeight
       // sigue en 0), así que un scrollTop asignado en el mismo tick se
@@ -521,6 +535,7 @@ export function renderQuiz(container) {
             const valorKgActual = aKg(valorEnPantalla, unidad);
             unidad = b.dataset.unidad;
             modal.querySelectorAll('.ruleta-unidades .chip').forEach((c) => c.classList.toggle('selected', c === b));
+            sufijoFijoEl.textContent = unidad;
             pintarItems();
             irA(aUnidad(valorKgActual, unidad));
           });
@@ -752,17 +767,26 @@ export function renderQuiz(container) {
       // pocas opciones que lo tienen -- el resto sigue usando emoji.
       const iconoPrefijo = opt.iconoHtml || (opt.emoji ? `${opt.emoji} ` : '');
       b.innerHTML = `${iconoPrefijo}${esc(opt.nombre)}`;
-      const isSel = () => multi ? target.includes(opt.id) : target[prop] === opt.id;
+      // "Todas" (opt.selectAll): no es un id real que se guarde, es un
+      // atajo que marca/desmarca el resto -- se ve seleccionado cuando
+      // TODAS las opciones reales ya están elegidas.
+      const reales = () => options.filter((o) => !o.selectAll && o.id !== 'ninguna');
+      const isMultiSel = (o) => o.selectAll ? reales().every((r) => target.includes(r.id)) : target.includes(o.id);
+      const isSel = () => multi ? isMultiSel(opt) : target[prop] === opt.id;
       b.classList.toggle('selected', isSel());
       b.addEventListener('click', () => {
         if (multi) {
           if (opt.id === 'ninguna') { target.length = 0; target.push('ninguna'); }
-          else {
+          else if (opt.selectAll) {
+            const yaTodas = reales().every((r) => target.includes(r.id));
+            target.length = 0;
+            if (!yaTodas) target.push(...reales().map((r) => r.id));
+          } else {
             const i = target.indexOf('ninguna'); if (i >= 0) target.splice(i, 1);
             const j = target.indexOf(opt.id);
             j >= 0 ? target.splice(j, 1) : target.push(opt.id);
           }
-          chipEls.forEach((c, k) => c.classList.toggle('selected', target.includes(options[k].id)));
+          chipEls.forEach((c, k) => c.classList.toggle('selected', isMultiSel(options[k])));
         } else {
           // Tocar la misma opción ya elegida la deselecciona (vuelve a
           // quedar sin responder) en vez de quedar "atascada" sin forma

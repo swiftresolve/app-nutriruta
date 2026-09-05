@@ -222,6 +222,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .btn.accent:active { box-shadow: 0 1px 0 #D96B4F, 0 2px 6px rgba(255, 138, 107, 0.16); }
 .btn.ghost { background: var(--card); color: var(--primary-dark); border: 1.5px solid var(--primary-soft); box-shadow: none; }
 .btn.ghost:active { box-shadow: none; }
+/* Botones de acción dentro de modales: naranja (--accent), igual que los
+   botones destacados del resto de la app -- antes salían del verde
+   (--primary) por defecto de .btn, sin pedirlo explícitamente en cada
+   modal. .ghost/.danger no se tocan, ya tienen su propio color con
+   sentido propio (secundario/destructivo). */
+.modal .btn:not(.ghost):not(.danger) { background: var(--accent); box-shadow: 0 4px 0 #D96B4F, 0 6px 14px rgba(255, 138, 107, 0.2); }
+.modal .btn:not(.ghost):not(.danger):active { box-shadow: 0 1px 0 #D96B4F, 0 2px 6px rgba(255, 138, 107, 0.16); }
 .btn.sm { min-height: var(--btn-h-sm); padding: 6px 14px; font-size: 0.88rem; border-radius: var(--btn-radius-sm); }
 /* Filtros de Recetas (Ordenar/Comida/Preferidos): dropdown/botón chico y
    sutil a propósito -- no la piel de .btn (quedaba grueso, con sombra y
@@ -238,7 +245,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .filtro-select.selected { background: var(--primary-soft); color: var(--primary-dark); border-color: var(--primary-soft); }
 /* Botones "Crear con IA" / "Crear manualmente" del Recetario -- tarjetas
-   chicas, iguales entre sí, en el espacio que antes ocupaba el buscador. */
+   chicas, iguales entre sí, en el espacio que antes ocupaba el buscador.
+   "Crear manualmente" abre la lista de 3 métodos (manual/foto/enlace, ver
+   .metodo-crear-*) en vez de ir directo al formulario. */
 .crear-receta-btn {
   border: none; transition: transform 0.1s ease;
   display: flex; align-items: center; justify-content: center; gap: 7px;
@@ -252,6 +261,21 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .crear-receta-btn span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .crear-receta-btn .crear-receta-emoji { font-size: 1rem; line-height: 1; flex: none; }
+.crear-receta-btn:active { transform: translateY(2px) scale(0.98); }
+
+/* Lista de "Elige cómo crear tu receta" (manual/foto/enlace) -- filas
+   grandes con ícono a la izquierda y título+descripción a la derecha,
+   referencia visual de la usuaria (captura de Fitia). */
+.metodo-crear-list { display: flex; flex-direction: column; gap: 10px; }
+.metodo-crear-row {
+  display: flex; align-items: center; gap: 14px; text-align: left;
+  border: none; background: var(--bg-soft, var(--card)); border-radius: var(--radius);
+  padding: 14px 16px; box-shadow: var(--shadow); transition: transform 0.1s ease;
+}
+.metodo-crear-row:active { transform: scale(0.98); }
+.metodo-crear-icon { font-size: 1.4rem; flex: none; width: 32px; text-align: center; }
+.metodo-crear-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.metodo-crear-text strong { font-size: 0.98rem; }
 .crear-receta-btn:active { transform: translateY(2px) scale(0.98); }
 .btn.danger { background: var(--red); box-shadow: 0 4px 0 #A8382C, 0 6px 14px rgba(224, 91, 75, 0.2); }
 .btn.danger:active { box-shadow: 0 1px 0 #A8382C, 0 2px 6px rgba(224, 91, 75, 0.16); }
@@ -503,14 +527,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   /* Como ahora son tarjetas anchas (no etiquetas cortas), el radio de
      píldora (999px) se veía como un óvalo raro — mismo radio que .card. */
   border-radius: 16px;
-  /* height FIJO (no min-height) para que TODAS las opciones midan
-     exactamente lo mismo, no solo las de la misma fila -- antes una
-     opción de una sola línea y otra de dos líneas quedaban de alturas
-     distintas entre preguntas. 46px alcanza para una línea; si el texto
-     llega a partirse en dos, el propio texto se ve más chico centrado,
-     nunca estira la tarjeta -- por eso los textos de las opciones deben
-     ser cortos (ver GOALS en profiles.js, ya recortado por esto mismo). */
-  display: flex; align-items: center; justify-content: flex-start; height: 46px; overflow: hidden;
+  /* height FIJO a propósito (la usuaria no quiere que el alto cambie
+     según el contenido) -- pero 46px era matemáticamente insuficiente
+     para 2 líneas reales: 2 × 0.92rem × line-height 1.25 + el padding
+     vertical de 9px ya suma ~55px, más que el propio alto fijo, así que
+     CUALQUIER opción de 2 líneas (no solo con fuente grande) quedaba
+     recortada por el overflow:hidden. 64px sí alcanza para 2 líneas
+     completas con este mismo padding, para todas las opciones por igual. */
+  display: flex; align-items: center; justify-content: flex-start; height: 64px; overflow: hidden;
 }
 /* Si el total de opciones es impar, la última queda sola en la columna
    izquierda con un hueco vacío a la derecha — que ocupe las dos columnas
@@ -1504,6 +1528,17 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 .ruleta-item {
   height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center;
   font-size: 1.05rem; color: var(--ink-soft); transition: color 0.1s, font-weight 0.1s;
+  /* Espacio reservado a la derecha para la etiqueta fija (años/cm/kg) --
+     sin esto el número se recentraba en todo el ancho y quedaba debajo
+     de la etiqueta en vez de a su izquierda. */
+  padding-right: 40px;
 }
 .ruleta-item.centrado { color: var(--ink); font-weight: 700; font-size: 1.2rem; }
-.ruleta-item .ruleta-sufijo { font-size: 0.85rem; font-weight: 600; margin-left: 5px; color: var(--ink-soft); }
+/* Etiqueta de unidad FIJA (nunca aparece/desaparece con el scroll, a
+   diferencia de antes que iba pegada al número centrado) -- vive fuera
+   de la lista que se desliza, siempre en el mismo lugar sobre la franja
+   resaltada. */
+.ruleta-sufijo-fijo {
+  position: absolute; top: 50%; right: 26%; transform: translateY(-50%);
+  font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); pointer-events: none; z-index: 2;
+}

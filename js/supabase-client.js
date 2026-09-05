@@ -219,19 +219,37 @@ export async function newGuideConversation() {
 // del saldo lo hace el cliente tras una respuesta exitosa (ver
 // gastarNutricoins en store.js) -- mismo modelo de confianza que el resto
 // de la moneda de la app.
-export async function generarRecetaIA(comida, notas) {
-  const { data, error } = await supabase.functions.invoke('generate-recipe', { body: { comida, notas } });
+async function invocarGenerarReceta(body) {
+  const { data, error } = await supabase.functions.invoke('generate-recipe', { body });
   if (error) {
-    let body = null;
-    try { body = await error.context.clone().json(); } catch { /* respuesta no era JSON */ }
-    if (body) {
-      const e = new Error(body.message || body.error || 'No pudimos generar la receta.');
-      e.code = body.error;
+    let errBody = null;
+    try { errBody = await error.context.clone().json(); } catch { /* respuesta no era JSON */ }
+    if (errBody) {
+      const e = new Error(errBody.message || errBody.error || 'No pudimos generar la receta.');
+      e.code = errBody.error;
       throw e;
     }
     throw error;
   }
   return data.receta;
+}
+
+export async function generarRecetaIA(comida, notas) {
+  return invocarGenerarReceta({ comida, modo: 'texto', notas });
+}
+
+// "Desde una foto": la propia foto puede ser (a) una receta escrita/
+// impresa -- se transcribe fiel -- o (b) el plato ya preparado -- se
+// reconstruye una receta razonable, marcada `reconstruida: true` para que
+// la app avise que es una estimación, nunca una fuente verificada.
+export async function generarRecetaDesdeFoto(comida, imagenBase64, imagenMediaType) {
+  return invocarGenerarReceta({ comida, modo: 'foto', imagenBase64, imagenMediaType });
+}
+
+// "Desde un enlace": el servidor descarga la página (nunca el navegador,
+// por CORS/CSP) y estructura solo lo que dice ese texto real.
+export async function generarRecetaDesdeEnlace(comida, url) {
+  return invocarGenerarReceta({ comida, modo: 'enlace', url });
 }
 
 // --- Notificaciones push ---
