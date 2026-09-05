@@ -114,6 +114,10 @@ function pintarPanel(container, d) {
     </div>`;
   if (u.detalle?.length) {
     const fecha = (iso) => iso ? new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+    // "Último acceso" sí necesita hora, no solo fecha -- a diferencia de
+    // "creada"/"vence" (donde el día ya dice todo lo que hace falta), acá
+    // la usuaria pidió el timestamp completo.
+    const fechaHora = (iso) => iso ? new Date(iso).toLocaleString('es', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
     // Tarjeta por usuaria en vez de una tabla ancha: en el celular una
     // tabla de 7 columnas con scroll horizontal deja la columna de
     // "Acción" (el selector para activar/quitar Premium) fuera de la
@@ -135,7 +139,7 @@ function pintarPanel(container, d) {
         </div>
         <p class="small muted">
           ${r.plan === 'premium' ? (r.tiene_pago_real ? '💳 pago real' : '<span style="color:var(--red)">⚠️ sin pago</span>') : 'sin plan pago'}
-          ${r.vence ? ` · vence ${fecha(r.vence)}` : ''} · creada ${fecha(r.creada)} · último acceso ${fecha(r.ultimo_acceso)}
+          ${r.vence ? ` · vence ${fecha(r.vence)}` : ''} · creada ${fecha(r.creada)} · último acceso ${fechaHora(r.ultimo_acceso)}
         </p>
         <select class="admin-plan-sel auth-input" style="margin:0;font-size:0.85rem">
           <option value="">Cambiar plan…</option>
