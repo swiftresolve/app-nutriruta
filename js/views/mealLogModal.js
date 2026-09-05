@@ -2,7 +2,7 @@
 // lista editable antes de guardar (nunca se guarda algo que la IA detectó
 // sin que la usuaria lo confirme o corrija). No cuenta contra la cuota de
 // SuSana ni requiere Premium (ver supabase-client.js / log-meal).
-import { openModal, toast } from '../app.js';
+import { openModal, toast, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON } from '../app.js';
 import { esc, guardarComidaRegistrada, today } from '../store.js';
 import { detectarAlimentosFoto, detectarAlimentosTexto, uploadComidaFoto } from '../supabase-client.js';
 
@@ -88,10 +88,10 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       modal.innerHTML = `
         <h2>¿Qué comiste en ${esc(mealTitle)}?</h2>
         <p class="small muted mt">Regístralo con foto, voz o texto — puedes corregir la lista antes de guardar.</p>
-        <div class="row wrap mt" style="gap:10px;justify-content:center">
-          <button type="button" class="btn ghost" id="ml-foto" style="flex-direction:column;height:80px;width:90px">📸<span class="small mt">Foto</span></button>
-          ${speechRecognitionCtor() ? '<button type="button" class="btn ghost" id="ml-voz" style="flex-direction:column;height:80px;width:90px">🎤<span class="small mt">Voz</span></button>' : ''}
-          <button type="button" class="btn ghost" id="ml-texto" style="flex-direction:column;height:80px;width:90px">⌨️<span class="small mt">Texto</span></button>
+        <div class="ml-opciones mt">
+          <button type="button" class="ml-opcion" id="ml-foto" aria-label="Foto"><span class="ml-opcion-circle">${CAMERA_SOLID_ICON}</span></button>
+          ${speechRecognitionCtor() ? `<button type="button" class="ml-opcion" id="ml-voz" aria-label="Voz"><span class="ml-opcion-circle">${MIC_ICON}</span></button>` : ''}
+          <button type="button" class="ml-opcion" id="ml-texto" aria-label="Texto"><span class="ml-opcion-circle">${TEXTO_ICON}</span></button>
         </div>`;
 
       modal.querySelector('#ml-foto').addEventListener('click', () => pantallaCamara());
@@ -178,16 +178,19 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       modal.innerHTML = `
         <h2>Dime qué comiste</h2>
         <div class="center mt">
-          <button type="button" id="ml-mic" class="btn accent" style="width:80px;height:80px;border-radius:50%;font-size:1.8rem">🎤</button>
+          <button type="button" id="ml-mic" class="ml-mic-btn" aria-label="Grabar">${MIC_ICON}</button>
         </div>
         <p class="small muted mt center" id="ml-voz-estado">Toca el micrófono y habla.</p>`;
       const estado = modal.querySelector('#ml-voz-estado');
+      const micBtn = modal.querySelector('#ml-mic');
       const rec = new Ctor();
       rec.lang = 'es-ES';
       rec.interimResults = false;
       rec.maxAlternatives = 1;
-      rec.onstart = () => { estado.textContent = 'Escuchando…'; };
-      rec.onerror = () => { estado.textContent = 'No se pudo escuchar. Intenta de nuevo o usa texto.'; };
+      // Titileo lento mientras "graba" -- señal visual de que sí está
+      // escuchando, no solo el texto de estado de arriba.
+      rec.onstart = () => { estado.textContent = 'Escuchando…'; micBtn.classList.add('grabando'); };
+      rec.onerror = () => { estado.textContent = 'No se pudo escuchar. Intenta de nuevo o usa texto.'; micBtn.classList.remove('grabando'); };
       rec.onresult = async (e) => {
         const texto = e.results[0][0].transcript;
         pantallaAnalizando();
@@ -200,7 +203,13 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           pantallaElegir();
         }
       };
-      modal.querySelector('#ml-mic').addEventListener('click', () => rec.start());
+      // Arranca solo, apenas se entra a esta pantalla -- tocar "Voz" ya
+      // fue el gesto de la usuaria, no hace falta un segundo toque sobre
+      // el ícono para empezar a grabar. El ícono sigue sirviendo para
+      // reintentar si algo falla (ver rec.onerror arriba).
+      const empezar = () => { try { rec.start(); } catch { /* ya estaba escuchando */ } };
+      micBtn.addEventListener('click', empezar);
+      empezar();
     }
 
     function pantallaTexto() {

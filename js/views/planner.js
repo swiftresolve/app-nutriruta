@@ -1,7 +1,7 @@
 // Recetario + lista de compras.
 import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
-import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
+import { isRecipeAvailable, trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
 import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
 import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace } from '../supabase-client.js';
 import { openRecipe } from './dashboard.js';
@@ -9,7 +9,8 @@ import { openRecipe } from './dashboard.js';
 const ORDENES = [
   { id: 'recomendadas', label: '🌿 Recomendadas' },
   { id: 'nombre', label: '🔤 Nombre (A-Z)' },
-  { id: 'rapido', label: '⚡ Más rápidas' }
+  { id: 'rapido', label: '⚡ Más rápidas' },
+  { id: 'mias', label: '📝 Mis recetas' }
 ];
 
 // Recetas visibles en el plan gratuito (el resto se muestra bloqueado).
@@ -171,34 +172,53 @@ Freír los huevos"></textarea>
   });
 }
 
-// Detalle de una receta propia -- mucho más simple que openRecipe()
-// (dashboard.js), que espera la estructura del catálogo curado
-// (sustituciones, "apto para", etc.) que estas recetas no tienen.
+// Detalle de una receta propia -- misma estructura que openRecipe()
+// (dashboard.js: tamaño de emoji, clase .ingredient por ingrediente,
+// <ol class="steps"> para los pasos) más lo que sí es propio de estas
+// recetas (de dónde salió, porciones/tiempo, el aviso de "reconstruida",
+// y el botón de eliminar) -- lo que openRecipe() no tiene porque el
+// catálogo curado no lo necesita (no hay "apto para"/sustituciones aquí,
+// texto libre en vez de ingredientes estructurados).
 function abrirRecetaPropia(receta, onEliminada) {
   const meal = MEALS.find((m) => m.id === receta.comida);
   openModal((modal, closeFn) => {
     modal.insertAdjacentHTML('beforeend', `
-      <div class="center">
-        <div style="font-size:2.6rem">${esc(receta.emoji)}</div>
-        <h2 class="mt">${esc(receta.nombre)}</h2>
-        <p class="small muted mt">${meal ? `${meal.emoji} ${esc(meal.nombre)}` : ''} · ${origenLabel(receta)}</p>
-        ${receta.tiempoMin ? `<p class="small muted">🍽️ ${receta.porciones || 1} porción${(receta.porciones || 1) === 1 ? '' : 'es'} · ⏱️ ${receta.tiempoMin} min</p>` : ''}
-      </div>
+      <div style="font-size:2.4rem">${esc(receta.emoji)}</div>
+      <h2>${esc(receta.nombre)}</h2>
+      <p class="small muted">${meal ? `${meal.emoji} ${esc(meal.nombre)}` : ''} · ${origenLabel(receta)}${receta.tiempoMin ? ` · 🍽️ ${receta.porciones || 1} porción${(receta.porciones || 1) === 1 ? '' : 'es'} · ⏱️ ${receta.tiempoMin} min` : ''}</p>
       ${receta.reconstruida ? `<p class="small mt" style="background:var(--accent-soft);border-radius:var(--radius);padding:10px 12px">⚠️ La IA reconstruyó esta receta a partir de la foto del plato, no de una receta escrita -- revisa cantidades y pasos antes de prepararla.</p>` : ''}
-      ${receta.descripcion ? `<p class="mt">${esc(receta.descripcion)}</p>` : ''}
+      ${receta.descripcion ? `<p class="small mt">${esc(receta.descripcion)}</p>` : ''}
       ${receta.ingredientes.length ? `
-        <h3 class="mt">🧺 Ingredientes</h3>
-        <ul class="mt" style="padding-left:20px">${receta.ingredientes.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>` : ''}
+        <h3 class="mt">Ingredientes</h3>
+        ${receta.ingredientes.map((i) => `<div class="ingredient">• ${esc(i)}</div>`).join('')}` : ''}
       ${receta.pasos.length ? `
-        <h3 class="mt">👩‍🍳 Pasos</h3>
-        <ol class="mt" style="padding-left:20px">${receta.pasos.map((p) => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}
+        <h3 class="mt">Preparación</h3>
+        <ol class="steps">${receta.pasos.map((p) => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}
       <button type="button" class="btn danger full mt" id="rp-eliminar">🗑️ Eliminar receta</button>`);
     modal.querySelector('#rp-eliminar').addEventListener('click', () => {
-      eliminarRecetaPropia(receta.id);
-      closeFn();
-      toast('Receta eliminada.');
-      if (onEliminada) onEliminada();
+      confirmarEliminarReceta(receta.nombre, () => {
+        eliminarRecetaPropia(receta.id);
+        closeFn();
+        toast('Receta eliminada.');
+        if (onEliminada) onEliminada();
+      });
     });
+  });
+}
+
+// Confirmación antes de borrar -- es irreversible (no hay papelera ni
+// deshacer, ver eliminarRecetaPropia en store.js), mismo criterio que
+// "Borrar todos mis datos" en Ajustes: nunca un solo toque.
+function confirmarEliminarReceta(nombre, onConfirmar) {
+  openModal((modal, close) => {
+    modal.insertAdjacentHTML('beforeend', `
+      <h2>¿Eliminar "${esc(nombre)}"?</h2>
+      <p class="mt">Esta acción no se puede deshacer.</p>`);
+    const yes = document.createElement('button');
+    yes.className = 'btn danger full mt';
+    yes.textContent = 'Sí, eliminar';
+    yes.addEventListener('click', () => { close(); onConfirmar(); });
+    modal.appendChild(yes);
   });
 }
 
@@ -255,13 +275,12 @@ export function renderPlanner(container, params = {}) {
   searchToggleBtn.className = 'icon-btn plain';
   searchToggleBtn.setAttribute('aria-label', 'Buscar recetas');
   searchToggleBtn.innerHTML = SEARCH_ICON;
-  tabsRow.appendChild(searchToggleBtn);
   const searchOverlay = document.createElement('div');
   searchOverlay.className = 'row hidden';
   searchOverlay.style.cssText = 'position:absolute;inset:0;align-items:center;gap:8px;background:var(--bg);z-index:3';
   searchOverlay.innerHTML = `
     <input id="recetas-buscar" type="search" inputmode="search" placeholder="Buscar por nombre o ingrediente…"
-      style="flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border);font:inherit;box-sizing:border-box;background:var(--card);color:var(--ink)">
+      style="flex:1;min-width:0;padding:8px 12px;border-radius:10px;border:1px solid var(--border);font:inherit;font-size:0.9rem;box-sizing:border-box;background:var(--card);color:var(--ink)">
     <button type="button" class="icon-btn plain" id="cerrar-buscar" aria-label="Cerrar búsqueda"><span style="font-size:1.1rem">✕</span></button>`;
   tabsRow.appendChild(searchOverlay);
   const searchInputEl = searchOverlay.querySelector('#recetas-buscar');
@@ -282,13 +301,16 @@ export function renderPlanner(container, params = {}) {
 
   function drawTabs() {
     tabs.innerHTML = '';
-    for (const [id, label] of [['recetas', '🥗 Recetario'], ['compras', '🛒 Lista de compras']]) {
+    const [recetasTab, comprasTab] = [['recetas', '🥗 Recetario'], ['compras', '🛒 Lista de compras']].map(([id, label]) => {
       const b = document.createElement('button');
       b.className = 'chip' + (tab === id ? ' selected' : '');
       b.textContent = label;
       b.addEventListener('click', () => { tab = id; drawTabs(); drawBody(); });
-      tabs.appendChild(b);
-    }
+      return b;
+    });
+    // La lupa va en la columna central de la grilla, entre las dos
+    // pestañas -- no suelta al final de la fila.
+    tabs.append(recetasTab, searchToggleBtn, comprasTab);
     // La búsqueda solo aplica al recetario, no a la lista de compras.
     searchToggleBtn.style.display = tab === 'recetas' ? '' : 'none';
     if (tab !== 'recetas') {
@@ -690,9 +712,18 @@ export function renderPlanner(container, params = {}) {
       if (label) label.textContent = `${Math.round(pct)}%`;
     }
 
+    // Nombres a evitar: las que la usuaria ya tiene guardadas para esta
+    // comida + las que ya salieron en esta misma tanda -- sin esto, pedir
+    // varias recetas de una vez (o volver a tocar "Crear con IA" otro
+    // día) sin escribir ninguna nota tendía a repetir siempre el mismo
+    // plato "obvio" para esa comida.
+    const nombresExistentes = (getState().misRecetas || [])
+      .filter((r) => r.comida === comida)
+      .map((r) => r.nombre);
+
     async function generarUna() {
       try {
-        const receta = await generarRecetaIA(comida, notas);
+        const receta = await generarRecetaIA(comida, notas, nombresExistentes);
         gastarNutricoins(COSTO_RECETA_IA);
         // header() no es reactivo -- pinta el saldo una sola vez al montar
         // la vista, así que sin este parche el número del header se queda
@@ -706,6 +737,7 @@ export function renderPlanner(container, params = {}) {
         }
         const nueva = agregarRecetaPropia({ ...receta, comida, origen: 'ia' });
         nuevasIds.add(nueva.id);
+        nombresExistentes.push(nueva.nombre);
         iaCompletadas++;
         segPct = 0;
         pintarProgreso();
@@ -792,7 +824,14 @@ export function renderPlanner(container, params = {}) {
       .filter((r) => matchesSearch(r, busqueda))
       .filter((r) => !soloFavoritas || (favoritas || []).includes(r.id));
 
-    if (orden === 'nombre') {
+    // "Mis recetas" -- el orden 'mias' no reordena el catálogo curado, lo
+    // OCULTA por completo (nada de RECIPES en pantalla), para dejar ver
+    // solo lo que la usuaria creó (ver renderMisRecetas() más abajo, que
+    // siempre se pinta al final de drawBody).
+    const soloMias = orden === 'mias';
+    if (soloMias) {
+      list = [];
+    } else if (orden === 'nombre') {
       list = [...list].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
     } else if (orden === 'rapido') {
       list = [...list].sort((a, b) => (b.etiquetas?.includes('rapido') ? 1 : 0) - (a.etiquetas?.includes('rapido') ? 1 : 0));
@@ -803,7 +842,7 @@ export function renderPlanner(container, params = {}) {
       list = rankRecipes(list, user.perfiles);
     }
 
-    if (!list.length) {
+    if (!list.length && !soloMias) {
       const empty = document.createElement('div');
       empty.className = 'card';
       empty.innerHTML = `<p>${busqueda ? `No encontramos recetas con "${busqueda}".` : 'No hay recetas disponibles con tus exclusiones actuales en esta categoría.'}</p>`;
@@ -822,8 +861,61 @@ export function renderPlanner(container, params = {}) {
     const otras = orden === 'recomendadas' ? list.filter((r) => !r.apto.some((p) => user.perfiles.includes(p))) : [];
     let globalIndex = 0;
 
-    function renderGroup(items, label) {
-      if (!items.length) return;
+    // Recetas propias que sí cumplen con el perfil de salud activo (ver
+    // trafficLightRecetaPropia en menu.js) se mezclan dentro de
+    // "Recomendadas para tu perfil", con su etiqueta "Tuya" -- solo tiene
+    // sentido con el orden "Recomendadas" (el mismo que agrupa el
+    // catálogo así); en "Mis recetas" todas van juntas sin importar el
+    // semáforo, y en Nombre/Más rápidas no hay esta separación.
+    const { misRecetas } = getState();
+    let propiasFiltradas = (misRecetas || [])
+      .filter((r) => mealFilter === 'todas' || r.comida === mealFilter)
+      .filter((r) => !busqueda || r.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+      .filter((r) => !soloFavoritas || (favoritas || []).includes(r.id));
+    if (nuevasIds.size) {
+      propiasFiltradas = [...propiasFiltradas].sort((a, b) => (nuevasIds.has(b.id) ? 1 : 0) - (nuevasIds.has(a.id) ? 1 : 0));
+    }
+    const propiasVerdes = orden === 'recomendadas' ? propiasFiltradas.filter((r) => trafficLightRecetaPropia(r, user.perfiles) === 'verde') : [];
+    const propiasIdsVerdes = new Set(propiasVerdes.map((r) => r.id));
+    const propiasResto = soloMias ? propiasFiltradas : propiasFiltradas.filter((r) => !propiasIdsVerdes.has(r.id));
+
+    // Tarjeta de una receta propia -- comparte look con el catálogo (plato,
+    // vapor, aro de semáforo ya evaluado contra el perfil activo, ver
+    // trafficLightRecetaPropia) pero con su propio click (abre
+    // abrirRecetaPropia, no openRecipe) y su etiqueta de origen ("Tuya"/
+    // "Con IA"/etc en vez de las etiquetas del catálogo).
+    function crearTarjetaPropia(r) {
+      const esFavorita = (favoritas || []).includes(r.id);
+      const esNueva = nuevasIds.has(r.id);
+      const light = trafficLightRecetaPropia(r, user.perfiles);
+      const item = document.createElement('button');
+      item.className = 'recipe-card';
+      item.innerHTML = `
+        ${esNueva ? '<span class="recipe-nuevo-tag">Nuevo</span>' : ''}
+        <span class="recipe-fav" aria-label="${esFavorita ? 'Quitar de preferidos' : 'Marcar como preferida'}">${esFavorita ? '⭐' : '☆'}</span>
+        <div class="recipe-plate">
+          ${HOT_MEALS.has(r.comida) ? '<span class="steam"><span></span><span></span><span></span></span>' : ''}
+          ${esc(r.emoji)}
+          <span class="garnish">${meal[r.comida]?.emoji || ''}</span>
+          <span class="semaforo-ring ${light}" title="Semáforo: ${light}"></span>
+        </div>
+        <div class="recipe-title">${esc(r.nombre)}</div>
+        <div class="recipe-desc">${esc(r.descripcion || 'Receta tuya')}</div>
+        <div class="recipe-tags"><span class="recipe-tag">${origenLabel(r)}</span></div>`;
+      item.querySelector('.recipe-fav').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFavorita(r.id);
+        drawBody();
+      });
+      item.addEventListener('click', () => {
+        nuevasIds.delete(r.id);
+        abrirRecetaPropia(r, () => drawBody());
+      });
+      return item;
+    }
+
+    function renderGroup(items, label, extraPropias = []) {
+      if (!items.length && !extraPropias.length) return;
       if (label) {
         const divider = document.createElement('div');
         divider.className = 'recipe-section-divider';
@@ -860,69 +952,46 @@ export function renderPlanner(container, params = {}) {
         item.addEventListener('click', () => locked ? navigate('plans') : openRecipe(r));
         grid.appendChild(item);
       }
+      for (const r of extraPropias) grid.appendChild(crearTarjetaPropia(r));
       body.appendChild(grid);
     }
 
-    renderGroup(recomendadas, recomendadas.length && otras.length ? '🌿 Recomendadas para tu perfil' : null);
-    renderGroup(otras, recomendadas.length && otras.length ? 'Otras recetas' : null);
+    // "Tus recetas" -- las que la usuaria creó a mano o con IA y NO
+    // entraron ya en "Recomendadas para tu perfil" (ver propiasVerdes
+    // arriba). Anidada aquí (no al nivel de drawRecipes) porque necesita
+    // crearTarjetaPropia, definida justo arriba.
+    function renderMisRecetas(propias) {
+      if (!propias.length) return false;
 
-    renderMisRecetas();
-  }
+      const divider = document.createElement('div');
+      divider.className = 'recipe-section-divider';
+      divider.id = 'tus-recetas';
+      divider.innerHTML = '<span>📝 Tus recetas</span>';
+      body.appendChild(divider);
 
-  // "Tus recetas" -- las que la usuaria creó a mano. Van aparte del
-  // catálogo curado (comparten filtro de comida/búsqueda/favoritos, pero
-  // con texto libre en vez de la estructura de ingredientes del catálogo,
-  // así que el match es simple .includes en vez de matchesSearch).
-  function renderMisRecetas() {
-    const { misRecetas, favoritas } = getState();
-    let propias = (misRecetas || [])
-      .filter((r) => mealFilter === 'todas' || r.comida === mealFilter)
-      .filter((r) => !busqueda || r.nombre.toLowerCase().includes(busqueda.toLowerCase()))
-      .filter((r) => !soloFavoritas || (favoritas || []).includes(r.id));
-    if (!propias.length) return;
-
-    // Lo recién generado con IA en esta sesión va primero (con tag
-    // "Nuevo") -- mismo comportamiento que el botón "Ver" del banner.
-    if (nuevasIds.size) {
-      propias = [...propias].sort((a, b) => (nuevasIds.has(b.id) ? 1 : 0) - (nuevasIds.has(a.id) ? 1 : 0));
+      const grid = document.createElement('div');
+      grid.className = 'recipe-grid';
+      for (const r of propias) {
+        grid.appendChild(crearTarjetaPropia(r));
+      }
+      body.appendChild(grid);
+      return true;
     }
 
-    const divider = document.createElement('div');
-    divider.className = 'recipe-section-divider';
-    divider.id = 'tus-recetas';
-    divider.innerHTML = '<span>📝 Tus recetas</span>';
-    body.appendChild(divider);
+    const hayRecomendadas = recomendadas.length > 0 || propiasVerdes.length > 0;
+    renderGroup(recomendadas, hayRecomendadas && otras.length ? '🌿 Recomendadas para tu perfil' : null, propiasVerdes);
+    renderGroup(otras, hayRecomendadas && otras.length ? 'Otras recetas' : null);
 
-    const grid = document.createElement('div');
-    grid.className = 'recipe-grid';
-    const meal = MEALS.reduce((m, x) => (m[x.id] = x, m), {});
-    for (const r of propias) {
-      const esFavorita = (favoritas || []).includes(r.id);
-      const esNueva = nuevasIds.has(r.id);
-      const item = document.createElement('button');
-      item.className = 'recipe-card';
-      item.innerHTML = `
-        ${esNueva ? '<span class="recipe-nuevo-tag">Nuevo</span>' : ''}
-        <span class="recipe-fav" aria-label="${esFavorita ? 'Quitar de preferidos' : 'Marcar como preferida'}">${esFavorita ? '⭐' : '☆'}</span>
-        <div class="recipe-plate">
-          ${esc(r.emoji)}
-          <span class="garnish">${meal[r.comida]?.emoji || ''}</span>
-        </div>
-        <div class="recipe-title">${esc(r.nombre)}</div>
-        <div class="recipe-desc">${esc(r.descripcion || 'Receta tuya')}</div>
-        <div class="recipe-tags"><span class="recipe-tag">${origenLabel(r)}</span></div>`;
-      item.querySelector('.recipe-fav').addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleFavorita(r.id);
-        drawBody();
-      });
-      item.addEventListener('click', () => {
-        nuevasIds.delete(r.id);
-        abrirRecetaPropia(r, () => drawBody());
-      });
-      grid.appendChild(item);
+    const huboMias = renderMisRecetas(propiasResto);
+    if (soloMias && !huboMias) {
+      const empty = document.createElement('div');
+      empty.className = 'card';
+      const tieneAlgunaPropia = (getState().misRecetas || []).length > 0;
+      empty.innerHTML = `<p>${tieneAlgunaPropia
+        ? 'Ninguna de tus recetas coincide con este filtro.'
+        : 'Aún no has creado ninguna receta. Usa "Crear con IA" o "Crear manualmente" arriba.'}</p>`;
+      body.appendChild(empty);
     }
-    body.appendChild(grid);
   }
 
   const CATEGORIA_EMOJI = { Frutas: '🍎', Verduras: '🥦', Proteínas: '🍗', Granos: '🌾', Lácteos: '🥛', Otros: '🧂' };

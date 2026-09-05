@@ -43,6 +43,57 @@ export function trafficLight(recipe, perfiles) {
   return 'verde';
 }
 
+// Semáforo para recetas PROPIAS (creadas por la usuaria, con IA o a mano)
+// -- no tienen el "evitar"/"moderar" curado a mano del catálogo (son
+// ingredientes en texto libre), así que se revisan contra las mismas
+// palabras clave que ya aparecen en las "claves" ya redactadas y
+// aprobadas de cada perfil (profiles.js), nunca contra un criterio nuevo
+// inventado aquí. Nivel "evitar" solo en los perfiles cuyas claves dicen
+// literalmente "Evitar..."; el resto son "moderar" (reducir/menos/
+// sustituir), igual que en el catálogo. Detecta negaciones simples ("sin
+// azúcar", "bajo en sodio") para no marcar en rojo justo lo que sí evita
+// el ingrediente problemático.
+const PERFIL_PALABRAS_PROPIAS = {
+  higado_graso: { evitar: ['frito', 'fritos', 'frita', 'fritas', 'azúcar', 'azucar', 'harina refinada', 'harinas refinadas', 'alcohol', 'cerveza', 'vino', 'licor'] },
+  candidiasis: { evitar: ['azúcar', 'azucar', 'levadura', 'alcohol', 'harina refinada', 'harinas refinadas', 'pan blanco'] },
+  resistencia_insulina: { moderar: ['harina refinada', 'pan blanco', 'arroz blanco', 'azúcar', 'azucar', 'refresco', 'gaseosa', 'jugo de fruta', 'bebida azucarada'] },
+  prediabetes: { moderar: ['azúcar', 'azucar', 'grasa saturada', 'manteca', 'mantequilla', 'tocineta', 'tocino', 'embutido'] },
+  colon_irritable: { moderar: ['cebolla', 'ajo', 'frijol', 'frijoles', 'lenteja', 'lentejas', 'garbanzo', 'garbanzos', 'sorbitol', 'xilitol'] },
+  migranas: { moderar: ['cafeína', 'cafeina', 'café', 'cafe', 'alcohol', 'vino', 'glutamato', 'queso curado', 'queso añejo', 'queso maduro'] },
+  colesterol: { moderar: ['grasa saturada', 'manteca', 'mantequilla', 'tocineta', 'tocino', 'embutido', 'frito', 'fritos', 'piel de pollo'] },
+  gases: { moderar: ['brócoli', 'brocoli', 'coliflor', 'repollo', 'cebolla', 'ajo', 'frijol', 'frijoles'] }
+};
+// "mantequilla de maní" es sana (grasa vegetal), no la mantequilla animal
+// que sí preocupa en colesterol/prediabetes -- falso positivo real que ya
+// se detectó auditando el catálogo, se evita igual acá.
+const EXCEPCIONES_PALABRA = { mantequilla: ['mantequilla de maní', 'mantequilla de mani', 'mantequilla de almendra'] };
+const NEGACIONES = ['sin ', 'bajo en ', 'baja en ', 'libre de ', '0% ', 'light '];
+
+function palabraAparece(texto, palabra) {
+  let idx = texto.indexOf(palabra);
+  while (idx !== -1) {
+    const excepciones = EXCEPCIONES_PALABRA[palabra] || [];
+    const esExcepcion = excepciones.some((exc) => texto.startsWith(exc, idx) || texto.includes(exc));
+    const antes = texto.slice(Math.max(0, idx - 12), idx);
+    const esNegada = NEGACIONES.some((n) => antes.endsWith(n.trim() + ' ') || antes.endsWith(n));
+    if (!esExcepcion && !esNegada) return true;
+    idx = texto.indexOf(palabra, idx + 1);
+  }
+  return false;
+}
+
+export function trafficLightRecetaPropia(receta, perfiles) {
+  const texto = normaliza(`${(receta.ingredientes || []).join(' ')} ${receta.descripcion || ''}`);
+  let huboAmarillo = false;
+  for (const perfilId of perfiles) {
+    const reglas = PERFIL_PALABRAS_PROPIAS[perfilId];
+    if (!reglas) continue;
+    if ((reglas.evitar || []).some((p) => palabraAparece(texto, normaliza(p)))) return 'rojo';
+    if ((reglas.moderar || []).some((p) => palabraAparece(texto, normaliza(p)))) huboAmarillo = true;
+  }
+  return huboAmarillo ? 'amarillo' : 'verde';
+}
+
 // Puntaje: cuántos perfiles del usuario cubre la receta (para priorizar).
 function score(recipe, perfiles) {
   const aptos = recipe.apto.filter((p) => perfiles.includes(p)).length;

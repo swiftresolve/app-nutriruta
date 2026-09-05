@@ -217,6 +217,24 @@ export const CAMERA_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" fill
   <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"/>
 </svg>`;
 
+// Cámara, micrófono y teclado (texto) para el selector de "¿Qué comiste?"
+// en Tu ruta de hoy (foto/voz/texto, ver mealLogModal.js) -- cada uno
+// elegido a partir de una imagen de referencia real que dio la usuaria
+// (nunca aproximados a mano): cámara de trazo grueso simple, micrófono y
+// teclado de silueta rellena. currentColor en los 3 -- el color blanco
+// lo pone el CSS del círculo (.ml-opcion-circle), no el SVG.
+export const CAMERA_SOLID_ICON = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+  <circle cx="12" cy="13" r="4"/>
+</svg>`;
+export const MIC_ICON = `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="display:block">
+  <path d="M8.25 4.5a3.75 3.75 0 1 1 7.5 0v8.25a3.75 3.75 0 1 1-7.5 0V4.5Z"/>
+  <path d="M6 10.5a.75.75 0 0 1 .75.75v1.5a5.25 5.25 0 1 0 10.5 0v-1.5a.75.75 0 0 1 1.5 0v1.5a6.751 6.751 0 0 1-6 6.709v2.291h3a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1 0-1.5h3v-2.291a6.751 6.751 0 0 1-6-6.709v-1.5A.75.75 0 0 1 6 10.5Z"/>
+</svg>`;
+export const TEXTO_ICON = `<svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor" style="display:block">
+  <path d="M160-200q-33 0-56.5-23.5T80-280v-400q0-33 23.5-56.5T160-760h640q33 0 56.5 23.5T880-680v400q0 33-23.5 56.5T800-200H160Zm0-80h640v-400H160v400Zm160-40h320v-80H320v80ZM200-440h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80ZM200-560h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80ZM160-280v-400 400Z"/>
+</svg>`;
+
 // Cabecera común de las vistas principales. Cuando ya hay cuenta activa,
 // muestra racha y escudos arriba a la derecha (persistentes, como el
 // marcador de racha de Duolingo) — tocar cualquiera abre el detalle.

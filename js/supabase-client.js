@@ -234,8 +234,14 @@ async function invocarGenerarReceta(body) {
   return data.receta;
 }
 
-export async function generarRecetaIA(comida, notas) {
-  return invocarGenerarReceta({ comida, modo: 'texto', notas });
+// evitarNombres: nombres de recetas propias que la usuaria ya tiene para
+// esa comida (más las que ya salieron en esta misma tanda, si pidió
+// varias de una vez) -- se le pasan al modelo para que no repita el
+// mismo plato de siempre, sobre todo cuando no hay notas de por medio
+// (sin ninguna preferencia que lo oriente, el modelo tiende a converger
+// siempre en la opción más "obvia" para esa comida).
+export async function generarRecetaIA(comida, notas, evitarNombres = []) {
+  return invocarGenerarReceta({ comida, modo: 'texto', notas, evitarNombres });
 }
 
 // "Desde una foto": la propia foto puede ser (a) una receta escrita/
