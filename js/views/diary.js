@@ -7,7 +7,7 @@
 // solo se comparte o descarga lo que la usuaria decide compartir.
 import { getState } from '../store.js';
 import { diasConDiario } from '../store.js';
-import { header, navigate, toast } from '../app.js';
+import { header, navigate, toast, SHARE_ICON } from '../app.js';
 import { MEALS } from '../data/recipes.js';
 import { broteStage, broteBadge } from '../ruti.js';
 
@@ -27,6 +27,16 @@ function etiquetaFecha(fecha) {
   if (fecha === ayer.toISOString().slice(0, 10)) return 'Ayer';
   const dt = new Date(`${fecha}T00:00:00`);
   return `${DIAS_SEMANA[dt.getDay()]} ${dt.getDate()} ${MESES[dt.getMonth()]}`;
+}
+
+// Para la imagen de compartir (crearImagenCompartir) -- ahí "Hoy" queda
+// redundante justo debajo del título "Mi Ruta de hoy", y además una vez
+// compartida la imagen puede verse días después, cuando "Hoy" ya no
+// tendría sentido. Siempre la fecha completa, nunca "Hoy"/"Ayer".
+function fechaCompletaCompartir(fecha) {
+  const dt = new Date(`${fecha}T00:00:00`);
+  const dia = DIAS_SEMANA[dt.getDay()].toLowerCase();
+  return `${dia}, ${String(dt.getDate()).padStart(2, '0')} ${MESES[dt.getMonth()]} ${dt.getFullYear()}`;
 }
 
 function mealMeta(mealId) {
@@ -95,7 +105,8 @@ export function renderDiary(container) {
     const compartirBtn = document.createElement('button');
     compartirBtn.type = 'button';
     compartirBtn.className = 'btn ghost full mt';
-    compartirBtn.textContent = '📤 Compartir este día';
+    compartirBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px';
+    compartirBtn.innerHTML = `${SHARE_ICON}Compartir este día`;
     compartirBtn.addEventListener('click', () => compartirDia(dia, completo, compartirBtn));
     card.appendChild(compartirBtn);
 
@@ -145,7 +156,7 @@ async function crearImagenCompartir(dia, completo) {
 
   ctx.font = '26px system-ui, sans-serif';
   ctx.fillStyle = '#5a7c68';
-  ctx.fillText(etiquetaFecha(dia.fecha), W / 2, 140);
+  ctx.fillText(fechaCompletaCompartir(dia.fecha), W / 2, 140);
 
   const fotos = dia.registros.slice(0, 5);
   const cols = Math.min(2, fotos.length) || 1;
@@ -183,9 +194,24 @@ async function crearImagenCompartir(dia, completo) {
     y += 50;
   }
 
+  // Logo a la izquierda del nombre, ambos centrados como un solo grupo
+  // (no el nombre solo centrado con el logo aparte) -- mismo ícono que
+  // el resto de la app (icons/icon-192.png), nunca un logo aproximado.
   ctx.font = '22px system-ui, sans-serif';
   ctx.fillStyle = '#8aa596';
-  ctx.fillText('NutriRuta', W / 2, H - 40);
+  const textoMarca = 'NutriRuta';
+  const anchoTexto = ctx.measureText(textoMarca).width;
+  const logoSize = 30, logoGap = 10;
+  const anchoGrupo = logoSize + logoGap + anchoTexto;
+  const inicioX = W / 2 - anchoGrupo / 2;
+  const textY = H - 40;
+  try {
+    const logo = await cargarImagen('./icons/icon-192.png');
+    ctx.drawImage(logo, inicioX, textY - logoSize / 2 - 6, logoSize, logoSize);
+  } catch { /* si no carga el logo, igual se ve el nombre */ }
+  ctx.textAlign = 'left';
+  ctx.fillText(textoMarca, inicioX + logoSize + logoGap, textY);
+  ctx.textAlign = 'center';
 
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
 }
