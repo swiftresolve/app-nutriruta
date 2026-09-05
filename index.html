@@ -13,7 +13,21 @@
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <script src="./js/theme-init.js"></script>
+  <script>
+    // Aplica el tema guardado ANTES del CSS, para que no haya parpadeo del
+    // tema equivocado al abrir. Inline (no ./js/theme-init.js aparte) para
+    // no sumar una vuelta de red más antes de la primera pintura -- con
+    // splash nativo de Android encima, cada milisegundo acá se nota. Nunca
+    // importa store.js (ver ahí el porqué): llave de localStorage propia,
+    // corre sincrónico sin esperar sesión.
+    (function () {
+      try {
+        var tema = localStorage.getItem('nutriruta-tema');
+        if (tema === 'claro') document.documentElement.setAttribute('data-theme', 'light');
+        else if (tema === 'oscuro') document.documentElement.setAttribute('data-theme', 'dark');
+      } catch (e) { /* localStorage bloqueado (ej. modo privado estricto): sigue con el tema del sistema */ }
+    })();
+  </script>
   <link rel="stylesheet" href="./css/styles.css">
   <style>
     /* Splash de arranque: vive solo hasta el primer render del router

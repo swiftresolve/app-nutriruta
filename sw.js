@@ -1,11 +1,10 @@
-const CACHE = 'nutriruta-2f8866a483';
+const CACHE = 'nutriruta-38d4999b3e';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './css/styles.css',
   './js/app.js',
-  './js/theme-init.js',
   './js/i18n.js',
   './js/config.js',
   './js/supabase-client.js',
