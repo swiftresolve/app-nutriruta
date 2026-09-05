@@ -254,10 +254,10 @@ export function renderDashboard(container) {
         celebrarSiSubioRacha(rachaAntes, escudoUsado);
         openRecipe(recipe);
       },
-      extraHtml: `<div class="row mt" style="gap:8px">
+      extraHtml: `<div class="row mt" style="gap:2px">
         <span class="dot ${light}"></span>
-        <button type="button" class="icon-btn swap-btn" title="${t('Cambiar receta')}" aria-label="${t('Cambiar receta')}">${REFRESH_ICON}</button>
-        <button type="button" class="icon-btn log-btn" title="${registro ? t('Editar lo que comiste') : t('¿Qué comiste realmente?')}" aria-label="${registro ? t('Editar lo que comiste') : t('Registrar lo que comiste')}">${registro ? '✏️' : '📸'}</button>
+        <button type="button" class="icon-btn plain swap-btn" title="${t('Cambiar receta')}" aria-label="${t('Cambiar receta')}">${REFRESH_ICON}</button>
+        <button type="button" class="icon-btn plain log-btn" style="margin-left:-12px" title="${registro ? t('Editar lo que comiste') : t('¿Qué comiste realmente?')}" aria-label="${registro ? t('Editar lo que comiste') : t('Registrar lo que comiste')}">${registro ? '✏️' : '📸'}</button>
       </div>`
     };
   });

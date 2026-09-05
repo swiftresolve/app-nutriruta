@@ -1310,72 +1310,101 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 }
 
 /* ===== Camino (Misión, Plan de 7 días) ===== */
-.path-wrap { position: relative; margin: 4px auto 0; width: 100%; max-width: 340px; }
+/* Margen superior suficiente para que la hojita flotante del nodo "Ahora"
+   (.path-mascot, -30px sobre el nodo) nunca tape el título de la tarjeta
+   de arriba -- con solo 4px, la primera fila (ej. Desayuno con "Ahora")
+   quedaba montada sobre "Tu ruta de hoy". */
+.path-wrap { position: relative; margin: 26px auto 0; width: 100%; max-width: 340px; }
 .path-svg { position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none; }
 /* El desplazamiento horizontal de cada fila ya viene calculado en JS
    (onda seno, ver AMPLITUD/PERIODO en pathMap.js) como margin-left en
    línea — aquí solo el ancho y el resto del look, no la posición. */
 .path-row {
-  position: relative; z-index: 1; display: flex; align-items: flex-start; gap: 14px; width: 56%;
+  /* Centrado (no flex-start): min-height ya se iguala en JS a la fila más
+     alta de la lista (ver equalizeRowHeights en pathMap.js) -- centrando
+     el nodo dentro de esa altura pareja, la distancia entre CENTROS de
+     nodo consecutivos queda siempre igual, sin importar cuántas líneas
+     ocupe cada etiqueta. */
+  /* Ancho subido de 56% a 60% y el espacio con el nodo de 14 a 10px --
+     con la etiqueta "Ahora"/"Hoy" ahora al lado del título (no debajo),
+     un título largo como "Desayuno" + la etiqueta no cabían en una sola
+     línea y se partían en dos. */
+  position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; width: 60%;
   margin-bottom: 24px; transition: margin-left 0.25s ease;
 }
 .path-row:last-child { margin-bottom: 0; }
-/* Sin línea (menú del día): círculos sueltos, con más aire entre sí. */
-.path-wrap.no-line .path-row { margin-bottom: 34px; }
+/* Sin línea (menú del día, Plan de 7 días, Misión): círculos sueltos,
+   más juntos entre sí -- antes 34px dejaba demasiado aire vertical
+   entre nodos, pedido explícito de la usuaria de acercarlos sin tocar
+   la curva (esa la sigue dando solo el margin-left en línea, ver
+   AMPLITUD/PERIODO arriba). */
+.path-wrap.no-line .path-row { margin-bottom: 18px; }
 .path-node-col { position: relative; flex: none; }
 .path-node {
-  /* Achatado (ovalado), no un círculo perfecto — como los tokens 3D de
-     Duolingo: más ancho que alto, con el "canto" inferior a la vista. */
-  width: 66px; height: 54px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
-  display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
-  border: none; color: #fff;
-  /* Estado por defecto (ej. comidas del día, que no tienen concepto de
-     "bloqueada"): un gema celeste con relieve, como los nodos disponibles
-     de Duolingo — antes esto caía en blanco/gris plano. */
-  background: linear-gradient(160deg, #8ED4F0, var(--secondary));
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(20,50,80,0.15), 0 6px 0 #4E86B8, 0 8px 10px rgba(35,56,51,0.14);
+  /* Esfera de vidrio -- círculo perfecto (antes ovalado), gradiente radial
+     con el punto de luz arriba-izquierda oscureciéndose hacia el borde,
+     más un brillo diagonal grande y difuminado (ver ::after), como la
+     referencia visual de la usuaria: nada de ícono plano/vectorizado. */
+  width: 64px; height: 64px; border-radius: 50%; flex: none; cursor: pointer; position: relative;
+  display: flex; align-items: center; justify-content: center; font-size: 1.9rem;
+  border: none; color: #fff; overflow: hidden;
+  background: radial-gradient(circle at 33% 28%, #D6F4FF 0%, #7DD3F5 38%, #35A9DE 72%, #1D82B5 100%);
+  box-shadow: inset 0 3px 5px rgba(255,255,255,0.5), inset 0 -10px 12px rgba(10,55,85,0.28), 0 6px 0 #1A6D99, 0 9px 12px rgba(20,50,80,0.2);
   transition: transform .12s ease; padding: 0;
 }
-/* Brillo superior (look "botón de caramelo" 3D) — se oculta en nodos bloqueados. */
+/* Brillo tipo "reflejo de vidrio" -- una franja que se desvanece hacia
+   los bordes (degradado), no un óvalo sólido difuminado -- así se ve
+   como el destello de luz de la referencia, no como una mancha. */
 .path-node::after {
-  content: ''; position: absolute; top: 6px; left: 11px; width: 34%; height: 24%;
-  border-radius: 50%; background: rgba(255,255,255,0.5); pointer-events: none;
+  content: ''; position: absolute; top: 6%; left: 12%; width: 58%; height: 40%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 35% 30%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.35) 45%, rgba(255,255,255,0) 75%);
+  transform: rotate(-24deg); pointer-events: none;
 }
-.path-node:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(20,50,80,0.15), 0 1px 0 #4E86B8; }
+.path-node:active { transform: translateY(3px); box-shadow: inset 0 3px 5px rgba(255,255,255,0.5), inset 0 -10px 12px rgba(10,55,85,0.28), 0 1px 0 #1A6D99; }
 .path-node.done {
-  background: var(--primary); color: #fff;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 var(--primary-dark), 0 8px 10px rgba(35,56,51,0.14);
+  background: radial-gradient(circle at 33% 28%, #DFFCE9 0%, #6FCB9B 40%, #2FA86E 74%, #1E8354 100%);
+  box-shadow: inset 0 3px 5px rgba(255,255,255,0.42), inset 0 -10px 12px rgba(0,0,0,0.18), 0 6px 0 #166B44, 0 9px 12px rgba(20,50,80,0.2);
 }
-.path-node.done:active { box-shadow: inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -5px 6px rgba(0,0,0,0.12), 0 1px 0 var(--primary-dark); }
+.path-node.done:active { box-shadow: inset 0 3px 5px rgba(255,255,255,0.42), inset 0 -10px 12px rgba(0,0,0,0.18), 0 1px 0 #166B44; }
 .path-node.now {
-  background: var(--accent); color: #fff; transform: scale(1.15);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 6px 0 #D96B4F, 0 8px 10px rgba(255,138,107,0.25);
+  /* Mismo tamaño que el resto -- la usuaria pidió no agrandar el botón
+     activo, el anillo de alrededor (::before en path-node-col) es lo que
+     debe distinguirlo, no un scale(). */
+  background: radial-gradient(circle at 33% 28%, #FFEBD6 0%, #FFB27D 40%, #F58445 74%, #D9662B 100%);
+  color: #fff;
+  box-shadow: inset 0 3px 5px rgba(255,255,255,0.5), inset 0 -10px 12px rgba(0,0,0,0.16), 0 6px 0 #B24E1D, 0 9px 12px rgba(255,138,107,0.3);
 }
-.path-node.now:active { transform: scale(1.15) translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -5px 6px rgba(0,0,0,0.12), 0 1px 0 #D96B4F; }
+.path-node.now:active { transform: translateY(3px); box-shadow: inset 0 3px 5px rgba(255,255,255,0.5), inset 0 -10px 12px rgba(0,0,0,0.16), 0 1px 0 #B24E1D; }
 /* Aro circular centrado alrededor del nodo activo — un elemento propio
    (no box-shadow con spread) porque el nodo es ovalado, no un círculo:
    un spread uniforme sobre una elipse queda torcido/descentrado. Este
    sí escala en las mismas proporciones que el nodo. Sin animación de
    latido — solo la hojita de arriba (.path-mascot) sigue animada. */
 .path-node-col:has(.path-node.now)::before {
-  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  /* Tamaño calculado sobre el nodo YA escalado (scale 1.15, ~76x62) más un
-     margen parejo de 8px por lado — antes el cálculo era sobre el tamaño
-     sin escalar, dejando el hueco desigual. */
-  width: 92px; height: 78px; border-radius: 50%;
-  /* var(--bg) quedaba casi igual al blanco de la tarjeta, invisible. Un
-     tinte del color de acento sí se distingue sin ser un aro sólido. */
-  background: var(--accent-soft);
+  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(1);
+  /* Nodo sin scale() (64px) + margen parejo por lado. Halo suave (relleno
+     translúcido de --accent, visible en ambos temas porque no depende de
+     --accent-soft -- esa sí cambia entre temas y en oscuro quedaba casi
+     invisible), con una animación de latido/respiración lenta y suave
+     -- no el pulso brusco de antes, un vaivén gradual tipo "está vivo". */
+  width: 82px; height: 82px; border-radius: 50%;
+  background: rgba(255,138,107,0.28);
   pointer-events: none;
+  animation: path-ring-breathe 2.8s ease-in-out infinite;
+}
+@keyframes path-ring-breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.75; }
+  50% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
 }
 .path-node.locked {
-  /* Mismo relieve 3D + canto inferior que los nodos activos, solo que en
-     gris — antes quedaba plano (sombra baja de 2px, sin brillo), muy
-     distinto en textura al resto del camino. */
-  opacity: 1; cursor: default; background: linear-gradient(160deg, #EEF3F1, #D3DEDA); color: #A8BDB7;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(35,56,51,0.08), 0 6px 0 #B9C7C2, 0 8px 10px rgba(35,56,51,0.1);
+  /* Misma esfera de vidrio que los nodos activos, solo que en gris. */
+  opacity: 1; cursor: default;
+  background: radial-gradient(circle at 33% 28%, #FBFDFC 0%, #DCE7E3 45%, #B9C7C2 80%, #9FAFA9 100%);
+  color: #8CA29B;
+  box-shadow: inset 0 3px 5px rgba(255,255,255,0.5), inset 0 -10px 12px rgba(35,56,51,0.14), 0 6px 0 #93A69F, 0 9px 12px rgba(35,56,51,0.12);
 }
-.path-node.locked:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), inset 0 -5px 6px rgba(35,56,51,0.08), 0 1px 0 #B9C7C2; }
+.path-node.locked:active { transform: translateY(3px); box-shadow: inset 0 3px 5px rgba(255,255,255,0.5), inset 0 -10px 12px rgba(35,56,51,0.14), 0 1px 0 #93A69F; }
 .path-mascot {
   position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 1.7rem;
   animation: path-bob 2.4s ease-in-out infinite; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.15));
@@ -1383,11 +1412,15 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 }
 @keyframes path-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .path-label { flex: 1; min-width: 0; padding-top: 6px; }
+/* La etiqueta "Ahora"/"Hoy" va al lado del título (no debajo, como antes)
+   -- fila propia para que se vea alineada con el texto, envolviendo si
+   el título es largo y no cabe la etiqueta a su lado. */
+.path-t-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .path-label .path-t { font-weight: 700; font-size: 0.92rem; line-height: 1.25; color: var(--ink); }
 .path-label .path-s { font-size: 0.76rem; color: var(--ink-soft); margin-top: 1px; }
 .path-tag {
-  display: inline-block; margin-top: 3px; font-size: 0.62rem; font-weight: 700; letter-spacing: .04em;
-  text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+  display: inline-block; font-size: 0.62rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 999px; flex: none;
 }
 .path-tag-now { color: var(--accent); background: var(--accent-soft); }
 
