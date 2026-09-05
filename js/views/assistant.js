@@ -120,10 +120,13 @@ export function renderAssistant(container) {
   }
 
   // Sin cuota rígida (decisión explícita: la competencia tampoco limita
-  // el número de consultas) -- solo un contador informativo, nunca
-  // bloquea el envío.
-  function setQuota(used) {
-    quotaEl.textContent = `${used} mensaje${used === 1 ? '' : 's'} este mes`;
+  // el número de consultas), y tampoco se muestra un contador -- mostrar
+  // "X mensajes este mes" contradecía el mensaje de "casi ilimitado" con
+  // el que se vende Premium, dando la sensación de un límite que en
+  // realidad no existe. `used` ya no se usa para nada visible, solo queda
+  // el parámetro por si algún día vuelve a hacer falta.
+  function setQuota() {
+    quotaEl.textContent = 'Con el contexto de tu salud 🌿';
   }
 
   async function loadHistory(idAAbrir) {

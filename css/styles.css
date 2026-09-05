@@ -1523,13 +1523,24 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    texto -- vacía, cargando o llena -- en vez del min-height:40vh fijo de
    antes, que se quedaba corto y dejaba un hueco vacío entre la tarjeta y
    el input. */
-#app.chat-active { height: var(--vvh, 100dvh); min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+/* El padding-bottom base de #app (regla general, más abajo) está pensado
+   para páginas normales cuyo contenido termina antes de la nav flotante
+   y necesita ese hueco para no quedar tapado -- aquí el input ya está
+   anclado como último elemento del flex-column, así que ese mismo
+   padding solo dejaba un espacio vacío enorme entre el input y la nav.
+   Se reduce al mínimo necesario para despejar la nav, nada más. */
+#app.chat-active { height: var(--vvh, 100dvh); min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding-bottom: calc(var(--nav-h) + var(--nav-gap) + 10px); }
 #app.chat-active .chat-header { flex: none; }
 #app.chat-active .chat-disclaimer { flex: none; }
-#app.chat-active .chat-card { flex: 1; min-height: 0; overflow-y: auto; }
+/* margin-bottom a 10px (en vez del 14px genérico de .card) para que el
+   espacio de arriba del input quede igual al de abajo (input-nav, ver
+   padding-bottom arriba) -- .chat-input-row ya no suma su padding-top de
+   8px extra en este contexto, si no el de arriba quedaba más grande que
+   el de abajo aunque los números "coincidieran". */
+#app.chat-active .chat-card { flex: 1; min-height: 0; overflow-y: auto; margin-bottom: 10px; }
 /* El input ya no necesita position:fixed -- es el último elemento del
    flex-column, siempre pegado justo debajo de la tarjeta que sí scrollea. */
-#app.chat-active .chat-input-row { position: static; left: auto; transform: none; bottom: auto; width: 100%; max-width: none; flex: none; }
+#app.chat-active .chat-input-row { position: static; left: auto; transform: none; bottom: auto; width: 100%; max-width: none; flex: none; padding-top: 0; }
 #app.chat-active .chat-msg, #app.chat-active .chat-typing, #app.chat-active .chat-divider { scroll-margin-bottom: 12px; }
 /* Con el teclado abierto (ver actualizarVvh() en app.js) la bottom-nav
    queda tapada de todas formas, así que el padding que #app le reserva

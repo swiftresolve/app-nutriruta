@@ -54,14 +54,14 @@ function abrirSelector(titulo, opciones, valorActual, onElegir) {
 function settingsSecciones() {
   return [
     { id: 'cuenta', icon: '👤', label: 'Mi cuenta' },
-    { id: 'sobre-ti', icon: '⚖️', label: 'Sobre ti' },
+    { id: 'sobre-ti', icon: '🧍', label: 'Sobre ti' },
     { id: 'salud', icon: '🩺', label: 'Salud y alimentación' },
     { id: 'comidas', icon: '⏰', label: 'Horario de comidas' },
     { id: 'interfaz', icon: '🌎', label: 'Interfaz y preferencias' },
     { id: 'notificaciones', icon: '🔔', label: 'Notificaciones', condicion: () => pushSupported() },
     { id: 'referidos', icon: '🎁', label: 'Referidos y NutriCoins' },
     { id: 'resena', icon: '🌿', label: 'Califica tu experiencia' },
-    { id: 'datos', icon: GEAR_ICON, label: 'Cuenta y datos' },
+    { id: 'datos', icon: GEAR_ICON, label: 'Datos y privacidad' },
     { id: 'legal', icon: '⚖️', label: 'Legal' }
   ];
 }
@@ -215,6 +215,18 @@ function pintarCuenta(container) {
   plansBtn.textContent = '✨ Ver planes (mensual / anual)';
   plansBtn.addEventListener('click', () => navigate('plans'));
   account.appendChild(plansBtn);
+  // El cobro es 100% externo (Hotmart, ver config.js) -- cancelar o
+  // cambiar el método de pago solo se puede hacer desde SU portal, la app
+  // no tiene ese control. Visible si alguna vez tuvo Premium (activo o
+  // vencido), no solo mientras está activo -- alguien con el plan vencido
+  // también puede necesitar entrar a revisar su historial de cobros.
+  if (plan.tipo === 'premium') {
+    const subBtn = document.createElement('button');
+    subBtn.className = 'btn ghost full mb';
+    subBtn.textContent = '🧾 Administrar mi suscripción';
+    subBtn.addEventListener('click', () => window.open('https://app.hotmart.com/login', '_blank', 'noopener'));
+    account.appendChild(subBtn);
+  }
   const outBtn = document.createElement('button');
   outBtn.className = 'btn ghost full';
   outBtn.textContent = '🚪 Cerrar sesión';
@@ -849,7 +861,7 @@ function pintarInterfaz(container) {
 function pintarDatos(container) {
   const actions = document.createElement('div');
   actions.className = 'card';
-  actions.innerHTML = `<h2>${GEAR_ICON} Cuenta y datos</h2>`;
+  actions.innerHTML = `<h2>${GEAR_ICON} Datos y privacidad</h2>`;
   const redoBtn = document.createElement('button');
   redoBtn.className = 'btn ghost full mb';
   redoBtn.textContent = '📝 Rehacer el quiz inicial';
