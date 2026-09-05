@@ -326,11 +326,17 @@ function etiquetaFecha(fechaISO) {
 }
 
 // Menú hamburguesa del chat: "Historial de SuSana" -- lista de
-// conversaciones agrupadas por fecha (como Fitia Coach), con un botón
-// para empezar una nueva. Tocar una fila cierra el modal y carga esa
-// conversación en el chat que ya está abierto (no navega a otra pantalla).
+// conversaciones agrupadas por fecha, con un botón para empezar una
+// nueva. Panel de pantalla completa que entra deslizando desde la
+// izquierda (referencia real de la usuaria: Fitia Coach), no un diálogo
+// centrado -- mismo mecanismo que .cam-fullscreen (variante agregada al
+// backdrop DESPUÉS de que openModal lo cuelga del documento, ver
+// setTimeout abajo; durante el propio contentBuilder el modal todavía no
+// tiene padre). Tocar una fila cierra el panel y carga esa conversación
+// en el chat que ya está abierto (no navega a otra pantalla).
 function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
   openModal((modal, closeFn) => {
+    setTimeout(() => modal.parentElement?.classList.add('drawer-izq'), 0);
     modal.insertAdjacentHTML('beforeend', `
       <div class="spread">
         <h2>Historial de ${susanaName()}</h2>

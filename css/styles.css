@@ -1052,6 +1052,21 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @keyframes modal-pop-in { from { transform: translateY(16px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
 .modal-close { position: sticky; top: 0; float: right; font-size: 1.3rem; color: var(--ink-soft); }
 
+/* Historial de SuSana (assistant.js) -- panel de pantalla completa que
+   entra deslizando desde la izquierda, referencia real de la usuaria
+   (Fitia Coach): se ve un borde de lo que hay detrás a la derecha, no un
+   diálogo centrado y flotante como el resto de modales de la app. */
+.modal-backdrop.drawer-izq { justify-content: flex-start; padding: 0; }
+.modal-backdrop.drawer-izq .modal {
+  width: 84%; max-width: 340px; height: 100%; max-height: none;
+  border-radius: 0 20px 20px 0; overflow-y: auto;
+  animation: drawer-slide-in 0.25s cubic-bezier(.32,1,.64,1);
+}
+@keyframes drawer-slide-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop.drawer-izq .modal { animation: none; }
+}
+
 /* ===== Cámara en vivo (registro de comida) — pantalla completa, mismo
    lenguaje visual que la cámara de Fitia (referencia de la usuaria):
    fondo negro de borde a borde, marco redondeado centrado, obturador

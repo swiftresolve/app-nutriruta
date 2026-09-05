@@ -6,7 +6,7 @@ import { getState, setState, resetState, getPlan, isPremium, planExpired, planEx
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
 import { getSession, signIn, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
-import { navigate, header, openModal, toast, abrirComprarNutricoins, GEAR_ICON } from '../app.js';
+import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, GEAR_ICON } from '../app.js';
 import { iniciarTour } from './tour.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
@@ -304,7 +304,7 @@ function pintarReferidos(container) {
   const nutricoinsCard = document.createElement('div');
   nutricoinsCard.className = 'card';
   nutricoinsCard.innerHTML = `
-    <div class="spread"><h2>🪙 NutriCoins</h2><span class="small muted">${getState().nutricoins || 0}</span></div>
+    <div class="spread"><h2 style="display:flex;align-items:center;gap:8px">${coinIcon(ORO_NUTRICOINS, 22)} NutriCoins</h2><span class="small muted">${getState().nutricoins || 0}</span></div>
     <p class="small mt">Se compran con dinero, nunca se ganan -- a diferencia de tus gemas 💎. Sirven para extras puntuales (como preguntas de más a SuSana), nunca para saltarte tu constancia real.</p>
     <button type="button" class="btn ghost full mt" id="btn-comprar-nutricoins">Comprar NutriCoins</button>`;
   nutricoinsCard.querySelector('#btn-comprar-nutricoins').addEventListener('click', () => abrirComprarNutricoins());

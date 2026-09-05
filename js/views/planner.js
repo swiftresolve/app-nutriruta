@@ -436,7 +436,7 @@ export function renderPlanner(container, params = {}) {
           <textarea id="ia-notas" class="auth-input mt" rows="5" maxlength="${NOTAS_MAX}" placeholder="Ej: con pollo, sin lácteos, algo rápido…" style="resize:none"></textarea>
           <p class="small muted" id="ia-contador" style="text-align:right;margin-top:-6px">${NOTAS_MAX} caracteres restantes</p>
         </div>
-        <button type="button" class="btn full" id="ia-generar">Generar ${cantidad === 1 ? 'receta' : 'recetas'} · ${cantidad * COSTO_RECETA_IA} 🪙</button>`);
+        <button type="button" class="btn full" id="ia-generar" style="display:flex;align-items:center;justify-content:center;gap:6px">Generar ${cantidad === 1 ? 'receta' : 'recetas'} · ${cantidad * COSTO_RECETA_IA} ${coinIcon(ORO_NUTRICOINS, 18)}</button>`);
 
       const { getComida } = montarSelectorComida(modal, modal.querySelector('#ia-comida-btn'), modal.querySelector('#ia-comida-menu'), comidaElegida);
 
@@ -478,17 +478,20 @@ export function renderPlanner(container, params = {}) {
             <span class="metodo-crear-text"><strong>Desde un enlace</strong><span class="small muted">Pega el link de una receta real</span></span>
           </button>
         </div>`);
+      // No se cierra esta modal al elegir un método -- se abre la
+      // siguiente pantalla ENCIMA (openModal soporta modales apiladas,
+      // ver modalLockCount en app.js). Si esa pantalla se cancela sin
+      // generar nada, esta sigue abierta debajo y se ve de nuevo; solo se
+      // cierra también (via closeFn, pasado a cada función) cuando el
+      // método sí llega a generar/guardar algo de verdad.
       modal.querySelector('#metodo-manual').addEventListener('click', () => {
-        closeFn();
-        abrirFormularioReceta(() => drawBody());
+        abrirFormularioReceta(() => { closeFn(); drawBody(); });
       });
       modal.querySelector('#metodo-foto').addEventListener('click', () => {
-        closeFn();
-        abrirCrearDesdeFoto();
+        abrirCrearDesdeFoto(closeFn);
       });
       modal.querySelector('#metodo-enlace').addEventListener('click', () => {
-        closeFn();
-        abrirCrearDesdeEnlace();
+        abrirCrearDesdeEnlace(closeFn);
       });
     });
   }
@@ -498,7 +501,11 @@ export function renderPlanner(container, params = {}) {
   // mealLogModal.js) -- referencia de la usuaria (video de Fitia): abre
   // directo a la cámara, sin pantalla previa. La comida se asigna sola
   // (pestaña activa del Recetario), sin pedirla aparte.
-  function abrirCrearDesdeFoto() {
+  // closeSelector: cierra también "Elige cómo crear tu receta" (la modal
+  // de abajo, apilada) -- solo se llama en el camino de ÉXITO (foto ya
+  // capturada/elegida, lista para generar). Cancelar o un error en el
+  // procesamiento solo cierra esta pantalla y deja el selector visible.
+  function abrirCrearDesdeFoto(closeSelector) {
     const saldo = getState().nutricoins || 0;
     if (saldo < COSTO_RECETA_IA) {
       toast(`Necesitas ${COSTO_RECETA_IA} NutriCoins para generar una receta.`);
@@ -530,6 +537,7 @@ export function renderPlanner(container, params = {}) {
         try {
           const { base64, mediaType } = await comprimirFotoReceta(file);
           cerrarTodo();
+          closeSelector();
           generarUnaConIA(comida, 'foto', () => generarRecetaDesdeFoto(comida, base64, mediaType));
         } catch (err) {
           toast(err.message || 'No se pudo procesar la foto.');
@@ -581,6 +589,7 @@ export function renderPlanner(container, params = {}) {
         canvas.toBlob((blob) => {
           const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
           cerrarTodo();
+          closeSelector();
           generarUnaConIA(comida, 'foto', () => generarRecetaDesdeFoto(comida, dataUrl.split(',')[1], 'image/jpeg'));
         }, 'image/jpeg', 0.85);
       });
@@ -600,7 +609,7 @@ export function renderPlanner(container, params = {}) {
   // Mismo diseño que la referencia de la usuaria: título "Pega un enlace",
   // input + botón Pegar (portapapeles), aviso de qué enlaces sirven, y un
   // botón "Importar receta" que se activa solo con algo escrito.
-  function abrirCrearDesdeEnlace() {
+  function abrirCrearDesdeEnlace(closeSelector) {
     const saldo = getState().nutricoins || 0;
     if (saldo < COSTO_RECETA_IA) {
       toast(`Necesitas ${COSTO_RECETA_IA} NutriCoins para generar una receta.`);
@@ -618,7 +627,7 @@ export function renderPlanner(container, params = {}) {
           <button type="button" class="btn ghost sm" id="enlace-pegar" style="flex:none">📋 Pegar</button>
         </div>
         <p class="small muted mt center">Enlaces soportados: TikTok, Instagram, YouTube Shorts y sitios web.</p>
-        <button type="button" class="btn full mt" id="enlace-generar" disabled>Importar receta · ${COSTO_RECETA_IA} 🪙</button>`);
+        <button type="button" class="btn full mt" id="enlace-generar" disabled style="display:flex;align-items:center;justify-content:center;gap:6px">Importar receta · ${COSTO_RECETA_IA} ${coinIcon(ORO_NUTRICOINS, 18)}</button>`);
 
       const urlInput = modal.querySelector('#enlace-url');
       const generarBtn = modal.querySelector('#enlace-generar');
@@ -640,6 +649,7 @@ export function renderPlanner(container, params = {}) {
         const url = urlInput.value.trim();
         if (!url) return;
         closeFn();
+        closeSelector();
         generarUnaConIA(comida, 'enlace', () => generarRecetaDesdeEnlace(comida, url));
       });
     });
@@ -978,9 +988,15 @@ export function renderPlanner(container, params = {}) {
       return true;
     }
 
+    // El título "Recomendadas para tu perfil" debe verse siempre que el
+    // orden activo sea justo ese, haya o no una segunda sección de
+    // "Otras recetas" debajo -- antes solo se mostraba si AMBOS grupos
+    // tenían contenido, así que con un perfil donde todo el catálogo
+    // calificaba como apto (sin ninguna "otra"), el título desaparecía
+    // por completo aunque la sección sí existiera.
     const hayRecomendadas = recomendadas.length > 0 || propiasVerdes.length > 0;
-    renderGroup(recomendadas, hayRecomendadas && otras.length ? '🌿 Recomendadas para tu perfil' : null, propiasVerdes);
-    renderGroup(otras, hayRecomendadas && otras.length ? 'Otras recetas' : null);
+    renderGroup(recomendadas, orden === 'recomendadas' && hayRecomendadas ? '🌿 Recomendadas para tu perfil' : null, propiasVerdes);
+    renderGroup(otras, otras.length ? 'Otras recetas' : null);
 
     const huboMias = renderMisRecetas(propiasResto);
     if (soloMias && !huboMias) {
