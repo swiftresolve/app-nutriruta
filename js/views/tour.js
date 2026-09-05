@@ -40,6 +40,10 @@ function crearPasos(sexo) {
     texto: 'Si un día no puedes cumplir, una Pausa cubre ese día sin romper tu racha -- se gana 1 cada 7 Días en Ruta, o se compra con gemas. Nunca te castiga por un mal día.'
   },
   {
+    target: '#tour-menu', titulo: '🍽️ Tu ruta de hoy',
+    texto: 'El menú de cada comida, elegido según tu perfil de salud. Tócala para ver la receta, o el 🔄 para cambiarla al instante por otra opción que también te sirva.'
+  },
+  {
     target: '#tour-paso', titulo: '🌱 Tu paso de hoy',
     texto: 'Una sola acción pequeña y concreta, pensada para tu situación real. Tócala cuando la hagas -- no hace falta más para empezar cada día.'
   },
@@ -48,8 +52,8 @@ function crearPasos(sexo) {
     texto: 'Marca al menos 3 para sumar a tu racha. El agua y el menú se marcan solos cuando los registras de verdad, no hace falta tocarlos aparte.'
   },
   {
-    target: '#tour-agua', titulo: '💧 Tu agua',
-    texto: 'Toca aquí para registrar cada vaso, a tu ritmo -- tu meta se ajusta sola según tu peso y sexo, si los guardaste en Ajustes.'
+    target: '#tour-agua', titulo: '💧 Tu agua y más',
+    texto: 'Toca aquí para registrar cada vaso, a tu ritmo -- tu meta se ajusta sola según tu peso y sexo, si los guardaste en Ajustes. Junto a este botón encuentras más accesos rápidos: tu progreso, diario, logros y más.'
   },
   {
     target: '[data-route="planner"]', titulo: '🥗 Recetas',
@@ -58,6 +62,10 @@ function crearPasos(sexo) {
   {
     target: '[data-route="sos"]', titulo: '💚 SOS antojo',
     texto: 'Cuando llegue un antojo fuerte, aquí tienes alternativas reales al momento -- sin culpa, sin regaños.'
+  },
+  {
+    target: '[data-route="liga"]', titulo: '🏆 Liga',
+    texto: 'Compite en gemas cada semana con otras personas de tu mismo nivel. Sube de liga con constancia -- nunca comprando nada.'
   },
   {
     target: '[data-route="assistant"]', titulo: '💬 SuSana',

@@ -28,14 +28,19 @@ function tono(audioCtx, freq, start, dur, { type = 'sine', peak = 0.18 } = {}) {
   osc.stop(start + dur + 0.02);
 }
 
+// Devuelve lo que retorne `fn` (ej. un handle para detener el sonido antes
+// de que termine solo) -- si el audio está apagado o falla, un stop() que
+// no hace nada, para que quien llama nunca tenga que chequear null primero.
+const SIN_HANDLE = { stop() {} };
 function conAudio(fn) {
-  if (!sonidoActivado()) return;
+  if (!sonidoActivado()) return SIN_HANDLE;
   try {
     const audioCtx = getCtx();
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    fn(audioCtx);
+    return fn(audioCtx) || SIN_HANDLE;
   } catch {
     // Audio no disponible (autoplay bloqueado, sin soporte, etc.) — silencioso.
+    return SIN_HANDLE;
   }
 }
 
@@ -127,14 +132,30 @@ function soplo(audioCtx, { desde, hasta, dur, peak = 0.11 }) {
   noise.connect(lowpass).connect(highpass).connect(gain).connect(audioCtx.destination);
   noise.start(start);
   noise.stop(start + dur + 0.05);
+  // stop(): corta YA en vez de esperar a que termine solo -- necesario para
+  // cuando la usuaria sale de la pantalla de respiración a mitad de un
+  // inhala/exhala (Continuar o Atrás), que no debe dejar sonido de fondo.
+  return {
+    stop() {
+      try {
+        const ahora = audioCtx.currentTime;
+        gain.gain.cancelScheduledValues(ahora);
+        gain.gain.setValueAtTime(gain.gain.value, ahora);
+        gain.gain.linearRampToValueAtTime(0, ahora + 0.05);
+        noise.stop(ahora + 0.06);
+      } catch {
+        // Ya se había detenido sola o el nodo no soporta cortar dos veces -- ignorar.
+      }
+    }
+  };
 }
 
 export function playInhaleSound(dur = 3.3) {
-  conAudio((audioCtx) => soplo(audioCtx, { desde: 500, hasta: 1300, dur, peak: 0.1 }));
+  return conAudio((audioCtx) => soplo(audioCtx, { desde: 500, hasta: 1300, dur, peak: 0.1 }));
 }
 
 export function playExhaleSound(dur = 3.3) {
-  conAudio((audioCtx) => soplo(audioCtx, { desde: 1400, hasta: 400, dur, peak: 0.13 }));
+  return conAudio((audioCtx) => soplo(audioCtx, { desde: 1400, hasta: 400, dur, peak: 0.13 }));
 }
 
 // Día completo (nueva racha): fanfarria corta — arpegio que sube y cierra

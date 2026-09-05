@@ -2,7 +2,7 @@
 import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
-import { header, navigate, toast, openModal, SEARCH_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
+import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
 import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace } from '../supabase-client.js';
 import { openRecipe } from './dashboard.js';
 
@@ -17,7 +17,7 @@ const FREE_RECIPE_LIMIT = 12;
 
 // Traducción de las etiquetas reales de cada receta (data/recipes.js) a un
 // chip corto y amigable — no inventa datos, solo los presenta mejor.
-const TAG_LABELS = {
+export const TAG_LABELS = {
   alto_proteina: '💪 Proteína', bajo_azucar: '🚫🍬 Bajo azúcar', alto_fibra: '🌾 Alta fibra',
   fibra_soluble: '🌾 Fibra soluble', grasa_saludable: '🥑 Grasa buena', rapido: '⚡ Rápido',
   sin_gluten: '🌾✕ Sin gluten', local: '📍 Local', fermentado: '🫙 Fermentado',
@@ -28,7 +28,7 @@ const TAG_LABELS = {
   reemplaza_paquetes: '🚫🍪 Sin paquete', reemplaza_alcohol: '🚫🍷 Sin alcohol', ligero: '🪶 Ligero',
   antojo_salado_saludable: '🧂 Antojo sano'
 };
-const HOT_MEALS = new Set(['desayuno', 'almuerzo', 'cena']);
+export const HOT_MEALS = new Set(['desayuno', 'almuerzo', 'cena']);
 
 // Comprime/redimensiona la foto en el cliente antes de mandarla a la IA --
 // mismo criterio que toJpegBase64 en mealLogModal.js, no vale la pena
@@ -448,7 +448,7 @@ export function renderPlanner(container, params = {}) {
             <span class="metodo-crear-text"><strong>Manual</strong><span class="small muted">Agrega ingredientes uno por uno</span></span>
           </button>
           <button type="button" class="metodo-crear-row" id="metodo-foto">
-            <span class="metodo-crear-icon">📷</span>
+            <span class="metodo-crear-icon">${CAMERA_ICON}</span>
             <span class="metodo-crear-text"><strong>Desde una foto</strong><span class="small muted">De una receta escrita, o del plato ya preparado</span></span>
           </button>
           <button type="button" class="metodo-crear-row" id="metodo-enlace">

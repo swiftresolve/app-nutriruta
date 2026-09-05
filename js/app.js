@@ -102,7 +102,7 @@ export function navigate(route, params = {}) {
   void app.offsetWidth;
   app.classList.add('page-enter');
 
-  const showNav = route !== 'quiz' && route !== 'auth' && route !== 'resetPassword';
+  const showNav = route !== 'quiz' && route !== 'auth' && route !== 'resetPassword' && route !== 'sos';
   nav.classList.toggle('hidden', !showNav);
   // Sin bottom-nav no hace falta reservarle espacio abajo -- si no, queda
   // un hueco vacío grande en pantallas cortas como la bienvenida del quiz.
@@ -113,7 +113,10 @@ export function navigate(route, params = {}) {
   // el botón "Siguiente" quedaba en flujo normal, sin el alto fijo que lo
   // mantiene pegado arriba del teclado. Esta clase la pone JS a mano, con
   // el route ya conocido, así que funciona sin importar el navegador.
-  app.classList.toggle('quiz-active', route === 'quiz');
+  // SOS reutiliza el mismo mecanismo de pantalla completa que el quiz
+  // (ver .quiz-step/.quiz-nav en CSS) -- ahora es un recorrido de varias
+  // pantallas igual que el quiz, no una sola pantalla con tarjetas.
+  app.classList.toggle('quiz-active', route === 'quiz' || route === 'sos');
   // El chat de SuSana necesita el mismo truco que el quiz: #app fijo a la
   // altura real de pantalla (--vvh) y adentro un flex-column donde SOLO
   // la tarjeta de mensajes hace scroll -- así la tarjeta siempre llega
@@ -197,6 +200,19 @@ export const GEAR_ICON = `<svg viewBox="0 0 24 24" width="22" height="22" fill="
 export const SEARCH_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" style="display:block" fill="none">
   <circle cx="10.5" cy="10.5" r="6.5" stroke="var(--primary-dark)" stroke-width="2"/>
   <path d="M15.5 15.5 L21 21" stroke="var(--primary-dark)" stroke-width="2" stroke-linecap="round"/>
+</svg>`;
+
+// Íconos reales de Heroicons (MIT), mismo criterio que GEAR_ICON --
+// minimalistas, un solo trazo sin relleno, en vez de emoji con su look
+// fijo por dispositivo. currentColor hereda el color del botón que los
+// use (icon-btn ya define su propio color).
+export const REFRESH_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary-dark)" stroke-width="1.8" style="display:block">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/>
+</svg>`;
+
+export const CAMERA_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary-dark)" stroke-width="1.8" style="display:block">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"/>
+  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"/>
 </svg>`;
 
 // Cabecera común de las vistas principales. Cuando ya hay cuenta activa,

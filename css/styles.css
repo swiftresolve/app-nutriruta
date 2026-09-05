@@ -1249,6 +1249,28 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .breath-done { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .breath-done-emoji { font-size: 1.5rem; line-height: 1; }
 
+/* Pantalla dedicada de "La pausa de 1 minuto" (SOS antojo) -- ocupa todo
+   el espacio disponible del paso, centrada, con un fondo en degradado
+   suave (en vez del fondo plano del resto de pantallas) para que se
+   sienta como un momento aparte, no una tarjeta más entre otras. */
+.sos-breath-step .quiz-content {
+  justify-content: center; align-items: center; text-align: center;
+  border-radius: 24px; margin: 4px 0;
+  background: radial-gradient(circle at 50% 40%, var(--primary-soft), var(--bg) 72%);
+}
+.sos-breath-step .step-body { flex: none; width: 100%; }
+.sos-breath-screen h2 { margin-bottom: 2px; }
+.sos-breath-screen .breath-wrap { padding: 34px 0; }
+.sos-breath-screen .breath-circle {
+  width: 190px; height: 190px; font-size: 1.15rem;
+  box-shadow: 0 0 0 10px rgba(43, 181, 160, 0.12), 0 0 40px rgba(43, 181, 160, 0.18);
+  transition: transform 3.5s ease-in-out, box-shadow 3.5s ease-in-out;
+}
+.sos-breath-screen .breath-circle.in {
+  box-shadow: 0 0 0 18px rgba(43, 181, 160, 0.16), 0 0 60px rgba(43, 181, 160, 0.28);
+}
+.sos-breath-screen .breath-done-emoji { font-size: 2rem; }
+
 /* ===== Fila con emoji (lecciones de Aprende, Legal en Ajustes) =====
    .recipe-item/.recipe-emoji nunca tuvieron una regla propia -- quedaban
    sin ningún estilo (texto suelto, sin fila ni separación), aunque se

@@ -8,7 +8,7 @@
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
-import { navigate, header, openModal, toast } from '../app.js';
+import { navigate, header, openModal, toast, REFRESH_ICON } from '../app.js';
 import { t } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
@@ -202,6 +202,7 @@ export function renderDashboard(container) {
   // --- Menú del día: la ruta de hoy ---
   const menuCard = document.createElement('div');
   menuCard.className = 'card';
+  menuCard.id = 'tour-menu';
   menuCard.innerHTML = `<div class="spread"><h2>${t('🍽️ Tu ruta de hoy')}</h2></div><div id="menu-path"></div>`;
   // insertBefore(pasoCard) en vez de appendChild -- pedido explícito de
   // la usuaria: "Tu ruta de hoy" debe quedar ARRIBA de "Tu paso de hoy",
@@ -239,7 +240,10 @@ export function renderDashboard(container) {
     const light = trafficLight(recipe, perfiles);
     const shown = displayRecipe(recipe, exclusiones);
     return {
-      icon: meal.emoji, title: t(meal.nombre),
+      // El ícono es el de la RECETA actual (shown.emoji), no el de la
+      // comida (meal.emoji) -- antes eran fijos por Desayuno/Almuerzo/etc.
+      // y nunca cambiaban al tocar 🔄, aunque la receta sí fuera otra.
+      icon: shown.emoji, title: t(meal.nombre),
       subtitle: registro ? registro.alimentos.join(', ') : shown.nombre,
       now: esAhora, nowLabel: t('Ahora'), done: !!registro,
       onClick: () => {
@@ -252,7 +256,7 @@ export function renderDashboard(container) {
       },
       extraHtml: `<div class="row mt" style="gap:8px">
         <span class="dot ${light}"></span>
-        <button type="button" class="icon-btn swap-btn" title="${t('Cambiar receta')}" aria-label="${t('Cambiar receta')}">🔄</button>
+        <button type="button" class="icon-btn swap-btn" title="${t('Cambiar receta')}" aria-label="${t('Cambiar receta')}">${REFRESH_ICON}</button>
         <button type="button" class="icon-btn log-btn" title="${registro ? t('Editar lo que comiste') : t('¿Qué comiste realmente?')}" aria-label="${registro ? t('Editar lo que comiste') : t('Registrar lo que comiste')}">${registro ? '✏️' : '📸'}</button>
       </div>`
     };

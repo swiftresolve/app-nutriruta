@@ -348,11 +348,21 @@ export function formatCantidad(n) {
 }
 
 // Snacks anti-ansiedad disponibles para el usuario.
+// Mismo criterio que candidatesFor: si hay perfiles de salud activos,
+// prioriza solo los snacks que de verdad ayudan a esa condición (apto),
+// completando con el resto si el catálogo no alcanza -- antes "no rojo"
+// dejaba pasar snacks neutros junto a los realmente indicados.
 export function sosSnacks() {
   const { user } = getState();
-  return RECIPES
+  const perfiles = user.perfiles || [];
+  const disponibles = RECIPES
     .filter((r) => (r.etiquetas || []).includes('snack_antiansiedad'))
     .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
-    .filter((r) => trafficLight(r, user.perfiles) !== 'rojo')
-    .sort((a, b) => score(b, user.perfiles) - score(a, user.perfiles));
+    .filter((r) => trafficLight(r, perfiles) !== 'rojo');
+
+  if (perfiles.length) {
+    const queAyudan = disponibles.filter((r) => (r.apto || []).some((p) => perfiles.includes(p)));
+    if (queAyudan.length >= 4) return queAyudan.sort((a, b) => score(b, perfiles) - score(a, perfiles));
+  }
+  return disponibles.sort((a, b) => score(b, perfiles) - score(a, perfiles));
 }
