@@ -3,7 +3,7 @@
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, eliminarMemoria, MEMORIA_MAX } from '../store.js';
 import { fetchGuideHistory, askGuide, listGuideConversations, newGuideConversation } from '../supabase-client.js';
-import { header, navigate, toast, susanaName, openModal, GEAR_ICON } from '../app.js';
+import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
 
 // Ícono de menú hamburguesa -- 3 líneas simples, mismo lenguaje visual
@@ -340,7 +340,7 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
     modal.insertAdjacentHTML('beforeend', `
       <div class="spread">
         <h2>Historial de ${susanaName()}</h2>
-        <button type="button" class="icon-btn plain" id="hist-nueva" aria-label="Nueva conversación">✏️</button>
+        <button type="button" class="icon-btn plain" id="hist-nueva" aria-label="Nueva conversación">${PENCIL_ICON}</button>
       </div>
       <div class="mt" id="hist-lista"><p class="small muted center">Cargando…</p></div>`);
 

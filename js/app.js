@@ -217,6 +217,12 @@ export const CAMERA_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" fill
   <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"/>
 </svg>`;
 
+// "Nueva conversación" (historial de SuSana) -- trazo fino sin relleno,
+// mismo lenguaje visual que el resto de íconos propios (nunca emoji).
+export const PENCIL_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary-dark)" stroke-width="1.8" style="display:block">
+  <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/>
+</svg>`;
+
 // Cámara, micrófono y teclado (texto) para el selector de "¿Qué comiste?"
 // en Tu ruta de hoy (foto/voz/texto, ver mealLogModal.js) -- cada uno
 // elegido a partir de una imagen de referencia real que dio la usuaria
