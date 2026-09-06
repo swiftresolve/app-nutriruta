@@ -8,7 +8,7 @@
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
-import { navigate, header, openModal, toast, REFRESH_ICON } from '../app.js';
+import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON } from '../app.js';
 import { t } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
@@ -530,16 +530,23 @@ export function openRecipe(recipe, hoy = null) {
   openModal((modal, closeFn) => {
     const light = trafficLight(recipe, user.perfiles);
     const shown = displayRecipe(recipe, user.exclusiones);
-    const ings = recipe.ingredientes.map((ing) => {
+    // Lista editable (referencia real: Fitia) -- empieza igual a la
+    // sugerencia, pero cada ingrediente se puede ajustar o quitar, y se
+    // puede agregar uno nuevo. Es esta lista, no el nombre fijo de la
+    // receta, la que se guarda al tocar el círculo de "¿Comiste esto?"
+    // -- así el registro refleja lo que de verdad comiste, no la
+    // sugerencia sin editar.
+    let ingredientesTexto = recipe.ingredientes.map((ing) => {
       const d = displayIngredient(ing, user.exclusiones);
       const texto = (d.cantidad != null && d.resto) ? textoConCantidad(d.cantidad, d.resto, user.unidades) : d.texto;
-      return `<div class="ingredient">• ${texto}${d.sustituido ? ` <span class="sub-note">(${t('sustituto de')} ${d.original})</span>` : ''}</div>`;
-    }).join('');
+      return texto + (d.sustituido ? ` (${t('sustituto de')} ${d.original})` : '');
+    });
     let registradoAhora = !!hoy?.registro;
     modal.insertAdjacentHTML('beforeend', `
-      <div style="font-size:2.4rem">${shown.emoji}</div>
-      <h2>${shown.nombre}</h2>
-      <p class="small">${recipe.descripcion}</p>
+      <div class="center" style="font-size:2.4rem">${shown.emoji}</div>
+      <h2 class="center">${shown.nombre}</h2>
+      ${recipe.tiempoMin ? `<p class="small muted center row" style="gap:5px;justify-content:center;align-items:center;margin-top:2px">${recipe.tiempoMin} min ${CLOCK_ICON}</p>` : ''}
+      <p class="small mt">${recipe.descripcion}</p>
       <p class="row mt" style="gap:8px;align-items:center">
         ${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span>
       </p>
@@ -549,15 +556,56 @@ export function openRecipe(recipe, hoy = null) {
         <button type="button" class="meal-check${registradoAhora ? ' done' : ''}" id="rc-check-toggle" aria-label="${t('Marcar como comido')}">${registradoAhora ? '✓' : ''}</button>
       </div>
       <p class="small muted center mt">${t('¿Comiste algo diferente? Usa el ícono de cámara en Tu ruta de hoy.')}</p>` : ''}
-      <h3 class="mt">${t('Ingredientes')}</h3>${ings}
-      <h3 class="mt">${t('Preparación')}</h3>
-      <ol class="steps">${recipe.pasos.map((p) => `<li>${p}</li>`).join('')}</ol>`);
+      <h3 class="mt">${t('Ingredientes')}</h3>
+      <div id="rc-ingredientes"></div>
+      <button type="button" class="row" id="rc-agregar-ing" style="gap:6px;padding:10px 0;color:var(--primary-dark);font-weight:700;width:100%">+ ${t('Agregar Ingrediente')}</button>
+      <details class="rc-desplegable mt">
+        <summary>${t('Instrucciones')}<span class="rc-chev">⌄</span></summary>
+        <div class="rc-desplegable-body">
+          <ol class="steps">${recipe.pasos.map((p) => `<li>${p}</li>`).join('')}</ol>
+        </div>
+      </details>`);
+
+    const ingsWrap = modal.querySelector('#rc-ingredientes');
+    function pintarIngredientes() {
+      ingsWrap.innerHTML = ingredientesTexto.map((texto, i) => `
+        <div class="row ingredient-row" data-idx="${i}" style="gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span class="ing-text" style="flex:1;min-width:0">${esc(texto)}</span>
+          <button type="button" class="icon-btn plain ing-edit" data-idx="${i}" aria-label="${t('Editar ingrediente')}">${PENCIL_ICON}</button>
+        </div>`).join('');
+      ingsWrap.querySelectorAll('.ing-edit').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const i = Number(btn.dataset.idx);
+          const fila = btn.closest('.ingredient-row');
+          const span = fila.querySelector('.ing-text');
+          const input = document.createElement('input');
+          input.type = 'text'; input.className = 'auth-input'; input.value = ingredientesTexto[i];
+          input.style.cssText = 'flex:1;min-width:0;padding:6px 10px;font-size:0.95rem';
+          span.replaceWith(input);
+          input.focus(); input.select();
+          const commit = () => {
+            ingredientesTexto[i] = input.value.trim() || ingredientesTexto[i];
+            pintarIngredientes();
+          };
+          input.addEventListener('blur', commit);
+          input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+        });
+      });
+    }
+    pintarIngredientes();
+    modal.querySelector('#rc-agregar-ing').addEventListener('click', () => {
+      ingredientesTexto.push('');
+      pintarIngredientes();
+      const filas = ingsWrap.querySelectorAll('.ing-edit');
+      filas[filas.length - 1]?.click();
+    });
+
     if (hoy) {
       const toggleBtn = modal.querySelector('#rc-check-toggle');
       const label = modal.querySelector('#rc-check-label');
       toggleBtn.addEventListener('click', () => {
         registradoAhora = !registradoAhora;
-        if (registradoAhora) guardarComidaRegistrada(hoy.mealId, [shown.nombre], 'sugerencia');
+        if (registradoAhora) guardarComidaRegistrada(hoy.mealId, ingredientesTexto.filter(Boolean), 'sugerencia');
         else borrarComidaRegistrada(hoy.mealId);
         toggleBtn.classList.toggle('done', registradoAhora);
         toggleBtn.textContent = registradoAhora ? '✓' : '';

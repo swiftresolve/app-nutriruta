@@ -3,6 +3,12 @@
 // `apto`: perfiles donde la receta es especialmente recomendada (verde).
 // `moderar`: perfiles donde conviene consumo moderado (amarillo).
 // `evitar`: perfiles donde se marca en rojo.
+// `tiempoMin`: minutos aproximados de preparación (se muestra junto al
+// reloj en la modal de "Tu ruta de hoy") -- estimado a partir de los
+// propios `pasos` de cada receta (suma de minutos mencionados ahí, o si
+// no menciona ninguno, una estimación por tipo de técnica de cocción),
+// no un dato medido a mano. Ajustar el número si una receta puntual
+// queda claramente mal calculada.
 
 export const MEALS = [
   { id: 'desayuno', nombre: 'Desayuno', emoji: '☀️', hora: '7:00 – 8:00 am' },
@@ -15,7 +21,7 @@ export const MEALS = [
 export const RECIPES = [
   // ================= DESAYUNOS =================
   {
-    id: 'omelette_espinaca', comida: 'desayuno', emoji: '🍳',
+    id: 'omelette_espinaca', tiempoMin: 20, comida: 'desayuno', emoji: '🍳',
     nombre: 'Omelette de espinaca y tomate',
     descripcion: 'Proteína y verduras para empezar el día con glucosa estable.',
     tituloSub: { huevo: { nombre: 'Revuelto de tofu con espinaca y tomate', emoji: '🌱' } },
@@ -36,7 +42,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'bajo_azucar']
   },
   {
-    id: 'avena_nocturna', comida: 'desayuno', emoji: '🥣',
+    id: 'avena_nocturna', tiempoMin: 10, comida: 'desayuno', emoji: '🥣',
     nombre: 'Avena nocturna con chía y fresas',
     descripcion: 'Fibra soluble y proteína: ideal para colesterol y glucosa.',
     ingredientes: [
@@ -56,7 +62,7 @@ export const RECIPES = [
     etiquetas: ['alto_fibra', 'fibra_soluble']
   },
   {
-    id: 'tostada_aguacate_huevo', comida: 'desayuno', emoji: '🥑',
+    id: 'tostada_aguacate_huevo', tiempoMin: 5, comida: 'desayuno', emoji: '🥑',
     nombre: 'Tostada integral con aguacate y huevo',
     descripcion: 'Grasa buena + proteína: saciedad sin picos de glucosa.',
     tituloSub: { huevo: { nombre: 'Tostada integral con aguacate y hummus', emoji: '🥑' } },
@@ -76,7 +82,7 @@ export const RECIPES = [
     etiquetas: ['grasa_saludable']
   },
   {
-    id: 'batido_verde', comida: 'desayuno', emoji: '🥬',
+    id: 'batido_verde', tiempoMin: 10, comida: 'desayuno', emoji: '🥬',
     nombre: 'Batido verde con proteína',
     descripcion: 'Verduras y proteína en 5 minutos, sin azúcar añadida.',
     ingredientes: [
@@ -95,7 +101,7 @@ export const RECIPES = [
     etiquetas: ['rapido']
   },
   {
-    id: 'arepa_huevo_verduras', comida: 'desayuno', emoji: '🫓',
+    id: 'arepa_huevo_verduras', tiempoMin: 5, comida: 'desayuno', emoji: '🫓',
     nombre: 'Arepa de maíz con huevo y verduras',
     descripcion: 'Versión balanceada del clásico: maíz integral + proteína.',
     tituloSub: { huevo: { nombre: 'Arepa de maíz con frijoles y verduras', emoji: '🫓' } },
@@ -115,7 +121,7 @@ export const RECIPES = [
     etiquetas: ['sin_gluten', 'local']
   },
   {
-    id: 'yogur_bowl', comida: 'desayuno', emoji: '🫐',
+    id: 'yogur_bowl', tiempoMin: 5, comida: 'desayuno', emoji: '🫐',
     nombre: 'Bowl de yogur, nueces y arándanos',
     descripcion: 'Fermentados + fibra para la microbiota.',
     ingredientes: [
@@ -133,7 +139,7 @@ export const RECIPES = [
     etiquetas: ['fermentado', 'microbiota']
   },
   {
-    id: 'panqueques_avena', comida: 'desayuno', emoji: '🥞',
+    id: 'panqueques_avena', tiempoMin: 20, comida: 'desayuno', emoji: '🥞',
     nombre: 'Panqueques de avena y banano',
     descripcion: 'Dulce natural sin azúcar añadida ni harina blanca.',
     ingredientes: [
@@ -155,7 +161,7 @@ export const RECIPES = [
 
   // ================= MEDIA MAÑANA =================
   {
-    id: 'manzana_almendras', comida: 'media_manana', emoji: '🍎',
+    id: 'manzana_almendras', tiempoMin: 10, comida: 'media_manana', emoji: '🍎',
     nombre: 'Manzana con almendras',
     descripcion: 'El snack anti-antojo clásico: fibra + grasa buena.',
     tituloSub: { frutos_secos: { nombre: 'Manzana con semillas de calabaza', emoji: '🍎' } },
@@ -171,7 +177,7 @@ export const RECIPES = [
     etiquetas: ['snack_antiansiedad', 'alto_fibra']
   },
   {
-    id: 'hummus_zanahoria', comida: 'media_manana', emoji: '🥕',
+    id: 'hummus_zanahoria', tiempoMin: 10, comida: 'media_manana', emoji: '🥕',
     nombre: 'Hummus con bastones de zanahoria',
     descripcion: 'Proteína vegetal y crunch para media mañana.',
     tituloSub: { legumbres: { nombre: 'Guacamole con bastones de zanahoria', emoji: '🥑' } },
@@ -186,7 +192,7 @@ export const RECIPES = [
     etiquetas: ['snack_antiansiedad', 'proteina_vegetal']
   },
   {
-    id: 'pera_yogur', comida: 'media_manana', emoji: '🍐',
+    id: 'pera_yogur', tiempoMin: 15, comida: 'media_manana', emoji: '🍐',
     nombre: 'Pera + yogur natural',
     descripcion: 'Fibra soluble y probióticos.',
     ingredientes: [
@@ -199,7 +205,7 @@ export const RECIPES = [
     etiquetas: ['fibra_soluble', 'fermentado']
   },
   {
-    id: 'huevo_duro_tomates', comida: 'media_manana', emoji: '🥚',
+    id: 'huevo_duro_tomates', tiempoMin: 5, comida: 'media_manana', emoji: '🥚',
     nombre: 'Huevo duro con tomates cherry',
     descripcion: 'Snack de pura proteína para cortar el antojo salado.',
     tituloSub: { huevo: { nombre: 'Garbanzos tostados con tomates cherry', emoji: '🫘' } },
@@ -213,7 +219,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'snack_antiansiedad']
   },
   {
-    id: 'naranja_nueces', comida: 'media_manana', emoji: '🍊',
+    id: 'naranja_nueces', tiempoMin: 5, comida: 'media_manana', emoji: '🍊',
     nombre: 'Naranja entera + nueces',
     descripcion: 'Vitamina C y omega vegetal; la fruta entera, nunca en jugo.',
     tituloSub: { frutos_secos: { nombre: 'Naranja entera + semillas de girasol', emoji: '🍊' } },
@@ -226,7 +232,7 @@ export const RECIPES = [
     etiquetas: ['fibra_soluble']
   },
   {
-    id: 'kefir_chia', comida: 'media_manana', emoji: '🥛',
+    id: 'kefir_chia', tiempoMin: 15, comida: 'media_manana', emoji: '🥛',
     nombre: 'Kéfir con chía',
     descripcion: 'Doble apoyo a la microbiota.',
     ingredientes: [
@@ -240,7 +246,7 @@ export const RECIPES = [
 
   // ================= ALMUERZOS =================
   {
-    id: 'salmon_quinoa', comida: 'almuerzo', emoji: '🐟',
+    id: 'salmon_quinoa', tiempoMin: 15, comida: 'almuerzo', emoji: '🐟',
     nombre: 'Salmón a la plancha con quinoa y ensalada',
     descripcion: 'Plato modelo: ½ verduras, ¼ integral, ¼ proteína + grasa buena.',
     tituloSub: { pescado: { nombre: 'Pollo a la plancha con quinoa y ensalada', emoji: '🍗' } },
@@ -259,7 +265,7 @@ export const RECIPES = [
     etiquetas: ['omega3', 'plato_modelo']
   },
   {
-    id: 'lentejas_arroz_integral', comida: 'almuerzo', emoji: '🫘',
+    id: 'lentejas_arroz_integral', tiempoMin: 20, comida: 'almuerzo', emoji: '🫘',
     nombre: 'Lentejas guisadas con arroz integral',
     descripcion: 'Fibra soluble + proteína vegetal, el combo cardioprotector.',
     tituloSub: { legumbres: { nombre: 'Pollo guisado con arroz integral', emoji: '🍗' } },
@@ -277,7 +283,7 @@ export const RECIPES = [
     etiquetas: ['fibra_soluble', 'proteina_vegetal', 'economico']
   },
   {
-    id: 'pollo_batata', comida: 'almuerzo', emoji: '🍗',
+    id: 'pollo_batata', tiempoMin: 40, comida: 'almuerzo', emoji: '🍗',
     nombre: 'Pollo al horno con batata y brócoli',
     descripcion: 'Carbohidrato de bajo índice glucémico + proteína magra.',
     ingredientes: [
@@ -296,7 +302,7 @@ export const RECIPES = [
     etiquetas: ['bajo_ig', 'plato_modelo']
   },
   {
-    id: 'bowl_garbanzos', comida: 'almuerzo', emoji: '🥙',
+    id: 'bowl_garbanzos', tiempoMin: 10, comida: 'almuerzo', emoji: '🥙',
     nombre: 'Bowl mediterráneo de garbanzos',
     descripcion: 'Inspirado en la dieta mediterránea, la más estudiada para prevenir diabetes.',
     tituloSub: { legumbres: { nombre: 'Bowl mediterráneo de pollo', emoji: '🥙' } },
@@ -316,7 +322,7 @@ export const RECIPES = [
     etiquetas: ['mediterraneo', 'proteina_vegetal']
   },
   {
-    id: 'pescado_verduras_horno', comida: 'almuerzo', emoji: '🐠',
+    id: 'pescado_verduras_horno', tiempoMin: 20, comida: 'almuerzo', emoji: '🐠',
     nombre: 'Tilapia al horno con verduras asadas',
     descripcion: 'Pescado blanco suave, apto para digestiones sensibles.',
     tituloSub: { pescado: { nombre: 'Pavo al horno con verduras asadas', emoji: '🍗' } },
@@ -335,7 +341,7 @@ export const RECIPES = [
     etiquetas: ['suave', 'colon_friendly']
   },
   {
-    id: 'tofu_salteado', comida: 'almuerzo', emoji: '🥦',
+    id: 'tofu_salteado', tiempoMin: 10, comida: 'almuerzo', emoji: '🥦',
     nombre: 'Salteado de tofu con verduras y arroz integral',
     descripcion: 'Opción 100 % vegetal alta en proteína.',
     tituloSub: { soya: { nombre: 'Salteado de pollo con verduras y arroz integral', emoji: '🍗' } },
@@ -355,7 +361,7 @@ export const RECIPES = [
     etiquetas: ['vegano', 'proteina_vegetal']
   },
   {
-    id: 'sopa_verduras_pollo', comida: 'almuerzo', emoji: '🍲',
+    id: 'sopa_verduras_pollo', tiempoMin: 15, comida: 'almuerzo', emoji: '🍲',
     nombre: 'Sopa de verduras con pollo desmechado',
     descripcion: 'Reconfortante, hidratante y suave para el colon.',
     ingredientes: [
@@ -372,7 +378,7 @@ export const RECIPES = [
     etiquetas: ['suave', 'colon_friendly', 'hidratante']
   },
   {
-    id: 'ensalada_atun', comida: 'almuerzo', emoji: '🥗',
+    id: 'ensalada_atun', tiempoMin: 10, comida: 'almuerzo', emoji: '🥗',
     nombre: 'Ensalada completa de atún y aguacate',
     descripcion: 'Rápida, alta en omega 3 y sin cocción.',
     tituloSub: { pescado: { nombre: 'Ensalada completa de huevo y aguacate', emoji: '🥗' } },
@@ -392,7 +398,7 @@ export const RECIPES = [
 
   // ================= MEDIA TARDE =================
   {
-    id: 'yogur_chia_tarde', comida: 'media_tarde', emoji: '🥄',
+    id: 'yogur_chia_tarde', tiempoMin: 10, comida: 'media_tarde', emoji: '🥄',
     nombre: 'Yogur natural con semillas de chía',
     descripcion: 'El snack de las 4 pm que estabiliza el resto del día.',
     ingredientes: [
@@ -405,7 +411,7 @@ export const RECIPES = [
     etiquetas: ['snack_antiansiedad', 'fermentado']
   },
   {
-    id: 'te_almendras_cacao', comida: 'media_tarde', emoji: '🍵',
+    id: 'te_almendras_cacao', tiempoMin: 5, comida: 'media_tarde', emoji: '🍵',
     nombre: 'Infusión + almendras y cacao amargo',
     descripcion: 'Para el antojo de dulce de la tarde, sin azúcar.',
     tituloSub: { frutos_secos: { nombre: 'Infusión + semillas de calabaza y cacao amargo', emoji: '🍵' } },
@@ -420,7 +426,7 @@ export const RECIPES = [
     etiquetas: ['antojo_dulce_saludable', 'snack_antiansiedad']
   },
   {
-    id: 'palitos_apio_mani', comida: 'media_tarde', emoji: '🥬',
+    id: 'palitos_apio_mani', tiempoMin: 5, comida: 'media_tarde', emoji: '🥬',
     nombre: 'Apio con crema de maní 100 %',
     descripcion: 'Crunch + grasa buena = antojo controlado.',
     tituloSub: { frutos_secos: { nombre: 'Apio con hummus', emoji: '🥬' } },
@@ -434,7 +440,7 @@ export const RECIPES = [
     etiquetas: ['snack_antiansiedad']
   },
   {
-    id: 'fruta_queso_fresco', comida: 'media_tarde', emoji: '🍓',
+    id: 'fruta_queso_fresco', tiempoMin: 5, comida: 'media_tarde', emoji: '🍓',
     nombre: 'Fresas con cuajada o queso fresco bajo en grasa',
     descripcion: 'Dulce natural + proteína láctea ligera.',
     tituloSub: { lacteos: { nombre: 'Fresas con nueces', emoji: '🍓' } },
@@ -448,7 +454,7 @@ export const RECIPES = [
     etiquetas: ['antojo_dulce_saludable']
   },
   {
-    id: 'garbanzos_tostados', comida: 'media_tarde', emoji: '🧆',
+    id: 'garbanzos_tostados', tiempoMin: 30, comida: 'media_tarde', emoji: '🧆',
     nombre: 'Garbanzos tostados especiados',
     descripcion: 'Snack crocante que reemplaza los paquetes.',
     tituloSub: { legumbres: { nombre: 'Semillas de calabaza tostadas especiadas', emoji: '🎃' } },
@@ -466,7 +472,7 @@ export const RECIPES = [
     etiquetas: ['snack_antiansiedad', 'reemplaza_paquetes']
   },
   {
-    id: 'agua_gas_limon', comida: 'media_tarde', emoji: '🥤',
+    id: 'agua_gas_limon', tiempoMin: 5, comida: 'media_tarde', emoji: '🥤',
     nombre: 'Agua con gas, limón y hierbabuena',
     descripcion: 'El ritual que reemplaza la gaseosa o la cerveza.',
     ingredientes: [
@@ -481,7 +487,7 @@ export const RECIPES = [
 
   // ================= CENAS =================
   {
-    id: 'crema_ahuyama', comida: 'cena', emoji: '🎃',
+    id: 'crema_ahuyama', tiempoMin: 20, comida: 'cena', emoji: '🎃',
     nombre: 'Crema de ahuyama con pollo a la plancha',
     descripcion: 'Cena ligera y caliente, sin crema de leche.',
     ingredientes: [
@@ -499,7 +505,7 @@ export const RECIPES = [
     etiquetas: ['ligero', 'plato_modelo', 'colon_friendly']
   },
   {
-    id: 'tortilla_calabacin', comida: 'cena', emoji: '🥒',
+    id: 'tortilla_calabacin', tiempoMin: 10, comida: 'cena', emoji: '🥒',
     nombre: 'Tortilla de calabacín y cebolla',
     descripcion: 'Cena vegetal alta en proteína.',
     tituloSub: { huevo: { nombre: 'Tortilla de garbanzo y calabacín', emoji: '🥒' } },
@@ -518,7 +524,7 @@ export const RECIPES = [
     etiquetas: ['ligero', 'rapido']
   },
   {
-    id: 'pescado_pure_coliflor', comida: 'cena', emoji: '🐟',
+    id: 'pescado_pure_coliflor', tiempoMin: 5, comida: 'cena', emoji: '🐟',
     nombre: 'Pescado al vapor con puré de coliflor',
     descripcion: 'Baja carga glucémica y crucíferas para el hígado.',
     tituloSub: { pescado: { nombre: 'Pavo a la plancha con puré de coliflor', emoji: '🍗' } },
@@ -537,7 +543,7 @@ export const RECIPES = [
     etiquetas: ['bajo_ig', 'ligero']
   },
   {
-    id: 'ensalada_tibia_pollo', comida: 'cena', emoji: '🥗',
+    id: 'ensalada_tibia_pollo', tiempoMin: 5, comida: 'cena', emoji: '🥗',
     nombre: 'Ensalada tibia de pollo y verduras asadas',
     descripcion: 'Completa pero liviana para la noche.',
     ingredientes: [
@@ -554,7 +560,7 @@ export const RECIPES = [
     etiquetas: ['ligero']
   },
   {
-    id: 'sopa_lentejas_cena', comida: 'cena', emoji: '🍜',
+    id: 'sopa_lentejas_cena', tiempoMin: 25, comida: 'cena', emoji: '🍜',
     nombre: 'Sopa ligera de lentejas rojas y zanahoria',
     descripcion: 'Fibra soluble en versión suave para la noche.',
     tituloSub: { legumbres: { nombre: 'Sopa ligera de pollo y zanahoria', emoji: '🍜' } },
@@ -573,7 +579,7 @@ export const RECIPES = [
     etiquetas: ['fibra_soluble', 'economico']
   },
   {
-    id: 'tacos_lechuga', comida: 'cena', emoji: '🌮',
+    id: 'tacos_lechuga', tiempoMin: 15, comida: 'cena', emoji: '🌮',
     nombre: 'Tacos de lechuga con pavo molido',
     descripcion: 'Antojo de comida rápida en versión saludable.',
     ingredientes: [
@@ -591,7 +597,7 @@ export const RECIPES = [
     etiquetas: ['antojo_salado_saludable', 'bajo_ig'],
   },
   {
-    id: 'revuelto_champinones', comida: 'cena', emoji: '🍄',
+    id: 'revuelto_champinones', tiempoMin: 15, comida: 'cena', emoji: '🍄',
     nombre: 'Revuelto de champiñones, espinaca y huevo',
     descripcion: 'Cena exprés en 10 minutos.',
     tituloSub: { huevo: { nombre: 'Revuelto de champiñones, espinaca y tofu', emoji: '🍄' } },
@@ -612,7 +618,7 @@ export const RECIPES = [
 
   // ================= DESAYUNOS (lote 2) =================
   {
-    id: 'yogur_griego_semillas', comida: 'desayuno', emoji: '🥣',
+    id: 'yogur_griego_semillas', tiempoMin: 5, comida: 'desayuno', emoji: '🥣',
     nombre: 'Yogur griego con semillas y arándanos',
     descripcion: 'Proteína completa + antioxidantes, sin picos de glucosa.',
     tituloSub: { lacteos: { nombre: 'Yogur de coco con semillas y arándanos', emoji: '🥥' } },
@@ -632,7 +638,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'fibra_soluble']
   },
   {
-    id: 'huevos_revueltos_aguacate_tomate', comida: 'desayuno', emoji: '🥑',
+    id: 'huevos_revueltos_aguacate_tomate', tiempoMin: 5, comida: 'desayuno', emoji: '🥑',
     nombre: 'Huevos revueltos con aguacate y pico de gallo',
     descripcion: 'Desayuno salado clásico, proteína y grasa buena desde temprano.',
     tituloSub: { huevo: { nombre: 'Revuelto de tofu con aguacate y pico de gallo', emoji: '🌱' } },
@@ -651,7 +657,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'grasa_saludable']
   },
   {
-    id: 'batido_verde_desayuno', comida: 'desayuno', emoji: '🥤',
+    id: 'batido_verde_desayuno', tiempoMin: 10, comida: 'desayuno', emoji: '🥤',
     nombre: 'Batido verde de espinaca, banano y mantequilla de maní',
     descripcion: 'Desayuno líquido pero completo: fibra, proteína y grasa buena juntas.',
     tituloSub: { frutos_secos: { nombre: 'Batido verde de espinaca, banano y semillas de girasol', emoji: '🥤' } },
@@ -671,7 +677,7 @@ export const RECIPES = [
     etiquetas: ['rapido', 'alto_fibra']
   },
   {
-    id: 'arepa_queso_bajo_sodio', comida: 'desayuno', emoji: '🫓',
+    id: 'arepa_queso_bajo_sodio', tiempoMin: 5, comida: 'desayuno', emoji: '🫓',
     nombre: 'Arepa de maíz con queso fresco y aguacate',
     descripcion: 'Clásico sin gluten, equilibrado con proteína y grasa buena.',
     tituloSub: { lacteos: { nombre: 'Arepa de maíz con hummus y aguacate', emoji: '🫓' } },
@@ -691,7 +697,7 @@ export const RECIPES = [
 
   // ================= MEDIA MAÑANA (lote 2) =================
   {
-    id: 'palitos_vegetales_guacamole', comida: 'media_manana', emoji: '🥒',
+    id: 'palitos_vegetales_guacamole', tiempoMin: 10, comida: 'media_manana', emoji: '🥒',
     nombre: 'Palitos de zanahoria y apio con guacamole',
     descripcion: 'Snack crocante, fibra y grasa buena, sin azúcar.',
     ingredientes: [
@@ -709,7 +715,7 @@ export const RECIPES = [
     etiquetas: ['snack_antiansiedad', 'grasa_saludable']
   },
   {
-    id: 'queso_fresco_uvas', comida: 'media_manana', emoji: '🧀',
+    id: 'queso_fresco_uvas', tiempoMin: 5, comida: 'media_manana', emoji: '🧀',
     nombre: 'Queso fresco con uvas',
     descripcion: 'Combo dulce-salado que evita el pico de azúcar de la fruta sola.',
     tituloSub: { lacteos: { nombre: 'Hummus con uvas', emoji: '🍇' } },
@@ -725,7 +731,7 @@ export const RECIPES = [
     etiquetas: ['rapido', 'antojo_dulce_saludable']
   },
   {
-    id: 'te_verde_nueces', comida: 'media_manana', emoji: '🍵',
+    id: 'te_verde_nueces', tiempoMin: 5, comida: 'media_manana', emoji: '🍵',
     nombre: 'Té verde con un puñado de nueces',
     descripcion: 'Antioxidantes + grasa buena, ideal para sostener energía sin azúcar.',
     ingredientes: [
@@ -740,7 +746,7 @@ export const RECIPES = [
     etiquetas: ['grasa_saludable', 'rapido']
   },
   {
-    id: 'gelatina_sin_azucar_fruta', comida: 'media_manana', emoji: '🍓',
+    id: 'gelatina_sin_azucar_fruta', tiempoMin: 5, comida: 'media_manana', emoji: '🍓',
     nombre: 'Gelatina sin azúcar con fruta fresca',
     descripcion: 'Antojo dulce ligero, sin azúcar añadida ni harinas.',
     ingredientes: [
@@ -757,7 +763,7 @@ export const RECIPES = [
 
   // ================= ALMUERZOS (lote 2) =================
   {
-    id: 'carne_magra_arroz_ensalada', comida: 'almuerzo', emoji: '🥩',
+    id: 'carne_magra_arroz_ensalada', tiempoMin: 15, comida: 'almuerzo', emoji: '🥩',
     nombre: 'Carne magra a la plancha con arroz integral y ensalada',
     descripcion: 'Plato modelo con proteína de fácil digestión y carbohidrato integral.',
     ingredientes: [
@@ -775,7 +781,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'plato_modelo']
   },
   {
-    id: 'pasta_integral_pollo_vegetales', comida: 'almuerzo', emoji: '🍝',
+    id: 'pasta_integral_pollo_vegetales', tiempoMin: 20, comida: 'almuerzo', emoji: '🍝',
     nombre: 'Pasta integral con pollo y vegetales salteados',
     descripcion: 'Carbohidrato de absorción más lenta que la pasta blanca, con proteína y fibra.',
     tituloSub: { gluten: { nombre: 'Arroz integral con pollo y vegetales salteados', emoji: '🍚' } },
@@ -795,7 +801,7 @@ export const RECIPES = [
     etiquetas: ['bajo_ig', 'plato_modelo']
   },
   {
-    id: 'bowl_quinoa_garbanzo_verduras', comida: 'almuerzo', emoji: '🥗',
+    id: 'bowl_quinoa_garbanzo_verduras', tiempoMin: 10, comida: 'almuerzo', emoji: '🥗',
     nombre: 'Bowl de quinoa, garbanzos y verduras asadas',
     descripcion: 'Proteína vegetal completa (quinoa + legumbre) con fibra de sobra.',
     tituloSub: { legumbres: { nombre: 'Bowl de quinoa, pollo y verduras asadas', emoji: '🥗' } },
@@ -815,7 +821,7 @@ export const RECIPES = [
     etiquetas: ['proteina_vegetal', 'alto_fibra']
   },
   {
-    id: 'pechuga_champinones_pure_ahuyama', comida: 'almuerzo', emoji: '🍗',
+    id: 'pechuga_champinones_pure_ahuyama', tiempoMin: 15, comida: 'almuerzo', emoji: '🍗',
     nombre: 'Pechuga en salsa de champiñones con puré de ahuyama',
     descripcion: 'Carbohidrato suave para digestiones sensibles, sin crema ni harinas.',
     ingredientes: [
@@ -834,7 +840,7 @@ export const RECIPES = [
 
   // ================= MEDIA TARDE (lote 2) =================
   {
-    id: 'tostadas_arroz_aguacate', comida: 'media_tarde', emoji: '🍚',
+    id: 'tostadas_arroz_aguacate', tiempoMin: 5, comida: 'media_tarde', emoji: '🍚',
     nombre: 'Tostadas de arroz con aguacate y semillas',
     descripcion: 'Alternativa sin gluten a las galletas de paquete, con grasa buena.',
     ingredientes: [
@@ -851,7 +857,7 @@ export const RECIPES = [
     etiquetas: ['sin_gluten', 'reemplaza_paquetes']
   },
   {
-    id: 'compota_manzana_canela', comida: 'media_tarde', emoji: '🍏',
+    id: 'compota_manzana_canela', tiempoMin: 15, comida: 'media_tarde', emoji: '🍏',
     nombre: 'Compota de manzana con canela (sin azúcar)',
     descripcion: 'Dulce natural y suave, fácil de digerir.',
     ingredientes: [
@@ -867,7 +873,7 @@ export const RECIPES = [
     etiquetas: ['suave', 'colon_friendly']
   },
   {
-    id: 'infusion_jengibre_snack', comida: 'media_tarde', emoji: '🫚',
+    id: 'infusion_jengibre_snack', tiempoMin: 5, comida: 'media_tarde', emoji: '🫚',
     nombre: 'Infusión de jengibre con un puñado de almendras',
     descripcion: 'Calma la digestión y sostiene energía sin azúcar.',
     ingredientes: [
@@ -882,7 +888,7 @@ export const RECIPES = [
     etiquetas: ['snack_antiansiedad', 'grasa_saludable']
   },
   {
-    id: 'chips_batata_horno', comida: 'media_tarde', emoji: '🍠',
+    id: 'chips_batata_horno', tiempoMin: 30, comida: 'media_tarde', emoji: '🍠',
     nombre: 'Chips de batata al horno',
     descripcion: 'Reemplaza las papas fritas de paquete sin freír y con más fibra.',
     ingredientes: [
@@ -900,7 +906,7 @@ export const RECIPES = [
 
   // ================= CENAS (lote 2) =================
   {
-    id: 'crema_calabacin_ligera', comida: 'cena', emoji: '🥣',
+    id: 'crema_calabacin_ligera', tiempoMin: 20, comida: 'cena', emoji: '🥣',
     nombre: 'Crema de calabacín ligera (sin crema de leche)',
     descripcion: 'Cena suave e hidratante, sin lácteos ni harinas espesantes.',
     ingredientes: [
@@ -918,7 +924,7 @@ export const RECIPES = [
     etiquetas: ['suave', 'colon_friendly', 'hidratante']
   },
   {
-    id: 'tortilla_espinaca_horno', comida: 'cena', emoji: '🍳',
+    id: 'tortilla_espinaca_horno', tiempoMin: 25, comida: 'cena', emoji: '🍳',
     nombre: 'Tortilla de espinaca al horno',
     descripcion: 'Ligera, alta en proteína, ideal para una cena que no pese.',
     tituloSub: { huevo: { nombre: 'Tortilla de tofu y espinaca al horno', emoji: '🌱' } },
@@ -936,7 +942,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'ligero']
   },
   {
-    id: 'pescado_papillote_limon', comida: 'cena', emoji: '🐟',
+    id: 'pescado_papillote_limon', tiempoMin: 25, comida: 'cena', emoji: '🐟',
     nombre: 'Pescado blanco en papillote con limón y hierbas',
     descripcion: 'Cocción al vapor en su propio jugo: ligero y fácil de digerir.',
     tituloSub: { pescado: { nombre: 'Pechuga de pollo en papillote con limón y hierbas', emoji: '🍗' } },
@@ -953,7 +959,7 @@ export const RECIPES = [
     etiquetas: ['suave', 'omega3', 'ligero']
   },
   {
-    id: 'ensalada_tibia_lentejas_cena', comida: 'cena', emoji: '🫘',
+    id: 'ensalada_tibia_lentejas_cena', tiempoMin: 20, comida: 'cena', emoji: '🫘',
     nombre: 'Ensalada tibia de lentejas con espinaca',
     descripcion: 'Cena vegetal completa: fibra soluble y proteína vegetal.',
     tituloSub: { legumbres: { nombre: 'Ensalada tibia de pollo con espinaca', emoji: '🍗' } },
@@ -975,7 +981,7 @@ export const RECIPES = [
 
   // ================= DESAYUNOS (lote 3) =================
   {
-    id: 'huevos_pochados_espinaca', comida: 'desayuno', emoji: '🥚',
+    id: 'huevos_pochados_espinaca', tiempoMin: 15, comida: 'desayuno', emoji: '🥚',
     nombre: 'Huevos pochados sobre espinaca salteada',
     descripcion: 'Sin aceite extra en la cocción del huevo: proteína limpia para arrancar.',
     tituloSub: { huevo: { nombre: 'Tofu revuelto sobre espinaca salteada', emoji: '🌱' } },
@@ -994,7 +1000,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'bajo_azucar']
   },
   {
-    id: 'bowl_avena_manzana_horno', comida: 'desayuno', emoji: '🍎',
+    id: 'bowl_avena_manzana_horno', tiempoMin: 25, comida: 'desayuno', emoji: '🍎',
     nombre: 'Bowl de avena horneada con manzana y canela',
     descripcion: 'Desayuno tibio y reconfortante, sin azúcar añadida.',
     ingredientes: [
@@ -1012,7 +1018,7 @@ export const RECIPES = [
     etiquetas: ['alto_fibra', 'fibra_soluble']
   },
   {
-    id: 'wrap_integral_pavo', comida: 'desayuno', emoji: '🌯',
+    id: 'wrap_integral_pavo', tiempoMin: 5, comida: 'desayuno', emoji: '🌯',
     nombre: 'Wrap integral de pavo y aguacate',
     descripcion: 'Desayuno salado para llevar, con proteína magra.',
     tituloSub: { gluten: { nombre: 'Bowl de pavo y aguacate sobre lechuga', emoji: '🥬' } },
@@ -1031,7 +1037,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'rapido']
   },
   {
-    id: 'chia_pudding_cacao', comida: 'desayuno', emoji: '🍫',
+    id: 'chia_pudding_cacao', tiempoMin: 10, comida: 'desayuno', emoji: '🍫',
     nombre: 'Pudín de chía con cacao puro',
     descripcion: 'Antojo de chocolate resuelto sin azúcar, con fibra soluble.',
     tituloSub: { lacteos: { nombre: 'Pudín de chía con cacao y bebida de almendra', emoji: '🍫' } },
@@ -1052,7 +1058,7 @@ export const RECIPES = [
 
   // ================= MEDIA MAÑANA (lote 3) =================
   {
-    id: 'agua_pepino_menta', comida: 'media_manana', emoji: '🥒',
+    id: 'agua_pepino_menta', tiempoMin: 20, comida: 'media_manana', emoji: '🥒',
     nombre: 'Agua de pepino y menta con almendras',
     descripcion: 'Hidratación con sabor natural, sin azúcar, más grasa buena.',
     ingredientes: [
@@ -1067,7 +1073,7 @@ export const RECIPES = [
     etiquetas: ['hidratante', 'grasa_saludable']
   },
   {
-    id: 'mandarina_semillas_calabaza', comida: 'media_manana', emoji: '🍊',
+    id: 'mandarina_semillas_calabaza', tiempoMin: 5, comida: 'media_manana', emoji: '🍊',
     nombre: 'Mandarina con semillas de calabaza',
     descripcion: 'Vitamina C + zinc, snack rápido sin preparación.',
     ingredientes: [
@@ -1082,7 +1088,7 @@ export const RECIPES = [
     etiquetas: ['rapido', 'alto_fibra']
   },
   {
-    id: 'crackers_avena_hummus', comida: 'media_manana', emoji: '🍘',
+    id: 'crackers_avena_hummus', tiempoMin: 5, comida: 'media_manana', emoji: '🍘',
     nombre: 'Crackers de avena con hummus',
     descripcion: 'Snack crocante casero, sin harinas refinadas ni ultraprocesados.',
     tituloSub: { legumbres: { nombre: 'Crackers de avena con guacamole', emoji: '🥑' } },
@@ -1098,7 +1104,7 @@ export const RECIPES = [
     etiquetas: ['proteina_vegetal', 'reemplaza_paquetes']
   },
   {
-    id: 'yogur_natural_canela', comida: 'media_manana', emoji: '🥣',
+    id: 'yogur_natural_canela', tiempoMin: 5, comida: 'media_manana', emoji: '🥣',
     nombre: 'Yogur natural con canela y nuez moscada',
     descripcion: 'Snack antiansiedad simple: la canela ayuda a estabilizar el ánimo dulce sin azúcar.',
     tituloSub: { lacteos: { nombre: 'Yogur de coco con canela y nuez moscada', emoji: '🥥' } },
@@ -1116,7 +1122,7 @@ export const RECIPES = [
 
   // ================= ALMUERZOS (lote 3) =================
   {
-    id: 'pavo_horno_ensalada_quinoa', comida: 'almuerzo', emoji: '🦃',
+    id: 'pavo_horno_ensalada_quinoa', tiempoMin: 30, comida: 'almuerzo', emoji: '🦃',
     nombre: 'Pavo al horno con ensalada de quinoa',
     descripcion: 'Proteína muy magra, ideal si se busca cuidar el hígado y el colesterol.',
     ingredientes: [
@@ -1133,7 +1139,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'plato_modelo']
   },
   {
-    id: 'arroz_integral_camarones', comida: 'almuerzo', emoji: '🍤',
+    id: 'arroz_integral_camarones', tiempoMin: 10, comida: 'almuerzo', emoji: '🍤',
     nombre: 'Arroz integral con camarones salteados y vegetales',
     descripcion: 'Proteína ligera de mar, alta en zinc, con carbohidrato integral.',
     tituloSub: { mariscos: { nombre: 'Arroz integral con pollo salteado y vegetales', emoji: '🍗' } },
@@ -1153,7 +1159,7 @@ export const RECIPES = [
     etiquetas: ['bajo_ig', 'plato_modelo']
   },
   {
-    id: 'berenjena_rellena_carne', comida: 'almuerzo', emoji: '🍆',
+    id: 'berenjena_rellena_carne', tiempoMin: 25, comida: 'almuerzo', emoji: '🍆',
     nombre: 'Berenjena rellena de carne magra y vegetales',
     descripcion: 'Plato completo horneado, sin frituras.',
     ingredientes: [
@@ -1172,7 +1178,7 @@ export const RECIPES = [
     etiquetas: ['plato_modelo', 'bajo_ig']
   },
   {
-    id: 'bowl_atun_papa_arvejas', comida: 'almuerzo', emoji: '🥣',
+    id: 'bowl_atun_papa_arvejas', tiempoMin: 10, comida: 'almuerzo', emoji: '🥣',
     nombre: 'Bowl de atún, papa cocida y arvejas',
     descripcion: 'Almuerzo suave y económico, fácil de digerir.',
     tituloSub: { pescado: { nombre: 'Bowl de pollo, papa cocida y arvejas', emoji: '🍗' } },
@@ -1193,7 +1199,7 @@ export const RECIPES = [
 
   // ================= MEDIA TARDE (lote 3) =================
   {
-    id: 'infusion_manzanilla_galletas_avena', comida: 'media_tarde', emoji: '🍵',
+    id: 'infusion_manzanilla_galletas_avena', tiempoMin: 5, comida: 'media_tarde', emoji: '🍵',
     nombre: 'Infusión de manzanilla con galletas de avena caseras',
     descripcion: 'Calma digestiva por la tarde, sin harinas refinadas.',
     ingredientes: [
@@ -1208,7 +1214,7 @@ export const RECIPES = [
     etiquetas: ['suave', 'antojo_dulce_saludable']
   },
   {
-    id: 'palomitas_caseras_aceite_oliva', comida: 'media_tarde', emoji: '🍿',
+    id: 'palomitas_caseras_aceite_oliva', tiempoMin: 5, comida: 'media_tarde', emoji: '🍿',
     nombre: 'Palomitas de maíz caseras con aceite de oliva',
     descripcion: 'Reemplaza el paquete de snacks salados por fibra de grano entero.',
     ingredientes: [
@@ -1225,7 +1231,7 @@ export const RECIPES = [
     etiquetas: ['reemplaza_paquetes', 'alto_fibra']
   },
   {
-    id: 'kiwi_yogur_snack', comida: 'media_tarde', emoji: '🥝',
+    id: 'kiwi_yogur_snack', tiempoMin: 10, comida: 'media_tarde', emoji: '🥝',
     nombre: 'Kiwi con yogur natural',
     descripcion: 'Fruta con enzimas digestivas + probióticos: combo suave y efectivo.',
     tituloSub: { lacteos: { nombre: 'Kiwi con yogur de coco', emoji: '🥥' } },
@@ -1240,7 +1246,7 @@ export const RECIPES = [
     etiquetas: ['fibra_soluble', 'fermentado']
   },
   {
-    id: 'te_jengibre_limon', comida: 'media_tarde', emoji: '🍋',
+    id: 'te_jengibre_limon', tiempoMin: 10, comida: 'media_tarde', emoji: '🍋',
     nombre: 'Té de jengibre con limón',
     descripcion: 'Bebida caliente sin azúcar para media tarde, sin alcohol ni cafeína extra.',
     ingredientes: [
@@ -1257,7 +1263,7 @@ export const RECIPES = [
 
   // ================= CENAS (lote 3) =================
   {
-    id: 'calabacines_rellenos_quinoa', comida: 'cena', emoji: '🥒',
+    id: 'calabacines_rellenos_quinoa', tiempoMin: 25, comida: 'cena', emoji: '🥒',
     nombre: 'Calabacines rellenos de quinoa y vegetales',
     descripcion: 'Cena vegetariana ligera y colorida, horneada sin frituras.',
     ingredientes: [
@@ -1275,7 +1281,7 @@ export const RECIPES = [
     etiquetas: ['proteina_vegetal', 'ligero']
   },
   {
-    id: 'pechuga_limon_romero_arroz', comida: 'cena', emoji: '🍋',
+    id: 'pechuga_limon_romero_arroz', tiempoMin: 15, comida: 'cena', emoji: '🍋',
     nombre: 'Pechuga al limón y romero con arroz blanco',
     descripcion: 'Cena suave con carbohidrato de fácil digestión para noches sensibles.',
     ingredientes: [
@@ -1293,7 +1299,7 @@ export const RECIPES = [
     etiquetas: ['suave', 'colon_friendly']
   },
   {
-    id: 'salmon_papillote_espinaca', comida: 'cena', emoji: '🐟',
+    id: 'salmon_papillote_espinaca', tiempoMin: 20, comida: 'cena', emoji: '🐟',
     nombre: 'Salmón en papillote con espinaca y limón',
     descripcion: 'Omega 3 + cocción sin grasa añadida, ideal para colesterol.',
     tituloSub: { pescado: { nombre: 'Pechuga en papillote con espinaca y limón', emoji: '🍗' } },
@@ -1310,7 +1316,7 @@ export const RECIPES = [
     etiquetas: ['omega3', 'ligero']
   },
   {
-    id: 'sopa_pollo_verduras_jengibre', comida: 'cena', emoji: '🍲',
+    id: 'sopa_pollo_verduras_jengibre', tiempoMin: 15, comida: 'cena', emoji: '🍲',
     nombre: 'Sopa de pollo con verduras y jengibre',
     descripcion: 'Cena caliente antiinflamatoria, hidratante y suave.',
     ingredientes: [
@@ -1329,7 +1335,7 @@ export const RECIPES = [
 
   // ================= DESAYUNOS (lote 4) =================
   {
-    id: 'shakshuka_ligera', comida: 'desayuno', emoji: '🍅',
+    id: 'shakshuka_ligera', tiempoMin: 10, comida: 'desayuno', emoji: '🍅',
     nombre: 'Shakshuka ligera de tomate y pimentón',
     descripcion: 'Huevos pochados en salsa de tomate especiada, sin harinas.',
     tituloSub: { huevo: { nombre: 'Tofu revuelto en salsa de tomate especiada', emoji: '🌱' } },
@@ -1348,7 +1354,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'mediterraneo']
   },
   {
-    id: 'bowl_requeson_frutos_rojos', comida: 'desayuno', emoji: '🍓',
+    id: 'bowl_requeson_frutos_rojos', tiempoMin: 5, comida: 'desayuno', emoji: '🍓',
     nombre: 'Bowl de requesón con frutos rojos',
     descripcion: 'Proteína de absorción lenta, ideal para sostener saciedad toda la mañana.',
     tituloSub: { lacteos: { nombre: 'Bowl de tofu batido con frutos rojos', emoji: '🌱' } },
@@ -1365,7 +1371,7 @@ export const RECIPES = [
     etiquetas: ['alto_proteina', 'bajo_azucar']
   },
   {
-    id: 'sandwich_pavo_integral', comida: 'desayuno', emoji: '🥪',
+    id: 'sandwich_pavo_integral', tiempoMin: 5, comida: 'desayuno', emoji: '🥪',
     nombre: 'Sándwich integral de pavo y queso fresco',
     descripcion: 'Clásico rápido con proteína magra y carbohidrato integral.',
     tituloSub: { gluten: { nombre: 'Roll-up de lechuga con pavo y queso fresco', emoji: '🥬' } },
@@ -1383,7 +1389,7 @@ export const RECIPES = [
     etiquetas: ['rapido', 'alto_proteina']
   },
   {
-    id: 'granola_casera_yogur', comida: 'desayuno', emoji: '🥜',
+    id: 'granola_casera_yogur', tiempoMin: 20, comida: 'desayuno', emoji: '🥜',
     nombre: 'Granola casera sin azúcar con yogur',
     descripcion: 'Crocante horneado con avena, semillas y frutos secos — sin miel ni panela.',
     tituloSub: { lacteos: { nombre: 'Granola casera con yogur de coco', emoji: '🥥' } },
@@ -1402,7 +1408,7 @@ export const RECIPES = [
     etiquetas: ['alto_fibra', 'grasa_saludable']
   },
   {
-    id: 'tortilla_avena_platano', comida: 'desayuno', emoji: '🥞',
+    id: 'tortilla_avena_platano', tiempoMin: 10, comida: 'desayuno', emoji: '🥞',
     nombre: 'Tortitas de avena y plátano (2 ingredientes)',
     descripcion: 'Dulce natural del plátano, sin azúcar ni harina añadida.',
     ingredientes: [
@@ -1422,7 +1428,7 @@ export const RECIPES = [
 
   // ================= MEDIA MAÑANA (lote 4) =================
   {
-    id: 'edamames_sal_marina', comida: 'media_manana', emoji: '🫛',
+    id: 'edamames_sal_marina', tiempoMin: 10, comida: 'media_manana', emoji: '🫛',
     nombre: 'Edamames al vapor con sal marina',
     descripcion: 'Proteína vegetal completa, snack entretenido de "pelar y comer".',
     tituloSub: { soya: { nombre: 'Garbanzos tostados con sal marina', emoji: '🫘' } },
@@ -1439,7 +1445,7 @@ export const RECIPES = [
     etiquetas: ['proteina_vegetal', 'snack_antiansiedad']
   },
   {
-    id: 'batido_proteina_avena', comida: 'media_manana', emoji: '🥤',
+    id: 'batido_proteina_avena', tiempoMin: 10, comida: 'media_manana', emoji: '🥤',
     nombre: 'Batido de avena, canela y proteína',
     descripcion: 'Snack líquido rápido, sostiene energía sin picos de glucosa.',
     tituloSub: { lacteos: { nombre: 'Batido de avena con bebida de almendra', emoji: '🥤' } },
@@ -1456,7 +1462,7 @@ export const RECIPES = [
     etiquetas: ['rapido', 'alto_fibra']
   },
   {
-    id: 'pepinillos_hummus', comida: 'media_manana', emoji: '🥒',
+    id: 'pepinillos_hummus', tiempoMin: 5, comida: 'media_manana', emoji: '🥒',
     nombre: 'Rodajas de pepino con hummus y pimentón',
     descripcion: 'Crocante fresco, fibra y proteína vegetal sin cocción.',
     tituloSub: { legumbres: { nombre: 'Rodajas de pepino con guacamole', emoji: '🥑' } },
@@ -1474,7 +1480,7 @@ export const RECIPES = [
     etiquetas: ['proteina_vegetal', 'hidratante']
   },
   {
-    id: 'ciruelas_pasas_nueces', comida: 'media_manana', emoji: '🍑',
+    id: 'ciruelas_pasas_nueces', tiempoMin: 5, comida: 'media_manana', emoji: '🍑',
     nombre: 'Ciruelas pasas con nueces',
     descripcion: 'El clásico snack para el tránsito intestinal, con grasa buena.',
     ingredientes: [
@@ -1489,7 +1495,7 @@ export const RECIPES = [
     etiquetas: ['alto_fibra', 'grasa_saludable']
   },
   {
-    id: 'agua_coco_natural', comida: 'media_manana', emoji: '🥥',
+    id: 'agua_coco_natural', tiempoMin: 5, comida: 'media_manana', emoji: '🥥',
     nombre: 'Agua de coco natural con un puñado de almendras',
     descripcion: 'Hidratación con electrolitos naturales, sin azúcar añadida.',
     ingredientes: [
@@ -1507,7 +1513,7 @@ export const RECIPES = [
 
   // ================= ALMUERZOS (lote 4) =================
   {
-    id: 'pechuga_pesto_tomates', comida: 'almuerzo', emoji: '🌿',
+    id: 'pechuga_pesto_tomates', tiempoMin: 20, comida: 'almuerzo', emoji: '🌿',
     nombre: 'Pechuga con pesto de albahaca y tomates asados',
     descripcion: 'Grasa buena del aceite de oliva y frutos secos, sabor intenso sin crema.',
     tituloSub: { frutos_secos: { nombre: 'Pechuga con pesto de albahaca y semillas de girasol', emoji: '🌿' } },
@@ -1525,7 +1531,7 @@ export const RECIPES = [
     etiquetas: ['mediterraneo', 'grasa_saludable']
   },
   {
-    id: 'arroz_coliflor_pollo', comida: 'almuerzo', emoji: '🥦',
+    id: 'arroz_coliflor_pollo', tiempoMin: 10, comida: 'almuerzo', emoji: '🥦',
     nombre: 'Arroz de coliflor con pollo salteado',
     descripcion: 'Carbohidrato ligero de bajo índice glucémico, alto en fibra.',
     ingredientes: [
@@ -1543,7 +1549,7 @@ export const RECIPES = [
     etiquetas: ['bajo_ig', 'ligero']
   },
   {
-    id: 'trucha_almendras_espinaca', comida: 'almuerzo', emoji: '🐟',
+    id: 'trucha_almendras_espinaca', tiempoMin: 20, comida: 'almuerzo', emoji: '🐟',
     nombre: 'Trucha con costra de almendras y espinaca salteada',
     descripcion: 'Omega 3 + grasa buena, plato de fin de semana.',
     tituloSub: { pescado: { nombre: 'Pechuga con costra de almendras y espinaca salteada', emoji: '🍗' }, frutos_secos: { nombre: 'Trucha con costra de ajonjolí y espinaca salteada', emoji: '🐟' } },
@@ -1561,7 +1567,7 @@ export const RECIPES = [
     etiquetas: ['omega3', 'grasa_saludable']
   },
   {
-    id: 'chili_lentejas_vegetal', comida: 'almuerzo', emoji: '🌶️',
+    id: 'chili_lentejas_vegetal', tiempoMin: 20, comida: 'almuerzo', emoji: '🌶️',
     nombre: 'Chili de lentejas y vegetales',
     descripcion: 'Plato único con proteína vegetal, fibra y especias reconfortantes.',
     tituloSub: { legumbres: { nombre: 'Chili de pollo desmechado y vegetales', emoji: '🍗' } },
@@ -1579,7 +1585,7 @@ export const RECIPES = [
     etiquetas: ['proteina_vegetal', 'fibra_soluble']
   },
   {
-    id: 'pollo_curry_leche_coco', comida: 'almuerzo', emoji: '🍛',
+    id: 'pollo_curry_leche_coco', tiempoMin: 15, comida: 'almuerzo', emoji: '🍛',
     nombre: 'Pollo al curry suave con leche de coco y arroz integral',
     descripcion: 'Especiado sin picante fuerte, con grasa buena de la leche de coco.',
     ingredientes: [
@@ -1598,7 +1604,7 @@ export const RECIPES = [
     etiquetas: ['bajo_ig', 'plato_modelo']
   },
   {
-    id: 'ensalada_quinoa_pollo_arandanos', comida: 'almuerzo', emoji: '🥗',
+    id: 'ensalada_quinoa_pollo_arandanos', tiempoMin: 10, comida: 'almuerzo', emoji: '🥗',
     nombre: 'Ensalada de quinoa, pollo y arándanos',
     descripcion: 'Combo dulce-salado con antioxidantes y proteína magra.',
     ingredientes: [
@@ -1617,7 +1623,7 @@ export const RECIPES = [
 
   // ================= MEDIA TARDE (lote 4) =================
   {
-    id: 'smoothie_bowl_bajo_azucar', comida: 'media_tarde', emoji: '🍇',
+    id: 'smoothie_bowl_bajo_azucar', tiempoMin: 10, comida: 'media_tarde', emoji: '🍇',
     nombre: 'Smoothie bowl de frutos rojos bajo en azúcar',
     descripcion: 'Espeso y con cuchara, no un jugo: la fibra entera se mantiene.',
     tituloSub: { lacteos: { nombre: 'Smoothie bowl de frutos rojos con yogur de coco', emoji: '🥥' } },
@@ -1634,7 +1640,7 @@ export const RECIPES = [
     etiquetas: ['bajo_azucar', 'alto_fibra']
   },
   {
-    id: 'aceitunas_queso_fresco', comida: 'media_tarde', emoji: '🫒',
+    id: 'aceitunas_queso_fresco', tiempoMin: 5, comida: 'media_tarde', emoji: '🫒',
     nombre: 'Aceitunas con queso fresco y tomates cherry',
     descripcion: 'Snack estilo mediterráneo, salado y con grasa buena.',
     tituloSub: { lacteos: { nombre: 'Aceitunas con hummus y tomates cherry', emoji: '🫘' } },
@@ -1650,7 +1656,7 @@ export const RECIPES = [
     etiquetas: ['mediterraneo', 'antojo_salado_saludable']
   },
   {
-    id: 'infusion_hinojo_snack', comida: 'media_tarde', emoji: '🌿',
+    id: 'infusion_hinojo_snack', tiempoMin: 5, comida: 'media_tarde', emoji: '🌿',
     nombre: 'Infusión de hinojo con manzana',
     descripcion: 'Clásica para desinflamar y calmar gases por la tarde.',
     ingredientes: [
@@ -1665,7 +1671,7 @@ export const RECIPES = [
     etiquetas: ['suave', 'hidratante']
   },
   {
-    id: 'barrita_casera_avena_dátil', comida: 'media_tarde', emoji: '🍪',
+    id: 'barrita_casera_avena_dátil', tiempoMin: 15, comida: 'media_tarde', emoji: '🍪',
     nombre: 'Barrita casera de avena y dátil',
     descripcion: 'Reemplaza la barrita comercial: solo dos ingredientes reales, sin azúcar añadida.',
     ingredientes: [
@@ -1683,7 +1689,7 @@ export const RECIPES = [
     etiquetas: ['reemplaza_paquetes', 'alto_fibra']
   },
   {
-    id: 'pepino_limon_chile_snack', comida: 'media_tarde', emoji: '🥒',
+    id: 'pepino_limon_chile_snack', tiempoMin: 10, comida: 'media_tarde', emoji: '🥒',
     nombre: 'Pepino con limón y un toque de chile piquín',
     descripcion: 'Snack fresco, casi sin calorías, hidratante.',
     ingredientes: [
@@ -1702,7 +1708,7 @@ export const RECIPES = [
 
   // ================= CENAS (lote 4) =================
   {
-    id: 'coliflor_horno_curry', comida: 'cena', emoji: '🥦',
+    id: 'coliflor_horno_curry', tiempoMin: 30, comida: 'cena', emoji: '🥦',
     nombre: 'Coliflor al horno con curry suave',
     descripcion: 'Cena vegetal simple, alta en fibra y baja en calorías.',
     ingredientes: [
@@ -1719,7 +1725,7 @@ export const RECIPES = [
     etiquetas: ['ligero', 'bajo_ig']
   },
   {
-    id: 'tacos_pescado_col_morada', comida: 'cena', emoji: '🌮',
+    id: 'tacos_pescado_col_morada', tiempoMin: 15, comida: 'cena', emoji: '🌮',
     nombre: 'Tacos de pescado con col morada',
     descripcion: 'Cena ligera con proteína de mar y fibra crocante, sin frituras.',
     tituloSub: { pescado: { nombre: 'Tacos de pollo desmechado con col morada', emoji: '🍗' } },
@@ -1738,7 +1744,7 @@ export const RECIPES = [
     etiquetas: ['sin_gluten', 'ligero']
   },
   {
-    id: 'crema_brocoli_almendras', comida: 'cena', emoji: '🥣',
+    id: 'crema_brocoli_almendras', tiempoMin: 20, comida: 'cena', emoji: '🥣',
     nombre: 'Crema de brócoli con almendras (sin lácteos)',
     descripcion: 'Cena caliente cremosa sin usar crema de leche.',
     ingredientes: [
@@ -1755,7 +1761,7 @@ export const RECIPES = [
     etiquetas: ['grasa_saludable', 'ligero']
   },
   {
-    id: 'pollo_teriyaki_casero', comida: 'cena', emoji: '🍗',
+    id: 'pollo_teriyaki_casero', tiempoMin: 10, comida: 'cena', emoji: '🍗',
     nombre: 'Pollo teriyaki casero con vegetales al vapor',
     descripcion: 'Salsa casera sin azúcar refinada, mucho más ligera que la comercial.',
     ingredientes: [
@@ -1773,7 +1779,7 @@ export const RECIPES = [
     etiquetas: ['bajo_ig', 'ligero']
   },
   {
-    id: 'omelette_calabacin_queso', comida: 'cena', emoji: '🧀',
+    id: 'omelette_calabacin_queso', tiempoMin: 20, comida: 'cena', emoji: '🧀',
     nombre: 'Omelette de calabacín con queso fresco',
     descripcion: 'Cena rápida, ligera y alta en proteína.',
     tituloSub: { huevo: { nombre: 'Revuelto de tofu, calabacín y queso fresco', emoji: '🌱' }, lacteos: { nombre: 'Omelette de calabacín sin queso', emoji: '🍳' } },

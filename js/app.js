@@ -283,6 +283,13 @@ export const TEXTO_ICON = `<svg viewBox="0 -960 960 960" width="24" height="24" 
   <path d="M160-200q-33 0-56.5-23.5T80-280v-400q0-33 23.5-56.5T160-760h640q33 0 56.5 23.5T880-680v400q0 33-23.5 56.5T800-200H160Zm0-80h640v-400H160v400Zm160-40h320v-80H320v80ZM200-440h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80ZM200-560h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80ZM160-280v-400 400Z"/>
 </svg>`;
 
+// Reloj (tiempo de preparación de una receta, junto al título en la
+// modal de "Tu ruta de hoy") -- Heroicons outline, mismo criterio que el
+// resto: ícono real, no aproximado a mano.
+export const CLOCK_ICON = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--ink-soft)" stroke-width="1.8" style="display:block">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+</svg>`;
+
 // Cabecera común de las vistas principales. Cuando ya hay cuenta activa,
 // muestra racha y escudos arriba a la derecha (persistentes, como el
 // marcador de racha de Duolingo) — tocar cualquiera abre el detalle.

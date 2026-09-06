@@ -525,6 +525,22 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .meal-check:active { transform: scale(0.9); }
 .meal-check.done { background: var(--green); border-color: var(--green); }
 
+/* Sección desplegable de la modal de receta ("Instrucciones", referencia
+   real: Fitia) -- <details> nativo, sin JS para el toggle. */
+.rc-desplegable summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center;
+  justify-content: space-between; padding: 12px 14px; font-weight: 700;
+  background: var(--modal-bg); border: 1px solid var(--border); border-radius: 12px;
+}
+.rc-desplegable summary::-webkit-details-marker { display: none; }
+.rc-desplegable[open] summary { border-radius: 12px 12px 0 0; border-bottom: none; }
+.rc-desplegable-body {
+  padding: 12px 14px; border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 12px 12px; background: var(--modal-bg);
+}
+.rc-chev { transition: transform 0.2s; color: var(--ink-soft); }
+.rc-desplegable[open] .rc-chev { transform: rotate(180deg); }
+
 /* ===== Quiz ===== */
 .quiz-progress { height: 8px; background: #E2EEEB; border-radius: 999px; overflow: hidden; margin: 14px 0 22px; }
 .quiz-progress > div { height: 100%; background: var(--primary); border-radius: 999px; transition: width 0.35s cubic-bezier(.34,1.2,.64,1); }
