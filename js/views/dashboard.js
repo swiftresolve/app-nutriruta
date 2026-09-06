@@ -292,26 +292,12 @@ export function renderDashboard(container) {
   // quedarse titilando sobre algo que ya se completó.
   let activeIndex = menuItems.findIndex((it) => it.now);
   if (activeIndex !== -1 && menuItems[activeIndex].done && activeIndex < menuItems.length - 1) activeIndex += 1;
-  // Posiciones fijas para las 5 comidas -- ver comentario de opts.offsets
-  // en pathMap.js. Una "S" de verdad necesita DOS arcos que curvan hacia
-  // lados opuestos (no un solo arco grande hacia un lado, eso es una "C"):
-  // arco hacia la derecha en los primeros 2 nodos, cruce por el centro
-  // justo en el nodo del medio (Almuerzo), arco hacia la izquierda en los
-  // últimos 2 -- suave (poca amplitud), no un zigzag brusco.
-  // Offsets medidos DIRECTAMENTE sobre la foto del boceto de la usuaria
-  // (coordenada x real del trazo a alturas parejas 0%, 25%, 50%, 75%,
-  // 100%, no adivinados) -- arranca bien a la derecha, cae fuerte a la
-  // izquierda, se recupera pasando de largo hacia la derecha, y termina
-  // corrigiendo un poco a la izquierda otra vez.
-  // Offsets medidos directamente sobre la foto del boceto de la usuaria,
-  // a 9 alturas parejas (no solo 5) -- ver curveShape en pathMap.js: con
-  // solo un punto por nodo, el tramo ENTRE nodos se aplanaba porque la
-  // curva real se dobla más de lo que un solo tramo de bezier entre esos
-  // dos puntos puede mostrar. Los 5 valores en índices pares (0,2,4,6,8)
-  // son los mismos que usan los nodos -- quedan exactamente sobre esta
-  // misma curva, no en una versión simplificada de ella.
-  const CURVA_BOCETO = [5, -13, -16, -11, 4, 14, 15, 13, 2];
-  renderPathMap(menuCard.querySelector('#menu-path'), menuItems, { showLine: true, activeIndex: activeIndex === -1 ? undefined : activeIndex, offsets: [CURVA_BOCETO[0], CURVA_BOCETO[2], CURVA_BOCETO[4], CURVA_BOCETO[6], CURVA_BOCETO[8]], curveShape: CURVA_BOCETO });
+  // La curva (medida del boceto real de la usuaria) y la posición de cada
+  // nodo sobre ella se generan solas dentro de renderPathMap cuando
+  // showLine viene activo -- ver curvaRepetida en pathMap.js. Así "Tu
+  // ruta de hoy", Plan de 7 días y Misión comparten EXACTAMENTE la misma
+  // forma, en vez de cada pantalla traer su propia copia del boceto.
+  renderPathMap(menuCard.querySelector('#menu-path'), menuItems, { showLine: true, activeIndex: activeIndex === -1 ? undefined : activeIndex });
   menuHoy.forEach(({ meal, recipe }, i) => {
     const logBtn = menuCard.querySelector(`[data-row-idx="${i}"] .log-btn`);
     if (logBtn) logBtn.addEventListener('click', (e) => {

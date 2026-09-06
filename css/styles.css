@@ -1500,7 +1500,7 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    entre nodos, pedido explícito de la usuaria de acercarlos sin tocar
    la curva (esa la sigue dando solo el margin-left en línea, ver
    AMPLITUD/PERIODO arriba). */
-.path-wrap.no-line .path-row { margin-bottom: 18px; }
+.path-wrap.no-line .path-row { margin-bottom: var(--path-gap, 18px); }
 /* "Tu ruta de hoy" (única vista con línea animada) NO necesita más margen
    que el resto -- se probó con 30px pensando en una demo sin los botones
    reales de cambiar/registrar que sí van bajo cada comida; esos botones

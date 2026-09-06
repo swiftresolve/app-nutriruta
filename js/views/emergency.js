@@ -87,7 +87,16 @@ export function renderEmergency(container) {
       }
     };
   });
-  renderPathMap(list, items);
+  // Misma curva animada que "Tu ruta de hoy" (ver curvaRepetida en
+  // pathMap.js) -- pedido explícito de la usuaria de que se vea
+  // exactamente igual en Plan de 7 días. "now" y "done" nunca coinciden
+  // acá (isCurrent ya exige !done), así que el índice activo es directo,
+  // sin el ajuste extra que sí necesita el menú del día.
+  const activeIndex = items.findIndex((it) => it.now);
+  // rowGap: sin los botones extra que sí tiene "Tu ruta de hoy" bajo cada
+  // fila, acá el punteado apenas se notaba en algunos tramos -- más aire
+  // vertical entre nodos, solo en esta vista.
+  renderPathMap(list, items, { showLine: true, activeIndex: activeIndex === -1 ? undefined : activeIndex, rowGap: 40 });
   container.appendChild(list);
 }
 

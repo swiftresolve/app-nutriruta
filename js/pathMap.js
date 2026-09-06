@@ -39,17 +39,61 @@ const PERIODO = 5.5;
 // que la curva se note desde el principio.
 const FASE = -0.06;
 
+// Curva medida directamente del boceto real de la usuaria (9 puntos --
+// 5 nodos + 4 intermedios -- no una fórmula de seno genérica). Debe verse
+// EXACTAMENTE igual (mismos saltos entre puntos consecutivos, sin
+// estirar ni comprimir la figura) en cualquier pantalla con línea
+// animada -- menú del día, Plan de 7 días, Misión -- y para listas más
+// largas que 5 pasos, esa misma figura se REPITE en ciclos idénticos.
+const CURVA_BOCETO = [5, -13, -16, -11, 4, 14, 15, 13, 2];
+const CURVA_RICH_FACTOR = 2; // puntos intermedios por cada tramo real
+const CURVA_DELTAS = CURVA_BOCETO.slice(1).map((v, i) => v - CURVA_BOCETO[i]);
+
+// Genera {offsets, curveShape} para CUALQUIER cantidad de nodos,
+// repitiendo la misma secuencia de saltos del boceto en ciclos idénticos.
+function curvaRepetida(nodeCount) {
+  const totalRich = (nodeCount - 1) * CURVA_RICH_FACTOR + 1;
+  let curveShape = [CURVA_BOCETO[0]];
+  // El primer ciclo se queda tal cual (idéntico al boceto). SOLO la
+  // segunda vuelta (nodos 5 a 7 en una lista de 7) se atenúa un poco --
+  // no es una regla que se repita en cada ciclo siguiente, es puntual a
+  // esa transición; de ahí en más (tercera vuelta, cuarta...) vuelve a la
+  // fuerza normal.
+  const DECAY = 0.55;
+  for (let i = 1; i < totalRich; i++) {
+    const ciclo = Math.floor((i - 1) / CURVA_DELTAS.length);
+    const factor = ciclo === 1 ? DECAY : 1;
+    curveShape.push(curveShape[i - 1] + CURVA_DELTAS[(i - 1) % CURVA_DELTAS.length] * factor);
+  }
+  // Nodo 4 y nodo 7 (Día 4 y Día 7 en Plan de 7 días) corridos muy
+  // levemente a la derecha -- pedido puntual, solo cuando hay más de 5
+  // nodos (no toca la curva ya aprobada de "Tu ruta de hoy").
+  if (nodeCount !== 5 && curveShape.length > 6) curveShape[6] += 3;
+  if (nodeCount !== 5 && curveShape.length > 12) curveShape[12] += 3;
+  // Recentrado: cada ciclo completo termina un poco más a la izquierda de
+  // donde empezó (el boceto no es perfectamente simétrico), así que al
+  // repetirlo varias veces el conjunto entero deriva hacia un lado en vez
+  // de quedar centrado en la tarjeta. Se resta el promedio real para
+  // balancearlo -- SOLO si no son 5 nodos, para no tocar en nada la curva
+  // de "Tu ruta de hoy" (5 comidas) que ya quedó aprobada tal cual.
+  if (nodeCount !== 5) {
+    const promedio = curveShape.reduce((a, b) => a + b, 0) / curveShape.length;
+    curveShape = curveShape.map((v) => v - promedio);
+  }
+  const offsets = [];
+  for (let i = 0; i < nodeCount; i++) offsets.push(curveShape[i * CURVA_RICH_FACTOR]);
+  return { offsets, curveShape };
+}
+
 export function renderPathMap(container, items, opts = {}) {
   const showLine = opts.showLine === true;
   // opts.offsets (PREVIEW): posiciones horizontales fijas a mano, en vez
-  // de calcularlas con la onda de seno -- "Tu ruta de hoy" siempre tiene
-  // las mismas 5 comidas, así que no hace falta una fórmula genérica, y
-  // con solo 5 puntos la onda no daba suficiente curva real en todos los
-  // tramos (cerca de donde cruza por cero, 3 nodos casi quedan alineados
-  // y el tramo se ve recto en vez de curvo -- ajustar el período solo
-  // corría el problema a otro tramo, no lo resolvía). Con offsets fijos
-  // se garantiza una curva visible tipo "S" en cada tramo, siempre igual.
-  const offsets = opts.offsets;
+  // de calcularlas con la onda de seno -- si showLine viene activo y no
+  // se pasan offsets/curveShape explícitos, se generan solos repitiendo
+  // el boceto real (ver curvaRepetida arriba), para que CUALQUIER
+  // pantalla con línea (no solo "Tu ruta de hoy") use la misma curva.
+  const curvaAuto = (showLine && !opts.offsets) ? curvaRepetida(items.length) : null;
+  const offsets = opts.offsets || (curvaAuto && curvaAuto.offsets);
   const rowsHtml = items.map((it, i) => {
     const offset = offsets ? (offsets[i] ?? 0) : AMPLITUD * Math.sin((i / PERIODO + FASE) * Math.PI * 2);
     const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
@@ -76,7 +120,14 @@ export function renderPathMap(container, items, opts = {}) {
   // entre TODOS los nodos (la usuaria fue explícita: la distancia vertical
   // entre nodos debe ser exactamente la misma en toda la lista).
   const drawsLine = showLine || opts.activeIndex != null;
-  container.innerHTML = `<div class="path-wrap no-line${drawsLine ? ' has-line' : ''}"><svg class="path-svg"></svg>${rowsHtml}</div>`;
+  // opts.rowGap (PREVIEW): Plan de 7 días y Misión no traen los botones
+  // extra (cambiar/registrar) que sí tiene "Tu ruta de hoy" bajo cada
+  // fila -- sin ese contenido, las filas quedan más bajas y el punteado
+  // apenas se nota en algunos tramos. Solo esas pantallas piden más aire
+  // vía esta variable; "Tu ruta de hoy" no la pasa y se queda con su
+  // espaciado ya aprobado (18px).
+  const gapStyle = opts.rowGap ? ` style="--path-gap:${opts.rowGap}px"` : '';
+  container.innerHTML = `<div class="path-wrap no-line${drawsLine ? ' has-line' : ''}"${gapStyle}><svg class="path-svg"></svg>${rowsHtml}</div>`;
   if (!drawsLine) container.querySelector('.path-svg').remove();
   // Espaciado vertical parejo entre nodos: una etiqueta de 3 líneas (ej.
   // "Arma tu plato modelo, sin excusas") hace su fila más alta que una de
@@ -98,9 +149,10 @@ export function renderPathMap(container, items, opts = {}) {
   // dibujada se quedaba en la posición vieja -- la línea no calzaba con
   // los nodos reales, sobre todo entre filas con subtítulos de distinto
   // largo.
+  const drawOpts = curvaAuto ? { ...opts, curveShape: opts.curveShape || curvaAuto.curveShape } : opts;
   requestAnimationFrame(() => {
     equalizeRowHeights(container);
-    if (drawsLine) drawCurve(container.querySelector('.path-wrap'), opts);
+    if (drawsLine) drawCurve(container.querySelector('.path-wrap'), drawOpts);
   });
 
   items.forEach((it, i) => {

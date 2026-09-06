@@ -185,7 +185,13 @@ function renderTramos(container, items) {
     container.appendChild(banner);
     const sub = document.createElement('div');
     container.appendChild(sub);
-    renderPathMap(sub, grupo);
+    // Misma curva animada que "Tu ruta de hoy" y Plan de 7 días (ver
+    // curvaRepetida en pathMap.js) -- pedido explícito de que se vea
+    // exactamente igual acá también. El índice activo es LOCAL a este
+    // tramo de 3 semanas (grupo), no al listado completo de 12.
+    let activeIndex = grupo.findIndex((it) => it.now);
+    if (activeIndex !== -1 && grupo[activeIndex].done && activeIndex < grupo.length - 1) activeIndex += 1;
+    renderPathMap(sub, grupo, { showLine: true, activeIndex: activeIndex === -1 ? undefined : activeIndex, rowGap: 40 });
   }
 }
 
