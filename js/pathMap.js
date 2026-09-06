@@ -41,8 +41,17 @@ const FASE = -0.06;
 
 export function renderPathMap(container, items, opts = {}) {
   const showLine = opts.showLine === true;
+  // opts.offsets (PREVIEW): posiciones horizontales fijas a mano, en vez
+  // de calcularlas con la onda de seno -- "Tu ruta de hoy" siempre tiene
+  // las mismas 5 comidas, así que no hace falta una fórmula genérica, y
+  // con solo 5 puntos la onda no daba suficiente curva real en todos los
+  // tramos (cerca de donde cruza por cero, 3 nodos casi quedan alineados
+  // y el tramo se ve recto en vez de curvo -- ajustar el período solo
+  // corría el problema a otro tramo, no lo resolvía). Con offsets fijos
+  // se garantiza una curva visible tipo "S" en cada tramo, siempre igual.
+  const offsets = opts.offsets;
   const rowsHtml = items.map((it, i) => {
-    const offset = AMPLITUD * Math.sin((i / PERIODO + FASE) * Math.PI * 2);
+    const offset = offsets ? (offsets[i] ?? 0) : AMPLITUD * Math.sin((i / PERIODO + FASE) * Math.PI * 2);
     const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
     const icon = it.done ? '✓' : (it.locked ? '🔒' : esc(it.icon));
     const tag = it.now ? `<span class="path-tag path-tag-now">${esc(it.nowLabel || 'Actual')}</span>` : '';
@@ -68,17 +77,7 @@ export function renderPathMap(container, items, opts = {}) {
   // entre nodos debe ser exactamente la misma en toda la lista).
   const drawsLine = showLine || opts.activeIndex != null;
   container.innerHTML = `<div class="path-wrap no-line${drawsLine ? ' has-line' : ''}"><svg class="path-svg"></svg>${rowsHtml}</div>`;
-  if (drawsLine) {
-    // PREVIEW -- opts.activeIndex (índice del nodo "now") activa el trazo
-    // punteado animado: un fondo tenue con el recorrido completo, y un
-    // trazo de color que se dibuja solo hasta la comida actual y queda
-    // titilando ahí (referencia real de la usuaria: "estás aquí, en
-    // camino" en vez de una línea fija). Sin activeIndex, se comporta
-    // igual que antes (línea sólida fija).
-    drawCurve(container.querySelector('.path-wrap'), opts);
-  } else {
-    container.querySelector('.path-svg').remove();
-  }
+  if (!drawsLine) container.querySelector('.path-svg').remove();
   // Espaciado vertical parejo entre nodos: una etiqueta de 3 líneas (ej.
   // "Arma tu plato modelo, sin excusas") hace su fila más alta que una de
   // 1 línea, y con solo margin-bottom fijo la distancia entre CENTROS de
@@ -92,7 +91,17 @@ export function renderPathMap(container, items, opts = {}) {
   // función retornar (ver dashboard.js/emergency.js/mission.js) -- medir
   // altura real ahora mismo daría 0 (elemento aún fuera del DOM). Para
   // cuando el navegador pinte el próximo frame, ya está insertado.
-  requestAnimationFrame(() => equalizeRowHeights(container));
+  // drawCurve va DESPUÉS de equalizeRowHeights, no antes -- drawCurve mide
+  // la posición real ya pintada de cada nodo, y si corría primero (como
+  // estaba) medía las filas ANTES de emparejar sus alturas; en cuanto
+  // equalizeRowHeights las cambiaba, los nodos se corrían pero la curva ya
+  // dibujada se quedaba en la posición vieja -- la línea no calzaba con
+  // los nodos reales, sobre todo entre filas con subtítulos de distinto
+  // largo.
+  requestAnimationFrame(() => {
+    equalizeRowHeights(container);
+    if (drawsLine) drawCurve(container.querySelector('.path-wrap'), opts);
+  });
 
   items.forEach((it, i) => {
     if (!it.onClick) return;
@@ -121,6 +130,25 @@ function equalizeRowHeights(container) {
 // (esa parte del camino ya se cerró, no debe seguir "en progreso" para
 // siempre), y solo el ÚLTIMO tramo -- el que lleva al nodo activo -- titila
 // lento, que es el único que realmente está "en camino" ahora mismo.
+// Catmull-Rom -> bezier genérico sobre CUALQUIER lista de puntos (no un
+// punto de control a media altura): el punto de control de cada tramo se
+// calcula mirando también al punto ANTERIOR y al SIGUIENTE, no solo los
+// dos que conecta -- así la tangente coincide exactamente en cada punto y
+// la curva se ve como un solo trazo fluido, sin "quiebres".
+function catmullRomSegments(points) {
+  const segments = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const pPrev = points[i - 1] || points[i];
+    const p0 = points[i];
+    const p1 = points[i + 1];
+    const pNext = points[i + 2] || p1;
+    const c0 = { x: p0.x + (p1.x - pPrev.x) / 6, y: p0.y + (p1.y - pPrev.y) / 6 };
+    const c1 = { x: p1.x - (pNext.x - p0.x) / 6, y: p1.y - (pNext.y - p0.y) / 6 };
+    segments.push(`M ${p0.x} ${p0.y} C ${c0.x} ${c0.y}, ${c1.x} ${c1.y}, ${p1.x} ${p1.y}`);
+  }
+  return segments;
+}
+
 function drawCurve(wrap, opts = {}) {
   const svg = wrap.querySelector('.path-svg');
   const nodes = Array.from(wrap.querySelectorAll('.path-node'));
@@ -133,26 +161,41 @@ function drawCurve(wrap, opts = {}) {
   svg.setAttribute('viewBox', `0 0 ${wrapRect.width} ${wrapRect.height}`);
   svg.setAttribute('width', wrapRect.width);
   svg.setAttribute('height', wrapRect.height);
-  // Un segmento (bezier) por cada PAR de nodos consecutivos, no un solo
-  // trazo largo -- así cada tramo se puede colorear/animar por separado.
-  // Catmull-Rom -> bezier (no un punto de control a media altura): el
-  // punto de control de cada tramo se calcula mirando también al nodo
-  // ANTERIOR y al SIGUIENTE, no solo los dos que conecta -- así la
-  // tangente coincide exactamente en cada nodo y la curva se ve como un
-  // solo trazo fluido, sin "quiebres" donde el zigzag (AMPLITUD/PERIODO)
-  // cambia de dirección (antes cada tramo se calculaba aislado y en esos
-  // puntos la línea se notaba como dos trazos distintos, no uno continuo).
+  // opts.curveShape (PREVIEW): con un punto por nodo (5), cada tramo entre
+  // dos nodos consecutivos queda casi recto en cuanto la curva real de la
+  // usuaria se dobla MÁS de lo que un solo tramo de bezier entre esos dos
+  // puntos puede reproducir -- la tangente en los nodos queda bien, pero
+  // lo que pasa ENTRE ellos se aplana. opts.curveShape trae más puntos
+  // (tomados del boceto real, uno por cada fracción de altura, no solo
+  // uno por nodo) para que el trazo entre nodos siga la curva real, no
+  // una versión simplificada de ella. richFactor = cuántos puntos extra
+  // de curveShape caen POR CADA tramo real (curveShape.length - 1 debe
+  // ser múltiplo de (points.length - 1)).
+  let richPoints = points;
+  let richFactor = 1;
+  if (Array.isArray(opts.curveShape) && opts.curveShape.length > points.length) {
+    const n = opts.curveShape.length;
+    richFactor = (n - 1) / (points.length - 1);
+    const nodeWidth = nodes[0].getBoundingClientRect().width;
+    richPoints = opts.curveShape.map((offset, k) => {
+      const t = k / (n - 1);
+      const segIdx = Math.min(Math.floor(t * (points.length - 1)), points.length - 2);
+      const localT = t * (points.length - 1) - segIdx;
+      const y = points[segIdx].y + (points[segIdx + 1].y - points[segIdx].y) * localT;
+      const x = (wrapRect.width * (22 + offset)) / 100 + nodeWidth / 2;
+      return { x, y };
+    });
+  }
+  // Un segmento (bezier) por cada PAR de puntos consecutivos de la curva
+  // rica, no un solo trazo largo -- así cada TRAMO REAL (entre nodos) se
+  // puede colorear/animar por separado agrupando sus `richFactor` piezas.
+  const richSegments = catmullRomSegments(richPoints);
   const segments = [];
   for (let i = 0; i < points.length - 1; i++) {
-    const pPrev = points[i - 1] || points[i];
-    const p0 = points[i];
-    const p1 = points[i + 1];
-    const pNext = points[i + 2] || p1;
-    const c0 = { x: p0.x + (p1.x - pPrev.x) / 6, y: p0.y + (p1.y - pPrev.y) / 6 };
-    const c1 = { x: p1.x - (pNext.x - p0.x) / 6, y: p1.y - (pNext.y - p0.y) / 6 };
-    segments.push(`M ${p0.x} ${p0.y} C ${c0.x} ${c0.y}, ${c1.x} ${c1.y}, ${p1.x} ${p1.y}`);
+    const piece = richSegments.slice(i * richFactor, (i + 1) * richFactor);
+    segments.push(`M ${richPoints[i * richFactor].x} ${richPoints[i * richFactor].y}` + piece.map((s) => s.slice(s.indexOf(' C'))).join(''));
   }
-  const fullD = `M ${points[0].x} ${points[0].y}` + segments.map((s) => s.slice(s.indexOf(' C'))).join('');
+  const fullD = `M ${richPoints[0].x} ${richPoints[0].y}` + richSegments.map((s) => s.slice(s.indexOf(' C'))).join('');
   const activeIndex = opts.activeIndex;
   const DASH = '6 11';
   if (activeIndex == null) {
@@ -190,19 +233,61 @@ function drawCurve(wrap, opts = {}) {
     const isUltimo = i === activeIndex - 1;
     overlayHtml += `<path class="${isUltimo ? 'path-progress' : ''}" d="${segments[i]}" fill="none" stroke="var(--primary)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${DASH}" stroke-dashoffset="${-offsets[i]}"/>`;
   }
+  // El fondo tenue solo cubre los tramos que el color de arriba NO tapa
+  // (de activeIndex en adelante) -- antes se dibujaba de punta a punta,
+  // por DEBAJO del trazo de color, y como los dos no coinciden pixel a
+  // pixel (distinto grosor/transición de opacidad) se asomaba una segunda
+  // línea gris detrás del color, un "doble trazo" feo. Sin superposición,
+  // no hay nada que se asome.
+  const futuroD = activeIndex < segments.length
+    ? `M ${points[activeIndex].x} ${points[activeIndex].y}` + segments.slice(activeIndex).map((s) => s.slice(s.indexOf(' C'))).join('')
+    : '';
   svg.innerHTML = `
-    <path d="${fullD}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round" stroke-dasharray="${DASH}"/>
+    ${futuroD ? `<path d="${futuroD}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round" stroke-dasharray="${DASH}"/>` : ''}
     ${overlayHtml}
   `;
   const progressPath = svg.querySelector('.path-progress');
   if (progressPath) {
-    // Aparece con un fundido corto y de ahí en más queda titilando lento
-    // -- "estás en camino" solo en el tramo que de verdad está activo.
-    progressPath.style.opacity = '0';
-    requestAnimationFrame(() => {
-      progressPath.style.transition = 'opacity 0.6s ease';
-      progressPath.style.opacity = '1';
-      progressPath.style.animation = 'path-progress-pulse 2.2s ease-in-out 0.6s infinite';
-    });
+    // Se traza de verdad, pedacito por pedacito, como si un lápiz lo
+    // fuera dibujando -- y eso se repite EN LOOP sin parar (dibuja, se
+    // mantiene un momento, se borra, vuelve a dibujarse), no una sola vez
+    // seguida de un simple parpadeo de opacidad -- "siempre en camino".
+    // Un rect en un clipPath propio de ESTE tramo (no de toda la ruta)
+    // crece y decrece entre 0 y su alto real.
+    const bbox = progressPath.getBBox();
+    const clipId = `path-draw-clip-${Math.random().toString(36).slice(2, 9)}`;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const fullH = bbox.height + 12;
+    svg.insertAdjacentHTML('afterbegin', `
+      <clipPath id="${clipId}">
+        <rect class="path-draw-rect" x="${bbox.x - 6}" y="${bbox.y - 6}" width="${bbox.width + 12}" height="${reduceMotion ? fullH : 0}"/>
+      </clipPath>
+    `);
+    progressPath.setAttribute('clip-path', `url(#${clipId})`);
+    if (reduceMotion) {
+      progressPath.style.animation = 'path-progress-pulse 2.2s ease-in-out infinite';
+    } else {
+      const rect = svg.querySelector('.path-draw-rect');
+      const DIBUJAR_MS = 3200, PAUSA_MS = 700;
+      // Nunca se ve "retrocediendo" (el trazo encogiéndose de vuelta) --
+      // eso se leía como que se estaba borrando. En vez de eso, al
+      // terminar la pausa el rect se resetea a 0 SIN transición (invisible
+      // de un frame a otro) y arranca a dibujarse de nuevo desde cero,
+      // como si volviera a empezar, no como si se deshiciera.
+      const ciclo = () => {
+        rect.style.transition = 'none';
+        rect.setAttribute('height', '0');
+        // Fuerza reflow para que el navegador no fusione este reseteo con
+        // la animación de dibujo que sigue -- si no, a veces salta
+        // directo al final en vez de animar desde 0.
+        rect.getBoundingClientRect();
+        requestAnimationFrame(() => {
+          rect.style.transition = `height ${DIBUJAR_MS}ms cubic-bezier(.4,0,.2,1)`;
+          rect.setAttribute('height', String(fullH));
+        });
+      };
+      ciclo();
+      setInterval(ciclo, DIBUJAR_MS + PAUSA_MS);
+    }
   }
 }

@@ -1501,12 +1501,16 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    la curva (esa la sigue dando solo el margin-left en línea, ver
    AMPLITUD/PERIODO arriba). */
 .path-wrap.no-line .path-row { margin-bottom: 18px; }
-/* "Tu ruta de hoy" es la única vista con línea animada (drawCurve en
-   pathMap.js) -- con el espaciado compacto de arriba el punteado no se
-   alcanzaba a apreciar entre nodo y nodo. Un poco más de aire, IGUAL entre
-   TODOS los nodos (pedido explícito: la distancia vertical debe ser
-   exactamente la misma en toda la lista, no solo en el nodo activo). */
-.path-wrap.no-line.has-line .path-row { margin-bottom: 30px; }
+/* "Tu ruta de hoy" (única vista con línea animada) NO necesita más margen
+   que el resto -- se probó con 30px pensando en una demo sin los botones
+   reales de cambiar/registrar que sí van bajo cada comida; esos botones
+   ya agrandan la fila lo suficiente para que el punteado se note, y de
+   más solo separaba los nodos mucho más que la preview aprobada. Mismo
+   18px que el resto, sin excepción. */
+/* Texto/botones un poco más separados del nodo, solo en "Tu ruta de hoy"
+   -- con la línea animada pasando justo al lado, el gap de siempre (10px,
+   compartido con Plan de 7 días/Misión) se sentía muy pegado. */
+.path-wrap.has-line .path-row { gap: 18px; }
 /* Con nombres de receta reales (varios más largos que el ejemplo con el
    que se armó la preview), el subtítulo podía llegar a 3 líneas -- como
    TODAS las filas se igualan a la más alta (equalizeRowHeights), una sola
