@@ -129,7 +129,15 @@ export function navigate(route, params = {}) {
   nav.querySelectorAll('.nav-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.route === route);
   });
-  nav.querySelectorAll('.nav-label').forEach((el) => { el.textContent = t(el.dataset.label); });
+  // "SuSana" es un nombre propio, no se traduce -- pero sí necesita el
+  // mismo bicolor (Su en rosado) que ya tiene en el chat, así que este
+  // label puntual usa innerHTML con susanaName() en vez de textContent.
+  // El resto de labels sigue igual (textContent, sin riesgo de HTML raro
+  // en un texto traducido).
+  nav.querySelectorAll('.nav-label').forEach((el) => {
+    if (el.dataset.label === 'SuSana') el.innerHTML = susanaName();
+    else el.textContent = t(el.dataset.label);
+  });
 }
 
 nav.addEventListener('click', (e) => {

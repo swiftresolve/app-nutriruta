@@ -580,11 +580,11 @@ export function openRecipe(recipe, hoy = null) {
     modal.insertAdjacentHTML('beforeend', `
       <div class="center" style="font-size:2.4rem">${shown.emoji}</div>
       <h2 class="center">${shown.nombre}</h2>
-      ${recipe.tiempoMin ? `<p class="small muted center row" style="gap:5px;justify-content:center;align-items:center;margin-top:2px">${CLOCK_ICON}${recipe.tiempoMin} min</p>` : ''}
-      <p class="small mt" style="text-align:justify">${recipe.descripcion}</p>
-      <p class="row mt" style="gap:8px;align-items:center">
-        ${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span>
+      <p class="row" style="gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:2px">
+        ${recipe.tiempoMin ? `<span class="small muted row" style="gap:5px;align-items:center">${CLOCK_ICON}${recipe.tiempoMin} min</span>` : ''}
+        <span class="row" style="gap:8px;align-items:center">${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span></span>
       </p>
+      <p class="small mt center">${recipe.descripcion}</p>
       <p class="mt">${recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => `<span class="tag perfil">${PROFILES[p].nombre}</span>`).join(' ')}</p>
       <button type="button" class="btn-susana mt" id="rc-analizar-susana"><span class="susana-sparkle">${SPARKLE_ICON}</span> ${t('Analizar con SuSana')}</button>
       ${hoy ? `<div class="row mt" style="gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--modal-bg);border:1px solid var(--border);border-radius:14px">
