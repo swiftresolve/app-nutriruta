@@ -2,7 +2,7 @@
 import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
-import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
+import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
 import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace } from '../supabase-client.js';
 import { openRecipe } from './dashboard.js';
 
@@ -303,10 +303,14 @@ export function renderPlanner(container, params = {}) {
 
   function drawTabs() {
     tabs.innerHTML = '';
-    const [recetasTab, comprasTab] = [['recetas', '🥗 Recetario'], ['compras', '🛒 Lista de compras']].map(([id, label]) => {
+    const [recetasTab, comprasTab] = [['recetas', '🥗 Recetario'], ['compras', `${CART_ICON} Lista de compras`]].map(([id, label]) => {
       const b = document.createElement('button');
       b.className = 'chip' + (tab === id ? ' selected' : '');
-      b.textContent = label;
+      b.style.display = 'flex';
+      b.style.alignItems = 'center';
+      b.style.justifyContent = 'center';
+      b.style.gap = '6px';
+      b.innerHTML = label;
       b.addEventListener('click', () => { tab = id; drawTabs(); drawBody(); });
       return b;
     });

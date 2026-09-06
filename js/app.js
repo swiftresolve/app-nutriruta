@@ -299,6 +299,14 @@ export const CLOCK_ICON = `<svg viewBox="0 0 24 24" width="15" height="15" fill=
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
 </svg>`;
 
+// Carrito (pestaña "Lista de compras" del recetario) -- Heroicons outline
+// "shopping-cart". Reemplaza al emoji 🛒, que en la mayoría de plataformas
+// se pinta gris/plateado y no se puede recolorear -- la usuaria lo quiere
+// dorado, como el resto de acentos de la app.
+export const CART_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--yellow)" stroke-width="1.8" style="display:block">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.716 2.559-7.221a1.125 1.125 0 0 0-1.11-1.279H6.267l-1.256 4.72M7.5 14.25 5.106 5.272M6 18.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm9.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/>
+</svg>`;
+
 // Chispas (botón "Analizar con SuSana" en la modal de receta) -- Heroicons
 // outline "sparkles", currentColor para heredar el color del botón.
 export const SPARKLE_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block">

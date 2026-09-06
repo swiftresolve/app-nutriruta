@@ -286,7 +286,13 @@ export function renderDashboard(container) {
       </div>`
     };
   });
-  renderPathMap(menuCard.querySelector('#menu-path'), menuItems, { showLine: false });
+  // PREVIEW -- línea punteada que se traza sola hasta la comida actual y
+  // titila ahí. Si la comida "ahora" ya quedó chuleada (registrada), el
+  // trazo avanza un nodo más -- "en camino hacia lo siguiente" en vez de
+  // quedarse titilando sobre algo que ya se completó.
+  let activeIndex = menuItems.findIndex((it) => it.now);
+  if (activeIndex !== -1 && menuItems[activeIndex].done && activeIndex < menuItems.length - 1) activeIndex += 1;
+  renderPathMap(menuCard.querySelector('#menu-path'), menuItems, { showLine: true, activeIndex: activeIndex === -1 ? undefined : activeIndex });
   menuHoy.forEach(({ meal, recipe }, i) => {
     const logBtn = menuCard.querySelector(`[data-row-idx="${i}"] .log-btn`);
     if (logBtn) logBtn.addEventListener('click', (e) => {
