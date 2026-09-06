@@ -66,10 +66,47 @@ function curvaRepetida(nodeCount) {
     curveShape.push(curveShape[i - 1] + CURVA_DELTAS[(i - 1) % CURVA_DELTAS.length] * factor);
   }
   // Nodo 4 y nodo 7 (Día 4 y Día 7 en Plan de 7 días) corridos muy
-  // levemente a la derecha -- pedido puntual, solo cuando hay más de 5
-  // nodos (no toca la curva ya aprobada de "Tu ruta de hoy").
-  if (nodeCount !== 5 && curveShape.length > 6) curveShape[6] += 3;
-  if (nodeCount !== 5 && curveShape.length > 12) curveShape[12] += 3;
+  // levemente a la derecha -- pedido puntual y ESPECÍFICO de esa lista de
+  // 7 pasos, no una regla general para "más de 5 nodos" (eso colaba el
+  // mismo ajuste en la Semana 7 de Misión, que es un nodo distinto en una
+  // lista de 12, y se veía mal ahí).
+  if (nodeCount === 7) {
+    curveShape[6] += 3;
+    curveShape[12] += 3;
+  }
+  // Semanas 1, 2 y 3 de Misión (nodos 0, 1 y 2, tramo 1) corridas a la
+  // derecha TODAS JUNTAS.
+  if (nodeCount === 12) {
+    for (let k = 0; k <= 4; k++) curveShape[k] += 13;
+  }
+  // Semanas 4, 5 y 6 de Misión (nodos 3, 4 y 5, tramo 2) corridas a la
+  // derecha TODAS JUNTAS por el mismo tanto -- mismo criterio que el
+  // corrimiento de grupo del tramo 4 más abajo.
+  if (nodeCount === 12) {
+    for (let k = 6; k <= 10; k++) curveShape[k] += 6;
+  }
+  // Tramo 3 de Misión (Semanas 7-9, nodos 6-8) cae justo en la parte
+  // atenuada de la segunda vuelta -- casi no se notaba la curva ahí. Se
+  // le agrega más curvatura hacia la derecha, centrada en Semana 8 (el
+  // punto intermedio), sin mover los nodos 6 y 8 de su lugar.
+  if (nodeCount === 12) {
+    curveShape[13] += 8;
+    curveShape[14] += 14;
+    curveShape[15] += 14;
+  }
+  // Tramo 3 completo (Semanas 7-9, nodos 6-8) corrido a la derecha TODO
+  // JUNTO, encima de la curvatura de arriba.
+  if (nodeCount === 12) {
+    for (let k = 12; k <= 16; k++) curveShape[k] += 6;
+  }
+  // Nodo 9 (Semana 9) corrido un poco más a la derecha, puntual.
+  if (nodeCount === 12) curveShape[16] += 5;
+  // Semanas 10, 11 y 12 de Misión (nodos 9, 10 y 11) corridas a la
+  // derecha TODAS JUNTAS por el mismo tanto -- un solo movimiento, no un
+  // reacomodo de la curva entre ellas. Puntual a la lista de 12 semanas.
+  if (nodeCount === 12) {
+    for (let k = 18; k < curveShape.length; k++) curveShape[k] += 17;
+  }
   // Recentrado: cada ciclo completo termina un poco más a la izquierda de
   // donde empezó (el boceto no es perfectamente simétrico), así que al
   // repetirlo varias veces el conjunto entero deriva hacia un lado en vez
@@ -247,7 +284,25 @@ function drawCurve(wrap, opts = {}) {
     const piece = richSegments.slice(i * richFactor, (i + 1) * richFactor);
     segments.push(`M ${richPoints[i * richFactor].x} ${richPoints[i * richFactor].y}` + piece.map((s) => s.slice(s.indexOf(' C'))).join(''));
   }
-  const fullD = `M ${richPoints[0].x} ${richPoints[0].y}` + richSegments.map((s) => s.slice(s.indexOf(' C'))).join('');
+  // opts.skipSegments (PREVIEW): índices de tramo (0 = entre nodo 0 y 1,
+  // etc.) donde NO debe haber línea -- Misión pide que el trazo se corte
+  // por completo justo donde va un banner de "Tramo N" divisor, en vez de
+  // pasar por debajo como si nada. Se cortan en runs (grupos de tramos
+  // consecutivos SIN saltos) y cada run se dibuja como su propio <path>,
+  // dejando un hueco real en la línea, no solo un cambio de color.
+  const skip = new Set(opts.skipSegments || []);
+  const runsDe = (indices) => {
+    const runs = [];
+    let actual = [];
+    for (const i of indices) {
+      if (skip.has(i)) { if (actual.length) runs.push(actual); actual = []; continue; }
+      actual.push(i);
+    }
+    if (actual.length) runs.push(actual);
+    return runs;
+  };
+  const pathDeRun = (run) => `M ${richPoints[run[0] * richFactor].x} ${richPoints[run[0] * richFactor].y}` +
+    run.map((i) => richSegments.slice(i * richFactor, (i + 1) * richFactor).map((s) => s.slice(s.indexOf(' C'))).join('')).join('');
   const activeIndex = opts.activeIndex;
   const DASH = '6 11';
   if (activeIndex == null) {
@@ -257,7 +312,9 @@ function drawCurve(wrap, opts = {}) {
     // línea sólida vieja sin guiones, que se veía como un bug/diseño
     // distinto al resto. Mismo punteado tenue que el tramo "todavía no
     // llegado", nada más -- consistente siempre, haya o no comida activa.
-    svg.innerHTML = `<path d="${fullD}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round" stroke-dasharray="${DASH}"/>`;
+    const todosIdx = Array.from({ length: points.length - 1 }, (_, i) => i);
+    const html = runsDe(todosIdx).map((run) => `<path d="${pathDeRun(run)}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round" stroke-dasharray="${DASH}"/>`).join('');
+    svg.innerHTML = html;
     return;
   }
   // Cada tramo se dibuja como su propio <path> (para poder colorear/animar
@@ -280,8 +337,11 @@ function drawCurve(wrap, opts = {}) {
   svg.removeChild(measure);
   let overlayHtml = '';
   // Tramos 0..activeIndex-1 conectan nodos ya completados -- sólidos, sin
-  // parpadeo. Solo el tramo (activeIndex-1 -> activeIndex) parpadea.
+  // parpadeo. Solo el tramo (activeIndex-1 -> activeIndex) parpadea. Si
+  // el tramo está en skipSegments (un banner divisor va justo ahí), no se
+  // dibuja nada -- ni color ni gris, un hueco real en la línea.
   for (let i = 0; i < activeIndex; i++) {
+    if (skip.has(i)) continue;
     const isUltimo = i === activeIndex - 1;
     overlayHtml += `<path class="${isUltimo ? 'path-progress' : ''}" d="${segments[i]}" fill="none" stroke="var(--primary)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${DASH}" stroke-dashoffset="${-offsets[i]}"/>`;
   }
@@ -294,11 +354,11 @@ function drawCurve(wrap, opts = {}) {
   // clipPath más abajo), la parte todavía no revelada debe verse como una
   // guía gris ya existente, exactamente con la misma curva -- no vacío.
   const inicioFuturo = Math.max(0, activeIndex - 1);
-  const futuroD = inicioFuturo < segments.length
-    ? `M ${points[inicioFuturo].x} ${points[inicioFuturo].y}` + segments.slice(inicioFuturo).map((s) => s.slice(s.indexOf(' C'))).join('')
-    : '';
+  const futuroIdx = [];
+  for (let i = inicioFuturo; i < segments.length; i++) futuroIdx.push(i);
+  const futuroHtml = runsDe(futuroIdx).map((run) => `<path d="${pathDeRun(run)}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round" stroke-dasharray="${DASH}"/>`).join('');
   svg.innerHTML = `
-    ${futuroD ? `<path d="${futuroD}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round" stroke-dasharray="${DASH}"/>` : ''}
+    ${futuroHtml}
     ${overlayHtml}
   `;
   const progressPath = svg.querySelector('.path-progress');

@@ -168,12 +168,38 @@ export function renderMission(container) {
   });
 }
 
-// Agrupa las semanas en tramos de 3 (como paradas de una expedición), cada
-// uno con su propio camino y un banner de checkpoint — reordena visualmente
-// las mismas 12 semanas reales, no inventa contenido nuevo.
+// Agrupa las semanas en tramos de 3 (como paradas de una expedición) SOLO
+// para los banners de checkpoint -- el camino en sí es UNO SOLO, continuo,
+// de las 12 semanas reales (pedido explícito: "debe ser una curva
+// completa, no cortada por semana"). Antes cada tramo tenía su propio
+// renderPathMap (su propia curva independiente, que se notaba cortada en
+// cada salto de tramo); ahora es una sola llamada con las 12, y los
+// banners se insertan DESPUÉS, como divisores visuales entre las filas ya
+// pintadas -- no parten el camino en pedazos.
 const TRAMO_SIZE = 3;
 function renderTramos(container, items) {
   container.innerHTML = '';
+  const camino = document.createElement('div');
+  container.appendChild(camino);
+  let activeIndex = items.findIndex((it) => it.now);
+  if (activeIndex !== -1 && items[activeIndex].done && activeIndex < items.length - 1) activeIndex += 1;
+  // skipSegments: el tramo justo donde va un banner divisor ("Tramo 2 ·
+  // Semanas 4-6", etc.) no debe tener línea -- ni color ni gris, un hueco
+  // real. Esos tramos son los que conectan el último nodo de un grupo de
+  // 3 con el primero del siguiente (índices TRAMO_SIZE-1, 2*TRAMO_SIZE-1...).
+  const skipSegments = [];
+  for (let i = TRAMO_SIZE; i < items.length; i += TRAMO_SIZE) skipSegments.push(i - 1);
+  renderPathMap(camino, items, { showLine: true, activeIndex: activeIndex === -1 ? undefined : activeIndex, rowGap: 40, skipSegments });
+  // Semana 8 (nodo 7) un poco más separada verticalmente de Semana 9 --
+  // pedido puntual, solo en la lista real de 12 semanas.
+  if (items.length === 12) {
+    const filaSemana8 = camino.querySelector('.path-row[data-row-idx="7"]');
+    if (filaSemana8) filaSemana8.style.marginBottom = '60px';
+  }
+  // Los banners se insertan ya con las filas en el DOM (renderPathMap
+  // arma su innerHTML de forma síncrona) -- antes de que corra el
+  // requestAnimationFrame que mide alturas y dibuja la curva, así esa
+  // medición ya incluye el espacio real que ocupan los banners.
   for (let i = 0; i < items.length; i += TRAMO_SIZE) {
     const grupo = items.slice(i, i + TRAMO_SIZE);
     const tramoN = i / TRAMO_SIZE + 1;
@@ -182,16 +208,8 @@ function renderTramos(container, items) {
     const banner = document.createElement('div');
     banner.className = 'tramo-banner' + (grupoCompleto ? ' done' : '');
     banner.innerHTML = `<span class="tramo-badge">${grupoCompleto ? '🏅' : tramoN}</span><span class="tramo-label">Tramo ${tramoN} · Semanas ${desde}-${hasta}</span>`;
-    container.appendChild(banner);
-    const sub = document.createElement('div');
-    container.appendChild(sub);
-    // Misma curva animada que "Tu ruta de hoy" y Plan de 7 días (ver
-    // curvaRepetida en pathMap.js) -- pedido explícito de que se vea
-    // exactamente igual acá también. El índice activo es LOCAL a este
-    // tramo de 3 semanas (grupo), no al listado completo de 12.
-    let activeIndex = grupo.findIndex((it) => it.now);
-    if (activeIndex !== -1 && grupo[activeIndex].done && activeIndex < grupo.length - 1) activeIndex += 1;
-    renderPathMap(sub, grupo, { showLine: true, activeIndex: activeIndex === -1 ? undefined : activeIndex, rowGap: 40 });
+    const filaInicio = camino.querySelector(`.path-row[data-row-idx="${i}"]`);
+    filaInicio.parentElement.insertBefore(banner, filaInicio);
   }
 }
 
