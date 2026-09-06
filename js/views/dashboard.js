@@ -8,7 +8,7 @@
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
-import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON } from '../app.js';
+import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON } from '../app.js';
 import { t } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
@@ -273,7 +273,7 @@ export function renderDashboard(container) {
       },
       extraHtml: `<div class="row mt" style="gap:2px">
         <button type="button" class="icon-btn plain swap-btn" title="${t('Cambiar receta')}" aria-label="${t('Cambiar receta')}">${REFRESH_ICON}</button>
-        <button type="button" class="icon-btn plain log-btn" style="margin-left:-12px" title="${registro ? t('Editar lo que comiste') : t('Comí algo diferente')}" aria-label="${registro ? t('Editar lo que comiste') : t('Registrar lo que comiste')}">${registro ? '✏️' : '📸'}</button>
+        <button type="button" class="icon-btn plain log-btn" style="margin-left:-12px;color:var(--primary-dark)" title="${registro ? t('Editar lo que comiste') : t('Comí algo diferente')}" aria-label="${registro ? t('Editar lo que comiste') : t('Registrar lo que comiste')}">${registro ? PENCIL_ICON : CAMERA_SOLID_ICON}</button>
       </div>`
     };
   });
@@ -506,18 +506,22 @@ const SEMAFORO_TEXTO = { verde: t('Apto para tu perfil'), amarillo: t('Modera es
 // "Analizar con SuSana" en una receta del CATÁLOGO no necesita IA -- el
 // semáforo ya salió de perfiles curados a mano (recipe.apto/moderar/
 // evitar), así que la respuesta ya está definida, no hay nada que
-// "pensar" ni tokens que gastar. Solo una receta propia sin esa
-// clasificación (ver más abajo) sí amerita mandarla a analizar de
-// verdad con la IA.
+// "pensar" ni tokens que gastar. El botón SIEMPRE lleva al chat de
+// SuSana (nunca se queda en una tarjeta dentro de la modal) -- para
+// catálogo, este mensaje se inyecta directo como si SuSana ya lo
+// hubiera dicho (instantMessage, sin llamar al servidor); solo una
+// receta sin esa clasificación (propia, fuera de catálogo) sí amerita
+// mandarla a analizar de verdad con la IA (ver el otro branch, más abajo).
 function analisisInstantaneo(light, recipe, user) {
   const perfilesMatch = recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => PROFILES[p].nombre);
+  const intro = `¡Hola! Ya miré "${recipe.nombre}" 🌿 `;
   if (light === 'verde') {
-    return `✅ ${t('Óptima para tu perfil')}${perfilesMatch.length ? ` — ${t('especialmente buena para')} ${perfilesMatch.join(', ')}.` : '.'} ${t('Puedes comerla con confianza.')}`;
+    return `${intro}Es una opción óptima para tu perfil${perfilesMatch.length ? `, especialmente buena para ${perfilesMatch.join(', ')}` : ''}. Puedes comerla con confianza. ¿Quieres que hablemos de algo más de tu día?`;
   }
   if (light === 'amarillo') {
-    return `🟡 ${t('Modérala')} — ${t('no es la mejor opción para tu perfil de salud, pero ocasionalmente está bien en una porción moderada.')}`;
+    return `${intro}Te recomiendo moderarla — no es la mejor opción para tu perfil de salud, pero ocasionalmente está bien en una porción moderada. ¿Te ayudo a buscar una alternativa mejor?`;
   }
-  return `🔴 ${t('Mejor evítala')} — ${t('no es recomendable para tu perfil de salud actual. Busca una alternativa más adecuada.')}`;
+  return `${intro}Mejor evítala si puedes — no es recomendable para tu perfil de salud actual. ¿Quieres que te sugiera una alternativa más adecuada?`;
 }
 
 // Semáforo horizontal de verdad (3 luces), no solo un punto -- con la
@@ -569,7 +573,6 @@ export function openRecipe(recipe, hoy = null) {
       </p>
       <p class="mt">${recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => `<span class="tag perfil">${PROFILES[p].nombre}</span>`).join(' ')}</p>
       <button type="button" class="btn-susana mt" id="rc-analizar-susana">${SPARKLE_ICON} ${t('Analizar con SuSana')}</button>
-      <p class="small mt" id="rc-analisis-instantaneo" hidden style="background:var(--modal-bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px"></p>
       ${hoy ? `<div class="row mt" style="gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--modal-bg);border:1px solid var(--border);border-radius:14px">
         <span class="small" id="rc-check-label">${registradoAhora ? t('¡Comiste esto! Toca para deshacer') : t('¿Comiste esto?')}</span>
         <button type="button" class="meal-check${registradoAhora ? ' done' : ''}" id="rc-check-toggle" aria-label="${t('Marcar como comido')}">${registradoAhora ? '✓' : ''}</button>
@@ -588,7 +591,7 @@ export function openRecipe(recipe, hoy = null) {
     const ingsWrap = modal.querySelector('#rc-ingredientes');
     function pintarIngredientes() {
       ingsWrap.innerHTML = ingredientesTexto.map((texto, i) => `
-        <div class="row ingredient-row" data-idx="${i}" style="gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div class="row ingredient-row" data-idx="${i}" style="gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--border)">
           <span class="ing-text" style="flex:1;min-width:0">${esc(texto)}</span>
           <button type="button" class="icon-btn plain ing-edit" data-idx="${i}" aria-label="${t('Editar ingrediente')}">${PENCIL_ICON}</button>
         </div>`).join('');
@@ -613,18 +616,20 @@ export function openRecipe(recipe, hoy = null) {
     }
     pintarIngredientes();
     modal.querySelector('#rc-analizar-susana').addEventListener('click', () => {
-      // Catálogo (recipe.apto/moderar/evitar ya definidos a mano) = el
-      // semáforo ya ES el análisis, respuesta instantánea sin gastar IA.
-      // Solo una receta SIN esa clasificación (propia, sin catálogo)
-      // amerita mandarla de verdad a SuSana -- ahí sí hace falta que la
-      // IA razone y le asigne un color de semáforo según el perfil.
+      closeFn();
+      // El botón SIEMPRE lleva al chat de SuSana -- el usuario debe
+      // sentir que la IA analizó su elección ahí, no en una tarjeta
+      // suelta dentro de la modal (eso nunca se pidió). Catálogo
+      // (recipe.apto/moderar/evitar ya definidos a mano) = el semáforo
+      // ya ES el análisis: se inyecta como mensaje de SuSana sin gastar
+      // IA de verdad. Solo una receta SIN esa clasificación (propia,
+      // fuera de catálogo) amerita mandarla a analizar de verdad --
+      // info fresca, recién pensada por la IA, incluida la clasificación
+      // de semáforo que le correspondería.
       if (Array.isArray(recipe.apto)) {
-        const caja = modal.querySelector('#rc-analisis-instantaneo');
-        caja.textContent = analisisInstantaneo(light, recipe, user);
-        caja.hidden = false;
+        navigate('assistant', { instantMessage: analisisInstantaneo(light, recipe, user) });
         return;
       }
-      closeFn();
       // El chat de SuSana es texto plano, no tarjetas como el "Fitia
       // Coach" de referencia -- para que la respuesta quede igual de
       // organizada (sin poder renderizar negritas/barras), se le pide

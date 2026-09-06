@@ -3,7 +3,7 @@
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, eliminarMemoria, MEMORIA_MAX } from '../store.js';
 import { fetchGuideHistory, askGuide, listGuideConversations, newGuideConversation } from '../supabase-client.js';
-import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON } from '../app.js';
+import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
 
 // Ícono de menú hamburguesa -- 3 líneas simples, mismo lenguaje visual
@@ -126,10 +126,32 @@ export function renderAssistant(container, params = {}) {
   // historial se pinta completo y de una vez, y loadHistory() salta sin
   // animación al final; solo un mensaje nuevo de verdad (send()) se
   // desplaza con scroll suave.
+  // Pulgar arriba/abajo bajo cada respuesta de SuSana (referencia real:
+  // Fitia Coach) -- solo feedback local por ahora (resalta el elegido +
+  // agradece), sin guardarlo en el servidor todavía.
+  function agregarFeedback(bubble) {
+    const fila = document.createElement('div');
+    fila.className = 'chat-feedback';
+    fila.innerHTML = `
+      <button type="button" class="chat-feedback-btn" data-val="up" aria-label="Buena respuesta">${THUMBS_UP_ICON}</button>
+      <button type="button" class="chat-feedback-btn" data-val="down" aria-label="Mala respuesta">${THUMBS_DOWN_ICON}</button>`;
+    fila.querySelectorAll('.chat-feedback-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        fila.querySelectorAll('.chat-feedback-btn').forEach((b2) => b2.classList.remove('elegido'));
+        btn.classList.add('elegido');
+        toast('Gracias por tu opinión');
+      });
+    });
+    bubble.appendChild(fila);
+  }
+
   function addBubble(role, text, { scroll = true } = {}) {
     const b = document.createElement('div');
     b.className = `chat-msg ${role}`;
-    b.textContent = text;
+    const textEl = document.createElement('div');
+    textEl.textContent = text;
+    b.appendChild(textEl);
+    if (role === 'assistant') agregarFeedback(b);
     log.appendChild(b);
     if (scroll) scrollToView(b);
     return b;
@@ -243,13 +265,20 @@ export function renderAssistant(container, params = {}) {
   });
 
   // "Analizar con SuSana" (botón en la modal de receta, ver dashboard.js)
-  // llega hasta acá con `params.prefill` -- se espera a que cargue el
-  // historial real (para seguir la MISMA conversación, no abrir una
-  // nueva cada vez que se analiza una receta) y recién ahí se manda.
+  // llega hasta acá de dos formas -- se espera a que cargue el historial
+  // real (para seguir la MISMA conversación, no abrir una nueva cada vez
+  // que se analiza una receta) y recién ahí se actúa:
+  // - params.prefill: una receta que SÍ amerita un análisis real (fuera
+  //   del catálogo) -- se manda a la IA de verdad, info fresca.
+  // - params.instantMessage: una receta del catálogo, cuyo semáforo ya
+  //   ES el análisis (curado a mano) -- se pinta directo como si SuSana
+  //   ya lo hubiera dicho, sin gastar una llamada a la IA.
   loadHistory().then(() => {
     if (params.prefill) {
       input.value = params.prefill;
       send();
+    } else if (params.instantMessage) {
+      addBubble('assistant', params.instantMessage);
     }
   });
 }
