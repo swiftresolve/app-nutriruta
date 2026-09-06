@@ -2,7 +2,7 @@
 import { getState, setState, esc, today, calcularIMC } from '../store.js';
 import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
-import { navigate, openModal, toast } from '../app.js';
+import { navigate, openModal, toast, susanaName } from '../app.js';
 import { rutiMascot } from '../mascot.js';
 import { validarCodigoReferido } from '../supabase-client.js';
 
@@ -348,7 +348,7 @@ export function renderQuiz(container) {
       // preseleccionado igual que en Ajustes, no en blanco: es una
       // preferencia de estilo con un valor por defecto real, no una
       // respuesta que deba forzarse a elegir desde cero.
-      title: '¿Cómo quieres que te hable SuSana?',
+      title: `¿Cómo quieres que te hable ${susanaName()}?`,
       sub: 'Nunca usa culpa ni regaños, solo cambia el estilo. Puedes cambiarlo cuando quieras.',
       render: (el, onChange) => chips(el, SUSANA_TONOS, answers, false, 'tonoSusana', true, onChange)
     },
@@ -356,7 +356,7 @@ export function renderQuiz(container) {
       // agrega aquí también, al final, como la última pregunta libre del
       // quiz, para no obligar a nadie a ir a buscarlo después.
       title: '¿Hay algo más que debamos saber? (opcional)',
-      sub: 'Se lo sumamos al contexto que ya tiene SuSana sobre ti, nunca lo reemplaza.',
+      sub: `Se lo sumamos al contexto que ya tiene ${susanaName()} sobre ti, nunca lo reemplaza.`,
       render(el) {
         const max = 300;
         el.innerHTML = `

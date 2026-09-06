@@ -9,6 +9,7 @@
 // distinta a NutriRuta frente a otras apps -- no solo dónde tocar. Solo
 // se muestra una vez, a cuentas nuevas.
 import { getState, setState } from '../store.js';
+import { susanaName } from '../app.js';
 
 // target: null = "slide" centrada sin spotlight (bienvenida/cierre,
 // conceptos que no viven en un solo elemento de la pantalla).
@@ -33,7 +34,7 @@ function crearPasos(sexo) {
   },
   {
     target: '#hs-nutricoins', titulo: '🪙 NutriCoins',
-    texto: 'A diferencia de las gemas, estos sí se compran con dinero real -- para extras puntuales (como preguntas de más a SuSana). Nunca reemplazan tu constancia ni compran Pausas de Ruta.'
+    texto: `A diferencia de las gemas, estos sí se compran con dinero real -- para extras puntuales (como preguntas de más a ${susanaName()}). Nunca reemplazan tu constancia ni compran Pausas de Ruta.`
   },
   {
     target: '#hs-escudos', titulo: '🛡️ Pausas de Ruta',
@@ -68,7 +69,7 @@ function crearPasos(sexo) {
     texto: 'Compite en gemas cada semana con otras personas de tu mismo nivel. Sube de liga con constancia -- nunca comprando nada.'
   },
   {
-    target: '[data-route="assistant"]', titulo: '💬 SuSana',
+    target: '[data-route="assistant"]', titulo: `💬 ${susanaName()}`,
     texto: 'Tu guía con IA: conoce tu perfil real y te habla en el tono que tú elijas. Parte del plan Premium.'
   },
   {

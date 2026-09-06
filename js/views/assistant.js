@@ -3,7 +3,7 @@
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, eliminarMemoria, MEMORIA_MAX } from '../store.js';
 import { fetchGuideHistory, askGuide, listGuideConversations, newGuideConversation } from '../supabase-client.js';
-import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON } from '../app.js';
+import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON, THUMBS_UP_SOLID_ICON, THUMBS_DOWN_SOLID_ICON, ARROW_UP_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
 
 // Ícono de menú hamburguesa -- 3 líneas simples, mismo lenguaje visual
@@ -87,15 +87,15 @@ export function renderAssistant(container, params = {}) {
   // -- llena siempre el espacio real hasta justo arriba del input, esté
   // vacía, cargando o llena de mensajes.
   const chatCard = document.createElement('div');
-  chatCard.className = 'card chat-card';
+  chatCard.className = 'chat-card';
   chatCard.innerHTML = '<div class="chat-log" id="chatLog"></div>';
   container.appendChild(chatCard);
 
   const inputRow = document.createElement('div');
   inputRow.className = 'chat-input-row';
   inputRow.innerHTML = `
-    <textarea id="chatInput" rows="1" maxlength="600" placeholder="Escribe tu pregunta…"></textarea>
-    <button class="btn accent" id="chatSend" aria-label="Enviar">➤</button>`;
+    <textarea id="chatInput" rows="1" maxlength="600" placeholder="Habla con SuSana..."></textarea>
+    <button class="btn accent" id="chatSend" aria-label="Enviar">${ARROW_UP_ICON}</button>`;
   container.appendChild(inputRow);
 
   const log = chatCard.querySelector('#chatLog');
@@ -135,10 +135,18 @@ export function renderAssistant(container, params = {}) {
     fila.innerHTML = `
       <button type="button" class="chat-feedback-btn" data-val="up" aria-label="Buena respuesta">${THUMBS_UP_ICON}</button>
       <button type="button" class="chat-feedback-btn" data-val="down" aria-label="Mala respuesta">${THUMBS_DOWN_ICON}</button>`;
+    const ICONOS = { up: [THUMBS_UP_ICON, THUMBS_UP_SOLID_ICON], down: [THUMBS_DOWN_ICON, THUMBS_DOWN_SOLID_ICON] };
     fila.querySelectorAll('.chat-feedback-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        fila.querySelectorAll('.chat-feedback-btn').forEach((b2) => b2.classList.remove('elegido'));
+        fila.querySelectorAll('.chat-feedback-btn').forEach((b2) => {
+          b2.classList.remove('elegido');
+          b2.innerHTML = ICONOS[b2.dataset.val][0];
+        });
         btn.classList.add('elegido');
+        // El pulgar elegido se rellena de verdad (ícono sólido, no solo
+        // un cambio de color sobre el mismo trazo) -- referencia real de
+        // Fitia Coach.
+        btn.innerHTML = ICONOS[btn.dataset.val][1];
         toast('Gracias por tu opinión');
       });
     });
@@ -410,7 +418,7 @@ function abrirPersonalizarSuSana() {
           <span class="setting-row-chevron">›</span>
         </button>
         <div class="mt" style="border-top:1px solid var(--border);padding-top:12px">
-          <label class="small" style="font-weight:600">Algo de contexto para SuSana</label>
+          <label class="small" style="font-weight:600">Algo de contexto para ${susanaName()}</label>
           <p class="small muted" style="margin-top:2px">Ej. "no hago ejercicio hace meses" o "estoy en un momento de mucho estrés". Se suma a tu perfil de siempre, nunca lo reemplaza.</p>
           <textarea id="pz-contexto" class="auth-input" rows="2" maxlength="${CONTEXTO_MAX}" placeholder="Escribe aquí…" style="margin-top:6px">${esc(user.contextoSusana || '')}</textarea>
           <div class="row" style="justify-content:space-between;margin-top:6px">
@@ -547,8 +555,8 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
           }
           const row = document.createElement('button');
           row.type = 'button';
-          row.className = 'habit selector-opcion' + (c.conversation_id === conversationIdActual ? ' selected' : '');
-          row.innerHTML = `<label style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.title.slice(0, 60))}</label>`;
+          row.className = 'hist-row' + (c.conversation_id === conversationIdActual ? ' selected' : '');
+          row.textContent = c.title.slice(0, 60);
           row.addEventListener('click', () => { closeFn(); onElegir(c.conversation_id); });
           cont.appendChild(row);
         }
