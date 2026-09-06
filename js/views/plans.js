@@ -26,7 +26,14 @@ const FREE_FEATURES = [
   '🎯 Semana 1 de la Misión (prueba)'
 ];
 
-const PREMIUM_FEATURES = [
+// Función, no un array fijo -- app.js importa este módulo y este módulo
+// importa CART_ICON de app.js (import circular). Si CART_ICON se lee al
+// cargar el módulo (en un array a nivel de módulo), todavía no existe --
+// app.js no ha terminado de definirlo en ese punto -- y tira
+// "Cannot access 'CART_ICON' before initialization", tumbando toda la
+// app en el splash. Adentro de una función, CART_ICON recién se lee
+// cuando de verdad se llama (mucho después, ya con todo cargado).
+const premiumFeatures = () => [
   '🎯 Misión 12 semanas completa',
   '🥗 Recetario completo (el plan gratis ve una selección)',
   `${CART_ICON} Lista de compras automática`,
@@ -73,7 +80,7 @@ export function renderPlans(container) {
     <h3>✨ Premium</h3>
     <div class="plan-options mt" id="plan-options"></div>
     <p class="small mt" style="font-weight:700">Todo lo que desbloqueas:</p>
-    <ul class="steps check small mt">${PREMIUM_FEATURES.map((f) => `<li>${f}</li>`).join('')}</ul>
+    <ul class="steps check small mt">${premiumFeatures().map((f) => `<li>${f}</li>`).join('')}</ul>
     <button class="btn accent full mt" id="plan-elegir"></button>
     <div class="plan-guarantees mt">
       <div class="pg-item">✅ Cancelas cuando quieras desde Hotmart</div>
