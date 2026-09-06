@@ -5,7 +5,7 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast, REFRESH_ICON } from '../app.js';
@@ -265,12 +265,15 @@ export function renderDashboard(container) {
         const rachaAntes = getState().racha.actual;
         const { escudoUsado } = registrarComidaSeguida(recipe.id) || {};
         celebrarSiSubioRacha(rachaAntes, escudoUsado);
-        openRecipe(recipe);
+        // El semáforo y el botón de "Comí esto" viven DENTRO de la modal
+        // ahora (ver openRecipe) -- la fila de afuera se veía sobrecargada
+        // con 4 señales a la vez, y el punto de color solo no se entendía
+        // como semáforo sin más contexto.
+        openRecipe(recipe, { mealId: meal.id, registro, onRegistrado: () => renderDashboard(clearAndGet(container)) });
       },
       extraHtml: `<div class="row mt" style="gap:2px">
-        <span class="dot ${light}"></span>
         <button type="button" class="icon-btn plain swap-btn" title="${t('Cambiar receta')}" aria-label="${t('Cambiar receta')}">${REFRESH_ICON}</button>
-        <button type="button" class="icon-btn plain log-btn" style="margin-left:-12px" title="${registro ? t('Editar lo que comiste') : t('¿Qué comiste realmente?')}" aria-label="${registro ? t('Editar lo que comiste') : t('Registrar lo que comiste')}">${registro ? '✏️' : '📸'}</button>
+        <button type="button" class="icon-btn plain log-btn" style="margin-left:-12px" title="${registro ? t('Editar lo que comiste') : t('Comí algo diferente')}" aria-label="${registro ? t('Editar lo que comiste') : t('Registrar lo que comiste')}">${registro ? '✏️' : '📸'}</button>
       </div>`
     };
   });
@@ -494,10 +497,37 @@ function pedirReflexionHabitos(onConfirm) {
   });
 }
 
-// Detalle de receta en modal (compartido conceptualmente con planner).
-export function openRecipe(recipe) {
+// Semáforo con texto, no solo el punto de color -- dentro de "Tu ruta de
+// hoy" el punto solo (sin la palabra "Semáforo" al lado, que sí tenía la
+// versión anterior de esta modal) no se entendía como semáforo. Frases
+// cortas y claras por color, mismo criterio en las 3.
+const SEMAFORO_TEXTO = { verde: t('Apto para tu perfil'), amarillo: t('Modera esto'), rojo: t('Evita esto') };
+
+// Semáforo horizontal de verdad (3 luces), no solo un punto -- con la
+// luz que corresponde encendida a color completo y las otras dos
+// apagadas, pero SIN perder su color (rojo/amarillo/verde opacos, no
+// gris) -- así se entiende que es un semáforo real, no solo un punto
+// resaltado. Al lado de la etiqueta de texto, nunca reemplazándola.
+function semaforoIcon(light) {
+  const color = { rojo: 'var(--red)', amarillo: 'var(--yellow)', verde: 'var(--green)' };
+  const opacidad = (c) => c === light ? '1' : '0.25';
+  return `<svg width="44" height="16" viewBox="0 0 44 16" aria-hidden="true" style="display:block;flex:none">
+    <circle cx="8" cy="8" r="6" fill="${color.rojo}" fill-opacity="${opacidad('rojo')}"/>
+    <circle cx="22" cy="8" r="6" fill="${color.amarillo}" fill-opacity="${opacidad('amarillo')}"/>
+    <circle cx="36" cy="8" r="6" fill="${color.verde}" fill-opacity="${opacidad('verde')}"/>
+  </svg>`;
+}
+
+// Detalle de receta en modal (compartido con planner/SOS/Plan 7 días/
+// buscador de despensa). El segundo parámetro `hoy` es opcional y solo lo
+// pasa "Tu ruta de hoy" (dashboard.js): agrega el semáforo con su
+// etiqueta y el botón de "Comí esto" -- de otro modo (recetario, SOS,
+// etc.) esta misma modal se ve exactamente igual que antes, sin esa
+// sección, porque "marcar como comido HOY" solo tiene sentido para una
+// comida real del día, no para cualquier receta que se está mirando.
+export function openRecipe(recipe, hoy = null) {
   const { user } = getState();
-  openModal((modal) => {
+  openModal((modal, closeFn) => {
     const light = trafficLight(recipe, user.perfiles);
     const shown = displayRecipe(recipe, user.exclusiones);
     const ings = recipe.ingredientes.map((ing) => {
@@ -505,14 +535,35 @@ export function openRecipe(recipe) {
       const texto = (d.cantidad != null && d.resto) ? textoConCantidad(d.cantidad, d.resto, user.unidades) : d.texto;
       return `<div class="ingredient">• ${texto}${d.sustituido ? ` <span class="sub-note">(${t('sustituto de')} ${d.original})</span>` : ''}</div>`;
     }).join('');
+    let registradoAhora = !!hoy?.registro;
     modal.insertAdjacentHTML('beforeend', `
       <div style="font-size:2.4rem">${shown.emoji}</div>
       <h2>${shown.nombre}</h2>
       <p class="small">${recipe.descripcion}</p>
-      <p class="mt"><span class="tag ${light}">${t('Semáforo')}: ${light}</span>
-        ${recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => `<span class="tag perfil">${PROFILES[p].nombre}</span>`).join(' ')}</p>
+      <p class="row mt" style="gap:8px;align-items:center">
+        ${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span>
+      </p>
+      <p class="mt">${recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => `<span class="tag perfil">${PROFILES[p].nombre}</span>`).join(' ')}</p>
+      ${hoy ? `<div class="row mt" style="gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--modal-bg);border:1px solid var(--border);border-radius:14px">
+        <span class="small" id="rc-check-label">${registradoAhora ? t('¡Comiste esto! Toca para deshacer') : t('¿Comiste esto?')}</span>
+        <button type="button" class="meal-check${registradoAhora ? ' done' : ''}" id="rc-check-toggle" aria-label="${t('Marcar como comido')}">${registradoAhora ? '✓' : ''}</button>
+      </div>
+      <p class="small muted center mt">${t('¿Comiste algo diferente? Usa el ícono de cámara en Tu ruta de hoy.')}</p>` : ''}
       <h3 class="mt">${t('Ingredientes')}</h3>${ings}
       <h3 class="mt">${t('Preparación')}</h3>
       <ol class="steps">${recipe.pasos.map((p) => `<li>${p}</li>`).join('')}</ol>`);
+    if (hoy) {
+      const toggleBtn = modal.querySelector('#rc-check-toggle');
+      const label = modal.querySelector('#rc-check-label');
+      toggleBtn.addEventListener('click', () => {
+        registradoAhora = !registradoAhora;
+        if (registradoAhora) guardarComidaRegistrada(hoy.mealId, [shown.nombre], 'sugerencia');
+        else borrarComidaRegistrada(hoy.mealId);
+        toggleBtn.classList.toggle('done', registradoAhora);
+        toggleBtn.textContent = registradoAhora ? '✓' : '';
+        label.textContent = registradoAhora ? t('¡Comiste esto! Toca para deshacer') : t('¿Comiste esto?');
+        hoy.onRegistrado?.();
+      });
+    }
   });
 }

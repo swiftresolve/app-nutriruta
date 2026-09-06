@@ -475,6 +475,15 @@ export function guardarComidaRegistrada(mealId, alimentos, fuente, dateStr = tod
   return registro;
 }
 
+// Para el círculo togglable de "Comí esto" en Tu ruta de hoy -- a
+// diferencia de editar (que reemplaza el registro), esto lo quita del
+// todo, dejando la comida sin registrar otra vez.
+export function borrarComidaRegistrada(mealId, dateStr = today()) {
+  const clave = claveComida(mealId, dateStr);
+  const { [clave]: _quitado, ...resto } = state.comidasRegistradas;
+  setState({ comidasRegistradas: resto });
+}
+
 // Registros de los últimos `dias` días con foto, agrupados por fecha y
 // ordenados del más reciente al más antiguo — lo que alimenta "Mi Diario".
 export function diasConDiario(dias = 14) {
