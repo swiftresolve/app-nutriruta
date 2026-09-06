@@ -233,14 +233,17 @@ function drawCurve(wrap, opts = {}) {
     const isUltimo = i === activeIndex - 1;
     overlayHtml += `<path class="${isUltimo ? 'path-progress' : ''}" d="${segments[i]}" fill="none" stroke="var(--primary)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${DASH}" stroke-dashoffset="${-offsets[i]}"/>`;
   }
-  // El fondo tenue solo cubre los tramos que el color de arriba NO tapa
-  // (de activeIndex en adelante) -- antes se dibujaba de punta a punta,
-  // por DEBAJO del trazo de color, y como los dos no coinciden pixel a
-  // pixel (distinto grosor/transición de opacidad) se asomaba una segunda
-  // línea gris detrás del color, un "doble trazo" feo. Sin superposición,
-  // no hay nada que se asome.
-  const futuroD = activeIndex < segments.length
-    ? `M ${points[activeIndex].x} ${points[activeIndex].y}` + segments.slice(activeIndex).map((s) => s.slice(s.indexOf(' C'))).join('')
+  // El fondo tenue cubre los tramos futuros Y el tramo activo (el que se
+  // está dibujando ahora) -- para los tramos YA completados (sólidos,
+  // quietos) no lleva nada debajo, porque esos quedan 100% tapados por el
+  // color y duplicar la línea ahí solo se asoma como un doble trazo feo
+  // (bug real, ya corregido antes). Pero el tramo activo SÍ necesita el
+  // gris debajo: mientras el color se revela punto por punto (ver el
+  // clipPath más abajo), la parte todavía no revelada debe verse como una
+  // guía gris ya existente, exactamente con la misma curva -- no vacío.
+  const inicioFuturo = Math.max(0, activeIndex - 1);
+  const futuroD = inicioFuturo < segments.length
+    ? `M ${points[inicioFuturo].x} ${points[inicioFuturo].y}` + segments.slice(inicioFuturo).map((s) => s.slice(s.indexOf(' C'))).join('')
     : '';
   svg.innerHTML = `
     ${futuroD ? `<path d="${futuroD}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round" stroke-dasharray="${DASH}"/>` : ''}
@@ -268,12 +271,21 @@ function drawCurve(wrap, opts = {}) {
       progressPath.style.animation = 'path-progress-pulse 2.2s ease-in-out infinite';
     } else {
       const rect = svg.querySelector('.path-draw-rect');
-      const DIBUJAR_MS = 3200, PAUSA_MS = 700;
+      const DIBUJAR_MS = 2900;
+      // Nunca llega al 100% antes de reiniciar -- cualquier trazo que
+      // "llega a su destino y se detiene" se siente como una llegada, sin
+      // importar qué tan preciso sea el reinicio (ya se afinó todo lo que
+      // se podía afinar ahí y seguía sintiéndose igual). En vez de eso,
+      // se dibuja hasta el 93% y ahí mismo reinicia -- nunca se ve
+      // "completo y quieto", siempre está en movimiento.
+      const FRACCION = 0.93;
+      const alturaObjetivo = fullH * FRACCION;
+      const duracion = Math.round(DIBUJAR_MS * FRACCION);
       // Nunca se ve "retrocediendo" (el trazo encogiéndose de vuelta) --
       // eso se leía como que se estaba borrando. En vez de eso, al
-      // terminar la pausa el rect se resetea a 0 SIN transición (invisible
-      // de un frame a otro) y arranca a dibujarse de nuevo desde cero,
-      // como si volviera a empezar, no como si se deshiciera.
+      // terminar se resetea a 0 SIN transición (invisible de un frame a
+      // otro) y arranca a dibujarse de nuevo desde cero, como si volviera
+      // a empezar, no como si se deshiciera.
       const ciclo = () => {
         rect.style.transition = 'none';
         rect.setAttribute('height', '0');
@@ -282,12 +294,22 @@ function drawCurve(wrap, opts = {}) {
         // directo al final en vez de animar desde 0.
         rect.getBoundingClientRect();
         requestAnimationFrame(() => {
-          rect.style.transition = `height ${DIBUJAR_MS}ms cubic-bezier(.4,0,.2,1)`;
-          rect.setAttribute('height', String(fullH));
+          // "linear" a propósito -- con desaceleración al final (la curva
+          // de antes) el último tramo se sentía como que "frenaba" justo
+          // al llegar al nodo activo, como una pausa antes de reiniciar.
+          rect.style.transition = `height ${duracion}ms linear`;
+          rect.setAttribute('height', String(alturaObjetivo));
         });
       };
+      // "transitionend" en vez de un setInterval con la misma duración --
+      // un temporizador aparte nunca cae exactamente en el instante real
+      // en que el navegador termina de pintar la transición (deriva por
+      // el propio reflow/composición), y esa diferencia de unos cuantos
+      // milisegundos se sentía como una pausa antes de reiniciar. Con el
+      // evento real del navegador, el reinicio se dispara en el mismo
+      // instante en que el trazo termina, sin espera de más.
+      rect.addEventListener('transitionend', ciclo);
       ciclo();
-      setInterval(ciclo, DIBUJAR_MS + PAUSA_MS);
     }
   }
 }
