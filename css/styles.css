@@ -1263,7 +1263,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .modal-backdrop.drawer-izq { justify-content: flex-start; padding: 0; }
 .modal-backdrop.drawer-izq .modal {
   width: 84%; max-width: 340px; height: 100%; max-height: none;
-  border-radius: 0 20px 20px 0; overflow-y: auto;
+  border-radius: 0; overflow-y: auto;
   animation: drawer-slide-in 0.25s cubic-bezier(.32,1,.64,1);
 }
 @keyframes drawer-slide-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
@@ -1916,7 +1916,11 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   padding: 13px 10px; border-radius: 12px; font-size: 0.94rem; color: var(--ink);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.hist-row.selected { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+/* var(--primary-soft)/var(--primary-dark), NO var(--accent) -- el accent
+   es coral/rojizo (se usa para CTAs), y una conversación "seleccionada"
+   no es una acción destructiva ni de alerta. Mismo patrón que ya usan
+   .filtro-select.selected y .plan-option.selected en el resto de la app. */
+.hist-row.selected { background: var(--primary-soft); color: var(--primary-dark); font-weight: 700; }
 .chat-divider::before, .chat-divider::after { content: ''; flex: 1; height: 1px; background: var(--primary-soft); }
 .chat-divider span { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--primary-dark); white-space: nowrap; }
 /* position: fixed en vez de sticky -- en móvil, sticky "salta" cuando la

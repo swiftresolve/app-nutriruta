@@ -12,19 +12,20 @@ import { SUSANA_TONOS } from '../data/susanaTonos.js';
 const MENU_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`;
 
 const CONTEXTO_MAX = 300;
-// Caché local de la última conversación abierta -- sin esto, cada vez que
-// se entraba al chat se veía "Cargando…" con el chat vacío por un
-// instante mientras llegaba la respuesta del servidor, aunque fuera
-// exactamente la misma conversación de la última vez. Se pinta la
-// versión guardada de inmediato (sin animación ni parpadeo) y de fondo
-// se pide la versión real al servidor, que solo reemplaza el contenido
-// si de verdad cambió algo (mensaje nuevo desde otro dispositivo, etc).
-const CACHE_KEY = 'nutriruta-susana-chat-cache';
-function leerCache() {
-  try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch { return null; }
+// Caché local SOLO de la lista de conversaciones del historial (drawer) --
+// sin esto, cada vez que se abría el historial se veía "Cargando…" un
+// instante aunque fuera exactamente la misma lista de la última vez. Se
+// pinta la versión guardada de inmediato y de fondo se pide la real, que
+// reemplaza la lista si algo cambió (ver abrirHistorialSuSana).
+// NO existe una caché equivalente para "reanudar" el último chat al abrir
+// SuSana -- se quitó a propósito: abrir SuSana debe empezar SIEMPRE una
+// conversación nueva, nunca la última guardada (pedido explícito).
+const HIST_CACHE_KEY = 'nutriruta-susana-hist-cache';
+function leerHistCache() {
+  try { return JSON.parse(localStorage.getItem(HIST_CACHE_KEY) || 'null'); } catch { return null; }
 }
-function guardarCache(conversationId, history, usedCount) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ conversationId, history, usedCount })); } catch { /* localStorage lleno o bloqueado, no es crítico */ }
+function guardarHistCache(conversations) {
+  try { localStorage.setItem(HIST_CACHE_KEY, JSON.stringify(conversations)); } catch { /* localStorage lleno o bloqueado, no es crítico */ }
 }
 
 export function renderAssistant(container, params = {}) {
@@ -65,14 +66,15 @@ export function renderAssistant(container, params = {}) {
   chatHeader.querySelector('#chatHistorial').addEventListener('click', () => {
     abrirHistorialSuSana(conversationId, {
       onElegir: (id) => loadHistory(id),
-      onNueva: async () => {
-        const nueva = await newGuideConversation();
-        conversationId = nueva;
+      // Sin llamar al servidor por un id todavía -- si nunca se manda un
+      // mensaje, esta conversación no debe existir en el historial real
+      // (askGuide ya genera su propio id cuando conversationId es null,
+      // ver ai-assistant/index.ts).
+      onNueva: () => {
+        conversationId = null;
         log.innerHTML = '';
         addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`);
-        setQuota(0);
         ultimaFirma = null;
-        guardarCache(nueva, [], 0);
       }
     });
   });
@@ -223,11 +225,10 @@ export function renderAssistant(container, params = {}) {
     quotaEl.textContent = 'Con el contexto de tu salud 🌿';
   }
 
-  // Pinta un historial ya resuelto (de caché o del servidor) en el chat.
-  // No toca el log si el contenido es exactamente el mismo que ya se ve
-  // -- evita un re-render/salto de scroll innecesario cuando la
-  // respuesta real del servidor llega y resulta ser igual a la caché que
-  // ya se había pintado al instante.
+  // Pinta un historial ya resuelto (del servidor) en el chat -- usado al
+  // elegir una conversación vieja desde "Historial". No toca el log si el
+  // contenido es exactamente el mismo que ya se ve, para evitar un
+  // re-render/salto de scroll innecesario si se llama dos veces seguidas.
   let ultimaFirma = null;
   function pintarHistorial(idConv, history, usedCount) {
     const firma = `${idConv}:${history.length}:${history[history.length - 1]?.content ?? ''}`;
@@ -245,17 +246,10 @@ export function renderAssistant(container, params = {}) {
     ultimo?.scrollIntoView({ block: 'end' });
   }
 
-  // Caché local: se pinta de inmediato si existe, sin esperar al
-  // servidor -- así la pantalla nunca abre vacía con "Cargando…" cuando
-  // ya se sabe cómo se ve la conversación.
-  const cache = leerCache();
-  if (cache) pintarHistorial(cache.conversationId, cache.history || [], cache.usedCount ?? 0);
-
   async function loadHistory(idAAbrir) {
     try {
       const data = await fetchGuideHistory(idAAbrir);
       pintarHistorial(data.conversationId, data.history, data.usedCount);
-      guardarCache(data.conversationId, data.history, data.usedCount);
     } catch (e) {
       addBubble('system', 'No pudimos cargar tu historial. Revisa tu conexión.', { scroll: false });
     }
@@ -294,10 +288,6 @@ export function renderAssistant(container, params = {}) {
       scrollToView(reply);
       sendBtn.disabled = false;
       input.disabled = false;
-      // Actualiza la caché con el intercambio recién enviado -- silencioso,
-      // no vuelve a pintar nada porque la "firma" ya coincide con lo que
-      // se ve en pantalla (ver pintarHistorial).
-      loadHistory(conversationId);
     } catch (e) {
       typing.remove();
       if (e.code === 'premium_requerido') {
@@ -336,7 +326,6 @@ export function renderAssistant(container, params = {}) {
       scrollToView(bubble);
       sendBtn.disabled = false;
       input.disabled = false;
-      loadHistory(conversationId);
     } catch (e) {
       typing.remove();
       if (e.code === 'premium_requerido') {
@@ -374,7 +363,6 @@ export function renderAssistant(container, params = {}) {
       conversationId = nuevaId;
       ultimaFirma = null;
       log.innerHTML = '';
-      guardarCache(nuevaId, [], 0);
       setQuota();
       if (params.instantCard) {
         addCardBubble('assistant', renderAnalysisCard(params.instantCard.recetaNombre, params.instantCard));
@@ -383,12 +371,20 @@ export function renderAssistant(container, params = {}) {
       }
     });
   } else {
-    loadHistory().then(() => {
-      if (params.prefill) {
-        input.value = params.prefill;
-        send();
-      }
-    });
+    // Abrir SuSana desde el menú SIEMPRE empieza una conversación nueva --
+    // pedido explícito, antes reanudaba la última guardada. La anterior
+    // sigue disponible en "Historial", solo que ya no se abre sola. Sin
+    // esperar red para pintar el saludo -- conversationId se queda en
+    // null hasta que de verdad se manda un mensaje (askGuide genera su
+    // propio id cuando llega null, ver ai-assistant/index.ts), así que
+    // esta conversación nunca aparece en el historial real si nunca se
+    // le escribe nada.
+    addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`, { scroll: false });
+    setQuota();
+    if (params.prefill) {
+      input.value = params.prefill;
+      send();
+    }
   }
 }
 
@@ -522,47 +518,60 @@ function etiquetaFecha(fechaISO) {
 function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
   openModal((modal, closeFn) => {
     setTimeout(() => modal.parentElement?.classList.add('drawer-izq'), 0);
+    // Sin texto de "Cargando…" -- si hay una lista en caché se pinta de
+    // inmediato (ver abajo); si no, queda vacío hasta que llegue la real
+    // en vez de mostrar un mensaje que solo dura una fracción de segundo.
     modal.insertAdjacentHTML('beforeend', `
       <div class="spread">
         <h2>Historial de ${susanaName()}</h2>
         <button type="button" class="icon-btn plain" id="hist-nueva" aria-label="Nueva conversación">${PENCIL_ICON}</button>
       </div>
-      <div class="mt" id="hist-lista"><p class="small muted center">Cargando…</p></div>`);
+      <div class="mt" id="hist-lista"></div>`);
 
-    modal.querySelector('#hist-nueva').addEventListener('click', async () => {
+    modal.querySelector('#hist-nueva').addEventListener('click', () => {
       closeFn();
-      await onNueva();
+      onNueva();
     });
+
+    const cont = modal.querySelector('#hist-lista');
+    function pintarLista(conversations) {
+      if (!conversations.length) {
+        cont.innerHTML = '<p class="small muted center">Aún no tienes conversaciones.</p>';
+        return;
+      }
+      cont.innerHTML = '';
+      let grupoActual = null;
+      for (const c of conversations) {
+        const grupo = etiquetaFecha(c.updated_at);
+        if (grupo !== grupoActual) {
+          grupoActual = grupo;
+          const divider = document.createElement('p');
+          divider.className = 'small muted mt';
+          divider.style.fontWeight = '700';
+          divider.textContent = grupo;
+          cont.appendChild(divider);
+        }
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'hist-row' + (c.conversation_id === conversationIdActual ? ' selected' : '');
+        row.textContent = c.title.slice(0, 60);
+        row.addEventListener('click', () => { closeFn(); onElegir(c.conversation_id); });
+        cont.appendChild(row);
+      }
+    }
+
+    const cacheada = leerHistCache();
+    if (cacheada) pintarLista(cacheada);
 
     listGuideConversations()
       .then((conversations) => {
-        const cont = modal.querySelector('#hist-lista');
-        if (!conversations.length) {
-          cont.innerHTML = '<p class="small muted center">Aún no tienes conversaciones.</p>';
-          return;
-        }
-        cont.innerHTML = '';
-        let grupoActual = null;
-        for (const c of conversations) {
-          const grupo = etiquetaFecha(c.updated_at);
-          if (grupo !== grupoActual) {
-            grupoActual = grupo;
-            const divider = document.createElement('p');
-            divider.className = 'small muted mt';
-            divider.style.fontWeight = '700';
-            divider.textContent = grupo;
-            cont.appendChild(divider);
-          }
-          const row = document.createElement('button');
-          row.type = 'button';
-          row.className = 'hist-row' + (c.conversation_id === conversationIdActual ? ' selected' : '');
-          row.textContent = c.title.slice(0, 60);
-          row.addEventListener('click', () => { closeFn(); onElegir(c.conversation_id); });
-          cont.appendChild(row);
-        }
+        guardarHistCache(conversations);
+        pintarLista(conversations);
       })
       .catch(() => {
-        modal.querySelector('#hist-lista').innerHTML = '<p class="small muted center">No pudimos cargar tu historial.</p>';
+        // Si ya había algo en caché pintado, se deja tal cual en vez de
+        // taparlo con un error por un fallo puntual de red.
+        if (!cacheada) cont.innerHTML = '<p class="small muted center">No pudimos cargar tu historial.</p>';
       });
   });
 }
