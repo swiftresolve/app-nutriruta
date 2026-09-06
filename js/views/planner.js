@@ -2,7 +2,7 @@
 import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
-import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
+import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
 import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace } from '../supabase-client.js';
 import { openRecipe } from './dashboard.js';
 
@@ -315,6 +315,11 @@ export function renderPlanner(container, params = {}) {
     tabs.append(recetasTab, searchToggleBtn, comprasTab);
     // La búsqueda solo aplica al recetario, no a la lista de compras.
     searchToggleBtn.style.display = tab === 'recetas' ? '' : 'none';
+    // display:none en la columna del medio no basta para que esa
+    // columna "auto" colapse a 0 -- seguía reservando espacio y
+    // apretando las 2 pestañas (una de ellas terminaba truncada con
+    // "…"). Sin la lupa, la grilla pasa a 2 columnas parejas.
+    tabs.style.gridTemplateColumns = tab === 'recetas' ? '1fr auto 1fr' : '1fr 1fr';
     if (tab !== 'recetas') {
       mostrarBusqueda = false;
       searchOverlay.classList.add('hidden');
@@ -468,7 +473,7 @@ export function renderPlanner(container, params = {}) {
         </div>
         <div class="metodo-crear-list mt">
           <button type="button" class="metodo-crear-row" id="metodo-manual">
-            <span class="metodo-crear-icon">✏️</span>
+            <span class="metodo-crear-icon">${PENCIL_ICON}</span>
             <span class="metodo-crear-text"><strong>Manual</strong><span class="small muted">Agrega ingredientes uno por uno</span></span>
           </button>
           <button type="button" class="metodo-crear-row" id="metodo-foto">
@@ -1124,7 +1129,8 @@ export function renderPlanner(container, params = {}) {
     if (items.length) {
       const shareBtn = document.createElement('button');
       shareBtn.className = 'btn ghost sm full mt';
-      shareBtn.textContent = '📤 Compartir lista';
+      shareBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px';
+      shareBtn.innerHTML = `${SHARE_ICON}Compartir lista`;
       shareBtn.addEventListener('click', () => compartirLista(grupos, tituloCard, esHoy));
       card.appendChild(shareBtn);
     }

@@ -252,12 +252,21 @@ export function renderDashboard(container) {
     const { perfiles, exclusiones } = getState().user;
     const light = trafficLight(recipe, perfiles);
     const shown = displayRecipe(recipe, exclusiones);
+    // El "Comí esto" de la modal puede guardar la lista de ingredientes
+    // EDITADA completa (varios ítems con cantidades) en vez de un
+    // registro corto de foto/voz/texto -- unida con join(', ') sola se
+    // volvía un párrafo larguísimo acá, empujando todo lo de abajo
+    // (íconos de cambiar/registrar) lejos del nodo. Se corta a un largo
+    // razonable para esta fila; el detalle completo sigue intacto en el
+    // registro real (Mi Diario, SuSana, etc.), esto es solo el resumen.
+    const alimentosTexto = registro ? registro.alimentos.join(', ') : '';
+    const subtitleRegistro = alimentosTexto.length > 46 ? `${alimentosTexto.slice(0, 46)}…` : alimentosTexto;
     return {
       // El ícono es el de la RECETA actual (shown.emoji), no el de la
       // comida (meal.emoji) -- antes eran fijos por Desayuno/Almuerzo/etc.
       // y nunca cambiaban al tocar 🔄, aunque la receta sí fuera otra.
       icon: shown.emoji, title: t(meal.nombre),
-      subtitle: registro ? registro.alimentos.join(', ') + notaHorario : shown.nombre,
+      subtitle: registro ? subtitleRegistro + notaHorario : shown.nombre,
       now: esAhora, nowLabel: t('Ahora'), done: !!registro,
       onClick: () => {
         // Abrir una comida real del menú de hoy es la señal de "seguí el
@@ -653,7 +662,14 @@ export function openRecipe(recipe, hoy = null) {
     if (hoy) {
       const toggleBtn = modal.querySelector('#rc-check-toggle');
       const label = modal.querySelector('#rc-check-label');
-      toggleBtn.addEventListener('click', () => {
+      // El registro ORIGINAL con el que se abrió esta modal -- si venía
+      // con foto (evidencia real, no una simple sugerencia), "deshacer"
+      // NUNCA debe borrarlo en silencio. Bug real ya ocurrido: se perdió
+      // la foto de un desayuno porque este círculo lo sobrescribió sin
+      // avisar. Ahora pide confirmación explícita antes de tocar un
+      // registro con foto.
+      const teniaFotoAlAbrir = !!hoy.registro?.fotoUrl;
+      const aplicarToggle = () => {
         registradoAhora = !registradoAhora;
         if (registradoAhora) guardarComidaRegistrada(hoy.mealId, ingredientesTexto.filter(Boolean), 'sugerencia');
         else borrarComidaRegistrada(hoy.mealId);
@@ -661,6 +677,22 @@ export function openRecipe(recipe, hoy = null) {
         toggleBtn.textContent = registradoAhora ? '✓' : '';
         label.textContent = registradoAhora ? t('¡Comiste esto! Toca para deshacer') : t('¿Comiste esto?');
         hoy.onRegistrado?.();
+      };
+      toggleBtn.addEventListener('click', () => {
+        if (registradoAhora && teniaFotoAlAbrir) {
+          openModal((modalConfirmar, closeConfirmar) => {
+            modalConfirmar.insertAdjacentHTML('beforeend', `
+              <h2>${t('¿Deshacer este registro?')}</h2>
+              <p class="mt">${t('Ya habías registrado esta comida con una foto -- deshacerlo la quita de Mi Diario.')}</p>`);
+            const yes = document.createElement('button');
+            yes.className = 'btn danger full mt';
+            yes.textContent = t('Sí, deshacer');
+            yes.addEventListener('click', () => { closeConfirmar(); aplicarToggle(); });
+            modalConfirmar.appendChild(yes);
+          });
+          return;
+        }
+        aplicarToggle();
       });
     }
   });

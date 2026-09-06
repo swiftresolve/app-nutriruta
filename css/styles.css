@@ -382,7 +382,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   position: absolute; bottom: -2px; right: -2px; width: 30px; height: 30px; border-radius: 50%;
   background: var(--card); display: flex; align-items: center; justify-content: center;
   font-size: 0.95rem; box-shadow: 0 2px 6px rgba(0,0,0,0.22), 0 0 0 3px var(--card);
+  color: var(--primary-dark);
 }
+.avatar-upload .avatar-cam svg { width: 16px; height: 16px; }
 
 /* ===== Ruti (mascota-planta) ===== */
 .ruti-avatar {
@@ -568,20 +570,20 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .btn-susana {
   position: relative; z-index: 0; width: 100%;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 12px 16px; border-radius: 999px; font-weight: 700;
+  padding: 9px 16px; border-radius: var(--btn-radius); font-weight: 700;
   color: #fff; background: var(--modal-bg);
   /* Borde sólido INTERNO -- inset, no border real, para no sumarle ni un
      px al tamaño del botón (pedido explícito: no agrandarlo). Blanco y
-     con un leve halo propio (referencia real de la usuaria), no gris
-     tenue -- se ve como un anillo brillante pegado al borde, con el
-     resplandor de color (::before, animado, sin tocar) asomando más
-     afuera de ese anillo. */
-  box-shadow: inset 0 0 0 1.5px #fff, 0 0 5px 1px rgba(255,255,255,0.6);
+     con un leve halo propio (referencia real de la usuaria). Corrido
+     4px hacia adentro (no pegado al borde exterior, que es donde
+     termina el resplandor de color) -- el primer inset "tapa" con el
+     propio fondo del botón hasta los 4px, el segundo pinta el anillo
+     blanco justo después de eso. */
+  box-shadow: inset 0 0 0 4px var(--modal-bg), inset 0 0 0 6px #fff, 0 0 5px 1px rgba(255,255,255,0.6);
 }
-/* El texto del botón es blanco (color heredado), pero las chispas van
-   en amarillo -- por eso el ícono necesita su propio color, no puede
-   heredar currentColor del botón como los demás. */
-.btn-susana .susana-sparkle { color: var(--yellow); display: inline-flex; }
+/* Las chispas van del mismo blanco que el texto del botón (hereda
+   currentColor) -- corregido de un amarillo que ya no se quería. */
+.btn-susana .susana-sparkle { display: inline-flex; }
 .btn-susana::before {
   content: ''; position: absolute; inset: -3px; z-index: -1; border-radius: inherit;
   background: conic-gradient(from var(--susana-angle), var(--primary), var(--secondary), var(--accent), var(--yellow), var(--primary));
@@ -846,7 +848,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .ruti-bubble::after { top: calc(100% - 1.5px); border-top-color: var(--card); }
 
 /* Nombre de Susana en dos colores: "Su" + "Sana" */
-.susana-name .su { color: var(--secondary); }
+/* Rosado fijo (no var(--secondary)/azul, ya no se quería) -- color de
+   marca, igual en ambos temas como el resto de --primary/--secondary. */
+.susana-name .su { color: #E85D9E; }
 .susana-name .sana { color: var(--primary-dark); }
 
 /* ===== Water tracker ===== */

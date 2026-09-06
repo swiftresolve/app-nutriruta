@@ -6,7 +6,7 @@ import { getState, setState, resetState, getPlan, isPremium, planExpired, planEx
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
 import { getSession, signIn, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
-import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, GEAR_ICON } from '../app.js';
+import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, GEAR_ICON, SHARE_ICON, CAMERA_SOLID_ICON } from '../app.js';
 import { iniciarTour } from './tour.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 
@@ -169,7 +169,7 @@ function pintarCuenta(container) {
       <label class="avatar-upload" for="avatar-input" aria-label="Cambiar foto de perfil">
         <img id="avatar-img" alt="" hidden>
         <span id="avatar-fallback">${inicial}</span>
-        <span class="avatar-cam">📷</span>
+        <span class="avatar-cam">${CAMERA_SOLID_ICON}</span>
       </label>
       <input type="file" id="avatar-input" accept="image/*" hidden>
       <p class="small muted" id="avatar-estado" style="min-height:1em"></p>
@@ -271,7 +271,7 @@ function pintarReferidos(container) {
       <div id="ref-codigo" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em;flex:1">Cargando…</div>
       <button type="button" class="btn ghost sm" id="ref-copiar" disabled>Copiar</button>
     </div>
-    <button type="button" class="btn accent full mt" id="ref-compartir" disabled>📤 Compartir mi código</button>`;
+    <button type="button" class="btn accent full mt" id="ref-compartir" style="display:flex;align-items:center;justify-content:center;gap:8px" disabled>${SHARE_ICON.replace('var(--primary-dark)', '#fff')}Compartir mi código</button>`;
   const refCodigoEl = referidos.querySelector('#ref-codigo');
   const refCopiarBtn = referidos.querySelector('#ref-copiar');
   const refCompartirBtn = referidos.querySelector('#ref-compartir');
@@ -888,7 +888,7 @@ function pintarDatos(container) {
   // cambiar de cuenta o solo para tenerla.
   const exportBtn = document.createElement('button');
   exportBtn.className = 'btn ghost full mb';
-  exportBtn.textContent = '📤 Exportar mis datos';
+  exportBtn.innerHTML = `${SHARE_ICON}Exportar mis datos`;
   exportBtn.addEventListener('click', () => {
     const datos = getState();
     const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
