@@ -506,22 +506,27 @@ const SEMAFORO_TEXTO = { verde: t('Apto para tu perfil'), amarillo: t('Modera es
 // "Analizar con SuSana" en una receta del CATÁLOGO no necesita IA -- el
 // semáforo ya salió de perfiles curados a mano (recipe.apto/moderar/
 // evitar), así que la respuesta ya está definida, no hay nada que
-// "pensar" ni tokens que gastar. El botón SIEMPRE lleva al chat de
-// SuSana (nunca se queda en una tarjeta dentro de la modal) -- para
-// catálogo, este mensaje se inyecta directo como si SuSana ya lo
-// hubiera dicho (instantMessage, sin llamar al servidor); solo una
-// receta sin esa clasificación (propia, fuera de catálogo) sí amerita
-// mandarla a analizar de verdad con la IA (ver el otro branch, más abajo).
+// "pensar" ni tokens que gastar. El botón SIEMPRE abre un chat NUEVO
+// (nunca continúa uno anterior) y muestra el resultado como tarjeta
+// visual (barras + etiquetas, referencia real: Fitia Coach) -- para
+// catálogo esta tarjeta se arma directo, sin llamar al servidor; solo
+// una receta sin esa clasificación (propia, fuera de catálogo) sí
+// amerita mandarla a analizar de verdad con la IA (ver el otro branch).
 function analisisInstantaneo(light, recipe, user) {
   const perfilesMatch = recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => PROFILES[p].nombre);
-  const intro = `¡Hola! Ya miré "${recipe.nombre}" 🌿 `;
-  if (light === 'verde') {
-    return `${intro}Es una opción óptima para tu perfil${perfilesMatch.length ? `, especialmente buena para ${perfilesMatch.join(', ')}` : ''}. Puedes comerla con confianza. ¿Quieres que hablemos de algo más de tu día?`;
-  }
-  if (light === 'amarillo') {
-    return `${intro}Te recomiendo moderarla — no es la mejor opción para tu perfil de salud, pero ocasionalmente está bien en una porción moderada. ¿Te ayudo a buscar una alternativa mejor?`;
-  }
-  return `${intro}Mejor evítala si puedes — no es recomendable para tu perfil de salud actual. ¿Quieres que te sugiera una alternativa más adecuada?`;
+  const nivel = light === 'verde' ? 'alto' : light === 'amarillo' ? 'medio' : 'bajo';
+  const nutritivo = {
+    alto: { rating: 'Óptimo', texto: `Excelente elección para tu perfil${perfilesMatch.length ? `, especialmente buena para ${perfilesMatch.join(', ')}` : ''}.` },
+    medio: { rating: 'Modérala', texto: 'No es la mejor opción para tu perfil de salud, pero ocasionalmente está bien en una porción moderada.' },
+    bajo: { rating: 'Evítala', texto: 'No es recomendable para tu perfil de salud actual. Mejor busca una alternativa.' }
+  }[nivel];
+  const integracion = {
+    alto: { rating: 'Encaja bien', texto: 'Puedes comerla con confianza en tu rutina de hoy.' },
+    medio: { rating: 'Con moderación', texto: 'Si la comes hoy, procura que sea en una porción pequeña.' },
+    bajo: { rating: 'No ideal hoy', texto: 'Mejor no la incluyas en tu menú de hoy.' }
+  }[nivel];
+  const cierre = nivel === 'alto' ? '¿Quieres que hablemos de algo más de tu día?' : '¿Te ayudo a buscar una alternativa mejor?';
+  return { nutritivo: { nivel, ...nutritivo }, integracion: { nivel, ...integracion }, cierre };
 }
 
 // Semáforo horizontal de verdad (3 luces), no solo un punto -- con la
@@ -572,7 +577,7 @@ export function openRecipe(recipe, hoy = null) {
         ${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span>
       </p>
       <p class="mt">${recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => `<span class="tag perfil">${PROFILES[p].nombre}</span>`).join(' ')}</p>
-      <button type="button" class="btn-susana mt" id="rc-analizar-susana">${SPARKLE_ICON} ${t('Analizar con SuSana')}</button>
+      <button type="button" class="btn-susana mt" id="rc-analizar-susana"><span class="susana-sparkle">${SPARKLE_ICON}</span> ${t('Analizar con SuSana')}</button>
       ${hoy ? `<div class="row mt" style="gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--modal-bg);border:1px solid var(--border);border-radius:14px">
         <span class="small" id="rc-check-label">${registradoAhora ? t('¡Comiste esto! Toca para deshacer') : t('¿Comiste esto?')}</span>
         <button type="button" class="meal-check${registradoAhora ? ' done' : ''}" id="rc-check-toggle" aria-label="${t('Marcar como comido')}">${registradoAhora ? '✓' : ''}</button>
@@ -591,7 +596,7 @@ export function openRecipe(recipe, hoy = null) {
     const ingsWrap = modal.querySelector('#rc-ingredientes');
     function pintarIngredientes() {
       ingsWrap.innerHTML = ingredientesTexto.map((texto, i) => `
-        <div class="row ingredient-row" data-idx="${i}" style="gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--border)">
+        <div class="row ingredient-row" data-idx="${i}" style="gap:8px;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border)">
           <span class="ing-text" style="flex:1;min-width:0">${esc(texto)}</span>
           <button type="button" class="icon-btn plain ing-edit" data-idx="${i}" aria-label="${t('Editar ingrediente')}">${PENCIL_ICON}</button>
         </div>`).join('');
@@ -617,28 +622,26 @@ export function openRecipe(recipe, hoy = null) {
     pintarIngredientes();
     modal.querySelector('#rc-analizar-susana').addEventListener('click', () => {
       closeFn();
-      // El botón SIEMPRE lleva al chat de SuSana -- el usuario debe
-      // sentir que la IA analizó su elección ahí, no en una tarjeta
-      // suelta dentro de la modal (eso nunca se pidió). Catálogo
-      // (recipe.apto/moderar/evitar ya definidos a mano) = el semáforo
-      // ya ES el análisis: se inyecta como mensaje de SuSana sin gastar
-      // IA de verdad. Solo una receta SIN esa clasificación (propia,
-      // fuera de catálogo) amerita mandarla a analizar de verdad --
-      // info fresca, recién pensada por la IA, incluida la clasificación
-      // de semáforo que le correspondería.
+      // El botón SIEMPRE abre un chat NUEVO con SuSana (nunca continúa
+      // uno anterior) y muestra el análisis como tarjeta visual (barras +
+      // etiquetas, referencia real: Fitia Coach), no como texto plano.
+      // Catálogo (recipe.apto/moderar/evitar ya definidos a mano) = el
+      // semáforo ya ES el análisis: la tarjeta se arma directo, sin
+      // gastar IA de verdad. Solo una receta SIN esa clasificación
+      // (propia, fuera de catálogo) amerita mandarla a analizar de
+      // verdad -- info fresca, recién pensada por la IA.
       if (Array.isArray(recipe.apto)) {
-        navigate('assistant', { instantMessage: analisisInstantaneo(light, recipe, user) });
+        navigate('assistant', {
+          nuevaConversacion: true,
+          instantCard: { recetaNombre: shown.nombre, ...analisisInstantaneo(light, recipe, user) }
+        });
         return;
       }
-      // El chat de SuSana es texto plano, no tarjetas como el "Fitia
-      // Coach" de referencia -- para que la respuesta quede igual de
-      // organizada (sin poder renderizar negritas/barras), se le pide
-      // esa misma estructura directamente en el mensaje, coherente con
-      // cómo ya conversa SuSana en el resto de la app. Al no venir del
-      // catálogo, también se le pide que la clasifique (verde/amarillo/
-      // rojo) según mis condiciones de salud.
-      const pregunta = `Analiza "${shown.nombre}" que estoy por comer (no está en tu catálogo curado). Respóndeme breve, en dos partes: 1) qué tan nutritiva es para mi perfil de salud (una palabra fuerte como Óptima/Buena/Regular, con una frase del porqué), y 2) qué tan bien encaja en mi día de hoy según lo que ya he comido (otra palabra + frase). Dime también si la clasificarías en verde (apta), amarilla (moderar) o roja (evitar) según mis condiciones de salud, y por qué. Cierra con una pregunta corta sobre cómo la voy a preparar.`;
-      navigate('assistant', { prefill: pregunta });
+      // La IA responde en JSON puro (nunca se muestra este prompt tal
+      // cual, ver assistant.js) para poder pintarlo con la misma tarjeta
+      // visual que la instantánea de catálogo, en vez de texto plano.
+      const aiPrompt = `Analiza "${shown.nombre}" que estoy por comer (no está en tu catálogo curado). Responde ÚNICAMENTE con un bloque JSON, sin texto antes ni después, con este formato exacto: {"nutritivo":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Óptima/Buena/Regular","texto":"una frase explicando por qué"},"integracion":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Excelente/Buena/Regular","texto":"una frase de cómo encaja en mi día según lo que ya he comido"},"semaforo":"verde|amarillo|rojo","cierre":"una pregunta corta sobre cómo la voy a preparar"}`;
+      navigate('assistant', { nuevaConversacion: true, recetaNombre: shown.nombre, aiPrompt });
     });
     modal.querySelector('#rc-agregar-ing').addEventListener('click', () => {
       ingredientesTexto.push('');

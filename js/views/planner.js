@@ -279,9 +279,11 @@ export function renderPlanner(container, params = {}) {
   searchOverlay.className = 'row hidden';
   searchOverlay.style.cssText = 'position:absolute;inset:0;align-items:center;gap:8px;background:var(--bg);z-index:3';
   searchOverlay.innerHTML = `
-    <input id="recetas-buscar" type="search" inputmode="search" placeholder="Buscar por nombre o ingrediente…"
-      style="flex:1;min-width:0;padding:8px 12px;border-radius:10px;border:1px solid var(--border);font:inherit;font-size:0.9rem;box-sizing:border-box;background:var(--card);color:var(--ink)">
-    <button type="button" class="icon-btn plain" id="cerrar-buscar" aria-label="Cerrar búsqueda"><span style="font-size:1.1rem">✕</span></button>`;
+    <div style="position:relative;flex:1;min-width:0">
+      <input id="recetas-buscar" type="search" inputmode="search" placeholder="Buscar por nombre o ingrediente…"
+        style="width:100%;padding:8px 36px 8px 12px;border-radius:10px;border:1px solid var(--border);font:inherit;font-size:0.9rem;box-sizing:border-box;background:var(--card);color:var(--ink)">
+      <button type="button" class="icon-btn plain" id="cerrar-buscar" aria-label="Cerrar búsqueda" style="position:absolute;right:0;top:50%;transform:translateY(-50%)"><span style="font-size:1.1rem">✕</span></button>
+    </div>`;
   tabsRow.appendChild(searchOverlay);
   const searchInputEl = searchOverlay.querySelector('#recetas-buscar');
   searchInputEl.addEventListener('input', (e) => { busqueda = e.target.value; drawBody(); });

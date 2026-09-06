@@ -157,6 +157,54 @@ export function renderAssistant(container, params = {}) {
     return b;
   }
 
+  // Tarjeta de análisis de una comida (referencia real: "Fitia Coach"):
+  // 2 bloques con una barra de 3 niveles + etiqueta ("Óptimo"/"Excelente"/
+  // etc.) + texto, en vez de la burbuja de texto plano normal. Todo el
+  // contenido dinámico pasa por esc() antes de entrar al innerHTML.
+  const NIVEL_COLOR = { alto: 'verde', medio: 'amarillo', bajo: 'rojo' };
+  const NIVEL_POS = { alto: 2, medio: 1, bajo: 0 };
+  function bloqueAnalisis(icono, pregunta, bloque) {
+    const color = NIVEL_COLOR[bloque.nivel] || 'amarillo';
+    const pos = NIVEL_POS[bloque.nivel] ?? 1;
+    const segmentos = [0, 1, 2].map((i) => `<span class="ca-seg${i === pos ? ` activo ${color}` : ''}"></span>`).join('');
+    const justify = pos === 0 ? 'flex-start' : pos === 1 ? 'center' : 'flex-end';
+    return `<div class="ca-block">
+      <div class="ca-titulo">${icono} ${esc(pregunta)}</div>
+      <div class="ca-badge-row" style="justify-content:${justify}"><span class="ca-badge ${color}">${esc(bloque.rating)}</span></div>
+      <div class="ca-bar">${segmentos}</div>
+      <p class="ca-texto">${esc(bloque.texto)}</p>
+    </div>`;
+  }
+  function renderAnalysisCard(recetaNombre, data) {
+    return `<p>¡Hola! Aquí tienes el análisis de "${esc(recetaNombre)}". 🌿</p>
+      <div class="chat-analysis-card">
+        ${bloqueAnalisis('❤️', '¿Qué tan nutritiva es?', data.nutritivo)}
+        ${bloqueAnalisis('🎯', '¿Cómo se integra en tu día?', data.integracion)}
+      </div>
+      ${data.cierre ? `<p class="mt">${esc(data.cierre)}</p>` : ''}`;
+  }
+  function addCardBubble(role, html, { scroll = true } = {}) {
+    const b = document.createElement('div');
+    b.className = `chat-msg ${role} chat-msg-card`;
+    b.innerHTML = html;
+    if (role === 'assistant') agregarFeedback(b);
+    log.appendChild(b);
+    if (scroll) scrollToView(b);
+    return b;
+  }
+  // La IA (fuera de catálogo) responde con un bloque JSON puro -- se
+  // intenta extraer y parsear; si no calza con la forma esperada, se cae
+  // a mostrar la respuesta como texto plano en vez de romper el chat.
+  function parseAnalysisJSON(text) {
+    try {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) return null;
+      const data = JSON.parse(match[0]);
+      if (data && data.nutritivo && data.integracion) return data;
+    } catch { /* no era JSON válido, se cae a texto plano */ }
+    return null;
+  }
+
   // Sin cuota rígida (decisión explícita: la competencia tampoco limita
   // el número de consultas), y tampoco se muestra un contador -- mostrar
   // "X mensajes este mes" contradecía el mensaje de "casi ilimitado" con
@@ -255,6 +303,45 @@ export function renderAssistant(container, params = {}) {
     }
   }
 
+  // "Analizar con SuSana" para una receta fuera de catálogo (dashboard.js)
+  // -- llamada real a la IA, pero sin mostrar el prompt técnico (le pide
+  // JSON puro) como si fuera un mensaje escrito por la usuaria; en vez de
+  // eso, va directo al "escribiendo…" y pinta la tarjeta de análisis,
+  // igual que la instantánea de catálogo.
+  async function enviarAnalisis(recetaNombre, apiPrompt) {
+    sendBtn.disabled = true;
+    input.disabled = true;
+    const typing = document.createElement('div');
+    typing.className = 'chat-typing';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    log.appendChild(typing);
+    scrollToView(typing);
+    try {
+      const data = await askGuide(apiPrompt, conversationId);
+      conversationId = data.conversationId;
+      typing.remove();
+      const parsed = parseAnalysisJSON(data.reply);
+      const bubble = parsed
+        ? addCardBubble('assistant', renderAnalysisCard(recetaNombre, parsed))
+        : addBubble('assistant', data.reply);
+      setQuota(data.usedCount);
+      scrollToView(bubble);
+      sendBtn.disabled = false;
+      input.disabled = false;
+      loadHistory(conversationId);
+    } catch (e) {
+      typing.remove();
+      if (e.code === 'premium_requerido') {
+        toast('Tu plan Premium ya no está activo.');
+        navigate('plans');
+      } else {
+        addBubble('system', e.message || 'No se pudo analizar. Intenta de nuevo.');
+        sendBtn.disabled = false;
+        input.disabled = false;
+      }
+    }
+  }
+
   sendBtn.addEventListener('click', send);
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
@@ -265,22 +352,36 @@ export function renderAssistant(container, params = {}) {
   });
 
   // "Analizar con SuSana" (botón en la modal de receta, ver dashboard.js)
-  // llega hasta acá de dos formas -- se espera a que cargue el historial
-  // real (para seguir la MISMA conversación, no abrir una nueva cada vez
-  // que se analiza una receta) y recién ahí se actúa:
-  // - params.prefill: una receta que SÍ amerita un análisis real (fuera
-  //   del catálogo) -- se manda a la IA de verdad, info fresca.
-  // - params.instantMessage: una receta del catálogo, cuyo semáforo ya
-  //   ES el análisis (curado a mano) -- se pinta directo como si SuSana
-  //   ya lo hubiera dicho, sin gastar una llamada a la IA.
-  loadHistory().then(() => {
-    if (params.prefill) {
-      input.value = params.prefill;
-      send();
-    } else if (params.instantMessage) {
-      addBubble('assistant', params.instantMessage);
-    }
-  });
+  // -- SIEMPRE abre una conversación nueva (pedido explícito: no debe
+  // continuar el chat anterior, cada análisis empieza de cero) y muestra
+  // el resultado como tarjeta visual (barras + etiquetas, referencia
+  // real: Fitia Coach), no como mensaje de texto suelto:
+  // - params.instantCard: receta del CATÁLOGO -- el semáforo ya ES el
+  //   análisis (curado a mano), se pinta directo sin gastar IA.
+  // - params.aiPrompt: receta fuera de catálogo -- análisis real, la IA
+  //   responde en JSON puro (parseado en enviarAnalisis) para poder
+  //   pintarlo con la misma tarjeta.
+  if (params.nuevaConversacion) {
+    newGuideConversation().then((nuevaId) => {
+      conversationId = nuevaId;
+      ultimaFirma = null;
+      log.innerHTML = '';
+      guardarCache(nuevaId, [], 0);
+      setQuota();
+      if (params.instantCard) {
+        addCardBubble('assistant', renderAnalysisCard(params.instantCard.recetaNombre, params.instantCard));
+      } else if (params.aiPrompt) {
+        enviarAnalisis(params.recetaNombre, params.aiPrompt);
+      }
+    });
+  } else {
+    loadHistory().then(() => {
+      if (params.prefill) {
+        input.value = params.prefill;
+        send();
+      }
+    });
+  }
 }
 
 // "Personalizar a SuSana": elegir el tono con una frase de ejemplo en vivo

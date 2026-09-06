@@ -569,12 +569,19 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   position: relative; z-index: 0; width: 100%;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 12px 16px; border-radius: 999px; font-weight: 700;
-  color: var(--primary-dark); background: var(--modal-bg);
+  color: #fff; background: var(--modal-bg);
+  /* Borde sólido INTERNO -- inset, no border real, para no sumarle ni un
+     px al tamaño del botón (pedido explícito: no agrandarlo). */
+  box-shadow: inset 0 0 0 1.5px var(--border);
 }
+/* El texto del botón es blanco (color heredado), pero las chispas van
+   en amarillo -- por eso el ícono necesita su propio color, no puede
+   heredar currentColor del botón como los demás. */
+.btn-susana .susana-sparkle { color: var(--yellow); display: inline-flex; }
 .btn-susana::before {
-  content: ''; position: absolute; inset: -6px; z-index: -1; border-radius: inherit;
+  content: ''; position: absolute; inset: -3px; z-index: -1; border-radius: inherit;
   background: conic-gradient(from var(--susana-angle), var(--primary), var(--secondary), var(--accent), var(--yellow), var(--primary));
-  filter: blur(9px); opacity: 0.5;
+  filter: blur(5px); opacity: 0.85;
   animation: btn-susana-girar 6s linear infinite;
 }
 @keyframes btn-susana-girar { to { --susana-angle: 360deg; } }
@@ -1700,6 +1707,30 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 .chat-msg.user { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
 .chat-msg.assistant { align-self: flex-start; background: var(--primary-soft); color: var(--ink); border-bottom-left-radius: 4px; }
 .chat-msg.system { align-self: center; background: #FBF0DA; color: #96690F; font-size: 0.85rem; text-align: center; }
+
+/* Tarjeta de análisis de una comida (referencia real: "Fitia Coach"):
+   ancha (no la burbuja angosta normal), sin color de fondo propio -- el
+   fondo lo pone cada .ca-block. */
+.chat-msg.chat-msg-card { max-width: 100%; width: 100%; background: none; padding: 0; align-self: stretch; }
+.chat-analysis-card { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.ca-block { background: var(--modal-bg); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+.ca-titulo { font-weight: 700; margin-bottom: 8px; }
+.ca-badge-row { display: flex; margin-bottom: 4px; }
+.ca-badge { font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.ca-badge.verde { background: var(--primary-soft); color: var(--primary-dark); }
+.ca-badge.amarillo { background: #FBF0DA; color: #96690F; }
+.ca-badge.rojo { background: var(--accent-soft); color: var(--red); }
+.ca-bar { display: flex; gap: 4px; }
+.ca-seg { flex: 1; height: 7px; border-radius: 999px; background: var(--border); }
+.ca-seg.activo.verde { background: var(--green); }
+.ca-seg.activo.amarillo { background: var(--yellow); }
+.ca-seg.activo.rojo { background: var(--red); }
+.ca-texto { font-size: 0.86rem; color: var(--ink-soft); margin-top: 8px; }
+
+/* Buscador del Recetario: la X propia (cerrar-buscar) vive DENTRO de la
+   barra a la derecha -- se oculta la X nativa del navegador para
+   type=search, que si no queda encimada con la nuestra. */
+#recetas-buscar::-webkit-search-cancel-button { display: none; }
 
 /* Pulgar arriba/abajo bajo cada respuesta de SuSana (referencia real:
    Fitia Coach) -- apagados hasta elegir uno, el elegido toma el color
