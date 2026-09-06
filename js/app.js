@@ -97,13 +97,16 @@ export function navigate(route, params = {}) {
   app.innerHTML = '';
   window.scrollTo(0, 0);
   document.getElementById('scroll-top-btn').classList.add('hidden');
-  render(app, params);
-  // Reinicia la animación de entrada (quitar+forzar reflow+agregar la clase)
-  // para que se vea en cada navegación, no solo la primera vez.
-  app.classList.remove('page-enter');
-  void app.offsetWidth;
-  app.classList.add('page-enter');
 
+  // Estas clases dependen SOLO del route, no de lo que pinte render() --
+  // por eso van ANTES de render(), no después. #app.chat-active es lo que
+  // le da a .chat-card su scroll propio (overflow-y:auto, ver CSS); si se
+  // agregaba después de render(), el pintado inicial del historial (desde
+  // caché, síncrono, dentro del propio render()) hacía su scrollIntoView
+  // ANTES de que .chat-card tuviera scroll real -- el navegador no tenía
+  // dónde desplazarse todavía, así que el chat abría mostrando el
+  // PRINCIPIO de la conversación, tapando el último mensaje detrás del
+  // input, hasta que la usuaria hacía scroll a mano.
   const showNav = route !== 'quiz' && route !== 'auth' && route !== 'resetPassword' && route !== 'sos';
   nav.classList.toggle('hidden', !showNav);
   // Sin bottom-nav no hace falta reservarle espacio abajo -- si no, queda
@@ -126,6 +129,14 @@ export function navigate(route, params = {}) {
   // (antes usaba min-height:40vh, un valor fijo que se quedaba corto y
   // dejaba un hueco vacío feo entre la tarjeta y el input).
   app.classList.toggle('chat-active', route === 'assistant');
+
+  render(app, params);
+  // Reinicia la animación de entrada (quitar+forzar reflow+agregar la clase)
+  // para que se vea en cada navegación, no solo la primera vez.
+  app.classList.remove('page-enter');
+  void app.offsetWidth;
+  app.classList.add('page-enter');
+
   nav.querySelectorAll('.nav-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.route === route);
   });
@@ -638,6 +649,9 @@ const PAQUETES_NUTRICOINS = [
   { cant: 2500, precio: 59900 }
 ];
 
+// El precio de cada paquete se formatea con 'es-CO' y no 'es' a secas: el
+// locale genérico 'es' no separa miles por debajo de 10.000 (el paquete
+// de 100 mostraba "$3900" sin punto, mientras los demás sí lo tenían).
 export function abrirComprarNutricoins() {
   openModal((modal) => {
     const nutricoins = getState().nutricoins || 0;
@@ -653,7 +667,7 @@ export function abrirComprarNutricoins() {
             <span class="farol-cant">${p.cant.toLocaleString('es')}</span>
             <span class="small muted">NutriCoins</span>
             <span class="farol-emoji">${coinIcon(ORO_NUTRICOINS, 34)}</span>
-            <span class="farol-precio">$${p.precio.toLocaleString('es')}</span>
+            <span class="farol-precio">$${p.precio.toLocaleString('es-CO')}</span>
           </button>`).join('')}
       </div>
       <p class="small muted mt">Los paquetes y precios todavía son provisionales -- esta pantalla es una maqueta mientras se conecta el cobro real.</p>`);

@@ -893,6 +893,55 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .susana-name .su { color: #F5A9D0; }
 .susana-name .sana { color: #7ED9C3; }
 
+/* Tarjeta "canjear código de amigo" con look de cupón/ticket para
+   recortar (como el emoji 🎟️): las 4 esquinas quedan mordidas hacia
+   ADENTRO en vez de redondeadas hacia afuera. El borde punteado se
+   dibuja con background (repeating-linear-gradient por cada lado) y no
+   con la propiedad border -- así el ::after de abajo, que "muerde" cada
+   esquina con un círculo del color de fondo de la PÁGINA, tapa a la vez
+   el relleno Y esa línea punteada exactamente en la esquina, en vez de
+   dejar el borde con una esquina cuadrada de fondo. Sin box-shadow: una
+   tarjeta con esquinas cóncavas y sombra redondeada normal se ve rota. */
+.coupon-card {
+  position: relative;
+  border-radius: 4px;
+  box-shadow: none;
+  background-color: var(--card);
+  background-image:
+    repeating-linear-gradient(to right, var(--border) 0 6px, transparent 0 12px),
+    repeating-linear-gradient(to right, var(--border) 0 6px, transparent 0 12px),
+    repeating-linear-gradient(to bottom, var(--border) 0 6px, transparent 0 12px),
+    repeating-linear-gradient(to bottom, var(--border) 0 6px, transparent 0 12px);
+  background-size: 12px 2px, 12px 2px, 2px 12px, 2px 12px;
+  background-position: top left, bottom left, top left, top right;
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+}
+.coupon-card::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(circle 12px at 0 0, var(--bg) 11px, transparent 12px),
+    radial-gradient(circle 12px at 100% 0, var(--bg) 11px, transparent 12px),
+    radial-gradient(circle 12px at 0 100%, var(--bg) 11px, transparent 12px),
+    radial-gradient(circle 12px at 100% 100%, var(--bg) 11px, transparent 12px);
+}
+.coupon-cut {
+  position: relative;
+  margin: 14px -16px;
+  border-top: 2px dashed var(--border);
+}
+.coupon-cut::before, .coupon-cut::after {
+  content: ''; position: absolute; top: 50%;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--bg); transform: translateY(-50%);
+}
+.coupon-cut::before { left: -9px; }
+.coupon-cut::after { right: -9px; }
+.coupon-cut span {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  background: var(--card); padding: 0 8px; font-size: 0.9rem; line-height: 1;
+}
+
 /* ===== Water tracker ===== */
 /* Grilla real de columnas fijas -- antes era flex+wrap, que según el
    ancho disponible podía envolver en filas dispares (ej. 5+3). Con
@@ -1727,9 +1776,17 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 }
 
 /* ===== Toast ===== */
+/* Borde claro traslúcido + sombra propia: sin esto, el toast (verde oscuro
+   fijo) casi desaparecía contra el fondo de un modal abierto detrás
+   (--modal-bg en oscuro es #223A2F, casi el mismo tono que el toast) --
+   reportado al presionar un precio de NutriCoins, que abre encima de la
+   modal de compra. El borde/sombra lo separan visualmente de CUALQUIER
+   fondo, sea la página o un modal, en cualquier tema. */
 .toast {
   position: fixed; bottom: calc(var(--nav-h) + var(--nav-gap) + 18px); left: 50%; transform: translateX(-50%);
   background: #233833; color: #fff; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
   padding: 10px 20px; font-size: 0.9rem; z-index: 70; max-width: 90vw; text-align: center;
   animation: slide-up 0.2s ease;
 }
@@ -1743,16 +1800,21 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 /* Header de chat propio -- avatar + nombre fijos arriba, como una
    conversación real (referencia: Coach de Fitia), en vez del saludo
    metido dentro de una tarjeta de texto genérica. */
+/* Fijo arriba de VERDAD (position:fixed al viewport, no sticky dentro del
+   layout) -- sticky solo "pega" un elemento cuando su propio contenedor
+   hace scroll y él sigue en el flujo; acá quien scrollea es .chat-card
+   (adentro), no #app, así que sticky no tenía nada contra qué pegarse y
+   dependía de que #app.chat-active nunca scrolleara por su cuenta. Fixed
+   no depende de eso: queda anclado al viewport pase lo que pase (barra
+   de direcciones, teclado, o cualquier quirk de scroll del navegador).
+   #app.chat-active le reserva el espacio con padding-top (ver abajo), ya
+   que un elemento fixed sale del flujo normal. */
 .chat-header {
   display: flex; align-items: center; gap: 10px;
   background: var(--card); box-shadow: var(--shadow);
-  padding: 12px 16px; margin: -16px -16px 4px;
-  /* Fijo arriba mientras el chat hace scroll -- sin el banner común de
-     marca/racha/gemas (renderAssistant ya no lo pinta en esta vista),
-     este es el único que queda, así que se ancla como si fuera el de
-     siempre. Sin bordes redondeados: de punta a punta como una barra
-     superior real, no una tarjeta flotante. */
-  position: sticky; top: 0; z-index: 5;
+  padding: 12px 16px;
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 560px; z-index: 20;
 }
 .chat-header-avatar { width: 40px; height: 40px; font-size: 1.2rem; }
 .chat-header-info { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
@@ -1773,8 +1835,12 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    anclado como último elemento del flex-column, así que ese mismo
    padding solo dejaba un espacio vacío enorme entre el input y la nav.
    Se reduce al mínimo necesario para despejar la nav, nada más. */
-#app.chat-active { height: var(--vvh, 100dvh); min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding-bottom: calc(var(--nav-h) + var(--nav-gap) + 10px); }
-#app.chat-active .chat-header { flex: none; }
+/* padding-top reemplaza el 16px genérico de #app: el header ahora es
+   position:fixed (ver .chat-header), así que sale del flujo y hay que
+   reservarle su espacio a mano -- 64px = sus 40px de avatar + 12px de
+   padding arriba y abajo. Sin esto, el aviso/la tarjeta de mensajes
+   arrancarían tapados debajo del header fijo. */
+#app.chat-active { height: var(--vvh, 100dvh); min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding-top: 64px; padding-bottom: calc(var(--nav-h) + var(--nav-gap) + 10px); }
 #app.chat-active .chat-disclaimer { flex: none; }
 /* margin-bottom a 10px (en vez del 14px genérico de .card) para que el
    espacio de arriba del input quede igual al de abajo (input-nav, ver
@@ -1879,10 +1945,24 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 .chat-input-spacer { height: 70px; }
 .chat-input-row textarea {
   flex: 1; resize: none; border: none; background: transparent; padding: 10px 0;
-  font: inherit; font-size: 0.94rem; max-height: 90px;
+  font: inherit; font-size: 0.94rem; max-height: 90px; color: var(--ink);
 }
 .chat-input-row textarea:focus { outline: none; }
-.chat-input-row button { flex: none; width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; margin: 4px 4px 4px 0; }
+/* El botón hereda de .btn/.btn.accent min-height:46px, padding:8px 20px y
+   un box-shadow "3D" (borde grueso debajo, para botones grandes) -- sobre
+   un círculo de 34px eso lo deformaba en un óvalo con una sombra
+   sobresaliendo abajo, nada parecido al círculo plano del botón de
+   enviar de Fitia. Se anula todo lo heredado que no aplica a un ícono
+   circular chiquito. Selector ".chat-input-row .btn.accent" (3 clases) a
+   propósito, no ".chat-input-row button": con solo 1 clase + la etiqueta
+   tenía MENOS especificidad que ".btn.accent" (2 clases) y el box-shadow
+   de abajo seguía ganando pase lo que pasara acá. */
+.chat-input-row .btn.accent {
+  flex: none; width: 34px; height: 34px; min-height: 0; padding: 0;
+  border-radius: 50%; font-size: 1.2rem; margin: 4px 4px 4px 0;
+  box-shadow: none;
+}
+.chat-input-row .btn.accent:active { box-shadow: none; transform: scale(0.92); }
 
 @media (min-width: 600px) {
   body { padding-top: 10px; }

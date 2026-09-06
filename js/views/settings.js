@@ -318,11 +318,12 @@ function pintarReferidos(container) {
   // guarda igual que la captura por URL (user.referidoPor), y la fila real
   // en `referidos` se crea recién al activar el plan anual (hotmart-webhook).
   const canjear = document.createElement('div');
-  canjear.className = 'card';
+  canjear.className = 'card coupon-card';
   const yaGuardado = getState().user.referidoPor;
   canjear.innerHTML = `
     <h2>🎟️ ¿Tienes el código de un amigo?</h2>
     <p class="small mb" id="canjear-desc"></p>
+    <div class="coupon-cut"><span>✂️</span></div>
     <div class="row" style="gap:8px">
       <input type="text" id="canjear-input" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em;flex:1" maxlength="6" placeholder="CÓDIGO" value="${esc(yaGuardado || '')}">
       <button type="button" class="btn sm" id="canjear-btn">Canjear</button>
