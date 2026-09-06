@@ -581,7 +581,7 @@ export function openRecipe(recipe, hoy = null) {
       <div class="center" style="font-size:2.4rem">${shown.emoji}</div>
       <h2 class="center">${shown.nombre}</h2>
       ${recipe.tiempoMin ? `<p class="small muted center row" style="gap:5px;justify-content:center;align-items:center;margin-top:2px">${CLOCK_ICON}${recipe.tiempoMin} min</p>` : ''}
-      <p class="small mt">${recipe.descripcion}</p>
+      <p class="small mt" style="text-align:justify">${recipe.descripcion}</p>
       <p class="row mt" style="gap:8px;align-items:center">
         ${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span>
       </p>
