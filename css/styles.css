@@ -200,20 +200,32 @@ strong { color: var(--ink); }
    dibujada a mano. Clara por defecto, oscura en tema oscuro -- mismo
    patrón de 3 estados que el resto del sistema de temas (preferencia del
    sistema, a menos que la usuaria haya elegido "Claro" explícito; o
-   "Oscuro" explícito, que siempre gana). */
-#tour-menu.card {
-  background-image: url("../img/mapa-ruta-hoy-claro.png");
+   "Oscuro" explícito, que siempre gana).
+   La imagen va en un ::before propio, no en el background directo de la
+   tarjeta -- así se le puede bajar la opacidad a SOLO la imagen (con
+   opacity en el elemento real se apaga también el texto/nodos de
+   encima). El contenido real necesita su propio z-index/position para
+   quedar por delante de esta capa. */
+#tour-menu.card { position: relative; }
+#tour-menu.card::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background-image: url("../img/mapa-ruta-hoy-claro.webp");
   background-size: cover;
   background-position: top right;
   background-repeat: no-repeat;
+  opacity: 0.35;
+  z-index: 0;
 }
+#tour-menu.card > * { position: relative; z-index: 1; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) #tour-menu.card {
-    background-image: url("../img/mapa-ruta-hoy.png");
+  :root:not([data-theme="light"]) #tour-menu.card::before {
+    background-image: url("../img/mapa-ruta-hoy.webp");
   }
 }
-:root[data-theme="dark"] #tour-menu.card {
-  background-image: url("../img/mapa-ruta-hoy.png");
+:root[data-theme="dark"] #tour-menu.card::before {
+  background-image: url("../img/mapa-ruta-hoy.webp");
 }
 .card {
   background: var(--card);
