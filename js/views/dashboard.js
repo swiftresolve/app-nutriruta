@@ -560,7 +560,7 @@ export function openRecipe(recipe, hoy = null) {
       <div id="rc-ingredientes"></div>
       <button type="button" class="row" id="rc-agregar-ing" style="gap:6px;padding:10px 0;color:var(--primary-dark);font-weight:700;width:100%">+ ${t('Agregar Ingrediente')}</button>
       <details class="rc-desplegable mt">
-        <summary>${t('Instrucciones')}<span class="rc-chev">⌄</span></summary>
+        <summary>${t('Preparación')}<span class="rc-chev">⌄</span></summary>
         <div class="rc-desplegable-body">
           <ol class="steps">${recipe.pasos.map((p) => `<li>${p}</li>`).join('')}</ol>
         </div>
