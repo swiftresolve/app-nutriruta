@@ -306,10 +306,6 @@ export function renderPlanner(container, params = {}) {
     const [recetasTab, comprasTab] = [['recetas', '🥗 Recetario'], ['compras', `${CART_ICON} Lista de compras`]].map(([id, label]) => {
       const b = document.createElement('button');
       b.className = 'chip' + (tab === id ? ' selected' : '');
-      b.style.display = 'flex';
-      b.style.alignItems = 'center';
-      b.style.justifyContent = 'center';
-      b.style.gap = '6px';
       b.innerHTML = label;
       b.addEventListener('click', () => { tab = id; drawTabs(); drawBody(); });
       return b;
@@ -1057,7 +1053,7 @@ export function renderPlanner(container, params = {}) {
       const upsell = document.createElement('div');
       upsell.className = 'card center';
       upsell.innerHTML = `
-        <div style="font-size:2.4rem">🛒</div>
+        <div style="width:44px;height:44px;margin:0 auto">${CART_ICON.replace('width="18" height="18"', 'width="44" height="44"')}</div>
         <h2>Lista de compras automática</h2>
         <p class="mt">Genera tu lista de mercado a partir de tu menú del día, con sustituciones incluidas. Es parte del <strong>plan Premium</strong>.</p>
         <button class="btn accent full mt">Ver planes Premium</button>`;
@@ -1084,15 +1080,15 @@ export function renderPlanner(container, params = {}) {
     const esHoy = rango === 'hoy';
     if (esHoy) {
       items = shoppingList();
-      tituloCard = '🛒 Compras para tu menú de hoy';
+      tituloCard = 'Compras para tu menú de hoy';
       sub = 'Generada automáticamente desde tu menú del día.';
     } else {
       const dias = rango === 'semana' ? 7 : 30;
       items = rangeShoppingList(dias);
-      tituloCard = `🛒 Compras para ${rango === 'semana' ? 'esta semana' : 'este mes'}`;
+      tituloCard = `Compras para ${rango === 'semana' ? 'esta semana' : 'este mes'}`;
       sub = `Proyectada desde tu menú de los próximos ${dias} días, con la cantidad ya sumada cuando la conocemos. Para lo que no tiene una medida exacta (ej. "al gusto") te mostramos en cuántos días aparece, como guía.`;
     }
-    card.innerHTML = `<h2>${tituloCard}</h2><p class="small mb">${sub}</p>`;
+    card.innerHTML = `<h2 style="display:flex;align-items:center;gap:8px">${CART_ICON}<span>${tituloCard}</span></h2><p class="small mb">${sub}</p>`;
 
     // Agrupada por categoría (fruta/verdura/proteína/...) en vez de una
     // lista plana — más fácil de recorrer por pasillo del súper.

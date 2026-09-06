@@ -195,6 +195,26 @@ strong { color: var(--ink); }
 .splash-logo svg { width: 76px; height: 76px; }
 
 /* ===== Cards & layout ===== */
+/* Fondo tipo "mapa" en la tarjeta "Tu ruta de hoy" -- las imágenes reales
+   que envió la usuaria (FONDO RUTA MAPA CLARO/OSCURO.png), no una versión
+   dibujada a mano. Clara por defecto, oscura en tema oscuro -- mismo
+   patrón de 3 estados que el resto del sistema de temas (preferencia del
+   sistema, a menos que la usuaria haya elegido "Claro" explícito; o
+   "Oscuro" explícito, que siempre gana). */
+#tour-menu.card {
+  background-image: url("../img/mapa-ruta-hoy-claro.png");
+  background-size: cover;
+  background-position: top right;
+  background-repeat: no-repeat;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #tour-menu.card {
+    background-image: url("../img/mapa-ruta-hoy.png");
+  }
+}
+:root[data-theme="dark"] #tour-menu.card {
+  background-image: url("../img/mapa-ruta-hoy.png");
+}
 .card {
   background: var(--card);
   border-radius: var(--radius);
@@ -436,7 +456,15 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    no aplica igual a controles de formulario en todos los navegadores),
    así que sin esto "Recetario" quedaba angosto por su propio contenido
    mientras la columna de la grilla ya medía lo mismo que la otra. */
-.recetario-tabs .chip { width: 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; padding-top: 6px; padding-bottom: 6px; }
+.recetario-tabs .chip { width: 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; padding-top: 6px; padding-bottom: 6px; padding-left: 6px; padding-right: 6px; font-size: 0.8rem; }
+/* El ícono del carrito (SVG, no emoji) va INLINE con el texto, no en un
+   contenedor flex -- con display:flex el botón dejaba de truncar con
+   "…" (text-overflow no aplica igual dentro de un contenedor flex), y
+   "Lista de compras" se salía del botón en vez de cortarse. vertical-align
+   lo alinea con el texto sin necesitar flexbox. margin-right más chico
+   que el genérico de .chip > svg (8px se sentía muy separado del texto
+   acá específicamente). */
+.recetario-tabs .chip svg { display: inline-block !important; vertical-align: -3px; margin-right: 5px; }
 /* Día/Semana/Mes en Progreso: mismo patrón de grilla de columnas iguales
    que .recetario-tabs, pero a 3 columnas. */
 #rango-tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
@@ -1037,6 +1065,10 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .steps li { margin-bottom: 6px; }
 .steps.check { list-style: none; padding-left: 0; }
 .steps.check li { position: relative; padding-left: 26px; font-weight: 600; color: var(--ink); }
+/* Ícono SVG (ej. el carrito de "Lista de compras automática") inline con
+   el texto -- su propio style="display:block" si no lo fuerza a su
+   propia línea, igual que en .recetario-tabs .chip svg. */
+.steps.check li svg { display: inline-block !important; vertical-align: -3px; margin-right: 4px; }
 .steps.check li::before {
   content: '✓'; position: absolute; left: 0; top: -1px; width: 18px; height: 18px; border-radius: 50%;
   background: var(--primary); color: #fff; font-size: 0.68rem; font-weight: 700;
@@ -1082,6 +1114,10 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   background: var(--card); box-shadow: var(--shadow);
 }
 .progreso-boton:active .progreso-boton-icon { transform: scale(0.94); }
+/* El ícono del carrito (SVG, 18x18 por defecto) se veía chico junto a
+   los demás emoji del carrusel -- un poco más grande, sin tocar el
+   círculo de 52px que lo contiene. */
+.progreso-boton-icon svg { width: 26px; height: 26px; }
 .progreso-boton-label { font-size: 0.72rem; font-weight: 700; color: var(--ink-soft); }
 .progreso-boton-valor { font-size: 0.8rem; font-weight: 800; color: var(--primary-dark); }
 

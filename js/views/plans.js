@@ -2,7 +2,7 @@
 import { getPlan, setPlanCache, isPremium, planExpired, planExpiry } from '../store.js';
 import { downgradeToFree } from '../supabase-client.js';
 import { HOTMART_CHECKOUT } from '../config.js';
-import { header, navigate, toast } from '../app.js';
+import { header, navigate, toast, CART_ICON } from '../app.js';
 
 const PLANS = [
   {
@@ -29,7 +29,7 @@ const FREE_FEATURES = [
 const PREMIUM_FEATURES = [
   '🎯 Misión 12 semanas completa',
   '🥗 Recetario completo (el plan gratis ve una selección)',
-  '🛒 Lista de compras automática',
+  `${CART_ICON} Lista de compras automática`,
   '💡 Detección de patrones de antojos',
   '📚 Todas las micro-lecciones',
   'Todo lo del plan gratuito, sin límites'
