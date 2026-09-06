@@ -571,8 +571,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   padding: 12px 16px; border-radius: 999px; font-weight: 700;
   color: #fff; background: var(--modal-bg);
   /* Borde sólido INTERNO -- inset, no border real, para no sumarle ni un
-     px al tamaño del botón (pedido explícito: no agrandarlo). */
-  box-shadow: inset 0 0 0 1.5px var(--border);
+     px al tamaño del botón (pedido explícito: no agrandarlo). Blanco y
+     con un leve halo propio (referencia real de la usuaria), no gris
+     tenue -- se ve como un anillo brillante pegado al borde, con el
+     resplandor de color (::before, animado, sin tocar) asomando más
+     afuera de ese anillo. */
+  box-shadow: inset 0 0 0 1.5px #fff, 0 0 5px 1px rgba(255,255,255,0.6);
 }
 /* El texto del botón es blanco (color heredado), pero las chispas van
    en amarillo -- por eso el ícono necesita su propio color, no puede
