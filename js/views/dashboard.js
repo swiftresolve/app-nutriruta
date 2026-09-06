@@ -8,7 +8,7 @@
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
-import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON } from '../app.js';
+import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON } from '../app.js';
 import { t } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
@@ -503,6 +503,23 @@ function pedirReflexionHabitos(onConfirm) {
 // cortas y claras por color, mismo criterio en las 3.
 const SEMAFORO_TEXTO = { verde: t('Apto para tu perfil'), amarillo: t('Modera esto'), rojo: t('Evita esto') };
 
+// "Analizar con SuSana" en una receta del CATÁLOGO no necesita IA -- el
+// semáforo ya salió de perfiles curados a mano (recipe.apto/moderar/
+// evitar), así que la respuesta ya está definida, no hay nada que
+// "pensar" ni tokens que gastar. Solo una receta propia sin esa
+// clasificación (ver más abajo) sí amerita mandarla a analizar de
+// verdad con la IA.
+function analisisInstantaneo(light, recipe, user) {
+  const perfilesMatch = recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => PROFILES[p].nombre);
+  if (light === 'verde') {
+    return `✅ ${t('Óptima para tu perfil')}${perfilesMatch.length ? ` — ${t('especialmente buena para')} ${perfilesMatch.join(', ')}.` : '.'} ${t('Puedes comerla con confianza.')}`;
+  }
+  if (light === 'amarillo') {
+    return `🟡 ${t('Modérala')} — ${t('no es la mejor opción para tu perfil de salud, pero ocasionalmente está bien en una porción moderada.')}`;
+  }
+  return `🔴 ${t('Mejor evítala')} — ${t('no es recomendable para tu perfil de salud actual. Busca una alternativa más adecuada.')}`;
+}
+
 // Semáforo horizontal de verdad (3 luces), no solo un punto -- con la
 // luz que corresponde encendida a color completo y las otras dos
 // apagadas, pero SIN perder su color (rojo/amarillo/verde opacos, no
@@ -551,6 +568,8 @@ export function openRecipe(recipe, hoy = null) {
         ${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span>
       </p>
       <p class="mt">${recipe.apto.filter((p) => user.perfiles.includes(p)).map((p) => `<span class="tag perfil">${PROFILES[p].nombre}</span>`).join(' ')}</p>
+      <button type="button" class="btn-susana mt" id="rc-analizar-susana">${SPARKLE_ICON} ${t('Analizar con SuSana')}</button>
+      <p class="small mt" id="rc-analisis-instantaneo" hidden style="background:var(--modal-bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px"></p>
       ${hoy ? `<div class="row mt" style="gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--modal-bg);border:1px solid var(--border);border-radius:14px">
         <span class="small" id="rc-check-label">${registradoAhora ? t('¡Comiste esto! Toca para deshacer') : t('¿Comiste esto?')}</span>
         <button type="button" class="meal-check${registradoAhora ? ' done' : ''}" id="rc-check-toggle" aria-label="${t('Marcar como comido')}">${registradoAhora ? '✓' : ''}</button>
@@ -593,6 +612,29 @@ export function openRecipe(recipe, hoy = null) {
       });
     }
     pintarIngredientes();
+    modal.querySelector('#rc-analizar-susana').addEventListener('click', () => {
+      // Catálogo (recipe.apto/moderar/evitar ya definidos a mano) = el
+      // semáforo ya ES el análisis, respuesta instantánea sin gastar IA.
+      // Solo una receta SIN esa clasificación (propia, sin catálogo)
+      // amerita mandarla de verdad a SuSana -- ahí sí hace falta que la
+      // IA razone y le asigne un color de semáforo según el perfil.
+      if (Array.isArray(recipe.apto)) {
+        const caja = modal.querySelector('#rc-analisis-instantaneo');
+        caja.textContent = analisisInstantaneo(light, recipe, user);
+        caja.hidden = false;
+        return;
+      }
+      closeFn();
+      // El chat de SuSana es texto plano, no tarjetas como el "Fitia
+      // Coach" de referencia -- para que la respuesta quede igual de
+      // organizada (sin poder renderizar negritas/barras), se le pide
+      // esa misma estructura directamente en el mensaje, coherente con
+      // cómo ya conversa SuSana en el resto de la app. Al no venir del
+      // catálogo, también se le pide que la clasifique (verde/amarillo/
+      // rojo) según mis condiciones de salud.
+      const pregunta = `Analiza "${shown.nombre}" que estoy por comer (no está en tu catálogo curado). Respóndeme breve, en dos partes: 1) qué tan nutritiva es para mi perfil de salud (una palabra fuerte como Óptima/Buena/Regular, con una frase del porqué), y 2) qué tan bien encaja en mi día de hoy según lo que ya he comido (otra palabra + frase). Dime también si la clasificarías en verde (apta), amarilla (moderar) o roja (evitar) según mis condiciones de salud, y por qué. Cierra con una pregunta corta sobre cómo la voy a preparar.`;
+      navigate('assistant', { prefill: pregunta });
+    });
     modal.querySelector('#rc-agregar-ing').addEventListener('click', () => {
       ingredientesTexto.push('');
       pintarIngredientes();

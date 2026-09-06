@@ -27,7 +27,7 @@ function guardarCache(conversationId, history, usedCount) {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify({ conversationId, history, usedCount })); } catch { /* localStorage lleno o bloqueado, no es crítico */ }
 }
 
-export function renderAssistant(container) {
+export function renderAssistant(container, params = {}) {
   if (!isPremium()) {
     header(container);
     const lock = document.createElement('div');
@@ -242,7 +242,16 @@ export function renderAssistant(container) {
     input.style.height = Math.min(input.scrollHeight, 90) + 'px';
   });
 
-  loadHistory();
+  // "Analizar con SuSana" (botón en la modal de receta, ver dashboard.js)
+  // llega hasta acá con `params.prefill` -- se espera a que cargue el
+  // historial real (para seguir la MISMA conversación, no abrir una
+  // nueva cada vez que se analiza una receta) y recién ahí se manda.
+  loadHistory().then(() => {
+    if (params.prefill) {
+      input.value = params.prefill;
+      send();
+    }
+  });
 }
 
 // "Personalizar a SuSana": elegir el tono con una frase de ejemplo en vivo
