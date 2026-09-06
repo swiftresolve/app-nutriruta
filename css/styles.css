@@ -1507,6 +1507,17 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    TODOS los nodos (pedido explícito: la distancia vertical debe ser
    exactamente la misma en toda la lista, no solo en el nodo activo). */
 .path-wrap.no-line.has-line .path-row { margin-bottom: 30px; }
+/* Con nombres de receta reales (varios más largos que el ejemplo con el
+   que se armó la preview), el subtítulo podía llegar a 3 líneas -- como
+   TODAS las filas se igualan a la más alta (equalizeRowHeights), una sola
+   fila así de alta separaba muchísimo el resto de los nodos, muy lejos
+   de cómo se veía la preview aprobada. Recortado a 2 líneas máximo, solo
+   en esta vista (no toca Plan de 7 días ni Misión, que sí quieren el
+   texto completo). */
+.path-wrap.has-line .path-s {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+}
 .path-node-col { position: relative; flex: none; }
 .path-node {
   /* Esfera de vidrio -- círculo perfecto (antes ovalado), gradiente radial

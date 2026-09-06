@@ -154,11 +154,17 @@ function drawCurve(wrap, opts = {}) {
   }
   const fullD = `M ${points[0].x} ${points[0].y}` + segments.map((s) => s.slice(s.indexOf(' C'))).join('');
   const activeIndex = opts.activeIndex;
+  const DASH = '6 11';
   if (activeIndex == null) {
-    svg.innerHTML = `<path d="${fullD}" fill="none" stroke="var(--primary-soft)" stroke-width="5" stroke-linecap="round"/>`;
+    // "Tu ruta de hoy" pasa activeIndex indefinido cuando, según la hora
+    // real y los horarios configurados por la usuaria, ninguna comida cae
+    // "ahora" (ej. justo entre dos ventanas) -- antes esto caía a una
+    // línea sólida vieja sin guiones, que se veía como un bug/diseño
+    // distinto al resto. Mismo punteado tenue que el tramo "todavía no
+    // llegado", nada más -- consistente siempre, haya o no comida activa.
+    svg.innerHTML = `<path d="${fullD}" fill="none" stroke="var(--border)" stroke-width="4" stroke-linecap="round" stroke-dasharray="${DASH}"/>`;
     return;
   }
-  const DASH = '6 11';
   // Cada tramo se dibuja como su propio <path> (para poder colorear/animar
   // por separado), pero el patrón de guiones debe verse como UNA sola
   // línea continua de punta a punta -- si cada tramo reinicia su propio
