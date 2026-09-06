@@ -7,9 +7,10 @@
 // solo se comparte o descarga lo que la usuaria decide compartir.
 import { getState } from '../store.js';
 import { diasConDiario } from '../store.js';
-import { header, navigate, toast, SHARE_ICON } from '../app.js';
+import { header, navigate, openModal, SHARE_ICON } from '../app.js';
 import { MEALS } from '../data/recipes.js';
 import { broteStage, broteBadge } from '../ruti.js';
+import { abrirCompartirPlantillas } from '../shareUI.js';
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -107,144 +108,76 @@ export function renderDiary(container) {
     compartirBtn.className = 'btn ghost full mt';
     compartirBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px';
     compartirBtn.innerHTML = `${SHARE_ICON}Compartir este día`;
-    compartirBtn.addEventListener('click', () => compartirDia(dia, completo, compartirBtn));
+    compartirBtn.addEventListener('click', () => {
+      const contenidoBase = {
+        tipo: 'diario',
+        titulo: 'Mi Ruta de hoy',
+        subtitulo: fechaCompletaCompartir(dia.fecha),
+        valorGrande: completo ? 'Hoy también cuidaste de ti' : '',
+        emoji: '💚'
+      };
+      // Con una sola foto registrada no hay nada que elegir -- directo al
+      // carrusel de plantillas (pedido explícito: compartir debe funcionar
+      // desde la primera comida del día, no solo cuando ya están las 5).
+      if (dia.registros.length <= 1) {
+        abrirCompartirPlantillas({ ...contenidoBase, fotos: dia.registros.map((r) => r.fotoUrl) });
+      } else {
+        elegirFotosParaCompartir(dia.registros, (fotos) => abrirCompartirPlantillas({ ...contenidoBase, fotos }));
+      }
+    });
     card.appendChild(compartirBtn);
 
     container.appendChild(card);
   }
 }
 
-function cargarImagen(url) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('No se pudo cargar una foto.'));
-    img.src = url;
+// crearImagenCompartir/compartirDia (la única plantilla fija de antes) se
+// movieron a shareTemplates.js/shareUI.js -- ahora Mi Diario es solo uno
+// de los 4 tipos de contenido que ese motor compartido sabe dibujar (ver
+// abrirCompartirPlantillas más arriba), con varias plantillas para elegir
+// en vez de una sola imagen fija.
+
+// Paso previo al carrusel de plantillas cuando hay más de una foto ese
+// día: todas empiezan preseleccionadas (lo más común es compartir el día
+// completo) y se puede destocar la que no se quiera incluir -- pedido
+// explícito: la usuaria elige cuáles fotos entran al collage, no todas
+// por obligación.
+function elegirFotosParaCompartir(registros, onListo) {
+  openModal((modal, closeFn) => {
+    const seleccionadas = new Set(registros.map((r) => r.fotoUrl));
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <h2 class="center">¿Qué fotos incluyes?</h2>
+      <p class="small muted center mt">Toca una para quitarla del collage.</p>
+      <div class="foto-elegir-grid mt" id="foto-elegir-grid"></div>
+      <button type="button" class="btn accent full mt" id="foto-elegir-continuar">Continuar</button>`;
+    modal.appendChild(wrap);
+
+    const grid = wrap.querySelector('#foto-elegir-grid');
+    const continuarBtn = wrap.querySelector('#foto-elegir-continuar');
+    function refrescarBoton() {
+      continuarBtn.disabled = seleccionadas.size === 0;
+      continuarBtn.style.opacity = seleccionadas.size === 0 ? '0.5' : '1';
+    }
+    registros.forEach((r) => {
+      const meta = mealMeta(r.mealId);
+      const item = document.createElement('div');
+      item.className = 'foto-elegir-item selected';
+      item.innerHTML = `<img src="${r.fotoUrl}" alt="${meta.nombre}"><span class="foto-elegir-check">✓</span>`;
+      item.addEventListener('click', () => {
+        if (seleccionadas.has(r.fotoUrl)) { seleccionadas.delete(r.fotoUrl); item.classList.remove('selected'); }
+        else { seleccionadas.add(r.fotoUrl); item.classList.add('selected'); }
+        refrescarBoton();
+      });
+      grid.appendChild(item);
+    });
+    refrescarBoton();
+
+    continuarBtn.addEventListener('click', () => {
+      if (!seleccionadas.size) return;
+      const orden = registros.map((r) => r.fotoUrl).filter((u) => seleccionadas.has(u));
+      closeFn();
+      onListo(orden);
+    });
   });
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-
-// Compone una imagen vertical (formato historia) con las fotos del día,
-// pensada para compartir en redes — se arma entera en el cliente, nunca
-// se sube a ningún servidor propio ni de terceros.
-async function crearImagenCompartir(dia, completo) {
-  const W = 720, H = 1280;
-  const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
-
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#eafbf1');
-  grad.addColorStop(1, '#ffffff');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#1f7a4d';
-  ctx.font = 'bold 42px system-ui, sans-serif';
-  ctx.fillText('Mi Ruta de hoy', W / 2, 100);
-
-  ctx.font = '26px system-ui, sans-serif';
-  ctx.fillStyle = '#5a7c68';
-  ctx.fillText(fechaCompletaCompartir(dia.fecha), W / 2, 140);
-
-  const fotos = dia.registros.slice(0, 5);
-  const cols = Math.min(2, fotos.length) || 1;
-  const gap = 16, pad = 40;
-  const size = (W - pad * 2 - (cols - 1) * gap) / cols;
-  const startY = 190;
-
-  for (let i = 0; i < fotos.length; i++) {
-    const col = i % cols, row = Math.floor(i / cols);
-    const x = pad + col * (size + gap);
-    const y = startY + row * (size + gap);
-    try {
-      const img = await cargarImagen(fotos[i].fotoUrl);
-      const side = Math.min(img.width, img.height);
-      const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
-      ctx.save();
-      roundRect(ctx, x, y, size, size, 20);
-      ctx.clip();
-      ctx.drawImage(img, sx, sy, side, side, x, y, size, size);
-      ctx.restore();
-    } catch {
-      ctx.fillStyle = '#dcefe3';
-      roundRect(ctx, x, y, size, size, 20);
-      ctx.fill();
-    }
-  }
-
-  const rows = Math.ceil(fotos.length / cols);
-  let y = startY + rows * (size + gap) + 30;
-
-  if (completo) {
-    ctx.font = 'bold 32px system-ui, sans-serif';
-    ctx.fillStyle = '#1f7a4d';
-    ctx.fillText('Hoy también cuidaste de ti 💚', W / 2, Math.min(y, H - 100));
-    y += 50;
-  }
-
-  // Logo a la izquierda del nombre, ambos centrados como un solo grupo
-  // (no el nombre solo centrado con el logo aparte) -- mismo ícono que
-  // el resto de la app (icons/icon-192.png), nunca un logo aproximado.
-  ctx.font = '22px system-ui, sans-serif';
-  ctx.fillStyle = '#8aa596';
-  const textoMarca = 'NutriRuta';
-  const anchoTexto = ctx.measureText(textoMarca).width;
-  const logoSize = 30, logoGap = 10;
-  const anchoGrupo = logoSize + logoGap + anchoTexto;
-  const inicioX = W / 2 - anchoGrupo / 2;
-  const textY = H - 40;
-  try {
-    const logo = await cargarImagen('./icons/icon-192.png');
-    ctx.drawImage(logo, inicioX, textY - logoSize / 2 - 6, logoSize, logoSize);
-  } catch { /* si no carga el logo, igual se ve el nombre */ }
-  ctx.textAlign = 'left';
-  ctx.fillText(textoMarca, inicioX + logoSize + logoGap, textY);
-  ctx.textAlign = 'center';
-
-  return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-}
-
-async function compartirDia(dia, completo, btn) {
-  btn.disabled = true;
-  const original = btn.textContent;
-  btn.textContent = 'Preparando imagen…';
-  try {
-    const blob = await crearImagenCompartir(dia, completo);
-    if (!blob) throw new Error('No se pudo generar la imagen.');
-    const file = new File([blob], `nutriruta-${dia.fecha}.jpg`, { type: 'image/jpeg' });
-    if (navigator.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: 'Mi Ruta de hoy' });
-      } catch (err) {
-        if (err?.name !== 'AbortError') toast('No se pudo compartir.');
-      }
-    } else {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nutriruta-${dia.fecha}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-      toast('Imagen descargada — ya la puedes compartir 💚');
-    }
-  } catch (err) {
-    toast(err.message || 'No se pudo preparar la imagen.');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = original;
-  }
 }

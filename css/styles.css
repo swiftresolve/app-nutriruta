@@ -124,6 +124,42 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar { display
   src: url('../fonts/karla-variable.woff2') format('woff2');
 }
 
+/* Fuente manuscrita para las plantillas de compartir estilo scrapbook
+   (ver shareTemplates.js) -- autohospedada (OFL, tomada del repo oficial
+   de Google Fonts) porque la CSP de la app es font-src 'self': no se
+   puede cargar directo desde fonts.gstatic.com. */
+@font-face {
+  font-family: 'Caveat';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: block;
+  src: url('../fonts/caveat-variable.ttf') format('truetype');
+}
+/* 3 fuentes más para poder elegir en el carrusel de plantillas (pedido
+   explícito: al menos 3-4 opciones, no solo Caveat) -- misma razón de
+   autohospedaje que arriba. */
+@font-face {
+  font-family: 'Pacifico';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('../fonts/pacifico.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Permanent Marker';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('../fonts/permanentmarker.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Shadows Into Light';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('../fonts/shadowsintolight.woff2') format('woff2');
+}
+
 body {
   font-family: 'Karla', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background: var(--bg);
@@ -571,6 +607,25 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .meal-check:active { transform: scale(0.9); }
 .meal-check.done { background: var(--green); border-color: var(--green); }
+
+/* Selección de fotos antes de compartir (Mi Diario) -- grilla de miniaturas
+   tocables, todas preseleccionadas de entrada (lo más común es querer
+   compartir el día completo), con un check circular igual a .meal-check
+   en la esquina de cada una para deseleccionar la que no quiera incluir. */
+.foto-elegir-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.foto-elegir-item { position: relative; cursor: pointer; }
+.foto-elegir-item img {
+  width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; display: block;
+  opacity: 0.45; transition: opacity 0.15s;
+}
+.foto-elegir-item.selected img { opacity: 1; }
+.foto-elegir-check {
+  position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid #fff; background: rgba(0,0,0,0.35);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 0.85rem; font-weight: 800; line-height: 1;
+}
+.foto-elegir-item.selected .foto-elegir-check { background: var(--green); border-color: var(--green); }
 
 /* Sección desplegable de la modal de receta ("Instrucciones", referencia
    real: Fitia) -- <details> nativo, sin JS para el toggle. */
@@ -1971,6 +2026,29 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 @media (min-width: 600px) {
   body { padding-top: 10px; }
 }
+
+/* ===== Carrusel "Elige tu plantilla" (compartir en redes) =====
+   Mismo patrón de scroll-snap horizontal que .liga-carrusel. Cada tarjeta
+   muestra una vista previa REAL (720x1280 del canvas, escalada) -- no un
+   ícono genérico -- para que se vea de una cómo queda cada plantilla con
+   los datos de verdad antes de elegir. */
+.share-carrusel {
+  display: flex; gap: 14px; overflow-x: auto; padding: 4px 30% 10px;
+  scroll-snap-type: x proximity; scrollbar-width: none;
+}
+.share-carrusel::-webkit-scrollbar { display: none; }
+.share-card { flex: none; width: 168px; scroll-snap-align: center; }
+.share-card-preview {
+  width: 100%; aspect-ratio: 720 / 1280; border-radius: 16px; overflow: hidden;
+  background: var(--border); box-shadow: var(--shadow);
+  display: flex; align-items: center; justify-content: center;
+}
+.share-card-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.share-card-loading { font-size: 1.8rem; opacity: 0.5; }
+/* Bloqueada (plantilla Premium que aún no tiene desbloqueada): la vista
+   previa se ve, pero apagada -- invita a imaginarla, no la esconde del
+   todo. */
+.share-card.bloqueada .share-card-preview { filter: grayscale(0.6) brightness(0.75); }
 
 /* ===== Ruleta numérica (quiz "Sobre ti": Edad/Estatura/Peso) =====
    Selector tipo rueda con scroll-snap nativo (sin librería): cada

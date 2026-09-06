@@ -8,7 +8,7 @@
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
-import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, CART_ICON } from '../app.js';
+import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, CART_ICON, SHARE_ICON } from '../app.js';
 import { t } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
@@ -18,6 +18,7 @@ import { renderCheckinBanner, checkinBannerVisible } from './checkin.js';
 import { renderNotifPrompt, notifPromptVisible } from './notifPrompt.js';
 import { openMealLogModal } from './mealLogModal.js';
 import { openKitchenSearchModal } from './kitchenSearchModal.js';
+import { abrirCompartirPlantillas } from '../shareUI.js';
 
 const DAILY_HABITS = [
   { id: 'agua', nombre: 'Tomé suficiente agua 💧' },
@@ -441,16 +442,30 @@ function abrirModalAgua(container) {
 function abrirModalLogros(state) {
   openModal((modal) => {
     const wrap = document.createElement('div');
-    wrap.innerHTML = '<h2>🎖️ Logros</h2><div class="badges mt"></div>';
+    const desbloqueados = state.logros.length;
+    wrap.innerHTML = `<h2>🎖️ Logros</h2><div class="badges mt"></div>
+      ${desbloqueados ? `<button type="button" class="btn ghost full mt" id="logros-compartir">${SHARE_ICON}Compartir mis logros</button>` : ''}`;
     const grid = wrap.querySelector('.badges');
+    let ultimoDesbloqueado = null;
     for (const a of ACHIEVEMENTS) {
       const unlocked = state.logros.includes(a.id);
+      if (unlocked) ultimoDesbloqueado = a;
       const b = document.createElement('div');
       b.className = 'badge' + (unlocked ? '' : ' locked');
       b.title = a.desc;
       b.innerHTML = `<div class="emoji">${a.emoji}</div><span class="small"><strong>${esc(a.nombre)}</strong></span>`;
       grid.appendChild(b);
     }
+    wrap.querySelector('#logros-compartir')?.addEventListener('click', () => {
+      abrirCompartirPlantillas({
+        tipo: 'logro',
+        titulo: 'Mis logros en NutriRuta',
+        subtitulo: ultimoDesbloqueado ? `Último: ${ultimoDesbloqueado.nombre}` : '',
+        valorGrande: `${desbloqueados}/${ACHIEVEMENTS.length}`,
+        valorEtiqueta: 'logros desbloqueados',
+        emoji: ultimoDesbloqueado?.emoji || '🎖️'
+      });
+    });
     modal.appendChild(wrap);
   });
 }

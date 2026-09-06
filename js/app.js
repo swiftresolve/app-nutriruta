@@ -23,6 +23,7 @@ import { renderAdmin } from './views/admin.js';
 import { renderWeekMenu } from './views/weekMenu.js';
 import { renderDiary } from './views/diary.js';
 import { renderLiga } from './views/liga.js';
+import { abrirCompartirPlantillas } from './shareUI.js';
 
 const app = document.getElementById('app');
 const nav = document.getElementById('bottom-nav');
@@ -533,9 +534,11 @@ function abrirMisRachas() {
     modal.appendChild(wrap);
 
     function pintar() {
+      const racha = getState().racha?.actual || 0;
       wrap.innerHTML = `
         <h2 class="center">🔥 Mis Rachas</h2>
         ${rachaDetailHtml(month, year, { size: 56 })}
+        ${racha > 0 ? `<button class="btn ghost full mt" id="mr-compartir">${SHARE_ICON}Compartir mi racha</button>` : ''}
         <button class="btn ghost full mt" id="mr-ver-progreso">Ver todo mi progreso →</button>`;
 
       wrap.querySelector('.mr-prev').addEventListener('click', () => {
@@ -551,6 +554,16 @@ function abrirMisRachas() {
           pintar();
         });
       }
+      wrap.querySelector('#mr-compartir')?.addEventListener('click', () => {
+        abrirCompartirPlantillas({
+          tipo: 'racha',
+          titulo: 'Mi racha en NutriRuta',
+          subtitulo: 'Días en Ruta',
+          valorGrande: String(racha),
+          valorEtiqueta: racha === 1 ? 'día seguido cuidándome' : 'días seguidos cuidándome',
+          emoji: '🔥'
+        });
+      });
       wrap.querySelector('#mr-ver-progreso').addEventListener('click', () => {
         closeFn();
         navigate('progress');

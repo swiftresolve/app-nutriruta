@@ -5,9 +5,10 @@ import { getState, logSintoma, sintomaPattern, esc, today, getWaterGoal, isPremi
 import { SYMPTOM_TYPES, SYMPTOM_CAUSES } from '../data/profiles.js';
 import { MISSION } from '../data/mission.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
-import { header, openModal, toast, navigate, susanaName } from '../app.js';
+import { header, openModal, toast, navigate, susanaName, SHARE_ICON } from '../app.js';
 import { t } from '../i18n.js';
 import { barChart, lineChart } from '../charts.js';
+import { abrirCompartirPlantillas } from '../shareUI.js';
 
 const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -123,10 +124,28 @@ export function renderProgress(container) {
     pesoCard.className = 'card';
     if (pesos.length >= 2) {
       const items = pesos.slice(-10).map((p) => ({ value: p.kg, label: `${p.fecha.slice(8, 10)}/${p.fecha.slice(5, 7)}` }));
+      const primero = pesos[0].kg;
+      const ultimo = pesos[pesos.length - 1].kg;
+      const diff = ultimo - primero;
       pesoCard.innerHTML = `<h2>⚖️ Tendencia de peso</h2>
         <div class="mt">${lineChart(items, { color: 'var(--secondary)' })}</div>
-        <p class="small muted mt">Registros: ${pesos.length}. Último: ${pesos[pesos.length - 1].kg} kg (${pesos[pesos.length - 1].fecha}).
-        Interpreta estos cambios con tu profesional de salud, no solo con la cifra.</p>`;
+        <p class="small muted mt">Registros: ${pesos.length}. Último: ${ultimo} kg (${pesos[pesos.length - 1].fecha}).
+        Interpreta estos cambios con tu profesional de salud, no solo con la cifra.</p>
+        <button type="button" class="btn ghost full mt" id="peso-compartir">${SHARE_ICON}Compartir mi progreso</button>`;
+      pesoCard.querySelector('#peso-compartir').addEventListener('click', () => {
+        abrirCompartirPlantillas({
+          tipo: 'peso',
+          titulo: 'Mi progreso en NutriRuta',
+          subtitulo: `Desde ${pesos[0].fecha}`,
+          // Con signo siempre visible (+/-) -- una bajada Y una subida son
+          // igual de válidas de compartir (ej. alguien en superávit
+          // buscando subir de peso con salud), nunca se asume una sola
+          // dirección "buena".
+          valorGrande: `${diff > 0 ? '+' : diff < 0 ? '-' : ''}${Math.abs(diff).toFixed(1)} kg`,
+          valorEtiqueta: `${pesos.length} registros`,
+          emoji: '⚖️'
+        });
+      });
     } else if (pesos.length === 1) {
       pesoCard.innerHTML = `<h2>⚖️ Tendencia de peso</h2>
         <p class="small mt">Tienes un registro. Cuando agregues otro en Ajustes, verás aquí tu tendencia.</p>`;
