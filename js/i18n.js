@@ -826,5 +826,11 @@ const EN = {
   '3 días': '3 days', '7 días': '7 days', '30 días': '30 days',
   'Para probar tu primer paso': 'To try your first step',
   'Una semana completa': 'A full week',
-  'Cambiar de verdad': 'Really change'
+  'Cambiar de verdad': 'Really change',
+
+  // --- Receta sugerida y progreso semanal (Plan de 7 días / Misión) ---
+  'Receta sugerida para hoy': 'Suggested recipe for today',
+  'Receta sugerida para esta semana': 'Suggested recipe for this week',
+  'Ver receta': 'View recipe',
+  'Tus hábitos esta semana': 'Your habits this week'
 };

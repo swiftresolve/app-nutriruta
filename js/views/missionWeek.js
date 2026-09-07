@@ -5,11 +5,74 @@
 // título. Mismo estilo de "pantalla con header + Volver" que weekMenu.js
 // (no el estilo de pantalla completa del quiz/SOS, la usuaria pidió dejar
 // el Plan de 7 días y la Misión con estilos visuales distintos).
-import { getState, setState, checkAchievements, today, esc, guardarReflexionSemana, responderInvitacionTestimonioMision, otorgarGemas, GEMAS_POR_DIA, sumarEnergiaRuta, esTextoReal } from '../store.js';
+import { getState, setState, checkAchievements, today, esc, guardarReflexionSemana, responderInvitacionTestimonioMision, otorgarGemas, GEMAS_POR_DIA, GEMAS_BONUS_HITO, sumarEnergiaRuta, esTextoReal } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
 import { celebrateMilestone } from '../streakAnim.js';
 import { playCelebrateSound } from '../sound.js';
-import { t } from '../i18n.js';
+import { t, getIdioma } from '../i18n.js';
+import { sugerirRecetaPorEtiquetas } from '../menu.js';
+import { openRecipe } from './dashboard.js';
+import { barChart } from '../charts.js';
+
+// Pistas para sugerir una receta real del catálogo por tema de semana --
+// mismo espíritu que EMERGENCY_PLAN.dias[].recetaEtiquetas, pero el
+// contenido de las semanas vive en Supabase (mission_weeks) así que las
+// pistas de receta se mantienen acá, en el cliente, por número de semana.
+const RECETA_HINTS_MISION = {
+  1: { etiquetas: ['hidratante'] },
+  2: { comida: 'desayuno', etiquetas: ['alto_proteina'] },
+  3: { etiquetas: ['hidratante'] },
+  4: { comida: 'almuerzo', etiquetas: ['plato_modelo'] },
+  5: { etiquetas: ['bajo_ig'] },
+  6: { comida: 'desayuno', etiquetas: ['rapido'] },
+  7: { comida: 'cena', etiquetas: ['mediterraneo', 'ligero'] },
+  8: { etiquetas: ['fermentado', 'alto_fibra', 'fibra_soluble', 'microbiota'] },
+  9: { comida: 'cena', etiquetas: ['ligero'] },
+  10: { comida: 'media_tarde', etiquetas: ['antojo_dulce_saludable', 'antojo_salado_saludable', 'snack_antiansiedad'] },
+  11: { etiquetas: ['suave', 'hidratante'] },
+  12: { etiquetas: ['mediterraneo'] }
+};
+// Abreviaturas de día sin pasar por t() -- "mar" ya es clave de traducción
+// para "marzo" en otra parte del diccionario, y reusar el mismo texto
+// fuente para "martes" pisaría esa traducción. Se elige el arreglo según
+// el idioma activo en el momento de pintar, no al cargar el módulo.
+const DIAS_CORTOS_ES = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const DIAS_CORTOS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+function diasCortos() {
+  return getIdioma() === 'en' ? DIAS_CORTOS_EN : DIAS_CORTOS_ES;
+}
+
+// Gráfica real de "días con hábitos cumplidos" durante el rango de
+// calendario de esta semana (mision.inicio + 7*(n-1) días) -- solo
+// aparece si hay al menos 2 días de historial real en ese rango, nunca
+// se inventa ni se rellena con ceros.
+function progresoSemanaHtml(weekN) {
+  const { mision, historialDiario, habitos } = getState();
+  if (!mision?.inicio) return '';
+  const inicio = new Date(mision.inicio + 'T00:00:00');
+  inicio.setDate(inicio.getDate() + (weekN - 1) * 7);
+  const fin = new Date(inicio);
+  fin.setDate(fin.getDate() + 6);
+  const t0 = today();
+  const hoyEnRango = t0 >= inicio.toISOString().slice(0, 10) && t0 <= fin.toISOString().slice(0, 10);
+  const dias = [...historialDiario];
+  if (hoyEnRango && habitos.fecha === t0) {
+    dias.push({ fecha: t0, habitosCompletados: Object.values(habitos.checks || {}).filter(Boolean).length, habitosTotal: 5 });
+  }
+  const enRango = dias
+    .filter((d) => d.fecha >= inicio.toISOString().slice(0, 10) && d.fecha <= fin.toISOString().slice(0, 10))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+  if (enRango.length < 2) return '';
+  const dc = diasCortos();
+  const items = enRango.map((d) => ({
+    label: dc[new Date(d.fecha + 'T00:00:00').getDay()],
+    value: Math.round((d.habitosCompletados / (d.habitosTotal || 5)) * 100)
+  }));
+  return `<div class="card mt">
+    <h3>${t('Tus hábitos esta semana')}</h3>
+    <div class="mt">${barChart(items, { color: 'var(--primary)', suffix: '%' })}</div>
+  </div>`;
+}
 
 export function renderMissionWeek(container, { week, canComplete = false, done = false } = {}) {
   header(container);
@@ -52,6 +115,31 @@ export function renderMissionWeek(container, { week, canComplete = false, done =
     container.appendChild(accionesCard);
   }
 
+  // Receta real del catálogo para el tema de esta semana (nunca inventada,
+  // respeta exclusiones y semáforo del usuario como el resto del menú).
+  const hint = RECETA_HINTS_MISION[week.n];
+  const receta = hint ? sugerirRecetaPorEtiquetas(hint.comida || null, hint.etiquetas || []) : null;
+  if (receta) {
+    const recetaCard = document.createElement('div');
+    recetaCard.className = 'card';
+    recetaCard.innerHTML = `
+      <div class="row" style="gap:10px;align-items:center">
+        <span style="font-size:1.6rem">${receta.emoji}</span>
+        <div style="flex:1">
+          <div class="small muted">${t('Receta sugerida para esta semana')}</div>
+          <strong>${esc(t(receta.nombre))}</strong>
+        </div>
+      </div>
+      <button type="button" class="btn ghost full mt" id="semana-ver-receta">${t('Ver receta')}</button>`;
+    recetaCard.querySelector('#semana-ver-receta').addEventListener('click', () => openRecipe(receta));
+    container.appendChild(recetaCard);
+  }
+
+  // Progreso real de hábitos durante el rango de calendario de esta
+  // semana -- solo aparece si ya hay historial en ese rango.
+  const progresoHtml = progresoSemanaHtml(week.n);
+  if (progresoHtml) container.insertAdjacentHTML('beforeend', progresoHtml);
+
   const reflexionCard = document.createElement('div');
   reflexionCard.className = 'card';
   reflexionCard.innerHTML = `
@@ -84,11 +172,15 @@ export function renderMissionWeek(container, { week, canComplete = false, done =
       });
       const nuevos = checkAchievements();
       if (completando) {
-        const gemasSemana = GEMAS_POR_DIA * 3;
+        const esHito = nuevos.includes('mision_mes1') || nuevos.includes('mision_mes2') || nuevos.includes('mision12_completo');
+        const gemasSemana = GEMAS_POR_DIA * 3 + (esHito ? GEMAS_BONUS_HITO : 0);
         otorgarGemas(gemasSemana);
         sumarEnergiaRuta(8, 5); // "Completar misión semanal"
         playCelebrateSound();
-        celebrateMilestone(t('¡Semana {n} completada!', { n: week.n }), `${week.titulo} · +${gemasSemana} 💎`);
+        const subt = esHito
+          ? `${week.titulo} · +${gemasSemana} 💎 (¡bono de hito!)`
+          : `${week.titulo} · +${gemasSemana} 💎`;
+        celebrateMilestone(t('¡Semana {n} completada!', { n: week.n }), subt);
       }
       if (nuevos.includes('mision12_completo')) {
         toast(t('🏆 ¡Completaste las 12 semanas de la Misión!'));

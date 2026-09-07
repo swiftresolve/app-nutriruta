@@ -189,6 +189,24 @@ export function dailyMenu(dateStr = today()) {
   return menu;
 }
 
+// Sugiere UNA receta real del catálogo para acompañar el tema de un día
+// del Plan de 7 días o una semana de la Misión (ej. la semana "Proteína
+// en el desayuno" sugiere una receta con la etiqueta alto_proteina) --
+// respeta exclusiones y semáforo como el resto del menú, nunca inventa
+// nada. `comida` es opcional (null = cualquier comida); `etiquetas` es
+// un array de etiquetas del catálogo, la mejor coincidencia gana.
+export function sugerirRecetaPorEtiquetas(comida, etiquetas = []) {
+  const { user } = getState();
+  const perfiles = user.perfiles || [];
+  const pool = RECIPES
+    .filter((r) => (!comida || r.comida === comida) && isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
+    .filter((r) => trafficLight(r, perfiles) !== 'rojo');
+  if (!pool.length) return null;
+  const conEtiqueta = pool.filter((r) => (r.etiquetas || []).some((e) => etiquetas.includes(e)));
+  const candidatos = conEtiqueta.length ? conEtiqueta : pool;
+  return rankRecipes(candidatos, perfiles)[0];
+}
+
 // Comidas que la usuaria eligió incluir en su día (quiz "¿Qué comidas
 // quieres incluir?", editable después en Ajustes) -- por defecto las 5,
 // para no romper cuentas creadas antes de que existiera esta opción

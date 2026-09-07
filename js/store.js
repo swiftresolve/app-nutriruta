@@ -546,6 +546,10 @@ export function maxEscudos() {
 // cuando ya se llegó al tope de los que se ganan gratis.
 export const GEMAS_POR_DIA = 5;
 export const COSTO_ESCUDO_GEMAS = 60;
+// Bono extra en los hitos de mitad/final del Plan de 7 días y en cada
+// bloque de 4 semanas de la Misión (junto con las insignias de abajo) --
+// mismo espíritu de "sin grindeo nuevo": solo marca un hito ya real.
+export const GEMAS_BONUS_HITO = 10;
 
 export function comprarEscudo() {
   if (state.escudos >= maxEscudos()) return false;
@@ -873,6 +877,9 @@ export const ACHIEVEMENTS = [
   { id: 'sos_5', emoji: '🛡️', nombre: '5 antojos vencidos', desc: 'Cinco veces elegiste la alternativa saludable.' },
   { id: 'detective', emoji: '🔍', nombre: 'Detective de síntomas', desc: 'Registraste 3 síntomas: ya podemos buscar tus patrones.' },
   { id: 'plan7_completo', emoji: '🎉', nombre: 'Primer paso dado', desc: 'Completaste el plan de 7 días. Empezaste sin esperar.' },
+  { id: 'plan_mitad', emoji: '🌗', nombre: 'A mitad de camino', desc: 'Completaste el día 4 de tu Plan de 7 días.' },
+  { id: 'mision_mes1', emoji: '🗓️', nombre: 'Un mes de Misión', desc: 'Completaste las primeras 4 semanas de tu Misión.' },
+  { id: 'mision_mes2', emoji: '🗓️', nombre: 'Dos meses de Misión', desc: 'Completaste 8 semanas de tu Misión.' },
   { id: 'mision12_completo', emoji: '🏆', nombre: 'Misión cumplida', desc: 'Completaste las 12 semanas de la Misión. Tu nuevo estilo de vida.' }
 ];
 
@@ -896,6 +903,9 @@ export function checkAchievements() {
   if (superados >= 5 && unlock('sos_5')) nuevos.push('sos_5');
   if (state.sintomas.length >= 3 && unlock('detective')) nuevos.push('detective');
   if ((state.emergencia?.completados || []).length >= 7 && unlock('plan7_completo')) nuevos.push('plan7_completo');
+  if ((state.emergencia?.completados || []).includes(4) && unlock('plan_mitad')) nuevos.push('plan_mitad');
+  if ((state.mision?.completadas || []).length >= 4 && unlock('mision_mes1')) nuevos.push('mision_mes1');
+  if ((state.mision?.completadas || []).length >= 8 && unlock('mision_mes2')) nuevos.push('mision_mes2');
   if ((state.mision?.completadas || []).length >= 12 && unlock('mision12_completo')) nuevos.push('mision12_completo');
   return nuevos;
 }

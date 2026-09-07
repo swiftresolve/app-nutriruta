@@ -15,7 +15,8 @@ export const EMERGENCY_PLAN = {
         'Guarda lejos (no hace falta botar) lo que tengas de esas bebidas en casa.',
         'Bebe un vaso de agua al despertar.'
       ],
-      reflexion: '¿Qué bebida te costó más cambiar hoy? Anótalo: es información valiosa sobre ti.'
+      reflexion: '¿Qué bebida te costó más cambiar hoy? Anótalo: es información valiosa sobre ti.',
+      recetaEtiquetas: ['hidratante']
     },
     {
       n: 2, emoji: '🍽️', titulo: 'Arma tu plato modelo',
@@ -25,7 +26,8 @@ export const EMERGENCY_PLAN = {
         'Empieza a comer por las verduras.',
         'No necesitas báscula ni contar nada: solo mira el plato.'
       ],
-      reflexion: '¿Sentiste diferencia en tu saciedad o tu energía después de comer así?'
+      reflexion: '¿Sentiste diferencia en tu saciedad o tu energía después de comer así?',
+      recetaComida: 'almuerzo', recetaEtiquetas: ['plato_modelo']
     },
     {
       n: 3, emoji: '💧', titulo: 'Tu meta de agua, sin excusas',
@@ -35,7 +37,8 @@ export const EMERGENCY_PLAN = {
         'Ten una botella visible en tu espacio de trabajo.',
         'Un vaso de agua antes de cada comida.'
       ],
-      reflexion: '¿Cómo estuvo tu energía y tu digestión hoy, comparado con ayer?'
+      reflexion: '¿Cómo estuvo tu energía y tu digestión hoy, comparado con ayer?',
+      recetaEtiquetas: ['hidratante']
     },
     {
       n: 4, emoji: '💚', titulo: 'Prepara tu snack de emergencia',
@@ -45,7 +48,8 @@ export const EMERGENCY_PLAN = {
         'Nota a qué hora del día te suele dar más ansiedad por comer.',
         'Si llega un antojo hoy, usa el botón SOS antes de decidir.'
       ],
-      reflexion: '¿A qué hora llegó tu antojo, si llegó? Empieza a notar el patrón.'
+      reflexion: '¿A qué hora llegó tu antojo, si llegó? Empieza a notar el patrón.',
+      recetaComida: 'media_tarde', recetaEtiquetas: ['antojo_dulce_saludable', 'antojo_salado_saludable', 'snack_antiansiedad']
     },
     {
       n: 5, emoji: '🚶‍♀️', titulo: 'Muévete, sin gimnasio',
@@ -55,7 +59,8 @@ export const EMERGENCY_PLAN = {
         'Si puedes, camina después de tu comida más grande.',
         'No necesitas ropa deportiva: cualquier movimiento cuenta.'
       ],
-      reflexion: '¿Cómo te sentiste después de moverte? Anótalo para tus días difíciles.'
+      reflexion: '¿Cómo te sentiste después de moverte? Anótalo para tus días difíciles.',
+      recetaComida: 'desayuno', recetaEtiquetas: ['rapido']
     },
     {
       n: 6, emoji: '🔍', titulo: 'Lee las etiquetas',
@@ -65,7 +70,8 @@ export const EMERGENCY_PLAN = {
         'Si el azúcar aparece entre los primeros 3 ingredientes, busca una alternativa.',
         'Prefiere alimentos con pocos ingredientes, todos reconocibles.'
       ],
-      reflexion: '¿Qué producto te sorprendió más al leer su etiqueta?'
+      reflexion: '¿Qué producto te sorprendió más al leer su etiqueta?',
+      recetaEtiquetas: ['economico', 'sin_gluten']
     },
     {
       n: 7, emoji: '🏁', titulo: 'Balance y siguiente paso',
@@ -75,7 +81,8 @@ export const EMERGENCY_PLAN = {
         'Agenda o confirma tu próximo control con tu profesional de salud.',
         'Decide si quieres seguir con la Misión 12 semanas para volverlo tu nuevo estilo de vida.'
       ],
-      reflexion: 'Compárate solo contigo misma hace 7 días. ¿Qué cambió?'
+      reflexion: 'Compárate solo contigo misma hace 7 días. ¿Qué cambió?',
+      recetaComida: 'cena', recetaEtiquetas: ['mediterraneo', 'ligero']
     }
   ]
 };

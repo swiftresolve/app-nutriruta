@@ -2,12 +2,14 @@
 // Termina con un CTA hacia la Misión 12 semanas (Premium).
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { PROFILES } from '../data/profiles.js';
-import { getState, setState, checkAchievements, today, esc, guardarReflexionDia, responderInvitacionTestimonioPlan, otorgarGemas, GEMAS_POR_DIA, sumarEnergiaRuta, esTextoReal } from '../store.js';
+import { getState, setState, checkAchievements, today, esc, guardarReflexionDia, responderInvitacionTestimonioPlan, otorgarGemas, GEMAS_POR_DIA, GEMAS_BONUS_HITO, sumarEnergiaRuta, esTextoReal } from '../store.js';
 import { header, navigate, toast, openModal } from '../app.js';
 import { renderPathMap } from '../pathMap.js';
 import { celebrateMilestone } from '../streakAnim.js';
 import { playCelebrateSound } from '../sound.js';
 import { t } from '../i18n.js';
+import { sugerirRecetaPorEtiquetas } from '../menu.js';
+import { openRecipe } from './dashboard.js';
 
 export function renderEmergency(container) {
   header(container);
@@ -139,9 +141,29 @@ function openDia(dia, done, onChange) {
       <ul class="steps">${dia.acciones.map((a) => `<li>${a}</li>`).join('')}</ul>
       <h3 class="mt">${t('Para reflexionar')}</h3>
       <p>${dia.reflexion}</p>
+      <div id="dia-receta"></div>
       <label class="muted small mt" for="dia-reflexion" style="display:block">${t('Escribe tu respuesta (mínimo 40 caracteres) para poder marcar el día como completado')}</label>
       <textarea id="dia-reflexion" maxlength="500" rows="3" placeholder="${t('Escribe lo que quieras...')}"
         class="auth-input" style="resize:vertical">${esc(reflexionGuardada)}</textarea>`);
+    // Receta real del catálogo que acompaña el tema del día (ej. día 4 =
+    // snack de emergencia sugiere un snack saludable de verdad) -- nunca
+    // bloquea el día si no hay ninguna disponible para el perfil/exclusiones.
+    const receta = sugerirRecetaPorEtiquetas(dia.recetaComida || null, dia.recetaEtiquetas || []);
+    if (receta) {
+      const recetaWrap = modal.querySelector('#dia-receta');
+      recetaWrap.innerHTML = `
+        <div class="card mt" style="background:var(--modal-bg)">
+          <div class="row" style="gap:10px;align-items:center">
+            <span style="font-size:1.6rem">${receta.emoji}</span>
+            <div style="flex:1">
+              <div class="small muted">${t('Receta sugerida para hoy')}</div>
+              <strong>${esc(t(receta.nombre))}</strong>
+            </div>
+          </div>
+          <button type="button" class="btn ghost full mt" id="dia-ver-receta">${t('Ver receta')}</button>
+        </div>`;
+      recetaWrap.querySelector('#dia-ver-receta').addEventListener('click', () => openRecipe(receta));
+    }
     const textarea = modal.querySelector('#dia-reflexion');
     const btn = document.createElement('button');
     btn.className = done ? 'btn ghost full mt' : 'btn full mt';
@@ -165,10 +187,14 @@ function openDia(dia, done, onChange) {
       const nuevos = checkAchievements();
       close();
       if (completando) {
-        otorgarGemas(GEMAS_POR_DIA);
+        const bono = nuevos.includes('plan_mitad') ? GEMAS_BONUS_HITO : 0;
+        otorgarGemas(GEMAS_POR_DIA + bono);
         sumarEnergiaRuta(2, 1); // equivalente a "completar microacción"
         playCelebrateSound();
-        celebrateMilestone(t('¡Día {n} completado!', { n: dia.n }), `${dia.titulo} · +${GEMAS_POR_DIA} 💎`);
+        const subt = bono
+          ? `${dia.titulo} · +${GEMAS_POR_DIA + bono} 💎 (¡bono de mitad de camino!)`
+          : `${dia.titulo} · +${GEMAS_POR_DIA} 💎`;
+        celebrateMilestone(t('¡Día {n} completado!', { n: dia.n }), subt);
       }
       if (nuevos.includes('plan7_completo')) {
         toast(t('🎉 ¡Completaste tu plan de 7 días!'));
