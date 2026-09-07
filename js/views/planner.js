@@ -2,9 +2,9 @@
 import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
-import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
+import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, CLOCK_ICON, SPARKLE_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
 import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace } from '../supabase-client.js';
-import { openRecipe } from './dashboard.js';
+import { openRecipe, semaforoIcon, SEMAFORO_TEXTO } from './dashboard.js';
 import { t, getIdioma } from '../i18n.js';
 
 const ORDENES = [
@@ -173,29 +173,53 @@ Freír los huevos"></textarea>
   });
 }
 
-// Detalle de una receta propia -- misma estructura que openRecipe()
-// (dashboard.js: tamaño de emoji, clase .ingredient por ingrediente,
-// <ol class="steps"> para los pasos) más lo que sí es propio de estas
-// recetas (de dónde salió, porciones/tiempo, el aviso de "reconstruida",
-// y el botón de eliminar) -- lo que openRecipe() no tiene porque el
-// catálogo curado no lo necesita (no hay "apto para"/sustituciones aquí,
-// texto libre en vez de ingredientes estructurados).
+// Detalle de una receta propia -- MISMO diseño visual que openRecipe()
+// (dashboard.js: emoji y título centrados, fila de tiempo + semáforo con
+// icono de 3 luces, descripción centrada, "Preparación" en <details>
+// colapsable) más lo que sí es propio de estas recetas (de dónde salió,
+// porciones, el aviso de "reconstruida", y el botón de eliminar en vez
+// del check "¿comiste esto?"). El semáforo usa trafficLightRecetaPropia
+// (perfiles curados a mano no aplican, texto libre en vez de ingredientes
+// estructurados) -- por eso no se listan tags de "apto para" con nombres
+// de perfil específicos, para no afirmar algo que no está curado de
+// verdad (ver [[feedback-solo-info-comprobada]]). "Analizar con SuSana"
+// siempre manda a analizar de verdad con IA (nunca instantáneo): a
+// diferencia del catálogo, acá no hay clasificación previa que reutilizar.
 function abrirRecetaPropia(receta, onEliminada) {
+  const { user } = getState();
   const meal = MEALS.find((m) => m.id === receta.comida);
+  const light = trafficLightRecetaPropia(receta, user.perfiles);
   openModal((modal, closeFn) => {
     modal.insertAdjacentHTML('beforeend', `
-      <div style="font-size:2.4rem">${esc(receta.emoji)}</div>
-      <h2>${esc(receta.nombre)}</h2>
-      <p class="small muted">${meal ? `${meal.emoji} ${t(esc(meal.nombre))}` : ''} · ${origenLabel(receta)}${receta.tiempoMin ? ` · 🍽️ ${t('{n} porción{s}', { n: receta.porciones || 1, s: (receta.porciones || 1) === 1 ? '' : 'es' })} · ⏱️ ${receta.tiempoMin} min` : ''}</p>
+      <div class="center" style="font-size:2.4rem">${esc(receta.emoji)}</div>
+      <h2 class="center">${esc(receta.nombre)}</h2>
+      <p class="row" style="gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:2px">
+        ${receta.tiempoMin ? `<span class="small muted row" style="gap:5px;align-items:center">${CLOCK_ICON}${receta.tiempoMin} min</span>` : ''}
+        <span class="row" style="gap:8px;align-items:center">${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span></span>
+      </p>
+      <p class="small muted center mt">${meal ? `${meal.emoji} ${t(meal.nombre)}` : ''} · ${origenLabel(receta)}${receta.porciones ? ` · 🍽️ ${t('{n} porción{s}', { n: receta.porciones, s: receta.porciones === 1 ? '' : 'es' })}` : ''}</p>
       ${receta.reconstruida ? `<p class="small mt" style="background:var(--accent-soft);border-radius:var(--radius);padding:10px 12px">⚠️ ${t('La IA reconstruyó esta receta a partir de la foto del plato, no de una receta escrita -- revisa cantidades y pasos antes de prepararla.')}</p>` : ''}
-      ${receta.descripcion ? `<p class="small mt">${esc(receta.descripcion)}</p>` : ''}
+      ${receta.descripcion ? `<p class="small mt center">${esc(receta.descripcion)}</p>` : ''}
+      <button type="button" class="btn-susana mt" id="rp-analizar-susana"><span class="susana-sparkle">${SPARKLE_ICON}</span> ${t('Analizar con SuSana')}</button>
       ${receta.ingredientes.length ? `
         <h3 class="mt">${t('Ingredientes')}</h3>
         ${receta.ingredientes.map((i) => `<div class="ingredient">• ${esc(i)}</div>`).join('')}` : ''}
       ${receta.pasos.length ? `
-        <h3 class="mt">${t('Preparación')}</h3>
-        <ol class="steps">${receta.pasos.map((p) => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}
+        <details class="rc-desplegable mt">
+          <summary>${t('Preparación')}<span class="rc-chev">⌄</span></summary>
+          <div class="rc-desplegable-body">
+            <ol class="steps">${receta.pasos.map((p) => `<li>${esc(p)}</li>`).join('')}</ol>
+          </div>
+        </details>` : ''}
       <button type="button" class="btn danger full mt" id="rp-eliminar">🗑️ ${t('Eliminar receta')}</button>`);
+    modal.querySelector('#rp-analizar-susana').addEventListener('click', () => {
+      closeFn();
+      // Misma ruta que el branch "sin apto" de openRecipe(): la IA responde
+      // en JSON puro (nunca se muestra el prompt tal cual) para pintarlo
+      // con la misma tarjeta visual que la instantánea de catálogo.
+      const aiPrompt = `Analiza "${receta.nombre}" que estoy por comer (no está en tu catálogo curado). Ingredientes: ${receta.ingredientes.join(', ') || 'no especificados'}. Responde ÚNICAMENTE con un bloque JSON, sin texto antes ni después, con este formato exacto: {"nutritivo":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Óptima/Buena/Regular","texto":"una frase explicando por qué"},"integracion":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Excelente/Buena/Regular","texto":"una frase de cómo encaja en mi día según lo que ya he comido"},"semaforo":"verde|amarillo|rojo","cierre":"una pregunta corta sobre cómo la voy a preparar"}`;
+      navigate('assistant', { nuevaConversacion: true, recetaNombre: receta.nombre, aiPrompt });
+    });
     modal.querySelector('#rp-eliminar').addEventListener('click', () => {
       confirmarEliminarReceta(receta.nombre, () => {
         eliminarRecetaPropia(receta.id);

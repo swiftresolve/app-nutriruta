@@ -536,7 +536,7 @@ function pedirReflexionHabitos(onConfirm) {
 // hoy" el punto solo (sin la palabra "Semáforo" al lado, que sí tenía la
 // versión anterior de esta modal) no se entendía como semáforo. Frases
 // cortas y claras por color, mismo criterio en las 3.
-const SEMAFORO_TEXTO = { verde: t('Apto para tu perfil'), amarillo: t('Modera esto'), rojo: t('Evita esto') };
+export const SEMAFORO_TEXTO = { verde: t('Apto para tu perfil'), amarillo: t('Modera esto'), rojo: t('Evita esto') };
 
 // "Analizar con SuSana" en una receta del CATÁLOGO no necesita IA -- el
 // semáforo ya salió de perfiles curados a mano (recipe.apto/moderar/
@@ -569,7 +569,7 @@ function analisisInstantaneo(light, recipe, user) {
 // apagadas, pero SIN perder su color (rojo/amarillo/verde opacos, no
 // gris) -- así se entiende que es un semáforo real, no solo un punto
 // resaltado. Al lado de la etiqueta de texto, nunca reemplazándola.
-function semaforoIcon(light) {
+export function semaforoIcon(light) {
   const color = { rojo: 'var(--red)', amarillo: 'var(--yellow)', verde: 'var(--green)' };
   const opacidad = (c) => c === light ? '1' : '0.25';
   return `<svg width="44" height="16" viewBox="0 0 44 16" aria-hidden="true" style="display:block;flex:none">
