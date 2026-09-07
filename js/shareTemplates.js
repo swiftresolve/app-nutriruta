@@ -210,6 +210,33 @@ function dibujarTituloCinta(ctx, texto, cx, cy, fuente) {
   ctx.restore();
 }
 
+// Nota de papel rasgada con una frase corta -- referencia real (varias de
+// las capturas que mandó la usuaria tienen estas notitas sueltas tipo
+// "Good food Great vibes ♡" al lado de una foto). Reusa pathRasgado, pero
+// más angosta y con texto normal (no manuscrito) en vez del título.
+function dibujarNotaPapel(ctx, texto, cx, cy, colorPapel, colorTexto, fuenteId, rotDeg = -3) {
+  const F = fuenteInfo(fuenteId);
+  ctx.font = `600 26px ${F.familia}`;
+  const anchoTexto = ctx.measureText(texto).width;
+  const padX = 22, alto = 52;
+  const ancho = Math.min(anchoTexto + padX * 2, 300);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((rotDeg * Math.PI) / 180);
+  ctx.shadowColor = 'rgba(0,0,0,0.25)';
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 4;
+  ctx.fillStyle = colorPapel;
+  pathRasgado(ctx, ancho, alto, 3, 4);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = colorTexto;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(texto, 0, 2);
+  ctx.restore();
+}
+
 // Pedacito de cinta washi con borde rasgado (reusa pathRasgado) -- pedido
 // explícito: "pedacitos de cinta pegados en los bordes de las fotos".
 // Distinta de dibujarCinta (esa sigue siendo el par de cintas en las
@@ -282,7 +309,7 @@ function dibujarFlecha(ctx, cx, cy, size, color, rotDeg = 0) {
   ctx.translate(cx, cy);
   ctx.rotate((rotDeg * Math.PI) / 180);
   ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(2, size * 0.08);
+  ctx.lineWidth = Math.max(1.5, size * 0.05);
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
@@ -296,6 +323,183 @@ function dibujarFlecha(ctx, cx, cy, size, color, rotDeg = 0) {
   ctx.stroke();
   ctx.restore();
 }
+// Motor alterno: usa la imagen de referencia REAL (las capturas que
+// mandó la usuaria, guardadas en img/share-templates/) como fondo
+// completo, e inserta la foto de la usuaria exactamente en el "hueco"
+// donde esa referencia ya tenía una foto -- pedido explícito: "en las
+// imagenes de referencia esta todo, solo debes hacer caso a lo que te
+// digo" / "deben ser esas mismas". Todo lo demás de la captura (cinta,
+// stickers, notas, textura de fondo) es la imagen real, sin redibujar.
+// cfg.huecos: posición de cada hueco en FRACCIÓN (0-1) del ancho/alto de
+// la propia imagen de referencia (no del canvas) -- se recalcula según
+// el tamaño real que ocupe esa imagen al hacer cover-fit sobre el 9:16.
+async function dibujarConFondoReal(ctx, content, cfg) {
+  const bg = await cargarImagen(cfg.fondoImagen);
+  const escala = Math.max(W / bg.width, H / bg.height);
+  const w = bg.width * escala, h = bg.height * escala;
+  const offX = (W - w) / 2, offY = (H - h) / 2;
+  ctx.drawImage(bg, offX, offY, w, h);
+
+  const fotos = await cargarFotos(content.fotos, cfg.huecos.length);
+  fotos.forEach((img, i) => {
+    if (!img) return;
+    const hueco = cfg.huecos[i];
+    const hx = offX + hueco.x * w, hy = offY + hueco.y * h;
+    const hw = hueco.w * w, hh = hueco.h * h;
+    ctx.save();
+    ctx.translate(hx + hw / 2, hy + hh / 2);
+    ctx.rotate(((hueco.rot ?? 0) * Math.PI) / 180);
+    ctx.beginPath();
+    // Algunas referencias (ej. círculos sobre fondo tostado) recortan la
+    // foto en círculo, no en rectángulo -- si no se respeta esa forma,
+    // la foto nueva se sale del marco redondo original.
+    if (hueco.forma === 'circulo') ctx.ellipse(0, 0, hw / 2, hh / 2, 0, 0, Math.PI * 2);
+    else ctx.rect(-hw / 2, -hh / 2, hw, hh);
+    ctx.clip();
+    const s = Math.max(hw / img.width, hh / img.height);
+    const fw = img.width * s, fh = img.height * s;
+    ctx.drawImage(img, -fw / 2, -fh / 2, fw, fh);
+    ctx.restore();
+  });
+
+  // "Ubicar la foto y ponerle encima el marco blanco": en vez de perseguir
+  // a ojo la posición exacta del borde de cada polaroid (siempre queda
+  // algo chueco), se redibuja encima la máscara de blancos de la propia
+  // referencia -- así el marco/cinta/texto blanco original vuelve a
+  // quedar nítido sin importar el tamaño/encuadre real de cada hueco.
+  if (cfg.lineaEncima) {
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = bg.width; maskCanvas.height = bg.height;
+    const mctx = maskCanvas.getContext('2d');
+    mctx.drawImage(bg, 0, 0);
+    const maskData = mctx.getImageData(0, 0, bg.width, bg.height);
+    const md = maskData.data;
+    for (let p = 0; p < md.length; p += 4) {
+      if (md[p] > 222 && md[p + 1] > 222 && md[p + 2] > 222) md[p + 3] = 255;
+      else md[p + 3] = 0;
+    }
+    mctx.putImageData(maskData, 0, 0);
+    ctx.drawImage(maskCanvas, offX, offY, w, h);
+  }
+}
+
+// Detecta por inundación (flood fill) la forma real de una "pieza" en la
+// imagen de referencia, partiendo de un punto semilla dentro de ella y
+// usando la línea blanca (zigzag o rompecabezas) como pared que no se
+// cruza. Devuelve una máscara pixel a pixel (no un rectángulo) + su caja
+// delimitadora -- así la foto del usuario se puede recortar con la forma
+// exacta de la pieza, incluyendo los "dientes" que se meten en la pieza
+// vecina, en vez de quedar como un rectángulo chico flotando adentro.
+function calcularMascaraPieza(data, W, H, seedXFrac, seedYFrac, umbral = 220) {
+  const sx = Math.min(W - 1, Math.max(0, Math.round(seedXFrac * W)));
+  const sy = Math.min(H - 1, Math.max(0, Math.round(seedYFrac * H)));
+  const esBarrera = (x, y) => {
+    const i = (y * W + x) * 4;
+    return data[i] > umbral && data[i + 1] > umbral && data[i + 2] > umbral;
+  };
+  const mask = new Uint8Array(W * H);
+  if (esBarrera(sx, sy)) return { mask, minX: sx, maxX: sx, minY: sy, maxY: sy };
+  const stack = [[sx, sy]];
+  mask[sy * W + sx] = 1;
+  let minX = sx, maxX = sx, minY = sy, maxY = sy;
+  while (stack.length) {
+    const [x, y] = stack.pop();
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+    const vecinos = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
+    for (const [nx, ny] of vecinos) {
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const idx = ny * W + nx;
+      if (mask[idx] || esBarrera(nx, ny)) continue;
+      mask[idx] = 1;
+      stack.push([nx, ny]);
+    }
+  }
+  return { mask, minX, maxX, minY, maxY };
+}
+
+// "Rompecabezas real": cada foto del usuario rellena por completo la
+// forma real de su pieza (rompecabezas o grilla con línea zigzag), no un
+// rectángulo aproximado adentro -- y la línea blanca original se vuelve a
+// dibujar encima al final para que la división entre piezas quede siempre
+// nítida sin importar el tamaño/recorte de cada foto. cfg.piezas: array
+// de { seed: [xFrac, yFrac] } -- un punto que caiga dentro de esa pieza en
+// la imagen de referencia (no necesita ser el centro exacto).
+async function dibujarRompecabezas(ctx, content, cfg) {
+  const bg = await cargarImagen(cfg.fondoImagen);
+  const bw = bg.width, bh = bg.height;
+  const bgCanvas = document.createElement('canvas');
+  bgCanvas.width = bw; bgCanvas.height = bh;
+  const bgCtx = bgCanvas.getContext('2d');
+  bgCtx.drawImage(bg, 0, 0);
+  const bgData = bgCtx.getImageData(0, 0, bw, bh);
+
+  const escala = Math.max(W / bw, H / bh);
+  const w = bw * escala, h = bh * escala;
+  const offX = (W - w) / 2, offY = (H - h) / 2;
+
+  const fotos = await cargarFotos(content.fotos, cfg.piezas.length);
+
+  const piezasCanvas = document.createElement('canvas');
+  piezasCanvas.width = bw; piezasCanvas.height = bh;
+  const pCtx = piezasCanvas.getContext('2d');
+  pCtx.drawImage(bg, 0, 0); // base: si faltan fotos, esa pieza queda con la foto original
+
+  cfg.piezas.forEach((pieza, i) => {
+    const img = fotos[i];
+    if (!img) return;
+    const resultado = calcularMascaraPieza(bgData.data, bw, bh, pieza.seed[0], pieza.seed[1]);
+    const { mask } = resultado;
+    let { minX, maxX, minY, maxY } = resultado;
+    // banda: para plantillas donde varias fotos comparten una misma
+    // "mitad" delimitada por la línea (ej. el zigzag vertical de la
+    // grilla, sin línea horizontal real entre filas) -- recorta la
+    // máscara a una franja vertical [y0,y1] para separar esas fotos,
+    // conservando el borde real (la línea) en los lados que sí la tienen.
+    if (pieza.banda) {
+      const [b0, b1] = pieza.banda;
+      const y0 = Math.round(b0 * bh), y1 = Math.round(b1 * bh);
+      minX = bw; maxX = 0; minY = bh; maxY = 0;
+      for (let y = 0; y < bh; y++) {
+        const dentro = y >= y0 && y < y1;
+        for (let x = 0; x < bw; x++) {
+          const idx = y * bw + x;
+          if (!mask[idx]) continue;
+          if (!dentro) { mask[idx] = 0; continue; }
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+        }
+      }
+    }
+    const pw = maxX - minX, ph = maxY - minY;
+    if (pw <= 0 || ph <= 0) return;
+    const capa = document.createElement('canvas');
+    capa.width = bw; capa.height = bh;
+    const capaCtx = capa.getContext('2d');
+    const s = Math.max(pw / img.width, ph / img.height);
+    const fw = img.width * s, fh = img.height * s;
+    capaCtx.drawImage(img, minX + pw / 2 - fw / 2, minY + ph / 2 - fh / 2, fw, fh);
+    const capaData = capaCtx.getImageData(0, 0, bw, bh);
+    const cd = capaData.data;
+    for (let p = 0; p < mask.length; p++) {
+      if (!mask[p]) cd[p * 4 + 3] = 0;
+    }
+    capaCtx.putImageData(capaData, 0, 0);
+    pCtx.drawImage(capa, 0, 0);
+  });
+
+  ctx.drawImage(piezasCanvas, offX, offY, w, h);
+
+  const lineaData = bgCtx.getImageData(0, 0, bw, bh);
+  const ld = lineaData.data;
+  for (let p = 0; p < ld.length; p += 4) {
+    if (ld[p] > 222 && ld[p + 1] > 222 && ld[p + 2] > 222) ld[p + 3] = 255;
+    else ld[p + 3] = 0;
+  }
+  bgCtx.putImageData(lineaData, 0, 0);
+  ctx.drawImage(bgCanvas, offX, offY, w, h);
+}
+
 // Set fijo de 4 acentos en las esquinas libres -- no depende de dónde
 // caigan las fotos porque las 4 esquinas del canvas siempre están vacías
 // (las fotos/círculos se centran, dejan margen a los lados). Si la
@@ -306,6 +510,10 @@ function dibujarDoodles(ctx, cfg) {
   dibujarCorazon(ctx, 65, 235, 58, color, -12);
   dibujarDestello(ctx, W - 65, 225, 46, color);
   dibujarTrazos(ctx, 60, H - 270, 60, color, -20);
+  // Flechita curva delgada, como dibujada a mano -- pedido explícito,
+  // referencia real (las notas de "sweet treat"/"chill sips" en DANBRO
+  // señalan la foto con una flecha así).
+  dibujarFlecha(ctx, W - 140, H - 340, 70, color, 25);
   if (!cfg.firma) dibujarDestello(ctx, W - 60, H - 260, 42, color);
 }
 
@@ -489,11 +697,11 @@ async function dibujarGenerica(ctx, content, cfg, fuenteId) {
   // salga esa zona.
   if (esFotoFondo) { ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 10; }
 
-  // Con fondo=foto de la usuaria, esa primera foto YA es el fondo -- las
-  // que se overlayan en polaroid/círculo/cuadrado son las demás
-  // seleccionadas (o la misma, si solo eligió una).
-  const fotosParaOverlay = esFotoFondo && content.fotos.length > 1 ? content.fotos.slice(1) : content.fotos;
-  const fotos = await cargarFotos(fotosParaOverlay, cfg.marco === 'filmstrip' ? 4 : 3);
+  // TODAS las fotos seleccionadas van arriba en polaroid/círculo/cuadrado,
+  // se use o no una de ellas también como fondo -- pedido explícito: el
+  // fondo no le "quita" una foto a las que se ven encima, es un uso
+  // aparte de la primera foto, no un reemplazo.
+  const fotos = await cargarFotos(content.fotos, cfg.marco === 'filmstrip' ? 4 : 3);
 
   if (cfg.marco === 'filmstrip') {
     dibujarFilmstrip(ctx, fotos, cfg.colorAcento);
@@ -524,6 +732,15 @@ async function dibujarGenerica(ctx, content, cfg, fuenteId) {
   ctx.shadowColor = 'transparent';
   dibujarDoodles(ctx, cfg);
 
+  // Notas de papel sueltas (referencia real: varias capturas traen
+  // notitas cortas al lado de una foto, ej. "Good food Great vibes ♡") --
+  // cfg.notas es una lista de {texto,x,y,rot} propia de cada plantilla.
+  if (cfg.notas) {
+    cfg.notas.forEach((n) => {
+      dibujarNotaPapel(ctx, n.texto, n.x, n.y, cfg.notaPapel || 'rgba(255,255,255,0.94)', cfg.notaTexto || '#3D2B24', fuenteId, n.rot ?? -3);
+    });
+  }
+
   if (content.subtitulo) {
     if (esFotoFondo) { ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 10; }
     dibujarTextoManuscrito(ctx, content.subtitulo, W / 2, 1095, { fuente: fuenteSubtitulo, color: cfg.colorSubtitulo, rotDeg: 2 });
@@ -552,39 +769,67 @@ const FUENTE_SUB = (px) => px;
 export const TEMPLATES = [
   // ----- Claras -----
   {
-    id: 'polaroid-claro', nombre: 'Polaroid', tema: 'claro', premium: true,
-    fondo: { tipo: 'gradiente-v', paradas: [[0, '#FFFDF9'], [1, '#FFF3E8']] },
-    marco: 'polaroid', cinta: null, colorAcento: '#FBD9C7',
-    colorTitulo: '#B5552E', colorSubtitulo: '#8C6F63', colorMarca: '#B99788',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(34), firma: 'xoxo'
+    // "Fondo real" (ver dibujarConFondoReal): la captura tal cual, las
+    // fotos de la usuaria se insertan en los mismos huecos donde esa
+    // captura ya tenía una foto.
+    id: 'polaroid-claro', nombre: 'Qué día tan lindo', tema: 'claro', premium: true,
+    fondoImagen: './img/share-templates/ref01-curtain.jpg',
+    // lineaEncima: en vez de perseguir a ojo el tamaño exacto del marco
+    // blanco (siempre queda un poco chueco), el hueco se hace un poco más
+    // grande de lo necesario y el marco/texto blanco original se redibuja
+    // encima al final -- así siempre tapa cualquier borde de la foto que
+    // se pase, sin importar el encuadre real de cada polaroid.
+    lineaEncima: true,
+    huecos: [
+      { x: 0.49, y: 0.04, w: 0.36, h: 0.31, rot: 13 },
+      { x: 0.02, y: 0.53, w: 0.43, h: 0.32, rot: -1 },
+      { x: 0.13, y: 0.69, w: 0.76, h: 0.30, rot: -1 }
+    ]
   },
   {
-    id: 'cinta-rosa', nombre: 'Cinta rosa', tema: 'claro', premium: true,
-    fondo: { tipo: 'solido', color: '#FBD9E5' },
-    marco: 'polaroid', cinta: '#F7C6D9', colorAcento: '#F7C6D9',
-    colorTitulo: '#7A3B54', colorSubtitulo: '#7A3B54', colorMarca: '#A85C79',
-    fuenteTitulo: FUENTE(62), fuenteSubtitulo: FUENTE_SUB(32), firma: null
+    id: 'cinta-rosa', nombre: 'Domingo y chill', tema: 'claro', premium: true,
+    fondoImagen: './img/share-templates/ref02-sakura.jpg',
+    lineaEncima: true,
+    huecos: [
+      { x: 0.08, y: 0.045, w: 0.35, h: 0.185, rot: -8 },
+      { x: 0.555, y: 0.045, w: 0.35, h: 0.16, rot: 17 },
+      { x: 0.26, y: 0.73, w: 0.50, h: 0.22, rot: 10 }
+    ]
   },
   {
-    id: 'circulo-menta', nombre: 'Círculos menta', tema: 'claro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#1F6B4A', lavado: 0.14, sombraInferior: 'rgba(10,30,20,0.55)' },
-    marco: 'circulo', cinta: null, colorAcento: '#FFFFFF',
-    colorTitulo: '#1F6B4A', colorSubtitulo: '#4E8067', colorMarca: '#4E8067',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: '🌿'
+    id: 'circulo-menta', nombre: 'Rincón de café', tema: 'claro', premium: true,
+    fondoImagen: './img/share-templates/ref09-circles-tan.jpg',
+    huecos: [
+      { x: 0.028, y: 0.008, w: 0.465, h: 0.270, forma: 'circulo' },
+      { x: 0.535, y: 0.168, w: 0.465, h: 0.316, forma: 'circulo' },
+      { x: 0.368, y: 0.746, w: 0.632, h: 0.254, forma: 'circulo' }
+    ]
   },
   {
-    id: 'cuadrado-mostaza', nombre: 'Bold mostaza', tema: 'claro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#B8860B', lavado: 0.16, sombraInferior: 'rgba(40,28,4,0.55)' },
-    marco: 'cuadrado', cinta: null, colorAcento: '#FFFFFF',
-    colorTitulo: '#7A4E1D', colorSubtitulo: '#8C6F3F', colorMarca: '#8C6F3F',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: null
+    id: 'cuadrado-mostaza', nombre: 'Sobre lo de ayer', tema: 'claro', premium: true,
+    fondoImagen: './img/share-templates/ref04-doodle.jpg',
+    // Rompecabezas real (ver dibujarRompecabezas): la línea zigzag
+    // vertical SÍ es una pared continua de punta a punta (no hay línea
+    // horizontal real entre filas, son fotos pegadas directo) -- por eso
+    // cada pieza usa "banda" para recortar su fila dentro de la mitad
+    // izquierda/derecha que sí delimita el zigzag real.
+    piezas: [
+      { seed: [0.15, 0.58], banda: [0.39, 0.663] },
+      { seed: [0.62, 0.48], banda: [0.39, 0.663] },
+      { seed: [0.72, 0.87], banda: [0.663, 1] }
+    ]
   },
   {
-    id: 'filmstrip-crema', nombre: 'Carrete crema', tema: 'claro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#8C7B65', lavado: 0.14, sombraInferior: 'rgba(30,24,14,0.5)' },
-    marco: 'filmstrip', cinta: null, colorAcento: '#FFFFFF',
-    colorTitulo: '#5A4632', colorSubtitulo: '#8C7B65', colorMarca: '#8C7B65',
-    fuenteTitulo: FUENTE(62), fuenteSubtitulo: FUENTE_SUB(30), firma: null
+    id: 'filmstrip-crema', nombre: 'Buena comida, buenas vibras', tema: 'claro', premium: true,
+    fondoImagen: './img/share-templates/ref06-lifelately.jpg',
+    // Cuadrícula real de 4 -- cada foto rellena su cuarto completo, sin
+    // márgenes (antes dejaban un borde del fondo original asomando).
+    huecos: [
+      { x: 0, y: 0, w: 0.5, h: 0.5, rot: 0 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.5, rot: 0 },
+      { x: 0, y: 0.5, w: 0.5, h: 0.5, rot: 0 },
+      { x: 0.5, y: 0.5, w: 0.5, h: 0.5, rot: 0 }
+    ]
   },
   {
     id: 'cinta-lavanda', nombre: 'Cinta lavanda', tema: 'claro', premium: false,
@@ -601,25 +846,34 @@ export const TEMPLATES = [
     fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: null
   },
   {
-    id: 'cuadrado-cielo', nombre: 'Bold cielo', tema: 'claro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#4E7291', lavado: 0.16, sombraInferior: 'rgba(8,20,32,0.55)' },
-    marco: 'cuadrado', cinta: null, colorAcento: '#FFFFFF',
-    colorTitulo: '#1F4E73', colorSubtitulo: '#4E7291', colorMarca: '#4E7291',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: null
+    id: 'cuadrado-cielo', nombre: 'Antojo del tiny café', tema: 'claro', premium: true,
+    fondoImagen: './img/share-templates/ref07-banner.jpg',
+    huecos: [
+      { x: 0, y: 0, w: 0.5, h: 0.5, rot: 0 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.5, rot: 0 },
+      { x: 0, y: 0.5, w: 0.5, h: 0.5, rot: 0 },
+      { x: 0.5, y: 0.5, w: 0.5, h: 0.5, rot: 0 }
+    ]
   },
   {
-    id: 'polaroid-terracota', nombre: 'Terracota', tema: 'claro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#9C4A2E', lavado: 0.16, sombraInferior: 'rgba(40,14,4,0.55)' },
-    marco: 'polaroid', cinta: null, colorAcento: '#E8C4AE',
-    colorTitulo: '#9C4A2E', colorSubtitulo: '#8C6250', colorMarca: '#8C6250',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: '♡'
+    id: 'polaroid-terracota', nombre: 'Cita en el café', tema: 'claro', premium: true,
+    fondoImagen: './img/share-templates/ref05-cream-notes.jpg',
+    lineaEncima: true,
+    huecos: [
+      { x: 0.02, y: 0.03, w: 0.52, h: 0.44, rot: -3 },
+      { x: 0.04, y: 0.49, w: 0.48, h: 0.42, rot: -2 },
+      { x: 0.56, y: 0.175, w: 0.42, h: 0.39, rot: 2 }
+    ]
   },
   {
-    id: 'cinta-menta', nombre: 'Cinta menta', tema: 'claro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#1F6B4A', lavado: 0.14, sombraInferior: 'rgba(10,30,20,0.5)' },
-    marco: 'polaroid', cinta: '#B8E8D4', colorAcento: '#B8E8D4',
-    colorTitulo: '#1F6B4A', colorSubtitulo: '#4E8067', colorMarca: '#4E8067',
-    fuenteTitulo: FUENTE(62), fuenteSubtitulo: FUENTE_SUB(32), firma: null
+    id: 'cinta-menta', nombre: 'Diario de antojos', tema: 'claro', premium: true,
+    fondoImagen: './img/share-templates/ref11-cream-scrap.jpg',
+    lineaEncima: true,
+    huecos: [
+      { x: 0.02, y: 0.01, w: 0.59, h: 0.45, rot: -2 },
+      { x: 0.33, y: 0.42, w: 0.66, h: 0.47, rot: -3 },
+      { x: 0, y: 0.755, w: 0.335, h: 0.245, rot: 0 }
+    ]
   },
   // ----- Oscuras -----
   {
@@ -631,62 +885,89 @@ export const TEMPLATES = [
     tituloY: 140
   },
   {
-    id: 'carrete-oscuro', nombre: 'Carrete', tema: 'oscuro', premium: true,
-    fondo: { tipo: 'gradiente-v', paradas: [[0, '#26221F'], [1, '#141210']] },
-    marco: 'filmstrip', cinta: null, colorAcento: '#FFFFFF',
-    colorTitulo: '#F5EDE3', colorSubtitulo: '#C9BFB3', colorMarca: '#C9BFB3',
-    fuenteTitulo: FUENTE(72), fuenteSubtitulo: FUENTE_SUB(32), firma: null,
-    tituloY: 150
+    id: 'carrete-oscuro', nombre: 'Mi vida últimamente', tema: 'oscuro', premium: true,
+    fondoImagen: './img/share-templates/ref15-puzzle.jpg',
+    // Rompecabezas real (ver dibujarRompecabezas): las 4 fotos de la
+    // usuaria rellenan la forma completa de su pieza -- no un rectángulo
+    // chico adentro -- y la línea blanca original se redibuja encima al
+    // final para que la división quede siempre nítida.
+    piezas: [
+      { seed: [0.25, 0.35] },
+      { seed: [0.78, 0.32] },
+      { seed: [0.15, 0.80] },
+      { seed: [0.78, 0.78] }
+    ]
   },
   {
-    id: 'circulo-esmeralda', nombre: 'Círculos esmeralda', tema: 'oscuro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#0D211A', lavado: 0.32, sombraInferior: 'rgba(3,10,7,0.7)' },
-    marco: 'circulo', cinta: null, colorAcento: '#E3B65E',
-    colorTitulo: '#F0E4C8', colorSubtitulo: '#B9CFC2', colorMarca: '#B9CFC2',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: null
+    id: 'circulo-esmeralda', nombre: 'Rico 😊', tema: 'oscuro', premium: true,
+    fondoImagen: './img/share-templates/ref14-cafevibes.jpg',
+    lineaEncima: true,
+    huecos: [
+      { x: 0.014, y: 0.160, w: 0.493, h: 0.320, rot: -1 },
+      { x: 0.521, y: 0.031, w: 0.479, h: 0.441, rot: 1 },
+      { x: 0, y: 0.496, w: 0.75, h: 0.504, rot: 0 }
+    ]
   },
   {
-    id: 'cuadrado-carbon', nombre: 'Bold carbón', tema: 'oscuro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#0A0A0A', lavado: 0.34, sombraInferior: 'rgba(0,0,0,0.7)' },
-    marco: 'cuadrado', cinta: null, colorAcento: '#FFFFFF',
-    colorTitulo: '#F5F5F5', colorSubtitulo: '#A3A3A3', colorMarca: '#A3A3A3',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: null
+    id: 'cuadrado-carbon', nombre: 'Salida del día', tema: 'oscuro', premium: true,
+    fondoImagen: './img/share-templates/ref16-blurredcafe.jpg',
+    lineaEncima: true,
+    huecos: [
+      { x: 0.17, y: 0.155, w: 0.58, h: 0.34, rot: -1 },
+      { x: 0.25, y: 0.50, w: 0.62, h: 0.36, rot: 2 }
+    ]
   },
   {
-    id: 'cinta-vino', nombre: 'Cinta vino', tema: 'oscuro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#3A1420', lavado: 0.3, sombraInferior: 'rgba(20,4,10,0.65)' },
-    marco: 'polaroid', cinta: '#D9A0B0', colorAcento: '#D9A0B0',
-    colorTitulo: '#F0C9D6', colorSubtitulo: '#D9AFBC', colorMarca: '#D9AFBC',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: '♡'
+    id: 'cinta-vino', nombre: 'Vibras de café', tema: 'oscuro', premium: true,
+    fondoImagen: './img/share-templates/ref12-green-notes.jpg',
+    lineaEncima: true,
+    huecos: [
+      { x: 0.56, y: 0.03, w: 0.44, h: 0.40, rot: 2 },
+      { x: 0, y: 0.23, w: 0.45, h: 0.47, rot: -2 },
+      { x: 0.41, y: 0.60, w: 0.59, h: 0.38, rot: 2 }
+    ]
   },
   {
-    id: 'polaroid-medianoche', nombre: 'Medianoche', tema: 'oscuro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#0A101F', lavado: 0.32, sombraInferior: 'rgba(4,6,14,0.7)' },
-    marco: 'polaroid', cinta: null, colorAcento: '#DCE6FF',
-    colorTitulo: '#DCE6FF', colorSubtitulo: '#9FB0D6', colorMarca: '#9FB0D6',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: '✨'
+    id: 'polaroid-medianoche', nombre: 'Ese momento', tema: 'oscuro', premium: true,
+    fondoImagen: './img/share-templates/ref08-dimmed.jpg',
+    huecos: [
+      { x: 0, y: 0.20, w: 0.5, h: 0.335, rot: 0 },
+      { x: 0.5, y: 0.20, w: 0.5, h: 0.335, rot: 0 },
+      { x: 0, y: 0.535, w: 0.5, h: 0.295, rot: 0 },
+      { x: 0.5, y: 0.535, w: 0.5, h: 0.295, rot: 0 }
+    ]
   },
   {
-    id: 'circulo-ciruela', nombre: 'Círculos ciruela', tema: 'oscuro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#2A2035', lavado: 0.3, sombraInferior: 'rgba(12,8,16,0.65)' },
-    marco: 'circulo', cinta: null, colorAcento: '#F5A9D0',
-    colorTitulo: '#F5E9F0', colorSubtitulo: '#C7B3C9', colorMarca: '#9B87A3',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: null
+    id: 'circulo-ciruela', nombre: 'Momentos así', tema: 'oscuro', premium: true,
+    fondoImagen: './img/share-templates/ref10-cafedate.jpg',
+    lineaEncima: true,
+    huecos: [
+      { x: 0.07, y: 0.04, w: 0.42, h: 0.45, rot: -3 },
+      { x: 0.55, y: 0.14, w: 0.44, h: 0.45, rot: 3 },
+      { x: 0.11, y: 0.40, w: 0.44, h: 0.44, rot: -2 }
+    ]
   },
   {
-    id: 'cuadrado-bosque', nombre: 'Bold bosque', tema: 'oscuro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#132018', lavado: 0.3, sombraInferior: 'rgba(4,10,7,0.65)' },
-    marco: 'cuadrado', cinta: null, colorAcento: '#7ED9C3',
-    colorTitulo: '#DFF5EC', colorSubtitulo: '#8FBBA9', colorMarca: '#8FBBA9',
-    fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: null
+    // "Fondo real": la captura DANBRO tal cual (ver dibujarConFondoReal) --
+    // las 3 fotos de la usuaria se insertan en los mismos 3 huecos donde
+    // esa captura ya tenía una foto; cinta, stickers, texto y textura de
+    // papel rayado son la imagen real, sin redibujar.
+    id: 'cuadrado-bosque', nombre: 'Momento café', tema: 'claro', premium: true,
+    fondoImagen: './img/share-templates/ref13-danbro.jpg',
+    huecos: [
+      { x: 0.10, y: 0.125, w: 0.76, h: 0.25, rot: -1.5 },
+      { x: 0.13, y: 0.395, w: 0.75, h: 0.255, rot: 1.5 },
+      { x: 0.10, y: 0.66, w: 0.78, h: 0.24, rot: -0.5 }
+    ]
   },
   {
-    id: 'filmstrip-negro', nombre: 'Carrete negro', tema: 'oscuro', premium: true,
-    fondo: { tipo: 'foto-usuario', tinte: '#0A0A0A', lavado: 0.32, sombraInferior: 'rgba(0,0,0,0.7)' },
-    marco: 'filmstrip', cinta: null, colorAcento: '#FFFFFF',
-    colorTitulo: '#FFFFFF', colorSubtitulo: '#9AA5A0', colorMarca: '#7ED9C3',
-    fuenteTitulo: FUENTE(70), fuenteSubtitulo: FUENTE_SUB(32), firma: null,
-    tituloY: 140
+    id: 'filmstrip-negro', nombre: 'Nunca es tarde para lo nuestro', tema: 'oscuro', premium: true,
+    fondoImagen: './img/share-templates/ref03-grid.jpg',
+    huecos: [
+      { x: 0, y: 0, w: 1, h: 0.333, rot: 0 },
+      { x: 0, y: 0.333, w: 1, h: 0.334, rot: 0 },
+      { x: 0, y: 0.667, w: 1, h: 0.333, rot: 0 }
+    ]
   },
   {
     id: 'cinta-cobre', nombre: 'Cinta cobre', tema: 'oscuro', premium: false,
@@ -695,7 +976,17 @@ export const TEMPLATES = [
     colorTitulo: '#E8B98C', colorSubtitulo: '#C9A88F', colorMarca: '#C9A88F',
     fuenteTitulo: FUENTE(64), fuenteSubtitulo: FUENTE_SUB(32), firma: null
   }
-].map((cfg) => ({ ...cfg, dibujar: (ctx, content, fuenteId) => dibujarGenerica(ctx, content, cfg, fuenteId) }));
+].map((cfg) => ({
+  ...cfg,
+  // Si trae fondoImagen, es una plantilla "fondo real" (ver
+  // dibujarConFondoReal) -- usa la captura de referencia tal cual en vez
+  // de la composición genérica.
+  dibujar: (ctx, content, fuenteId) => {
+    if (cfg.piezas) return dibujarRompecabezas(ctx, content, cfg);
+    if (cfg.fondoImagen) return dibujarConFondoReal(ctx, content, cfg);
+    return dibujarGenerica(ctx, content, cfg, fuenteId);
+  }
+}));
 
 async function dibujarPlantilla(tpl, content, fuenteId) {
   const canvas = document.createElement('canvas');
