@@ -5,6 +5,7 @@
 import { getState, setState } from '../store.js';
 import { pushSupported, enablePush } from '../push.js';
 import { toast } from '../app.js';
+import { t } from '../i18n.js';
 
 export function notifPromptVisible() {
   if (!pushSupported()) return false;
@@ -25,11 +26,11 @@ export function renderNotifPrompt(container, onChange) {
   card.style.borderLeft = '4px solid var(--accent)';
   card.innerHTML = `
     <div class="spread">
-      <span class="small" style="font-weight:700">🔔 ¿Te avisamos para seguir tu Ruta cada día?</span>
-      <button class="icon-btn" id="np-cerrar" aria-label="Cerrar">✕</button>
+      <span class="small" style="font-weight:700">🔔 ${t('¿Te avisamos para seguir tu Ruta cada día?')}</span>
+      <button class="icon-btn" id="np-cerrar" aria-label="${t('Cerrar')}">✕</button>
     </div>
-    <p class="small mt">${user.nombre ? esc(user.nombre) + ', un' : 'Un'} aviso a tiempo te ayuda a no dejar pasar el momento — sin presión, a tu ritmo.</p>
-    <button class="btn accent sm mt" id="np-activar">🔔 Sí, avísame</button>`;
+    <p class="small mt">${user.nombre ? t('{nombre}, un aviso a tiempo te ayuda a no dejar pasar el momento — sin presión, a tu ritmo.', { nombre: esc(user.nombre) }) : t('Un aviso a tiempo te ayuda a no dejar pasar el momento — sin presión, a tu ritmo.')}</p>
+    <button class="btn accent sm mt" id="np-activar">🔔 ${t('Sí, avísame')}</button>`;
   container.appendChild(card);
 
   card.querySelector('#np-cerrar').addEventListener('click', () => {
@@ -39,12 +40,12 @@ export function renderNotifPrompt(container, onChange) {
   card.querySelector('#np-activar').addEventListener('click', async () => {
     const btn = card.querySelector('#np-activar');
     btn.disabled = true;
-    btn.textContent = 'Activando…';
+    btn.textContent = t('Activando…');
     try {
       await enablePush();
-      toast('¡Notificaciones activadas! 🔔');
+      toast(t('¡Notificaciones activadas! 🔔'));
     } catch (e) {
-      toast(e.message || 'No se pudo activar. Puedes intentarlo luego en Ajustes.');
+      toast(e.message || t('No se pudo activar. Puedes intentarlo luego en Ajustes.'));
     }
     setState({ notifPromptEstado: 'terminado' });
     if (onChange) onChange();

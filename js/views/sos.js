@@ -11,13 +11,14 @@ import { navigate, toast } from '../app.js';
 import { openRecipe } from './dashboard.js';
 import { playInhaleSound, playExhaleSound } from '../sound.js';
 import { TAG_LABELS, HOT_MEALS } from './planner.js';
+import { t } from '../i18n.js';
 
 const CRAVING_TYPES = [
-  { id: 'dulce', nombre: '🍫 Dulce' },
-  { id: 'salado', nombre: '🍟 Salado / paquete' },
-  { id: 'alcohol', nombre: '🍺 Alcohol' },
-  { id: 'picoteo', nombre: '🌙 Picoteo nocturno' },
-  { id: 'no_se', nombre: '🤷‍♀️ No sé, solo ansiedad' }
+  { id: 'dulce', nombre: () => `🍫 ${t('Dulce')}` },
+  { id: 'salado', nombre: () => `🍟 ${t('Salado / paquete')}` },
+  { id: 'alcohol', nombre: () => `🍺 ${t('Alcohol')}` },
+  { id: 'picoteo', nombre: () => `🌙 ${t('Picoteo nocturno')}` },
+  { id: 'no_se', nombre: () => `🤷‍♀️ ${t('No sé, solo ansiedad')}` }
 ];
 
 export function renderSOS(container) {
@@ -41,7 +42,7 @@ export function renderSOS(container) {
     view.className = 'quiz-step' + (esRespiracion ? ' sos-breath-step' : '');
     view.innerHTML = `
       <div class="quiz-topbar">
-        <button class="quiz-topbar-back" aria-label="${step === 0 ? 'Salir' : 'Atrás'}"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="quiz-topbar-back" aria-label="${step === 0 ? t('Salir') : t('Atrás')}"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div class="quiz-progress"><div style="width:${pct}%"></div></div>
       </div>
       <div class="quiz-content">
@@ -66,7 +67,7 @@ export function renderSOS(container) {
     container.appendChild(view);
   }
 
-  function botonContinuar(navEl, { disabled = false, texto = 'Continuar' } = {}) {
+  function botonContinuar(navEl, { disabled = false, texto = t('Continuar') } = {}) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn full';
@@ -80,18 +81,18 @@ export function renderSOS(container) {
   // Paso 1: identificar el antojo.
   function pintarTipo(body, navEl) {
     body.innerHTML = `
-      <h2>¿Qué tipo de antojo sientes?</h2>
-      <p>Respira. Estás bien 💚 No es falta de fuerza de voluntad -- es un momento, y va a pasar. Vamos paso a paso.</p>
+      <h2>${t('¿Qué tipo de antojo sientes?')}</h2>
+      <p>${t('Respira. Estás bien 💚 No es falta de fuerza de voluntad -- es un momento, y va a pasar. Vamos paso a paso.')}</p>
       <div class="chips chips-1col mt"></div>`;
     const wrap = body.querySelector('.chips');
     const next = botonContinuar(navEl, { disabled: !tipo });
-    for (const t of CRAVING_TYPES) {
+    for (const ct of CRAVING_TYPES) {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'chip' + (tipo === t.id ? ' selected' : '');
-      b.textContent = t.nombre;
+      b.className = 'chip' + (tipo === ct.id ? ' selected' : '');
+      b.textContent = ct.nombre();
       b.addEventListener('click', () => {
-        tipo = t.id;
+        tipo = ct.id;
         wrap.querySelectorAll('.chip').forEach((c) => c.classList.remove('selected'));
         b.classList.add('selected');
         next.disabled = false;
@@ -105,15 +106,15 @@ export function renderSOS(container) {
   function pintarRespiracion(body, navEl) {
     body.innerHTML = `
       <div class="sos-breath-screen">
-        <h2>La pausa de 1 minuto</h2>
-        <p class="small">Antes de decidir, respira conmigo 5 veces.</p>
-        <div class="breath-wrap"><div class="breath-circle" id="breath">Toca<br>para empezar</div></div>
+        <h2>${t('La pausa de 1 minuto')}</h2>
+        <p class="small">${t('Antes de decidir, respira conmigo 5 veces.')}</p>
+        <div class="breath-wrap"><div class="breath-circle" id="breath">${t('Toca')}<br>${t('para empezar')}</div></div>
         <p class="small muted" id="breath-label">&nbsp;</p>
       </div>`;
     // Nunca deshabilitado -- la respiración es una ayuda opcional, no un
     // requisito para avanzar (pedido explícito de la usuaria: nunca se
     // le dijo que bloqueara el botón hasta terminar el ciclo).
-    const next = botonContinuar(navEl, { texto: 'Continuar' });
+    const next = botonContinuar(navEl, { texto: t('Continuar') });
     const circle = body.querySelector('#breath');
     const label = body.querySelector('#breath-label');
     let breathing = false;
@@ -130,19 +131,19 @@ export function renderSOS(container) {
       const doCycle = () => {
         if (cycle >= 5) {
           circle.classList.remove('in');
-          circle.innerHTML = '<span class="breath-done"><span class="breath-done-emoji">🌿</span>¡Bien hecho!</span>';
-          label.textContent = '¿Cómo te sientes ahora?';
+          circle.innerHTML = `<span class="breath-done"><span class="breath-done-emoji">🌿</span>${t('¡Bien hecho!')}</span>`;
+          label.textContent = t('¿Cómo te sientes ahora?');
           breathing = false;
           return;
         }
         cycle++;
         circle.classList.add('in');
-        circle.textContent = 'Inhala';
+        circle.textContent = t('Inhala');
         sonidoActual = playInhaleSound();
         pendingTimeout = setTimeout(() => {
           circle.classList.remove('in');
-          circle.textContent = 'Exhala';
-          label.textContent = `Respiración ${cycle} de 5`;
+          circle.textContent = t('Exhala');
+          label.textContent = t('Respiración {n} de 5', { n: cycle });
           sonidoActual = playExhaleSound();
           pendingTimeout = setTimeout(doCycle, 3500);
         }, 3500);
@@ -156,16 +157,16 @@ export function renderSOS(container) {
   // sola"). La respuesta se guarda junto al resto del registro del antojo,
   // igual que el tipo -- ver logCraving en store.js.
   const HAMBRE_TIPOS = [
-    { id: 'fisica', nombre: '🍽️ Fue física' },
-    { id: 'emocional', nombre: '💭 Fue emocional' },
-    { id: 'no_se', nombre: '🤔 No estoy segura' }
+    { id: 'fisica', nombre: () => `🍽️ ${t('Fue física')}` },
+    { id: 'emocional', nombre: () => `💭 ${t('Fue emocional')}` },
+    { id: 'no_se', nombre: () => `🤔 ${t('No estoy segura')}` }
   ];
   function pintarHambre(body, navEl) {
     body.innerHTML = `
-      <h2>¿Hambre física o emocional?</h2>
-      <p><strong>Física:</strong> llegó poco a poco y aceptarías cualquier comida.</p>
-      <p class="mt"><strong>Emocional:</strong> llegó de golpe y pide algo muy específico.</p>
-      <p class="mt small muted">Elige lo que más se parezca a lo que sientes ahora:</p>
+      <h2>${t('¿Hambre física o emocional?')}</h2>
+      <p><strong>${t('Física:')}</strong> ${t('llegó poco a poco y aceptarías cualquier comida.')}</p>
+      <p class="mt"><strong>${t('Emocional:')}</strong> ${t('llegó de golpe y pide algo muy específico.')}</p>
+      <p class="mt small muted">${t('Elige lo que más se parezca a lo que sientes ahora:')}</p>
       <div class="chips chips-1col mt"></div>`;
     const wrap = body.querySelector('.chips');
     const next = botonContinuar(navEl, { disabled: !hambre });
@@ -173,7 +174,7 @@ export function renderSOS(container) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'chip' + (hambre === h.id ? ' selected' : '');
-      b.textContent = h.nombre;
+      b.textContent = h.nombre();
       b.addEventListener('click', () => {
         hambre = h.id;
         wrap.querySelectorAll('.chip').forEach((c) => c.classList.remove('selected'));
@@ -190,8 +191,8 @@ export function renderSOS(container) {
   // menu.js, mismo criterio "apto" que candidatesFor).
   function pintarAlternativas(body, navEl) {
     body.innerHTML = `
-      <h2>Elige tu alternativa saludable</h2>
-      <p>Elegidas para tu perfil de salud y tus exclusiones:</p>
+      <h2>${t('Elige tu alternativa saludable')}</h2>
+      <p>${t('Elegidas para tu perfil de salud y tus exclusiones:')}</p>
       <div class="recipe-grid mt"></div>`;
     const { user, favoritas } = getState();
     const { exclusiones, perfiles } = user;
@@ -200,18 +201,18 @@ export function renderSOS(container) {
     for (const r of sosSnacks().slice(0, 6)) {
       const shown = displayRecipe(r, exclusiones);
       const light = trafficLight(r, perfiles);
-      const tags = (r.etiquetas || []).slice(0, 2).map((t) => `<span class="recipe-tag">${TAG_LABELS[t] || t}</span>`).join('');
+      const tags = (r.etiquetas || []).slice(0, 2).map((tag) => `<span class="recipe-tag">${TAG_LABELS[tag] || tag}</span>`).join('');
       const esFavorita = (favoritas || []).includes(r.id);
       const item = document.createElement('button');
       item.type = 'button';
       item.className = 'recipe-card';
       item.innerHTML = `
-        <span class="recipe-fav" aria-label="${esFavorita ? 'Quitar de preferidos' : 'Marcar como preferida'}">${esFavorita ? '⭐' : '☆'}</span>
+        <span class="recipe-fav" aria-label="${esFavorita ? t('Quitar de preferidos') : t('Marcar como preferida')}">${esFavorita ? '⭐' : '☆'}</span>
         <div class="recipe-plate">
           ${HOT_MEALS.has(r.comida) ? '<span class="steam"><span></span><span></span><span></span></span>' : ''}
           ${shown.emoji}
           <span class="garnish">${mealById[r.comida]?.emoji || ''}</span>
-          <span class="semaforo-ring ${light}" title="Semáforo: ${light}"></span>
+          <span class="semaforo-ring ${light}" title="${t('Semáforo: {v}', { v: light })}"></span>
         </div>
         <div class="recipe-title">${shown.nombre}</div>
         <div class="recipe-desc">${r.descripcion}</div>
@@ -230,20 +231,20 @@ export function renderSOS(container) {
   // Paso 5: registrar resultado -- 2 acciones terminales en vez de "Continuar".
   function pintarRegistrar(body) {
     body.innerHTML = `
-      <h2>Registra cómo terminó</h2>
-      <p>Registrar te ayuda a detectar tus patrones. Sin culpa: todo dato sirve.</p>
-      <button type="button" class="btn full mt" id="sos-ok">✅ Usé una alternativa saludable</button>
-      <button type="button" class="btn ghost full mt" id="sos-cedio">🤍 Esta vez cedí al antojo</button>`;
+      <h2>${t('Registra cómo terminó')}</h2>
+      <p>${t('Registrar te ayuda a detectar tus patrones. Sin culpa: todo dato sirve.')}</p>
+      <button type="button" class="btn full mt" id="sos-ok">✅ ${t('Usé una alternativa saludable')}</button>
+      <button type="button" class="btn ghost full mt" id="sos-cedio">🤍 ${t('Esta vez cedí al antojo')}</button>`;
     body.querySelector('#sos-ok').addEventListener('click', () => {
       logCraving(tipo || 'no_se', 'alternativa', hambre);
       checkAchievements();
       navigate('dashboard');
-      toast('💚 Registrado. ¡Cada vez que eliges distinto, reentrenas tu hábito!');
+      toast(t('💚 Registrado. ¡Cada vez que eliges distinto, reentrenas tu hábito!'));
     });
     body.querySelector('#sos-cedio').addEventListener('click', () => {
       logCraving(tipo || 'no_se', 'cedio', hambre);
       navigate('dashboard');
-      toast('Está bien. Progreso, no perfección. Mañana seguimos 💛');
+      toast(t('Está bien. Progreso, no perfección. Mañana seguimos 💛'));
     });
   }
 

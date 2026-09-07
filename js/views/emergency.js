@@ -7,6 +7,7 @@ import { header, navigate, toast, openModal } from '../app.js';
 import { renderPathMap } from '../pathMap.js';
 import { celebrateMilestone } from '../streakAnim.js';
 import { playCelebrateSound } from '../sound.js';
+import { t } from '../i18n.js';
 
 export function renderEmergency(container) {
   header(container);
@@ -16,8 +17,8 @@ export function renderEmergency(container) {
   hero.className = 'sos-hero';
   const topPerfil = user.perfiles[0] ? PROFILES[user.perfiles[0]] : null;
   hero.innerHTML = `
-    <h2>🏁 ${EMERGENCY_PLAN.nombre}</h2>
-    <p>${topPerfil ? `Sabemos que lo de ${esc(topPerfil.nombre.toLowerCase())} preocupa. ` : ''}${EMERGENCY_PLAN.descripcion}</p>`;
+    <h2>🏁 ${t(EMERGENCY_PLAN.nombre)}</h2>
+    <p>${topPerfil ? t('Sabemos que lo de {perfil} preocupa. ', { perfil: esc(topPerfil.nombre.toLowerCase()) }) : ''}${t(EMERGENCY_PLAN.descripcion)}</p>`;
   container.appendChild(hero);
 
   // Sin plan iniciado
@@ -25,11 +26,11 @@ export function renderEmergency(container) {
     const start = document.createElement('div');
     start.className = 'card center';
     start.innerHTML = `
-      <p>Siete días, un paso concreto cada día. Gratis, sin letra pequeña.</p>
-      <button class="btn accent full mt">🚀 Empezar mi plan de 7 días</button>`;
+      <p>${t('Siete días, un paso concreto cada día. Gratis, sin letra pequeña.')}</p>
+      <button class="btn accent full mt">🚀 ${t('Empezar mi plan de 7 días')}</button>`;
     start.querySelector('.btn').addEventListener('click', () => {
       setState({ emergencia: { inicio: today(), completados: [] } });
-      toast('¡Empezamos! Día 1: ' + EMERGENCY_PLAN.dias[0].titulo);
+      toast(t('¡Empezamos! Día 1: {titulo}', { titulo: EMERGENCY_PLAN.dias[0].titulo }));
       renderEmergency(clear(container));
     });
     container.appendChild(start);
@@ -58,9 +59,9 @@ export function renderEmergency(container) {
     fin.className = 'card center';
     fin.innerHTML = `
       <div style="font-size:3rem">🎉</div>
-      <h2>¡Diste el primer paso!</h2>
-      <p class="mt">Siete días de cambios reales, sin esperar a nadie. Si quieres sostener esto en el tiempo, la Misión 12 semanas te lleva al siguiente nivel, un cambio a la vez.</p>
-      <button class="btn accent full mt">Ver Misión 12 semanas →</button>`;
+      <h2>${t('¡Diste el primer paso!')}</h2>
+      <p class="mt">${t('Siete días de cambios reales, sin esperar a nadie. Si quieres sostener esto en el tiempo, la Misión 12 semanas te lleva al siguiente nivel, un cambio a la vez.')}</p>
+      <button class="btn accent full mt">${t('Ver Misión 12 semanas →')}</button>`;
     fin.querySelector('.btn').addEventListener('click', () => navigate('mission'));
     container.appendChild(fin);
   }
@@ -68,7 +69,7 @@ export function renderEmergency(container) {
   const prog = document.createElement('div');
   prog.className = 'card';
   prog.innerHTML = `
-    <div class="spread"><h2>Tu semana</h2><span class="tag info">${completados.length}/7</span></div>
+    <div class="spread"><h2>${t('Tu semana')}</h2><span class="tag info">${completados.length}/7</span></div>
     <div class="quiz-progress mt"><div style="width:${Math.round((completados.length / 7) * 100)}%"></div></div>`;
   container.appendChild(prog);
 
@@ -79,8 +80,8 @@ export function renderEmergency(container) {
     const locked = d.n > diaDesbloqueado;
     const isCurrent = d.n === diaDesbloqueado && !done;
     return {
-      icon: d.emoji, title: `Día ${d.n}`, subtitle: d.titulo,
-      done, now: isCurrent, locked, nowLabel: 'Hoy',
+      icon: d.emoji, title: t('Día {n}', { n: d.n }), subtitle: d.titulo,
+      done, now: isCurrent, locked, nowLabel: t('Hoy'),
       onClick: () => {
         if (locked) { showVuelveManana(d); return; }
         openDia(d, done, () => renderEmergency(clear(container)));
@@ -117,7 +118,7 @@ function showVuelveManana(dia) {
   overlay.innerHTML = `
     <div class="ring"></div>
     <div class="flame-big">🌙</div>
-    <div class="label wrap">Ya diste tu paso de hoy — vuelve mañana después de medianoche para el Día ${dia.n}</div>`;
+    <div class="label wrap">${t('Ya diste tu paso de hoy — vuelve mañana después de medianoche para el Día {n}', { n: dia.n })}</div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click', () => overlay.remove());
   setTimeout(() => {
@@ -132,19 +133,19 @@ function openDia(dia, done, onChange) {
     const reflexionGuardada = (emergencia?.reflexiones || {})[dia.n] || '';
     modal.insertAdjacentHTML('beforeend', `
       <div style="font-size:2.4rem">${dia.emoji}</div>
-      <h2>Día ${dia.n}: ${dia.titulo}</h2>
-      <p class="mt"><strong>Objetivo:</strong> ${dia.objetivo}</p>
-      <h3 class="mt">Hoy vas a…</h3>
+      <h2>${t('Día {n}: {titulo}', { n: dia.n, titulo: dia.titulo })}</h2>
+      <p class="mt"><strong>${t('Objetivo:')}</strong> ${dia.objetivo}</p>
+      <h3 class="mt">${t('Hoy vas a…')}</h3>
       <ul class="steps">${dia.acciones.map((a) => `<li>${a}</li>`).join('')}</ul>
-      <h3 class="mt">Para reflexionar</h3>
+      <h3 class="mt">${t('Para reflexionar')}</h3>
       <p>${dia.reflexion}</p>
-      <label class="muted small mt" for="dia-reflexion" style="display:block">Escribe tu respuesta (mínimo 40 caracteres) para poder marcar el día como completado</label>
-      <textarea id="dia-reflexion" maxlength="500" rows="3" placeholder="Escribe lo que quieras..."
+      <label class="muted small mt" for="dia-reflexion" style="display:block">${t('Escribe tu respuesta (mínimo 40 caracteres) para poder marcar el día como completado')}</label>
+      <textarea id="dia-reflexion" maxlength="500" rows="3" placeholder="${t('Escribe lo que quieras...')}"
         class="auth-input" style="resize:vertical">${esc(reflexionGuardada)}</textarea>`);
     const textarea = modal.querySelector('#dia-reflexion');
     const btn = document.createElement('button');
     btn.className = done ? 'btn ghost full mt' : 'btn full mt';
-    btn.textContent = done ? '↩️ Desmarcar día' : '✅ Marcar día como completado';
+    btn.textContent = done ? t('↩️ Desmarcar día') : t('✅ Marcar día como completado');
     if (!done) {
       btn.disabled = !esTextoReal(textarea.value);
       textarea.addEventListener('input', () => { btn.disabled = !esTextoReal(textarea.value); });
@@ -167,10 +168,10 @@ function openDia(dia, done, onChange) {
         otorgarGemas(GEMAS_POR_DIA);
         sumarEnergiaRuta(2, 1); // equivalente a "completar microacción"
         playCelebrateSound();
-        celebrateMilestone(`¡Día ${dia.n} completado!`, `${dia.titulo} · +${GEMAS_POR_DIA} 💎`);
+        celebrateMilestone(t('¡Día {n} completado!', { n: dia.n }), `${dia.titulo} · +${GEMAS_POR_DIA} 💎`);
       }
       if (nuevos.includes('plan7_completo')) {
-        toast('🎉 ¡Completaste tu plan de 7 días!');
+        toast(t('🎉 ¡Completaste tu plan de 7 días!'));
         const { emergencia: e2 } = getState();
         if (!e2.testimonioPlanPreguntado) setTimeout(() => abrirInvitacionTestimonioPlan(), 500);
       }
@@ -188,12 +189,11 @@ function abrirInvitacionTestimonioPlan() {
   openModal((modal, close) => {
     modal.insertAdjacentHTML('beforeend', `
       <div style="font-size:2rem">💛</div>
-      <h2>Completaste tus 7 días</h2>
-      <p class="small mt">Nos encantaría compartir lo que escribiste en tus reflexiones de esta semana — con tu nombre o de forma anónima, como prefieras — para inspirar a alguien que está empezando justo como tú hace una semana.
-      Es completamente tu decisión, y no pasa nada si prefieres que quede solo entre nosotros.</p>
+      <h2>${t('Completaste tus 7 días')}</h2>
+      <p class="small mt">${t('Nos encantaría compartir lo que escribiste en tus reflexiones de esta semana — con tu nombre o de forma anónima, como prefieras — para inspirar a alguien que está empezando justo como tú hace una semana. Es completamente tu decisión, y no pasa nada si prefieres que quede solo entre nosotros.')}</p>
       <div class="row mt" style="gap:10px">
-        <button class="btn ghost sm" id="tp-no">Prefiero que quede privado</button>
-        <button class="btn sm" id="tp-si" style="flex:1">Sí, compartan mi historia 💛</button>
+        <button class="btn ghost sm" id="tp-no">${t('Prefiero que quede privado')}</button>
+        <button class="btn sm" id="tp-si" style="flex:1">${t('Sí, compartan mi historia 💛')}</button>
       </div>`);
     modal.querySelector('#tp-no').addEventListener('click', () => {
       responderInvitacionTestimonioPlan(false);
@@ -202,7 +202,7 @@ function abrirInvitacionTestimonioPlan() {
     modal.querySelector('#tp-si').addEventListener('click', () => {
       responderInvitacionTestimonioPlan(true);
       close();
-      toast('Gracias por confiar en nosotros 💛');
+      toast(t('Gracias por confiar en nosotros 💛'));
     });
   });
 }

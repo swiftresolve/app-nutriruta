@@ -5,6 +5,7 @@ import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, elimi
 import { fetchGuideHistory, askGuide, listGuideConversations, newGuideConversation } from '../supabase-client.js';
 import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON, THUMBS_UP_SOLID_ICON, THUMBS_DOWN_SOLID_ICON, ARROW_UP_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
+import { t } from '../i18n.js';
 
 // Ícono de menú hamburguesa -- 3 líneas simples, mismo lenguaje visual
 // que el resto de íconos propios de la app (GEAR_ICON, SEARCH_ICON en
@@ -35,9 +36,9 @@ export function renderAssistant(container, params = {}) {
     lock.className = 'card center';
     lock.innerHTML = `
       <div style="font-size:2.6rem">💬</div>
-      <h2>${susanaName()}, tu guía</h2>
-      <p class="mt">Un espacio para resolver dudas puntuales de nutrición y hábitos, con el contexto de tu perfil — como tener acompañamiento a la mano. Es parte del <strong>plan Premium</strong>.</p>
-      <button class="btn accent full mt">Ver planes Premium</button>`;
+      <h2>${t('{nombre}, tu guía', { nombre: susanaName() })}</h2>
+      <p class="mt">${t('Un espacio para resolver dudas puntuales de nutrición y hábitos, con el contexto de tu perfil — como tener acompañamiento a la mano. Es parte del {strong}plan Premium{fin}.', { strong: '<strong>', fin: '</strong>' })}</p>
+      <button class="btn accent full mt">${t('Ver planes Premium')}</button>`;
     lock.querySelector('.btn').addEventListener('click', () => navigate('plans'));
     container.appendChild(lock);
     return;
@@ -54,13 +55,13 @@ export function renderAssistant(container, params = {}) {
   const chatHeader = document.createElement('div');
   chatHeader.className = 'chat-header';
   chatHeader.innerHTML = `
-    <button type="button" class="icon-btn plain" id="chatHistorial" aria-label="Historial de conversaciones">${MENU_ICON}</button>
+    <button type="button" class="icon-btn plain" id="chatHistorial" aria-label="${t('Historial de conversaciones')}">${MENU_ICON}</button>
     <span class="sana-avatar chat-header-avatar">🌿</span>
     <div class="chat-header-info">
       <strong>${susanaName()}</strong>
-      <span class="small muted" id="chatQuota">Cargando…</span>
+      <span class="small muted" id="chatQuota">${t('Cargando…')}</span>
     </div>
-    <button type="button" class="icon-btn plain" id="chatPersonalizar" aria-label="Personalizar a SuSana">${GEAR_ICON}</button>`;
+    <button type="button" class="icon-btn plain" id="chatPersonalizar" aria-label="${t('Personalizar a SuSana')}">${GEAR_ICON}</button>`;
   container.appendChild(chatHeader);
   chatHeader.querySelector('#chatPersonalizar').addEventListener('click', () => abrirPersonalizarSuSana());
   chatHeader.querySelector('#chatHistorial').addEventListener('click', () => {
@@ -73,7 +74,7 @@ export function renderAssistant(container, params = {}) {
       onNueva: () => {
         conversationId = null;
         log.innerHTML = '';
-        addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`);
+        addBubble('system', t('¡Hola! Soy SuSana 🌿 {apertura}', { apertura: sanaApertura() }));
         ultimaFirma = null;
       }
     });
@@ -81,7 +82,7 @@ export function renderAssistant(container, params = {}) {
 
   const aviso = document.createElement('p');
   aviso.className = 'small muted chat-disclaimer';
-  aviso.textContent = 'No reemplaza a tu médico o nutricionista — ante señales de alarma, busca atención profesional de inmediato.';
+  aviso.textContent = t('No reemplaza a tu médico o nutricionista — ante señales de alarma, busca atención profesional de inmediato.');
   container.appendChild(aviso);
 
   // "chat-card" (además de "card"): en #app.chat-active (ver navigate()
@@ -96,8 +97,8 @@ export function renderAssistant(container, params = {}) {
   const inputRow = document.createElement('div');
   inputRow.className = 'chat-input-row';
   inputRow.innerHTML = `
-    <textarea id="chatInput" rows="1" maxlength="600" placeholder="Habla con SuSana..."></textarea>
-    <button class="btn accent" id="chatSend" aria-label="Enviar">${ARROW_UP_ICON}</button>`;
+    <textarea id="chatInput" rows="1" maxlength="600" placeholder="${t('Habla con SuSana...')}"></textarea>
+    <button class="btn accent" id="chatSend" aria-label="${t('Enviar')}">${ARROW_UP_ICON}</button>`;
   container.appendChild(inputRow);
 
   const log = chatCard.querySelector('#chatLog');
@@ -135,8 +136,8 @@ export function renderAssistant(container, params = {}) {
     const fila = document.createElement('div');
     fila.className = 'chat-feedback';
     fila.innerHTML = `
-      <button type="button" class="chat-feedback-btn" data-val="up" aria-label="Buena respuesta">${THUMBS_UP_ICON}</button>
-      <button type="button" class="chat-feedback-btn" data-val="down" aria-label="Mala respuesta">${THUMBS_DOWN_ICON}</button>`;
+      <button type="button" class="chat-feedback-btn" data-val="up" aria-label="${t('Buena respuesta')}">${THUMBS_UP_ICON}</button>
+      <button type="button" class="chat-feedback-btn" data-val="down" aria-label="${t('Mala respuesta')}">${THUMBS_DOWN_ICON}</button>`;
     const ICONOS = { up: [THUMBS_UP_ICON, THUMBS_UP_SOLID_ICON], down: [THUMBS_DOWN_ICON, THUMBS_DOWN_SOLID_ICON] };
     fila.querySelectorAll('.chat-feedback-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -149,7 +150,7 @@ export function renderAssistant(container, params = {}) {
         // un cambio de color sobre el mismo trazo) -- referencia real de
         // Fitia Coach.
         btn.innerHTML = ICONOS[btn.dataset.val][1];
-        toast('Gracias por tu opinión');
+        toast(t('Gracias por tu opinión'));
       });
     });
     bubble.appendChild(fila);
@@ -186,10 +187,10 @@ export function renderAssistant(container, params = {}) {
     </div>`;
   }
   function renderAnalysisCard(recetaNombre, data) {
-    return `<p>¡Hola! Aquí tienes el análisis de "${esc(recetaNombre)}". 🌿</p>
+    return `<p>${t('¡Hola! Aquí tienes el análisis de "{receta}". 🌿', { receta: esc(recetaNombre) })}</p>
       <div class="chat-analysis-card">
-        ${bloqueAnalisis('❤️', '¿Qué tan nutritiva es?', data.nutritivo)}
-        ${bloqueAnalisis('🎯', '¿Cómo se integra en tu día?', data.integracion)}
+        ${bloqueAnalisis('❤️', t('¿Qué tan nutritiva es?'), data.nutritivo)}
+        ${bloqueAnalisis('🎯', t('¿Cómo se integra en tu día?'), data.integracion)}
       </div>
       ${data.cierre ? `<p class="mt">${esc(data.cierre)}</p>` : ''}`;
   }
@@ -222,7 +223,7 @@ export function renderAssistant(container, params = {}) {
   // realidad no existe. `used` ya no se usa para nada visible, solo queda
   // el parámetro por si algún día vuelve a hacer falta.
   function setQuota() {
-    quotaEl.textContent = 'Con el contexto de tu salud 🌿';
+    quotaEl.textContent = t('Con el contexto de tu salud 🌿');
   }
 
   // Pinta un historial ya resuelto (del servidor) en el chat -- usado al
@@ -238,7 +239,7 @@ export function renderAssistant(container, params = {}) {
     log.innerHTML = '';
     let ultimo = null;
     if (!history.length) {
-      ultimo = addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`, { scroll: false });
+      ultimo = addBubble('system', t('¡Hola! Soy SuSana 🌿 {apertura}', { apertura: sanaApertura() }), { scroll: false });
     } else {
       for (const m of history) ultimo = addBubble(m.role, m.content, { scroll: false });
     }
@@ -251,7 +252,7 @@ export function renderAssistant(container, params = {}) {
       const data = await fetchGuideHistory(idAAbrir);
       pintarHistorial(data.conversationId, data.history, data.usedCount);
     } catch (e) {
-      addBubble('system', 'No pudimos cargar tu historial. Revisa tu conexión.', { scroll: false });
+      addBubble('system', t('No pudimos cargar tu historial. Revisa tu conexión.'), { scroll: false });
     }
   }
 
@@ -278,7 +279,7 @@ export function renderAssistant(container, params = {}) {
       const data = await askGuide(text, conversationId);
       conversationId = data.conversationId;
       typing.remove();
-      const divider = addDivider('Nuevo mensaje');
+      const divider = addDivider(t('Nuevo mensaje'));
       const reply = addBubble('assistant', data.reply);
       setQuota(data.usedCount);
       // El divisor solo marca "hasta aquí llegó lo nuevo" mientras esta
@@ -291,10 +292,10 @@ export function renderAssistant(container, params = {}) {
     } catch (e) {
       typing.remove();
       if (e.code === 'premium_requerido') {
-        toast('Tu plan Premium ya no está activo.');
+        toast(t('Tu plan Premium ya no está activo.'));
         navigate('plans');
       } else {
-        addBubble('system', e.message || 'No se pudo enviar tu pregunta. Intenta de nuevo.');
+        addBubble('system', e.message || t('No se pudo enviar tu pregunta. Intenta de nuevo.'));
         sendBtn.disabled = false;
         input.disabled = false;
       }
@@ -329,10 +330,10 @@ export function renderAssistant(container, params = {}) {
     } catch (e) {
       typing.remove();
       if (e.code === 'premium_requerido') {
-        toast('Tu plan Premium ya no está activo.');
+        toast(t('Tu plan Premium ya no está activo.'));
         navigate('plans');
       } else {
-        addBubble('system', e.message || 'No se pudo analizar. Intenta de nuevo.');
+        addBubble('system', e.message || t('No se pudo analizar. Intenta de nuevo.'));
         sendBtn.disabled = false;
         input.disabled = false;
       }
@@ -379,7 +380,7 @@ export function renderAssistant(container, params = {}) {
     // propio id cuando llega null, ver ai-assistant/index.ts), así que
     // esta conversación nunca aparece en el historial real si nunca se
     // le escribe nada.
-    addBubble('system', `¡Hola! Soy SuSana 🌿 ${sanaApertura()}`, { scroll: false });
+    addBubble('system', t('¡Hola! Soy SuSana 🌿 {apertura}', { apertura: sanaApertura() }), { scroll: false });
     setQuota();
     if (params.prefill) {
       input.value = params.prefill;
@@ -399,27 +400,27 @@ function abrirPersonalizarSuSana() {
 
     function pintar() {
       const user = getState().user;
-      const tonoActual = SUSANA_TONOS.find((t) => t.id === (user.tonoSusana || 'calida')) || SUSANA_TONOS[0];
+      const tonoActual = SUSANA_TONOS.find((tono) => tono.id === (user.tonoSusana || 'calida')) || SUSANA_TONOS[0];
       const memorias = user.memorias || [];
       wrap.innerHTML = `
-        <h2>${GEAR_ICON} Personalizar a ${susanaName()}</h2>
-        <p class="small muted mt">Define el tono con el que te habla. Nunca usa culpa ni regaños, solo cambia el estilo.</p>
+        <h2>${GEAR_ICON} ${t('Personalizar a {nombre}', { nombre: susanaName() })}</h2>
+        <p class="small muted mt">${t('Define el tono con el que te habla. Nunca usa culpa ni regaños, solo cambia el estilo.')}</p>
         <div class="chips mt" id="pz-tonos">
-          ${SUSANA_TONOS.map((t) => `<button type="button" class="chip${t.id === tonoActual.id ? ' selected' : ''}" data-tono="${t.id}">${t.emoji} ${t.nombre}</button>`).join('')}
+          ${SUSANA_TONOS.map((tono) => `<button type="button" class="chip${tono.id === tonoActual.id ? ' selected' : ''}" data-tono="${tono.id}">${tono.emoji} ${tono.nombre}</button>`).join('')}
         </div>
         <p class="small mt" style="font-style:italic;border-left:4px solid var(--secondary);padding-left:10px" id="pz-ejemplo">"${esc(tonoActual.ejemplo)}"</p>
         <button type="button" class="setting-row mt" id="pz-memorias" style="padding:10px 0;border-top:1px solid var(--border)">
           <span class="setting-row-icon">🧠</span>
-          <span class="setting-row-label">Memorias (${memorias.length}/${MEMORIA_MAX})</span>
+          <span class="setting-row-label">${t('Memorias ({n}/{max})', { n: memorias.length, max: MEMORIA_MAX })}</span>
           <span class="setting-row-chevron">›</span>
         </button>
         <div class="mt" style="border-top:1px solid var(--border);padding-top:12px">
-          <label class="small" style="font-weight:600">Algo de contexto para ${susanaName()}</label>
-          <p class="small muted" style="margin-top:2px">Ej. "no hago ejercicio hace meses" o "estoy en un momento de mucho estrés". Se suma a tu perfil de siempre, nunca lo reemplaza.</p>
-          <textarea id="pz-contexto" class="auth-input" rows="2" maxlength="${CONTEXTO_MAX}" placeholder="Escribe aquí…" style="margin-top:6px">${esc(user.contextoSusana || '')}</textarea>
+          <label class="small" style="font-weight:600">${t('Algo de contexto para {nombre}', { nombre: susanaName() })}</label>
+          <p class="small muted" style="margin-top:2px">${t('Ej. "no hago ejercicio hace meses" o "estoy en un momento de mucho estrés". Se suma a tu perfil de siempre, nunca lo reemplaza.')}</p>
+          <textarea id="pz-contexto" class="auth-input" rows="2" maxlength="${CONTEXTO_MAX}" placeholder="${t('Escribe aquí…')}" style="margin-top:6px">${esc(user.contextoSusana || '')}</textarea>
           <div class="row" style="justify-content:space-between;margin-top:6px">
             <span class="small muted" id="pz-contexto-count"></span>
-            <button type="button" class="btn ghost sm" id="pz-contexto-guardar">Guardar</button>
+            <button type="button" class="btn ghost sm" id="pz-contexto-guardar">${t('Guardar')}</button>
           </div>
         </div>`;
 
@@ -441,7 +442,7 @@ function abrirPersonalizarSuSana() {
       ctxInput.addEventListener('input', actualizarContador);
       wrap.querySelector('#pz-contexto-guardar').addEventListener('click', () => {
         setState({ user: { ...getState().user, contextoSusana: ctxInput.value.trim() } });
-        toast('Guardado 🌿');
+        toast(t('Guardado 🌿'));
       });
     }
 
@@ -462,26 +463,26 @@ function abrirMemorias() {
       const memorias = getState().user.memorias || [];
       const lleno = memorias.length >= MEMORIA_MAX;
       wrap.innerHTML = `
-        <h2>🧠 Memorias</h2>
-        <p class="small muted mt">${memorias.length}/${MEMORIA_MAX} creadas. ${susanaName()} las tiene en cuenta en cada respuesta.</p>
+        <h2>🧠 ${t('Memorias')}</h2>
+        <p class="small muted mt">${t('{n}/{max} creadas. {nombre} las tiene en cuenta en cada respuesta.', { n: memorias.length, max: MEMORIA_MAX, nombre: susanaName() })}</p>
         <div class="mt" id="mem-lista"></div>
-        <textarea id="mem-nueva" class="auth-input mt" rows="2" maxlength="200" placeholder="Ej: hace meses no hago ejercicio, quiero retomar con disciplina" ${lleno ? 'disabled' : ''}></textarea>
-        <button class="btn ghost full mt" id="mem-agregar" ${lleno ? 'disabled' : ''}>${lleno ? 'Llegaste al máximo de 10' : '+ Agregar'}</button>`;
+        <textarea id="mem-nueva" class="auth-input mt" rows="2" maxlength="200" placeholder="${t('Ej: hace meses no hago ejercicio, quiero retomar con disciplina')}" ${lleno ? 'disabled' : ''}></textarea>
+        <button class="btn ghost full mt" id="mem-agregar" ${lleno ? 'disabled' : ''}>${lleno ? t('Llegaste al máximo de 10') : t('+ Agregar')}</button>`;
       const lista = wrap.querySelector('#mem-lista');
       if (!memorias.length) {
-        lista.innerHTML = '<p class="small muted">Aún no has guardado ninguna.</p>';
+        lista.innerHTML = `<p class="small muted">${t('Aún no has guardado ninguna.')}</p>`;
       } else {
         for (const m of memorias) {
           const row = document.createElement('div');
           row.className = 'habit';
-          row.innerHTML = `<label style="flex:1">${esc(m.texto)}</label><button type="button" class="link-btn small" aria-label="Eliminar">🗑️</button>`;
+          row.innerHTML = `<label style="flex:1">${esc(m.texto)}</label><button type="button" class="link-btn small" aria-label="${t('Eliminar')}">🗑️</button>`;
           row.querySelector('button').addEventListener('click', () => { eliminarMemoria(m.id); pintar(); });
           lista.appendChild(row);
         }
       }
       wrap.querySelector('#mem-agregar').addEventListener('click', () => {
         const val = wrap.querySelector('#mem-nueva').value;
-        if (!agregarMemoria(val)) { toast('Escribe algo, o ya llegaste al máximo de 10.'); return; }
+        if (!agregarMemoria(val)) { toast(t('Escribe algo, o ya llegaste al máximo de 10.')); return; }
         pintar();
       });
     }
@@ -501,9 +502,9 @@ function etiquetaFecha(fechaISO) {
   const ayer = new Date(hoy);
   ayer.setDate(ayer.getDate() - 1);
   const mismoDia = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-  if (mismoDia(fecha, hoy)) return 'Hoy';
-  if (mismoDia(fecha, ayer)) return 'Ayer';
-  return `${fecha.getDate()} de ${MESES[fecha.getMonth()]}`;
+  if (mismoDia(fecha, hoy)) return t('Hoy');
+  if (mismoDia(fecha, ayer)) return t('Ayer');
+  return t('{d} de {mes}', { d: fecha.getDate(), mes: t(MESES[fecha.getMonth()]) });
 }
 
 // Menú hamburguesa del chat: "Historial de SuSana" -- lista de
@@ -523,8 +524,8 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
     // en vez de mostrar un mensaje que solo dura una fracción de segundo.
     modal.insertAdjacentHTML('beforeend', `
       <div class="spread">
-        <h2>Historial de ${susanaName()}</h2>
-        <button type="button" class="icon-btn plain" id="hist-nueva" aria-label="Nueva conversación">${PENCIL_ICON}</button>
+        <h2>${t('Historial de {nombre}', { nombre: susanaName() })}</h2>
+        <button type="button" class="icon-btn plain" id="hist-nueva" aria-label="${t('Nueva conversación')}">${PENCIL_ICON}</button>
       </div>
       <div class="mt" id="hist-lista"></div>`);
 
@@ -536,7 +537,7 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
     const cont = modal.querySelector('#hist-lista');
     function pintarLista(conversations) {
       if (!conversations.length) {
-        cont.innerHTML = '<p class="small muted center">Aún no tienes conversaciones.</p>';
+        cont.innerHTML = `<p class="small muted center">${t('Aún no tienes conversaciones.')}</p>`;
         return;
       }
       cont.innerHTML = '';
@@ -571,7 +572,7 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
       .catch(() => {
         // Si ya había algo en caché pintado, se deja tal cual en vez de
         // taparlo con un error por un fallo puntual de red.
-        if (!cacheada) cont.innerHTML = '<p class="small muted center">No pudimos cargar tu historial.</p>';
+        if (!cacheada) cont.innerHTML = `<p class="small muted center">${t('No pudimos cargar tu historial.')}</p>`;
       });
   });
 }

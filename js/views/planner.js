@@ -5,12 +5,13 @@ import { isRecipeAvailable, trafficLight, trafficLightRecetaPropia, shoppingList
 import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
 import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace } from '../supabase-client.js';
 import { openRecipe } from './dashboard.js';
+import { t, getIdioma } from '../i18n.js';
 
 const ORDENES = [
-  { id: 'recomendadas', label: '🌿 Recomendadas' },
-  { id: 'nombre', label: '🔤 Nombre (A-Z)' },
-  { id: 'rapido', label: '⚡ Más rápidas' },
-  { id: 'mias', label: '📝 Mis recetas' }
+  { id: 'recomendadas', label: () => `🌿 ${t('Recomendadas')}` },
+  { id: 'nombre', label: () => `🔤 ${t('Nombre (A-Z)')}` },
+  { id: 'rapido', label: () => `⚡ ${t('Más rápidas')}` },
+  { id: 'mias', label: () => `📝 ${t('Mis recetas')}` }
 ];
 
 // Recetas visibles en el plan gratuito (el resto se muestra bloqueado).
@@ -48,7 +49,7 @@ function comprimirFotoReceta(file, maxDim = 1000) {
       URL.revokeObjectURL(img.src);
       resolve({ base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
     };
-    img.onerror = () => reject(new Error('Imagen inválida.'));
+    img.onerror = () => reject(new Error(t('Imagen inválida.')));
     img.src = URL.createObjectURL(file);
   });
 }
@@ -62,14 +63,14 @@ function montarSelectorComida(modal, btnEl, menuEl, comidaInicial) {
   let comidaElegida = comidaInicial;
   function pintarBtnComida() {
     const m = MEALS.find((x) => x.id === comidaElegida);
-    btnEl.textContent = `${m.emoji} ${m.nombre} ⌄`;
+    btnEl.textContent = `${m.emoji} ${t(m.nombre)} ⌄`;
   }
   pintarBtnComida();
   for (const m of MEALS) {
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'habit selector-opcion' + (m.id === comidaElegida ? ' selected' : '');
-    row.innerHTML = `<label>${m.emoji} ${m.nombre}</label>${m.id === comidaElegida ? '<span>✓</span>' : ''}`;
+    row.innerHTML = `<label>${m.emoji} ${t(m.nombre)}</label>${m.id === comidaElegida ? '<span>✓</span>' : ''}`;
     row.addEventListener('click', () => {
       comidaElegida = m.id;
       pintarBtnComida();
@@ -94,10 +95,10 @@ function montarSelectorComida(modal, btnEl, menuEl, comidaInicial) {
 }
 
 function origenLabel(receta) {
-  if (receta.origen === 'ia') return '✨ Generada con IA';
-  if (receta.origen === 'foto') return receta.reconstruida ? '📷 Reconstruida de una foto' : '📷 Desde una foto';
-  if (receta.origen === 'enlace') return '🔗 Desde un enlace';
-  return '✏️ Tuya';
+  if (receta.origen === 'ia') return `✨ ${t('Generada con IA')}`;
+  if (receta.origen === 'foto') return receta.reconstruida ? `📷 ${t('Reconstruida de una foto')}` : `📷 ${t('Desde una foto')}`;
+  if (receta.origen === 'enlace') return `🔗 ${t('Desde un enlace')}`;
+  return `✏️ ${t('Tuya')}`;
 }
 
 // "Crear manualmente" -- formulario simple: nombre, comida, ingredientes y
@@ -108,42 +109,42 @@ function abrirFormularioReceta(onGuardada) {
   openModal((modal, closeFn) => {
     let comidaElegida = MEALS[0].id;
     modal.insertAdjacentHTML('beforeend', `
-      <h2>✏️ Crear receta</h2>
-      <p class="small muted mt">Sin calorías ni macros -- solo lo que de verdad necesitas para prepararla.</p>
-      <label class="muted small mt" style="display:block;font-weight:600">Nombre</label>
-      <input id="rp-nombre" type="text" maxlength="80" placeholder="Ej: Tostadas con aguacate y huevo" class="auth-input">
-      <label class="muted small mt" style="display:block;font-weight:600">¿Para cuál comida?</label>
+      <h2>✏️ ${t('Crear receta')}</h2>
+      <p class="small muted mt">${t('Sin calorías ni macros -- solo lo que de verdad necesitas para prepararla.')}</p>
+      <label class="muted small mt" style="display:block;font-weight:600">${t('Nombre')}</label>
+      <input id="rp-nombre" type="text" maxlength="80" placeholder="${t('Ej: Tostadas con aguacate y huevo')}" class="auth-input">
+      <label class="muted small mt" style="display:block;font-weight:600">${t('¿Para cuál comida?')}</label>
       <div class="chips mt" id="rp-comida"></div>
-      <label class="muted small mt" style="display:block;font-weight:600">Descripción breve (opcional)</label>
-      <input id="rp-desc" type="text" maxlength="200" placeholder="Ej: Rápida, ideal para las mañanas ocupadas" class="auth-input">
+      <label class="muted small mt" style="display:block;font-weight:600">${t('Descripción breve (opcional)')}</label>
+      <input id="rp-desc" type="text" maxlength="200" placeholder="${t('Ej: Rápida, ideal para las mañanas ocupadas')}" class="auth-input">
       <div class="row mt" style="gap:12px">
         <div style="flex:1">
-          <label class="muted small" style="display:block;font-weight:600">Porciones</label>
+          <label class="muted small" style="display:block;font-weight:600">${t('Porciones')}</label>
           <input id="rp-porciones" type="number" min="1" max="20" value="1" class="auth-input">
         </div>
         <div style="flex:1">
-          <label class="muted small" style="display:block;font-weight:600">Tiempo (min)</label>
+          <label class="muted small" style="display:block;font-weight:600">${t('Tiempo (min)')}</label>
           <input id="rp-tiempo" type="number" min="0" max="240" value="15" class="auth-input">
         </div>
       </div>
-      <label class="muted small mt" style="display:block;font-weight:600">Ingredientes</label>
-      <p class="small muted" style="margin-top:2px">Uno por línea.</p>
+      <label class="muted small mt" style="display:block;font-weight:600">${t('Ingredientes')}</label>
+      <p class="small muted" style="margin-top:2px">${t('Uno por línea.')}</p>
       <textarea id="rp-ingredientes" class="auth-input" rows="4" placeholder="2 huevos
 1 aguacate
 2 tostadas integrales"></textarea>
-      <label class="muted small mt" style="display:block;font-weight:600">Pasos</label>
-      <p class="small muted" style="margin-top:2px">Uno por línea.</p>
+      <label class="muted small mt" style="display:block;font-weight:600">${t('Pasos')}</label>
+      <p class="small muted" style="margin-top:2px">${t('Uno por línea.')}</p>
       <textarea id="rp-pasos" class="auth-input" rows="4" placeholder="Tostar el pan
 Machacar el aguacate
 Freír los huevos"></textarea>
-      <button type="button" class="btn full mt" id="rp-guardar">Guardar receta</button>`);
+      <button type="button" class="btn full mt" id="rp-guardar">${t('Guardar receta')}</button>`);
 
     const chipsEl = modal.querySelector('#rp-comida');
     for (const m of MEALS) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'chip small' + (m.id === comidaElegida ? ' selected' : '');
-      b.textContent = `${m.emoji} ${m.nombre}`;
+      b.textContent = `${m.emoji} ${t(m.nombre)}`;
       b.addEventListener('click', () => {
         comidaElegida = m.id;
         chipsEl.querySelectorAll('.chip').forEach((c) => c.classList.toggle('selected', c === b));
@@ -153,7 +154,7 @@ Freír los huevos"></textarea>
 
     modal.querySelector('#rp-guardar').addEventListener('click', () => {
       const nombre = modal.querySelector('#rp-nombre').value.trim();
-      if (!nombre) { toast('Escribe un nombre para tu receta.'); return; }
+      if (!nombre) { toast(t('Escribe un nombre para tu receta.')); return; }
       const ingredientes = modal.querySelector('#rp-ingredientes').value.split('\n');
       const pasos = modal.querySelector('#rp-pasos').value.split('\n');
       agregarRecetaPropia({
@@ -166,7 +167,7 @@ Freír los huevos"></textarea>
         pasos
       });
       closeFn();
-      toast('¡Receta guardada! 🌿');
+      toast(t('¡Receta guardada! 🌿'));
       if (onGuardada) onGuardada();
     });
   });
@@ -185,21 +186,21 @@ function abrirRecetaPropia(receta, onEliminada) {
     modal.insertAdjacentHTML('beforeend', `
       <div style="font-size:2.4rem">${esc(receta.emoji)}</div>
       <h2>${esc(receta.nombre)}</h2>
-      <p class="small muted">${meal ? `${meal.emoji} ${esc(meal.nombre)}` : ''} · ${origenLabel(receta)}${receta.tiempoMin ? ` · 🍽️ ${receta.porciones || 1} porción${(receta.porciones || 1) === 1 ? '' : 'es'} · ⏱️ ${receta.tiempoMin} min` : ''}</p>
-      ${receta.reconstruida ? `<p class="small mt" style="background:var(--accent-soft);border-radius:var(--radius);padding:10px 12px">⚠️ La IA reconstruyó esta receta a partir de la foto del plato, no de una receta escrita -- revisa cantidades y pasos antes de prepararla.</p>` : ''}
+      <p class="small muted">${meal ? `${meal.emoji} ${t(esc(meal.nombre))}` : ''} · ${origenLabel(receta)}${receta.tiempoMin ? ` · 🍽️ ${t('{n} porción{s}', { n: receta.porciones || 1, s: (receta.porciones || 1) === 1 ? '' : 'es' })} · ⏱️ ${receta.tiempoMin} min` : ''}</p>
+      ${receta.reconstruida ? `<p class="small mt" style="background:var(--accent-soft);border-radius:var(--radius);padding:10px 12px">⚠️ ${t('La IA reconstruyó esta receta a partir de la foto del plato, no de una receta escrita -- revisa cantidades y pasos antes de prepararla.')}</p>` : ''}
       ${receta.descripcion ? `<p class="small mt">${esc(receta.descripcion)}</p>` : ''}
       ${receta.ingredientes.length ? `
-        <h3 class="mt">Ingredientes</h3>
+        <h3 class="mt">${t('Ingredientes')}</h3>
         ${receta.ingredientes.map((i) => `<div class="ingredient">• ${esc(i)}</div>`).join('')}` : ''}
       ${receta.pasos.length ? `
-        <h3 class="mt">Preparación</h3>
+        <h3 class="mt">${t('Preparación')}</h3>
         <ol class="steps">${receta.pasos.map((p) => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}
-      <button type="button" class="btn danger full mt" id="rp-eliminar">🗑️ Eliminar receta</button>`);
+      <button type="button" class="btn danger full mt" id="rp-eliminar">🗑️ ${t('Eliminar receta')}</button>`);
     modal.querySelector('#rp-eliminar').addEventListener('click', () => {
       confirmarEliminarReceta(receta.nombre, () => {
         eliminarRecetaPropia(receta.id);
         closeFn();
-        toast('Receta eliminada.');
+        toast(t('Receta eliminada.'));
         if (onEliminada) onEliminada();
       });
     });
@@ -212,11 +213,11 @@ function abrirRecetaPropia(receta, onEliminada) {
 function confirmarEliminarReceta(nombre, onConfirmar) {
   openModal((modal, close) => {
     modal.insertAdjacentHTML('beforeend', `
-      <h2>¿Eliminar "${esc(nombre)}"?</h2>
-      <p class="mt">Esta acción no se puede deshacer.</p>`);
+      <h2>${t('¿Eliminar "{nombre}"?', { nombre: esc(nombre) })}</h2>
+      <p class="mt">${t('Esta acción no se puede deshacer.')}</p>`);
     const yes = document.createElement('button');
     yes.className = 'btn danger full mt';
-    yes.textContent = 'Sí, eliminar';
+    yes.textContent = t('Sí, eliminar');
     yes.addEventListener('click', () => { close(); onConfirmar(); });
     modal.appendChild(yes);
   });
@@ -273,16 +274,16 @@ export function renderPlanner(container, params = {}) {
   const searchToggleBtn = document.createElement('button');
   searchToggleBtn.type = 'button';
   searchToggleBtn.className = 'icon-btn plain';
-  searchToggleBtn.setAttribute('aria-label', 'Buscar recetas');
+  searchToggleBtn.setAttribute('aria-label', t('Buscar recetas'));
   searchToggleBtn.innerHTML = SEARCH_ICON;
   const searchOverlay = document.createElement('div');
   searchOverlay.className = 'row hidden';
   searchOverlay.style.cssText = 'position:absolute;inset:0;align-items:center;gap:8px;background:var(--bg);z-index:3';
   searchOverlay.innerHTML = `
     <div style="position:relative;flex:1;min-width:0">
-      <input id="recetas-buscar" type="search" inputmode="search" placeholder="Buscar por nombre o ingrediente…"
+      <input id="recetas-buscar" type="search" inputmode="search" placeholder="${t('Buscar por nombre o ingrediente…')}"
         style="width:100%;padding:8px 36px 8px 12px;border-radius:10px;border:1px solid var(--border);font:inherit;font-size:0.9rem;box-sizing:border-box;background:var(--card);color:var(--ink)">
-      <button type="button" class="icon-btn plain" id="cerrar-buscar" aria-label="Cerrar búsqueda" style="position:absolute;right:0;top:50%;transform:translateY(-50%)"><span style="font-size:1.1rem">✕</span></button>
+      <button type="button" class="icon-btn plain" id="cerrar-buscar" aria-label="${t('Cerrar búsqueda')}" style="position:absolute;right:0;top:50%;transform:translateY(-50%)"><span style="font-size:1.1rem">✕</span></button>
     </div>`;
   tabsRow.appendChild(searchOverlay);
   const searchInputEl = searchOverlay.querySelector('#recetas-buscar');
@@ -303,7 +304,7 @@ export function renderPlanner(container, params = {}) {
 
   function drawTabs() {
     tabs.innerHTML = '';
-    const [recetasTab, comprasTab] = [['recetas', '🥗 Recetario'], ['compras', `${CART_ICON} Lista de compras`]].map(([id, label]) => {
+    const [recetasTab, comprasTab] = [['recetas', `🥗 ${t('Recetario')}`], ['compras', `${CART_ICON} ${t('Lista de compras')}`]].map(([id, label]) => {
       const b = document.createElement('button');
       b.className = 'chip' + (tab === id ? ' selected' : '');
       b.innerHTML = label;
@@ -347,7 +348,7 @@ export function renderPlanner(container, params = {}) {
         <span style="font-size:1.8rem">🍳</span>
         <div style="flex:1;min-width:0">
           <div class="spread">
-            <p style="font-weight:700">Generando ${iaCantidad === 1 ? 'receta' : `${iaCantidad} recetas`}…</p>
+            <p style="font-weight:700">${iaCantidad === 1 ? t('Generando receta…') : t('Generando {n} recetas…', { n: iaCantidad })}</p>
             <p class="small" id="ia-pct" style="font-weight:700">0%</p>
           </div>
           <div style="background:var(--border);border-radius:99px;height:6px;margin-top:6px;overflow:hidden">
@@ -359,9 +360,9 @@ export function renderPlanner(container, params = {}) {
       banner.innerHTML = `
         <div class="row" style="gap:12px">
           <span style="font-size:1.6rem">✅</span>
-          <p style="font-weight:700">¡Tu${iaCantidad === 1 ? '' : 's'} ${iaCantidad === 1 ? 'receta está' : `${iaCantidad} recetas están`} list${iaCantidad === 1 ? 'a' : 'as'}!</p>
+          <p style="font-weight:700">${iaCantidad === 1 ? t('¡Tu receta está lista!') : t('¡Tus {n} recetas están listas!', { n: iaCantidad })}</p>
         </div>
-        <button type="button" class="btn sm" id="ia-ver">Ver</button>`;
+        <button type="button" class="btn sm" id="ia-ver">${t('Ver')}</button>`;
       banner.querySelector('#ia-ver').addEventListener('click', () => {
         iaEstado = 'idle';
         drawBody();
@@ -380,7 +381,7 @@ export function renderPlanner(container, params = {}) {
   function abrirSelectorCantidadIA() {
     const saldo = getState().nutricoins || 0;
     if (saldo < COSTO_RECETA_IA) {
-      toast(`Necesitas ${COSTO_RECETA_IA} NutriCoins para generar una receta.`);
+      toast(t('Necesitas {n} NutriCoins para generar una receta.', { n: COSTO_RECETA_IA }));
       abrirComprarNutricoins();
       return;
     }
@@ -389,26 +390,26 @@ export function renderPlanner(container, params = {}) {
       let cantidad = 1;
       modal.insertAdjacentHTML('beforeend', `
         <div class="center">
-          <h2>¿Cuántas recetas quieres generar?</h2>
+          <h2>${t('¿Cuántas recetas quieres generar?')}</h2>
         </div>
         <div class="row mt" style="justify-content:center;align-items:center;gap:22px">
-          <button type="button" class="icon-btn" id="cant-menos" aria-label="Menos">−</button>
+          <button type="button" class="icon-btn" id="cant-menos" aria-label="${t('Menos')}">−</button>
           <div class="center" style="min-width:70px">
             <p id="cant-num" style="font-size:2.2rem;font-weight:800;line-height:1">1</p>
-            <p class="small muted" id="cant-label">receta</p>
+            <p class="small muted" id="cant-label">${t('receta')}</p>
           </div>
-          <button type="button" class="icon-btn" id="cant-mas" aria-label="Más">+</button>
+          <button type="button" class="icon-btn" id="cant-mas" aria-label="${t('Más')}">+</button>
         </div>
-        <p class="small muted center mt" id="cant-costo">1 receta = ${COSTO_RECETA_IA} NutriCoins</p>
-        <button type="button" class="btn full mt" id="cant-continuar">Continuar</button>`);
+        <p class="small muted center mt" id="cant-costo">${t('1 receta = {n} NutriCoins', { n: COSTO_RECETA_IA })}</p>
+        <button type="button" class="btn full mt" id="cant-continuar">${t('Continuar')}</button>`);
 
       const numEl = modal.querySelector('#cant-num');
       const labelEl = modal.querySelector('#cant-label');
       const costoEl = modal.querySelector('#cant-costo');
       function pintar() {
         numEl.textContent = cantidad;
-        labelEl.textContent = cantidad === 1 ? 'receta' : 'recetas';
-        costoEl.textContent = `${cantidad} ${cantidad === 1 ? 'receta' : 'recetas'} = ${cantidad * COSTO_RECETA_IA} NutriCoins`;
+        labelEl.textContent = cantidad === 1 ? t('receta') : t('recetas');
+        costoEl.textContent = t('{n} {palabra} = {total} NutriCoins', { n: cantidad, palabra: cantidad === 1 ? t('receta') : t('recetas'), total: cantidad * COSTO_RECETA_IA });
         modal.querySelector('#cant-menos').disabled = cantidad <= 1;
         modal.querySelector('#cant-mas').disabled = cantidad >= tope;
       }
@@ -432,25 +433,25 @@ export function renderPlanner(container, params = {}) {
       let comidaElegida = mealFilter !== 'todas' ? mealFilter : MEALS[0].id;
       modal.insertAdjacentHTML('beforeend', `
         <div class="center">
-          <h2>Describe la receta que quieres</h2>
-          <p class="small muted mt">Menciona ingredientes, un plato específico, o ajusta el tiempo de preparación. Sin calorías ni macros.</p>
+          <h2>${t('Describe la receta que quieres')}</h2>
+          <p class="small muted mt">${t('Menciona ingredientes, un plato específico, o ajusta el tiempo de preparación. Sin calorías ni macros.')}</p>
         </div>
         <div class="center mt" style="position:relative">
           <button type="button" class="chip small" id="ia-comida-btn"></button>
           <div id="ia-comida-menu" class="card hidden" style="position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);z-index:5;width:200px;padding:6px 14px;box-shadow:0 8px 24px rgba(8,18,15,0.18)"></div>
         </div>
         <div style="position:relative">
-          <textarea id="ia-notas" class="auth-input mt" rows="5" maxlength="${NOTAS_MAX}" placeholder="Ej: con pollo, sin lácteos, algo rápido…" style="resize:none"></textarea>
-          <p class="small muted" id="ia-contador" style="text-align:right;margin-top:-6px">${NOTAS_MAX} caracteres restantes</p>
+          <textarea id="ia-notas" class="auth-input mt" rows="5" maxlength="${NOTAS_MAX}" placeholder="${t('Ej: con pollo, sin lácteos, algo rápido…')}" style="resize:none"></textarea>
+          <p class="small muted" id="ia-contador" style="text-align:right;margin-top:-6px">${t('{n} caracteres restantes', { n: NOTAS_MAX })}</p>
         </div>
-        <button type="button" class="btn full" id="ia-generar" style="display:flex;align-items:center;justify-content:center;gap:6px">Generar ${cantidad === 1 ? 'receta' : 'recetas'} · ${cantidad * COSTO_RECETA_IA} ${coinIcon(ORO_NUTRICOINS, 18)}</button>`);
+        <button type="button" class="btn full" id="ia-generar" style="display:flex;align-items:center;justify-content:center;gap:6px">${cantidad === 1 ? t('Generar receta') : t('Generar {n} recetas', { n: cantidad })} · ${cantidad * COSTO_RECETA_IA} ${coinIcon(ORO_NUTRICOINS, 18)}</button>`);
 
       const { getComida } = montarSelectorComida(modal, modal.querySelector('#ia-comida-btn'), modal.querySelector('#ia-comida-menu'), comidaElegida);
 
       const notasEl = modal.querySelector('#ia-notas');
       const contador = modal.querySelector('#ia-contador');
       notasEl.addEventListener('input', () => {
-        contador.textContent = `${NOTAS_MAX - notasEl.value.length} caracteres restantes`;
+        contador.textContent = t('{n} caracteres restantes', { n: NOTAS_MAX - notasEl.value.length });
       });
 
       modal.querySelector('#ia-generar').addEventListener('click', () => {
@@ -469,20 +470,20 @@ export function renderPlanner(container, params = {}) {
     openModal((modal, closeFn) => {
       modal.insertAdjacentHTML('beforeend', `
         <div class="center">
-          <h2>Elige cómo<br>crear tu receta</h2>
+          <h2>${t('Elige cómo')}<br>${t('crear tu receta')}</h2>
         </div>
         <div class="metodo-crear-list mt">
           <button type="button" class="metodo-crear-row" id="metodo-manual">
             <span class="metodo-crear-icon">${PENCIL_ICON}</span>
-            <span class="metodo-crear-text"><strong>Manual</strong><span class="small muted">Agrega ingredientes uno por uno</span></span>
+            <span class="metodo-crear-text"><strong>${t('Manual')}</strong><span class="small muted">${t('Agrega ingredientes uno por uno')}</span></span>
           </button>
           <button type="button" class="metodo-crear-row" id="metodo-foto">
             <span class="metodo-crear-icon">${CAMERA_ICON}</span>
-            <span class="metodo-crear-text"><strong>Desde una foto</strong><span class="small muted">De una receta escrita, o del plato ya preparado</span></span>
+            <span class="metodo-crear-text"><strong>${t('Desde una foto')}</strong><span class="small muted">${t('De una receta escrita, o del plato ya preparado')}</span></span>
           </button>
           <button type="button" class="metodo-crear-row" id="metodo-enlace">
             <span class="metodo-crear-icon">🔗</span>
-            <span class="metodo-crear-text"><strong>Desde un enlace</strong><span class="small muted">Pega el link de una receta real</span></span>
+            <span class="metodo-crear-text"><strong>${t('Desde un enlace')}</strong><span class="small muted">${t('Pega el link de una receta real')}</span></span>
           </button>
         </div>`);
       // No se cierra esta modal al elegir un método -- se abre la
@@ -515,7 +516,7 @@ export function renderPlanner(container, params = {}) {
   function abrirCrearDesdeFoto(closeSelector) {
     const saldo = getState().nutricoins || 0;
     if (saldo < COSTO_RECETA_IA) {
-      toast(`Necesitas ${COSTO_RECETA_IA} NutriCoins para generar una receta.`);
+      toast(t('Necesitas {n} NutriCoins para generar una receta.', { n: COSTO_RECETA_IA }));
       abrirComprarNutricoins();
       return;
     }
@@ -547,21 +548,21 @@ export function renderPlanner(container, params = {}) {
           closeSelector();
           generarUnaConIA(comida, 'foto', () => generarRecetaDesdeFoto(comida, base64, mediaType));
         } catch (err) {
-          toast(err.message || 'No se pudo procesar la foto.');
+          toast(err.message || t('No se pudo procesar la foto.'));
           cerrarTodo();
         }
       });
 
       modal.innerHTML = `
-        <div class="camera-top"><button type="button" class="camera-cancelar" id="rf-cam-cancelar">Cancelar</button></div>
-        <p class="camera-instruccion">Toma una foto de una receta escrita, o del plato ya preparado</p>
+        <div class="camera-top"><button type="button" class="camera-cancelar" id="rf-cam-cancelar">${t('Cancelar')}</button></div>
+        <p class="camera-instruccion">${t('Toma una foto de una receta escrita, o del plato ya preparado')}</p>
         <div class="camera-wrap">
           <video id="rf-cam-video" autoplay playsinline muted></video>
           <div class="camera-frame"></div>
         </div>
         <div class="camera-controls">
-          <button type="button" class="camera-icon-btn" id="rf-cam-galeria" aria-label="Elegir de la galería">🖼️</button>
-          <button type="button" id="rf-cam-shutter" class="camera-shutter" aria-label="Tomar foto"></button>
+          <button type="button" class="camera-icon-btn" id="rf-cam-galeria" aria-label="${t('Elegir de la galería')}">🖼️</button>
+          <button type="button" id="rf-cam-shutter" class="camera-shutter" aria-label="${t('Tomar foto')}"></button>
           <span class="camera-icon-btn" style="visibility:hidden" aria-hidden="true"></span>
         </div>`;
       // Fullscreen (fondo negro de borde a borde) recién ahora -- modal aún
@@ -583,7 +584,7 @@ export function renderPlanner(container, params = {}) {
           video.srcObject = stream;
         } catch {
           modal.parentElement?.classList.remove('cam-fullscreen');
-          toast('No pudimos abrir la cámara. Elige una foto de tu galería.');
+          toast(t('No pudimos abrir la cámara. Elige una foto de tu galería.'));
           fileInput.click();
         }
       })();
@@ -619,7 +620,7 @@ export function renderPlanner(container, params = {}) {
   function abrirCrearDesdeEnlace(closeSelector) {
     const saldo = getState().nutricoins || 0;
     if (saldo < COSTO_RECETA_IA) {
-      toast(`Necesitas ${COSTO_RECETA_IA} NutriCoins para generar una receta.`);
+      toast(t('Necesitas {n} NutriCoins para generar una receta.', { n: COSTO_RECETA_IA }));
       abrirComprarNutricoins();
       return;
     }
@@ -627,14 +628,14 @@ export function renderPlanner(container, params = {}) {
     openModal((modal, closeFn) => {
       modal.insertAdjacentHTML('beforeend', `
         <div class="center">
-          <h2>Pega un enlace</h2>
+          <h2>${t('Pega un enlace')}</h2>
         </div>
         <div class="row mt" style="gap:8px">
           <input type="url" id="enlace-url" class="auth-input" placeholder="https://www.example.com" inputmode="url" style="margin:0;flex:1;min-width:0">
-          <button type="button" class="btn ghost sm" id="enlace-pegar" style="flex:none">📋 Pegar</button>
+          <button type="button" class="btn ghost sm" id="enlace-pegar" style="flex:none">📋 ${t('Pegar')}</button>
         </div>
-        <p class="small muted mt center">Enlaces soportados: TikTok, Instagram, YouTube Shorts y sitios web.</p>
-        <button type="button" class="btn full mt" id="enlace-generar" disabled style="display:flex;align-items:center;justify-content:center;gap:6px">Importar receta · ${COSTO_RECETA_IA} ${coinIcon(ORO_NUTRICOINS, 18)}</button>`);
+        <p class="small muted mt center">${t('Enlaces soportados: TikTok, Instagram, YouTube Shorts y sitios web.')}</p>
+        <button type="button" class="btn full mt" id="enlace-generar" disabled style="display:flex;align-items:center;justify-content:center;gap:6px">${t('Importar receta')} · ${COSTO_RECETA_IA} ${coinIcon(ORO_NUTRICOINS, 18)}</button>`);
 
       const urlInput = modal.querySelector('#enlace-url');
       const generarBtn = modal.querySelector('#enlace-generar');
@@ -648,7 +649,7 @@ export function renderPlanner(container, params = {}) {
             generarBtn.disabled = !urlInput.value.trim();
           }
         } catch {
-          toast('No pudimos leer el portapapeles. Pega el enlace manualmente.');
+          toast(t('No pudimos leer el portapapeles. Pega el enlace manualmente.'));
         }
       });
 
@@ -701,7 +702,7 @@ export function renderPlanner(container, params = {}) {
       iaEstado = 'idle';
       drawBody();
       if (e.code === 'nutricoins_insuficientes') abrirComprarNutricoins();
-      else toast(e.message || 'No pudimos generar la receta.');
+      else toast(e.message || t('No pudimos generar la receta.'));
     }
   }
 
@@ -770,7 +771,7 @@ export function renderPlanner(container, params = {}) {
         iaEstado = 'idle';
         drawBody();
         if (e.code === 'nutricoins_insuficientes') abrirComprarNutricoins();
-        else toast((e.message || 'No pudimos generar la receta.') + (iaCompletadas > 0 ? ` Se generaron ${iaCompletadas}.` : ''));
+        else toast((e.message || t('No pudimos generar la receta.')) + (iaCompletadas > 0 ? ' ' + t('Se generaron {n}.', { n: iaCompletadas }) : ''));
       }
     }
     generarUna();
@@ -790,11 +791,11 @@ export function renderPlanner(container, params = {}) {
     crear.innerHTML = `
       <button type="button" class="crear-receta-btn" id="crear-ia" style="flex:1;min-width:0;cursor:pointer">
         <span class="crear-receta-emoji">✨</span>
-        <span>Crear con IA</span>
+        <span>${t('Crear con IA')}</span>
       </button>
       <button type="button" class="crear-receta-btn" id="crear-manual" style="flex:1;min-width:0;cursor:pointer">
         <span class="crear-receta-emoji">➕</span>
-        <span>Crear manualmente</span>
+        <span>${t('Crear manualmente')}</span>
       </button>`;
     crear.querySelector('#crear-ia').addEventListener('click', abrirSelectorCantidadIA);
     crear.querySelector('#crear-manual').addEventListener('click', abrirSelectorMetodoCreacion);
@@ -804,7 +805,7 @@ export function renderPlanner(container, params = {}) {
 
     const note = document.createElement('p');
     note.className = 'muted small center mt mb';
-    note.textContent = 'El semáforo se calcula según tus perfiles activos: verde = recomendado, amarillo = con moderación.';
+    note.textContent = t('El semáforo se calcula según tus perfiles activos: verde = recomendado, amarillo = con moderación.');
     body.appendChild(note);
 
     // Barra de filtros: 3 controles del mismo tamaño en una sola línea
@@ -812,18 +813,18 @@ export function renderPlanner(container, params = {}) {
     // nativos con la piel de .btn (dropdown real del sistema al tocar, no
     // un modal de pantalla completa) -- Preferidos sigue siendo un botón
     // simple porque solo alterna encendido/apagado, no elige entre varias.
-    const MEAL_OPTS = [{ id: 'todas', nombre: 'Todas', emoji: '✨' }, ...MEALS];
+    const MEAL_OPTS = [{ id: 'todas', nombre: t('Todas'), emoji: '✨' }, ...MEALS];
     const filters = document.createElement('div');
     filters.className = 'mb';
     filters.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px';
     filters.innerHTML = `
-      <select class="filtro-select" id="sel-ordenar" aria-label="Ordenar por">
-        ${ORDENES.map((o) => `<option value="${o.id}" ${orden === o.id ? 'selected' : ''}>${o.label}</option>`).join('')}
+      <select class="filtro-select" id="sel-ordenar" aria-label="${t('Ordenar por')}">
+        ${ORDENES.map((o) => `<option value="${o.id}" ${orden === o.id ? 'selected' : ''}>${o.label()}</option>`).join('')}
       </select>
-      <select class="filtro-select" id="sel-comida" aria-label="Filtrar por comida">
-        ${MEAL_OPTS.map((o) => `<option value="${o.id}" ${mealFilter === o.id ? 'selected' : ''}>${o.emoji} ${o.nombre}</option>`).join('')}
+      <select class="filtro-select" id="sel-comida" aria-label="${t('Filtrar por comida')}">
+        ${MEAL_OPTS.map((o) => `<option value="${o.id}" ${mealFilter === o.id ? 'selected' : ''}>${o.emoji} ${t(o.nombre)}</option>`).join('')}
       </select>
-      <button type="button" class="filtro-select${soloFavoritas ? ' selected' : ''}" id="btn-preferidos"><span class="filtro-txt">⭐ Preferidos</span></button>`;
+      <button type="button" class="filtro-select${soloFavoritas ? ' selected' : ''}" id="btn-preferidos"><span class="filtro-txt">⭐ ${t('Preferidos')}</span></button>`;
     filters.querySelectorAll('.filtro-txt').forEach((s) => {
       s.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%';
     });
@@ -849,7 +850,7 @@ export function renderPlanner(container, params = {}) {
     if (soloMias) {
       list = [];
     } else if (orden === 'nombre') {
-      list = [...list].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+      list = [...list].sort((a, b) => a.nombre.localeCompare(b.nombre, getIdioma()));
     } else if (orden === 'rapido') {
       list = [...list].sort((a, b) => (b.etiquetas?.includes('rapido') ? 1 : 0) - (a.etiquetas?.includes('rapido') ? 1 : 0));
     } else {
@@ -862,7 +863,7 @@ export function renderPlanner(container, params = {}) {
     if (!list.length && !soloMias) {
       const empty = document.createElement('div');
       empty.className = 'card';
-      empty.innerHTML = `<p>${busqueda ? `No encontramos recetas con "${busqueda}".` : 'No hay recetas disponibles con tus exclusiones actuales en esta categoría.'}</p>`;
+      empty.innerHTML = `<p>${busqueda ? t('No encontramos recetas con "{busqueda}".', { busqueda }) : t('No hay recetas disponibles con tus exclusiones actuales en esta categoría.')}</p>`;
       body.appendChild(empty);
     }
     const premium = isPremium();
@@ -908,16 +909,16 @@ export function renderPlanner(container, params = {}) {
       const item = document.createElement('button');
       item.className = 'recipe-card';
       item.innerHTML = `
-        ${esNueva ? '<span class="recipe-nuevo-tag">Nuevo</span>' : ''}
-        <span class="recipe-fav" aria-label="${esFavorita ? 'Quitar de preferidos' : 'Marcar como preferida'}">${esFavorita ? '⭐' : '☆'}</span>
+        ${esNueva ? `<span class="recipe-nuevo-tag">${t('Nuevo')}</span>` : ''}
+        <span class="recipe-fav" aria-label="${esFavorita ? t('Quitar de preferidos') : t('Marcar como preferida')}">${esFavorita ? '⭐' : '☆'}</span>
         <div class="recipe-plate">
           ${HOT_MEALS.has(r.comida) ? '<span class="steam"><span></span><span></span><span></span></span>' : ''}
           ${esc(r.emoji)}
           <span class="garnish">${meal[r.comida]?.emoji || ''}</span>
-          <span class="semaforo-ring ${light}" title="Semáforo: ${light}"></span>
+          <span class="semaforo-ring ${light}" title="${t('Semáforo: {v}', { v: light })}"></span>
         </div>
         <div class="recipe-title">${esc(r.nombre)}</div>
-        <div class="recipe-desc">${esc(r.descripcion || 'Receta tuya')}</div>
+        <div class="recipe-desc">${esc(r.descripcion || t('Receta tuya'))}</div>
         <div class="recipe-tags"><span class="recipe-tag">${origenLabel(r)}</span></div>`;
       item.querySelector('.recipe-fav').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -946,21 +947,21 @@ export function renderPlanner(container, params = {}) {
         const locked = !premium && i >= FREE_RECIPE_LIMIT;
         const light = trafficLight(r, user.perfiles);
         const shown = displayRecipe(r, user.exclusiones);
-        const tags = (r.etiquetas || []).slice(0, 2).map((t) => `<span class="recipe-tag">${TAG_LABELS[t] || t}</span>`).join('');
+        const tags = (r.etiquetas || []).slice(0, 2).map((tag) => `<span class="recipe-tag">${t(TAG_LABELS[tag] || tag)}</span>`).join('');
         const esFavorita = (favoritas || []).includes(r.id);
         const item = document.createElement('button');
         item.className = 'recipe-card' + (locked ? ' locked' : '');
         item.innerHTML = `
-          <span class="recipe-fav" aria-label="${esFavorita ? 'Quitar de preferidos' : 'Marcar como preferida'}">${esFavorita ? '⭐' : '☆'}</span>
+          <span class="recipe-fav" aria-label="${esFavorita ? t('Quitar de preferidos') : t('Marcar como preferida')}">${esFavorita ? '⭐' : '☆'}</span>
           <div class="recipe-plate">
             ${HOT_MEALS.has(r.comida) ? '<span class="steam"><span></span><span></span><span></span></span>' : ''}
             ${shown.emoji}
             <span class="garnish">${meal[r.comida]?.emoji || ''}</span>
-            ${locked ? '' : `<span class="semaforo-ring ${light}" title="Semáforo: ${light}"></span>`}
+            ${locked ? '' : `<span class="semaforo-ring ${light}" title="${t('Semáforo: {v}', { v: light })}"></span>`}
           </div>
           <div class="recipe-title">${shown.nombre}</div>
           <div class="recipe-desc${locked ? ' lesson-blur' : ''}">${r.descripcion}</div>
-          ${locked ? '<div class="recipe-lock">🔒 Premium</div>' : `<div class="recipe-tags">${tags}</div>`}`;
+          ${locked ? `<div class="recipe-lock">🔒 Premium</div>` : `<div class="recipe-tags">${tags}</div>`}`;
         item.querySelector('.recipe-fav').addEventListener('click', (e) => {
           e.stopPropagation();
           toggleFavorita(r.id);
@@ -983,7 +984,7 @@ export function renderPlanner(container, params = {}) {
       const divider = document.createElement('div');
       divider.className = 'recipe-section-divider';
       divider.id = 'tus-recetas';
-      divider.innerHTML = '<span>📝 Tus recetas</span>';
+      divider.innerHTML = `<span>📝 ${t('Tus recetas')}</span>`;
       body.appendChild(divider);
 
       const grid = document.createElement('div');
@@ -1002,8 +1003,8 @@ export function renderPlanner(container, params = {}) {
     // calificaba como apto (sin ninguna "otra"), el título desaparecía
     // por completo aunque la sección sí existiera.
     const hayRecomendadas = recomendadas.length > 0 || propiasVerdes.length > 0;
-    renderGroup(recomendadas, orden === 'recomendadas' && hayRecomendadas ? '🌿 Recomendadas para tu perfil' : null, propiasVerdes);
-    renderGroup(otras, otras.length ? 'Otras recetas' : null);
+    renderGroup(recomendadas, orden === 'recomendadas' && hayRecomendadas ? `🌿 ${t('Recomendadas para tu perfil')}` : null, propiasVerdes);
+    renderGroup(otras, otras.length ? t('Otras recetas') : null);
 
     const huboMias = renderMisRecetas(propiasResto);
     if (soloMias && !huboMias) {
@@ -1011,8 +1012,8 @@ export function renderPlanner(container, params = {}) {
       empty.className = 'card';
       const tieneAlgunaPropia = (getState().misRecetas || []).length > 0;
       empty.innerHTML = `<p>${tieneAlgunaPropia
-        ? 'Ninguna de tus recetas coincide con este filtro.'
-        : 'Aún no has creado ninguna receta. Usa "Crear con IA" o "Crear manualmente" arriba.'}</p>`;
+        ? t('Ninguna de tus recetas coincide con este filtro.')
+        : t('Aún no has creado ninguna receta. Usa "Crear con IA" o "Crear manualmente" arriba.')}</p>`;
       body.appendChild(empty);
     }
   }
@@ -1033,18 +1034,18 @@ export function renderPlanner(container, params = {}) {
 
   async function compartirLista(grupos, tituloCard, esHoy) {
     const texto = grupos.map(({ categoria, items: itemsCat }) =>
-      `${CATEGORIA_EMOJI[categoria] || ''} ${categoria.toUpperCase()}\n${itemsCat.map((it) => `• ${textoItem(it, esHoy)}`).join('\n')}`
+      `${CATEGORIA_EMOJI[categoria] || ''} ${t(categoria).toUpperCase()}\n${itemsCat.map((it) => `• ${textoItem(it, esHoy)}`).join('\n')}`
     ).join('\n\n');
     const contenido = `${tituloCard.replace(/^🛒\s*/, '')}\n\n${texto}`;
     if (navigator.share) {
-      try { await navigator.share({ title: 'Mi lista de compras — NutriRuta', text: contenido }); } catch { /* la usuaria canceló el share, no es un error */ }
+      try { await navigator.share({ title: t('Mi lista de compras — NutriRuta'), text: contenido }); } catch { /* la usuaria canceló el share, no es un error */ }
       return;
     }
     try {
       await navigator.clipboard.writeText(contenido);
-      toast('Lista copiada — pégala donde quieras 📋');
+      toast(t('Lista copiada — pégala donde quieras 📋'));
     } catch {
-      toast('No se pudo copiar automáticamente. Copia la lista a mano.');
+      toast(t('No se pudo copiar automáticamente. Copia la lista a mano.'));
     }
   }
 
@@ -1054,16 +1055,16 @@ export function renderPlanner(container, params = {}) {
       upsell.className = 'card center';
       upsell.innerHTML = `
         <div style="width:44px;height:44px;margin:0 auto">${CART_ICON.replace('width="18" height="18"', 'width="44" height="44"')}</div>
-        <h2>Lista de compras automática</h2>
-        <p class="mt">Genera tu lista de mercado a partir de tu menú del día, con sustituciones incluidas. Es parte del <strong>plan Premium</strong>.</p>
-        <button class="btn accent full mt">Ver planes Premium</button>`;
+        <h2>${t('Lista de compras automática')}</h2>
+        <p class="mt">${t('Genera tu lista de mercado a partir de tu menú del día, con sustituciones incluidas. Es parte del {strong}plan Premium{fin}.', { strong: '<strong>', fin: '</strong>' })}</p>
+        <button class="btn accent full mt">${t('Ver planes Premium')}</button>`;
       upsell.querySelector('.btn').addEventListener('click', () => navigate('plans'));
       body.appendChild(upsell);
       return;
     }
     const rangos = document.createElement('div');
     rangos.className = 'chips mb';
-    for (const [id, label] of [['hoy', 'Hoy'], ['semana', 'Esta semana'], ['mes', 'Este mes']]) {
+    for (const [id, label] of [['hoy', t('Hoy')], ['semana', t('Esta semana')], ['mes', t('Este mes')]]) {
       const b = document.createElement('button');
       b.className = 'chip small' + (rango === id ? ' selected' : '');
       b.textContent = label;
@@ -1080,13 +1081,13 @@ export function renderPlanner(container, params = {}) {
     const esHoy = rango === 'hoy';
     if (esHoy) {
       items = shoppingList();
-      tituloCard = 'Compras para tu menú de hoy';
-      sub = 'Generada automáticamente desde tu menú del día.';
+      tituloCard = t('Compras para tu menú de hoy');
+      sub = t('Generada automáticamente desde tu menú del día.');
     } else {
       const dias = rango === 'semana' ? 7 : 30;
       items = rangeShoppingList(dias);
-      tituloCard = `Compras para ${rango === 'semana' ? 'esta semana' : 'este mes'}`;
-      sub = `Proyectada desde tu menú de los próximos ${dias} días, con la cantidad ya sumada cuando la conocemos. Para lo que no tiene una medida exacta (ej. "al gusto") te mostramos en cuántos días aparece, como guía.`;
+      tituloCard = t('Compras para {periodo}', { periodo: rango === 'semana' ? t('esta semana') : t('este mes') });
+      sub = t('Proyectada desde tu menú de los próximos {dias} días, con la cantidad ya sumada cuando la conocemos. Para lo que no tiene una medida exacta (ej. "al gusto") te mostramos en cuántos días aparece, como guía.', { dias });
     }
     card.innerHTML = `<h2 style="display:flex;align-items:center;gap:8px">${CART_ICON}<span>${tituloCard}</span></h2><p class="small mb">${sub}</p>`;
 
@@ -1097,7 +1098,7 @@ export function renderPlanner(container, params = {}) {
       const h = document.createElement('h3');
       h.className = 'mt';
       h.style.cssText = 'font-size:0.78rem;color:var(--primary-dark);text-transform:uppercase;letter-spacing:.04em';
-      h.textContent = `${CATEGORIA_EMOJI[categoria] || ''} ${categoria}`;
+      h.textContent = `${CATEGORIA_EMOJI[categoria] || ''} ${t(categoria)}`;
       card.appendChild(h);
       for (const it of itemsCat) {
         const row = document.createElement('div');
@@ -1130,7 +1131,7 @@ export function renderPlanner(container, params = {}) {
       const shareBtn = document.createElement('button');
       shareBtn.className = 'btn ghost sm full mt';
       shareBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px';
-      shareBtn.innerHTML = `${SHARE_ICON}Compartir lista`;
+      shareBtn.innerHTML = `${SHARE_ICON}${t('Compartir lista')}`;
       shareBtn.addEventListener('click', () => compartirLista(grupos, tituloCard, esHoy));
       card.appendChild(shareBtn);
     }

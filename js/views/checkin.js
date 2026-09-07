@@ -2,26 +2,27 @@
 // nunca bloquea el uso de la app. Aparece cada ~3 días de uso activo.
 import { shouldShowCheckin, postponeCheckin, logCheckin, responderInvitacionTestimonio } from '../store.js';
 import { openModal, toast } from '../app.js';
+import { t } from '../i18n.js';
 
 const ANIMOS = [
-  { id: 'dificil', label: '🙁 Difícil' },
-  { id: 'normal', label: '😐 Normal' },
-  { id: 'bien', label: '🙂 Bien' },
-  { id: 'muy_bien', label: '😄 Muy bien' }
+  { id: 'dificil', label: () => `🙁 ${t('Difícil')}` },
+  { id: 'normal', label: () => `😐 ${t('Normal')}` },
+  { id: 'bien', label: () => `🙂 ${t('Bien')}` },
+  { id: 'muy_bien', label: () => `😄 ${t('Muy bien')}` }
 ];
 
 const IMPULSOS = [
-  { id: '0', label: '0' },
-  { id: '1-2', label: '1–2' },
-  { id: '3-5', label: '3–5' },
-  { id: '6+', label: '6+' }
+  { id: '0', label: () => '0' },
+  { id: '1-2', label: () => '1–2' },
+  { id: '3-5', label: () => '3–5' },
+  { id: '6+', label: () => '6+' }
 ];
 
 const EXPERIENCIA_MENU = [
-  { id: 'no_me_gusto', label: '👎 No me gustó' },
-  { id: 'neutral', label: '😐 Neutral' },
-  { id: 'me_gusto', label: '👍 Me gustó' },
-  { id: 'me_encanto', label: '🤩 Me encantó' }
+  { id: 'no_me_gusto', label: () => `👎 ${t('No me gustó')}` },
+  { id: 'neutral', label: () => `😐 ${t('Neutral')}` },
+  { id: 'me_gusto', label: () => `👍 ${t('Me gustó')}` },
+  { id: 'me_encanto', label: () => `🤩 ${t('Me encantó')}` }
 ];
 
 // Ya no se abre solo como modal al entrar al dashboard (se sentía invasivo,
@@ -36,9 +37,9 @@ export function renderCheckinBanner(container, onChange) {
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = `
-    <span class="small" style="font-weight:700">👋 ¿Cómo vas?</span>
-    <p class="small mt">Dos minutos, para acompañarte mejor. Cuéntanos cuando quieras.</p>
-    <button class="btn ghost sm mt" id="ci-abrir">Contarnos cómo voy →</button>`;
+    <span class="small" style="font-weight:700">👋 ${t('¿Cómo vas?')}</span>
+    <p class="small mt">${t('Dos minutos, para acompañarte mejor. Cuéntanos cuando quieras.')}</p>
+    <button class="btn ghost sm mt" id="ci-abrir">${t('Contarnos cómo voy →')}</button>`;
   container.appendChild(card);
 
   card.querySelector('#ci-abrir').addEventListener('click', () => abrirCheckin(onChange));
@@ -50,7 +51,7 @@ function chipGroup(wrap, options, onPick) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'chip';
-    b.textContent = o.label;
+    b.textContent = o.label();
     b.addEventListener('click', () => {
       picked = o.id;
       wrap.querySelectorAll('.chip').forEach((c) => c.classList.toggle('selected', c === b));
@@ -66,20 +67,20 @@ function abrirCheckin(onChange) {
   openModal((modal, close) => {
     const cerrarYPosponer = () => { postponeCheckin(); close(); if (onChange) onChange(); };
     modal.insertAdjacentHTML('beforeend', `
-      <h2>👋 ¿Cómo vas?</h2>
-      <p class="small mt">Dos minutos, para acompañarte mejor. Puedes saltarlo si no es buen momento.</p>
-      <p class="small mt" style="font-weight:600">¿Cómo te has sentido?</p>
+      <h2>👋 ${t('¿Cómo vas?')}</h2>
+      <p class="small mt">${t('Dos minutos, para acompañarte mejor. Puedes saltarlo si no es buen momento.')}</p>
+      <p class="small mt" style="font-weight:600">${t('¿Cómo te has sentido?')}</p>
       <div class="chips mt" id="ci-animo"></div>
-      <p class="small mt" style="font-weight:600">¿Cuántos impulsos de antojo tuviste?</p>
+      <p class="small mt" style="font-weight:600">${t('¿Cuántos impulsos de antojo tuviste?')}</p>
       <div class="chips mt" id="ci-impulsos"></div>
-      <p class="small mt" style="font-weight:600">¿Qué tal el menú de estos días?</p>
+      <p class="small mt" style="font-weight:600">${t('¿Qué tal el menú de estos días?')}</p>
       <div class="chips mt" id="ci-menu"></div>
-      <label class="muted small mt" for="ci-notas" style="display:block">¿Algo más que quieras contarnos? (opcional)</label>
-      <textarea id="ci-notas" maxlength="300" rows="3" placeholder="Cuéntanos lo que quieras…"
+      <label class="muted small mt" for="ci-notas" style="display:block">${t('¿Algo más que quieras contarnos? (opcional)')}</label>
+      <textarea id="ci-notas" maxlength="300" rows="3" placeholder="${t('Cuéntanos lo que quieras…')}"
         class="auth-input" style="resize:vertical"></textarea>
       <div class="row mt" style="gap:10px">
-        <button class="btn ghost sm" id="ci-posponer">Ahora no</button>
-        <button class="btn sm" id="ci-enviar" disabled style="flex:1">Enviar</button>
+        <button class="btn ghost sm" id="ci-posponer">${t('Ahora no')}</button>
+        <button class="btn sm" id="ci-enviar" disabled style="flex:1">${t('Enviar')}</button>
       </div>`);
 
     const enviarBtn = modal.querySelector('#ci-enviar');
@@ -96,7 +97,7 @@ function abrirCheckin(onChange) {
       const notas = modal.querySelector('#ci-notas').value;
       const index = logCheckin({ animo, antojosImpulsos: impulsos, menuExperiencia: experiencia, notas });
       close();
-      toast('Gracias por contarnos cómo vas 🌱');
+      toast(t('Gracias por contarnos cómo vas 🌱'));
       if (onChange) onChange();
       const positivo = (animo === 'bien' || animo === 'muy_bien') && (experiencia === 'me_gusto' || experiencia === 'me_encanto');
       if (positivo) setTimeout(() => abrirInvitacionTestimonio(index), 500);
@@ -108,13 +109,11 @@ function abrirInvitacionTestimonio(index) {
   openModal((modal, close) => {
     modal.insertAdjacentHTML('beforeend', `
       <div style="font-size:2rem">💛</div>
-      <h2>Nos alegra mucho leer esto</h2>
-      <p class="small mt">Estamos reuniendo historias reales para acompañar a personas que están empezando, como tú al inicio.
-      Si te nace, nos encantaría compartir lo que nos cuentas en redes o en la página — con tu nombre o de forma anónima, como prefieras.
-      Es completamente tu decisión, y no pasa nada si prefieres que quede solo entre nosotros.</p>
+      <h2>${t('Nos alegra mucho leer esto')}</h2>
+      <p class="small mt">${t('Estamos reuniendo historias reales para acompañar a personas que están empezando, como tú al inicio. Si te nace, nos encantaría compartir lo que nos cuentas en redes o en la página — con tu nombre o de forma anónima, como prefieras. Es completamente tu decisión, y no pasa nada si prefieres que quede solo entre nosotros.')}</p>
       <div class="row mt" style="gap:10px">
-        <button class="btn ghost sm" id="ti-no">Prefiero que quede privado</button>
-        <button class="btn sm" id="ti-si" style="flex:1">Sí, compartan mi experiencia 💛</button>
+        <button class="btn ghost sm" id="ti-no">${t('Prefiero que quede privado')}</button>
+        <button class="btn sm" id="ti-si" style="flex:1">${t('Sí, compartan mi experiencia 💛')}</button>
       </div>`);
     modal.querySelector('#ti-no').addEventListener('click', () => {
       responderInvitacionTestimonio(index, false);
@@ -123,19 +122,22 @@ function abrirInvitacionTestimonio(index) {
     modal.querySelector('#ti-si').addEventListener('click', () => {
       responderInvitacionTestimonio(index, true);
       close();
-      toast('Gracias por confiar en nosotros 💛');
+      toast(t('Gracias por confiar en nosotros 💛'));
     });
   });
 }
 
 export function labelAnimo(id) {
-  return (ANIMOS.find((a) => a.id === id) || {}).label || id;
+  const o = ANIMOS.find((a) => a.id === id);
+  return o ? o.label() : id;
 }
 
 export function labelImpulsos(id) {
-  return (IMPULSOS.find((i) => i.id === id) || {}).label || id;
+  const o = IMPULSOS.find((i) => i.id === id);
+  return o ? o.label() : id;
 }
 
 export function labelExperiencia(id) {
-  return (EXPERIENCIA_MENU.find((e) => e.id === id) || {}).label || id;
+  const o = EXPERIENCIA_MENU.find((e) => e.id === id);
+  return o ? o.label() : id;
 }

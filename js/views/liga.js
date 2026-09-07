@@ -11,6 +11,7 @@
 import { esc } from '../store.js';
 import { header } from '../app.js';
 import { fetchLigaEstado, fetchMiNivelLiga } from '../supabase-client.js';
+import { t } from '../i18n.js';
 
 const NIVELES = [
   null,
@@ -31,9 +32,9 @@ const MEDALLAS = ['🥇', '🥈', '🥉'];
 // posición, no de cuántas haya en total (ver rellenarConDummies: la
 // lista siempre se completa a 20).
 const ZONAS = [
-  { desde: 0, hasta: 6, label: '⬆️ Suben de nivel' },
-  { desde: 6, hasta: 12, label: 'Se quedan' },
-  { desde: 12, hasta: 20, label: '⬇️ Bajan de nivel' }
+  { desde: 0, hasta: 6, label: () => `⬆️ ${t('Suben de nivel')}` },
+  { desde: 6, hasta: 12, label: () => t('Se quedan') },
+  { desde: 12, hasta: 20, label: () => `⬇️ ${t('Bajan de nivel')}` }
 ];
 const TOTAL_GRUPO = 20;
 // Nombres genéricos para rellenar cuando el grupo real tiene menos de 20
@@ -63,13 +64,13 @@ function rellenarConDummies(participantes) {
 export function renderLiga(container) {
   header(container);
   const wrap = document.createElement('div');
-  wrap.innerHTML = '<div class="card center"><p class="muted">Cargando tu liga…</p></div>';
+  wrap.innerHTML = `<div class="card center"><p class="muted">${t('Cargando tu liga…')}</p></div>`;
   container.appendChild(wrap);
 
   Promise.all([fetchLigaEstado(), fetchMiNivelLiga()])
     .then(([participantes, nivel]) => pintar(wrap, participantes, nivel))
     .catch(() => {
-      wrap.innerHTML = '<div class="card center"><p class="muted">No pudimos cargar tu liga. Intenta de nuevo más tarde.</p></div>';
+      wrap.innerHTML = `<div class="card center"><p class="muted">${t('No pudimos cargar tu liga. Intenta de nuevo más tarde.')}</p></div>`;
     });
 }
 
@@ -105,13 +106,13 @@ function pintar(wrap, participantes, nivel) {
   intro.className = 'center mt mb';
   intro.innerHTML = `
     <h2>${esc(tier.nombre)}</h2>
-    <p class="small muted mt">Ganas tu lugar con las gemas 💎 de esta semana. Los primeros 6 suben de nivel, los últimos 8 bajan -- la semana reinicia cada domingo.</p>`;
+    <p class="small muted mt">${t('Ganas tu lugar con las gemas 💎 de esta semana. Los primeros 6 suben de nivel, los últimos 8 bajan -- la semana reinicia cada domingo.')}</p>`;
   wrap.appendChild(intro);
 
   if (!participantes.length) {
     const vacio = document.createElement('div');
     vacio.className = 'card center';
-    vacio.innerHTML = '<p class="muted">Aún no hay nadie en tu grupo esta semana.</p>';
+    vacio.innerHTML = `<p class="muted">${t('Aún no hay nadie en tu grupo esta semana.')}</p>`;
     wrap.appendChild(vacio);
   } else {
     // Un único contenedor plano para TODAS las filas -- antes cada zona
@@ -128,7 +129,7 @@ function pintar(wrap, participantes, nivel) {
       if (!items.length) continue;
       const divider = document.createElement('div');
       divider.className = 'section-divider';
-      divider.innerHTML = `<span>${zona.label}</span>`;
+      divider.innerHTML = `<span>${zona.label()}</span>`;
       lista.appendChild(divider);
       items.forEach((p, idx) => {
         const rank = zona.desde + idx + 1;
@@ -140,7 +141,7 @@ function pintar(wrap, participantes, nivel) {
         row.className = 'habit' + (p.es_yo ? ' liga-yo' : '') + (esUltimaDeZona ? ' liga-sin-borde' : '') + (p.dummy ? ' liga-dummy' : '');
         row.innerHTML = `
           <span class="liga-rank">${rank <= 3 && !p.dummy ? MEDALLAS[rank - 1] : rank}</span>
-          <label style="flex:1">${esc(p.nombre || 'Alguien en tu ruta')}${p.es_yo ? ' <span class="tag verde">Tú</span>' : ''}</label>
+          <label style="flex:1">${esc(p.nombre || t('Alguien en tu ruta'))}${p.es_yo ? ` <span class="tag verde">${t('Tú')}</span>` : ''}</label>
           <span class="small" style="font-weight:700;white-space:nowrap">${p.gemas_semana} 💎</span>`;
         lista.appendChild(row);
       });

@@ -7,6 +7,7 @@ import { getState } from '../store.js';
 import { dailyMenu, displayRecipe } from '../menu.js';
 import { header, navigate } from '../app.js';
 import { openRecipe } from './dashboard.js';
+import { t } from '../i18n.js';
 
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -27,13 +28,13 @@ export function renderWeekMenu(container) {
 
   const back = document.createElement('button');
   back.className = 'link-btn small';
-  back.textContent = '← Volver';
+  back.textContent = t('← Volver');
   back.addEventListener('click', () => navigate('dashboard'));
   container.appendChild(back);
 
   const titulo = document.createElement('div');
   titulo.className = 'card center';
-  titulo.innerHTML = '<h2>📅 Tu semana</h2><p class="small muted mt">Lo que tu Ruta te sugiere para los próximos 7 días.</p>';
+  titulo.innerHTML = `<h2>📅 ${t('Tu semana')}</h2><p class="small muted mt">${t('Lo que tu Ruta te sugiere para los próximos 7 días.')}</p>`;
   container.appendChild(titulo);
 
   const hoy = todayStr();
@@ -43,7 +44,7 @@ export function renderWeekMenu(container) {
     const menu = dailyMenu(fecha);
     const dia = document.createElement('div');
     dia.className = 'card';
-    dia.innerHTML = `<h3>${i === 0 ? 'Hoy · ' : ''}${DIAS[dow]}</h3>`;
+    dia.innerHTML = `<h3>${i === 0 ? t('Hoy · ') : ''}${t(DIAS[dow])}</h3>`;
     for (const { meal, recipe } of menu) {
       if (!recipe) continue;
       const shown = displayRecipe(recipe, user.exclusiones);
@@ -52,7 +53,7 @@ export function renderWeekMenu(container) {
       row.className = 'habit';
       row.style.width = '100%';
       row.style.textAlign = 'left';
-      row.innerHTML = `<label>${meal.emoji} ${meal.nombre}</label><span class="small muted">${shown.emoji} ${shown.nombre}</span>`;
+      row.innerHTML = `<label>${meal.emoji} ${t(meal.nombre)}</label><span class="small muted">${shown.emoji} ${shown.nombre}</span>`;
       row.addEventListener('click', () => openRecipe(recipe));
       dia.appendChild(row);
     }

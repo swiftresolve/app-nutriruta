@@ -10,6 +10,7 @@
 // se muestra una vez, a cuentas nuevas.
 import { getState, setState } from '../store.js';
 import { susanaName } from '../app.js';
+import { t } from '../i18n.js';
 
 // target: null = "slide" centrada sin spotlight (bienvenida/cierre,
 // conceptos que no viven en un solo elemento de la pantalla).
@@ -18,63 +19,63 @@ import { susanaName } from '../app.js';
 // 'Bienvenida' para mujer o sin dato (mismo criterio neutro-femenino que
 // ya usa el resto de la app por defecto).
 function crearPasos(sexo) {
-  const bienvenida = sexo === 'hombre' ? 'Bienvenido' : 'Bienvenida';
+  const bienvenida = sexo === 'hombre' ? t('Bienvenido') : t('Bienvenida');
   return [
   {
     target: null, titulo: `🌿 ${bienvenida} a NutriRuta`,
-    texto: 'A diferencia de otras apps, aquí no cuentas calorías ni pesas cada gramo -- nos enfocamos en hábitos reales, con evidencia clínica real, nunca en números que agobian. Este recorrido rápido te muestra lo esencial.'
+    texto: t('A diferencia de otras apps, aquí no cuentas calorías ni pesas cada gramo -- nos enfocamos en hábitos reales, con evidencia clínica real, nunca en números que agobian. Este recorrido rápido te muestra lo esencial.')
   },
   {
-    target: '#hs-racha', titulo: '🔥 Tu racha (Días en Ruta)',
-    texto: 'Cuenta tus días seguidos cuidándote. Sumas un día completando al menos 3 hábitos, o dando tu "paso de hoy".'
+    target: '#hs-racha', titulo: `🔥 ${t('Tu racha (Días en Ruta)')}`,
+    texto: t('Cuenta tus días seguidos cuidándote. Sumas un día completando al menos 3 hábitos, o dando tu "paso de hoy".')
   },
   {
-    target: '#hs-gemas', titulo: '💎 Gemas',
-    texto: 'Se ganan solo con constancia (cada día completado, cada semana de tu plan) -- nunca se compran con dinero. Sirven para comprar Pausas de Ruta extra.'
+    target: '#hs-gemas', titulo: `💎 ${t('Gemas')}`,
+    texto: t('Se ganan solo con constancia (cada día completado, cada semana de tu plan) -- nunca se compran con dinero. Sirven para comprar Pausas de Ruta extra.')
   },
   {
     target: '#hs-nutricoins', titulo: '🪙 NutriCoins',
-    texto: `A diferencia de las gemas, estos sí se compran con dinero real -- para extras puntuales (como preguntas de más a ${susanaName()}). Nunca reemplazan tu constancia ni compran Pausas de Ruta.`
+    texto: t('A diferencia de las gemas, estos sí se compran con dinero real -- para extras puntuales (como preguntas de más a {nombre}). Nunca reemplazan tu constancia ni compran Pausas de Ruta.', { nombre: susanaName() })
   },
   {
-    target: '#hs-escudos', titulo: '🛡️ Pausas de Ruta',
-    texto: 'Si un día no puedes cumplir, una Pausa cubre ese día sin romper tu racha -- se gana 1 cada 7 Días en Ruta, o se compra con gemas. Nunca te castiga por un mal día.'
+    target: '#hs-escudos', titulo: `🛡️ ${t('Pausas de Ruta')}`,
+    texto: t('Si un día no puedes cumplir, una Pausa cubre ese día sin romper tu racha -- se gana 1 cada 7 Días en Ruta, o se compra con gemas. Nunca te castiga por un mal día.')
   },
   {
-    target: '#tour-menu', titulo: '🍽️ Tu ruta de hoy',
-    texto: 'El menú de cada comida, elegido según tu perfil de salud. Tócala para ver la receta, o el 🔄 para cambiarla al instante por otra opción que también te sirva.'
+    target: '#tour-menu', titulo: `🍽️ ${t('Tu ruta de hoy')}`,
+    texto: t('El menú de cada comida, elegido según tu perfil de salud. Tócala para ver la receta, o el 🔄 para cambiarla al instante por otra opción que también te sirva.')
   },
   {
-    target: '#tour-paso', titulo: '🌱 Tu paso de hoy',
-    texto: 'Una sola acción pequeña y concreta, pensada para tu situación real. Tócala cuando la hagas -- no hace falta más para empezar cada día.'
+    target: '#tour-paso', titulo: `🌱 ${t('Tu paso de hoy')}`,
+    texto: t('Una sola acción pequeña y concreta, pensada para tu situación real. Tócala cuando la hagas -- no hace falta más para empezar cada día.')
   },
   {
-    target: '#tour-habitos', titulo: '✅ Hábitos de hoy',
-    texto: 'Marca al menos 3 para sumar a tu racha. El agua y el menú se marcan solos cuando los registras de verdad, no hace falta tocarlos aparte.'
+    target: '#tour-habitos', titulo: `✅ ${t('Hábitos de hoy')}`,
+    texto: t('Marca al menos 3 para sumar a tu racha. El agua y el menú se marcan solos cuando los registras de verdad, no hace falta tocarlos aparte.')
   },
   {
-    target: '#tour-agua', titulo: '💧 Tu agua y más',
-    texto: 'Toca aquí para registrar cada vaso, a tu ritmo -- tu meta se ajusta sola según tu peso y sexo, si los guardaste en Ajustes. Junto a este botón encuentras más accesos rápidos: tu progreso, diario, logros y más.'
+    target: '#tour-agua', titulo: `💧 ${t('Tu agua y más')}`,
+    texto: t('Toca aquí para registrar cada vaso, a tu ritmo -- tu meta se ajusta sola según tu peso y sexo, si los guardaste en Ajustes. Junto a este botón encuentras más accesos rápidos: tu progreso, diario, logros y más.')
   },
   {
-    target: '[data-route="planner"]', titulo: '🥗 Recetas',
-    texto: 'Tu menú del día y el recetario completo, filtrado según tu perfil de salud -- nada de recetas al azar.'
+    target: '[data-route="planner"]', titulo: `🥗 ${t('Recetas')}`,
+    texto: t('Tu menú del día y el recetario completo, filtrado según tu perfil de salud -- nada de recetas al azar.')
   },
   {
-    target: '[data-route="sos"]', titulo: '💚 SOS antojo',
-    texto: 'Cuando llegue un antojo fuerte, aquí tienes alternativas reales al momento -- sin culpa, sin regaños.'
+    target: '[data-route="sos"]', titulo: `💚 ${t('SOS antojo')}`,
+    texto: t('Cuando llegue un antojo fuerte, aquí tienes alternativas reales al momento -- sin culpa, sin regaños.')
   },
   {
-    target: '[data-route="liga"]', titulo: '🏆 Liga',
-    texto: 'Compite en gemas cada semana con otras personas de tu mismo nivel. Sube de liga con constancia -- nunca comprando nada.'
+    target: '[data-route="liga"]', titulo: `🏆 ${t('Liga')}`,
+    texto: t('Compite en gemas cada semana con otras personas de tu mismo nivel. Sube de liga con constancia -- nunca comprando nada.')
   },
   {
     target: '[data-route="assistant"]', titulo: `💬 ${susanaName()}`,
-    texto: 'Tu guía con IA: conoce tu perfil real y te habla en el tono que tú elijas. Parte del plan Premium.'
+    texto: t('Tu guía con IA: conoce tu perfil real y te habla en el tono que tú elijas. Parte del plan Premium.')
   },
   {
-    target: null, titulo: '🎉 Listo',
-    texto: 'Ya conoces lo esencial de NutriRuta. El resto lo vas descubriendo a tu ritmo -- progreso, no perfección 🌿'
+    target: null, titulo: `🎉 ${t('Listo')}`,
+    texto: t('Ya conoces lo esencial de NutriRuta. El resto lo vas descubriendo a tu ritmo -- progreso, no perfección 🌿')
   }
   ];
 }
@@ -161,12 +162,12 @@ export function iniciarTour(onFin) {
       }
 
       tip.innerHTML = `
-        <p class="small muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin:0">Paso ${i + 1} de ${PASOS.length}</p>
+        <p class="small muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin:0">${t('Paso {n} de {total}', { n: i + 1, total: PASOS.length })}</p>
         <h3 class="mt">${paso.titulo}</h3>
         <p class="small mt">${paso.texto}</p>
         <div class="row mt" style="justify-content:${esUltimo ? 'flex-end' : 'space-between'};align-items:center">
-          ${esUltimo ? '' : '<button type="button" class="link-btn small" id="tour-saltar">Saltar</button>'}
-          <button type="button" class="btn accent sm" id="tour-siguiente">${esUltimo ? 'Empezar 🌿' : 'Continuar →'}</button>
+          ${esUltimo ? '' : `<button type="button" class="link-btn small" id="tour-saltar">${t('Saltar')}</button>`}
+          <button type="button" class="btn accent sm" id="tour-siguiente">${esUltimo ? t('Empezar 🌿') : t('Continuar →')}</button>
         </div>`;
 
       if (esSlide) {

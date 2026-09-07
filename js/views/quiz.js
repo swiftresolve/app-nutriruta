@@ -5,6 +5,7 @@ import { MEALS } from '../data/recipes.js';
 import { navigate, openModal, toast, susanaName } from '../app.js';
 import { rutiMascot } from '../mascot.js';
 import { validarCodigoReferido } from '../supabase-client.js';
+import { t } from '../i18n.js';
 
 // Respeta el modo minimalista ("Ocultar Ruti" en Ajustes) — la app sigue
 // funcionando igual, solo deja de dibujarla.
@@ -99,58 +100,58 @@ const ORIGEN = [
   { id: 'tiktok', nombre: 'TikTok', iconoHtml: LOGO_TIKTOK },
   { id: 'facebook', nombre: 'Facebook', iconoHtml: LOGO_FACEBOOK },
   { id: 'youtube', nombre: 'YouTube', iconoHtml: LOGO_YOUTUBE },
-  { id: 'amigo', nombre: 'Un amigo o familiar', emoji: '👋' },
-  { id: 'referido', nombre: 'Fui referido/a', emoji: '🎁' },
-  { id: 'busqueda', nombre: 'Buscando en internet', emoji: '🔍' },
-  { id: 'anuncio', nombre: 'Un anuncio publicitario', emoji: '📣' },
-  { id: 'otro', nombre: 'Otro', emoji: '✨' }
+  { id: 'amigo', get nombre() { return t('Un amigo o familiar'); }, emoji: '👋' },
+  { id: 'referido', get nombre() { return t('Fui referido/a'); }, emoji: '🎁' },
+  { id: 'busqueda', get nombre() { return t('Buscando en internet'); }, emoji: '🔍' },
+  { id: 'anuncio', get nombre() { return t('Un anuncio publicitario'); }, emoji: '📣' },
+  { id: 'otro', get nombre() { return t('Otro'); }, emoji: '✨' }
 ];
 
 const CONDITIONS = [
-  { id: 'higado_graso', nombre: 'Hígado graso', emoji: '🫀' },
-  { id: 'resistencia_insulina', nombre: 'Resistencia a la insulina', emoji: '🩸' },
-  { id: 'prediabetes', nombre: 'Prediabetes', emoji: '🛡️' },
-  { id: 'colesterol', nombre: 'Colesterol alto', emoji: '❤️' },
-  { id: 'colon_irritable', nombre: 'Colon irritable', emoji: '🌱' },
-  { id: 'gases', nombre: 'Gases', emoji: '🎈' },
-  { id: 'hinchazon', nombre: 'Hinchazón frecuente', emoji: '🎈' },
-  { id: 'estrenimiento', nombre: 'Estreñimiento', emoji: '🚰' },
-  { id: 'candidiasis', nombre: 'Candidiasis', emoji: '🌸' },
-  { id: 'migranas', nombre: 'Migrañas', emoji: '🧠' },
-  { id: 'sop', nombre: 'SOP / tema hormonal', emoji: '🌺' },
-  { id: 'ninguna', nombre: 'Ninguna diagnosticada', emoji: '✅' }
+  { id: 'higado_graso', get nombre() { return t('Hígado graso'); }, emoji: '🫀' },
+  { id: 'resistencia_insulina', get nombre() { return t('Resistencia a la insulina'); }, emoji: '🩸' },
+  { id: 'prediabetes', get nombre() { return t('Prediabetes'); }, emoji: '🛡️' },
+  { id: 'colesterol', get nombre() { return t('Colesterol alto'); }, emoji: '❤️' },
+  { id: 'colon_irritable', get nombre() { return t('Colon irritable'); }, emoji: '🌱' },
+  { id: 'gases', get nombre() { return t('Gases'); }, emoji: '🎈' },
+  { id: 'hinchazon', get nombre() { return t('Hinchazón frecuente'); }, emoji: '🎈' },
+  { id: 'estrenimiento', get nombre() { return t('Estreñimiento'); }, emoji: '🚰' },
+  { id: 'candidiasis', get nombre() { return t('Candidiasis'); }, emoji: '🌸' },
+  { id: 'migranas', get nombre() { return t('Migrañas'); }, emoji: '🧠' },
+  { id: 'sop', get nombre() { return t('SOP / tema hormonal'); }, emoji: '🌺' },
+  { id: 'ninguna', get nombre() { return t('Ninguna diagnosticada'); }, emoji: '✅' }
 ];
 
 const MOTIVATION = [
-  { id: 'poca', nombre: 'Poco motivado/a', emoji: '😔' },
-  { id: 'algo', nombre: 'Algo motivado/a', emoji: '🙂' },
-  { id: 'mucha', nombre: 'Muy motivado/a', emoji: '😃' },
-  { id: 'total', nombre: 'Totalmente motivado/a', emoji: '🤩' }
+  { id: 'poca', get nombre() { return t('Poco motivado/a'); }, emoji: '😔' },
+  { id: 'algo', get nombre() { return t('Algo motivado/a'); }, emoji: '🙂' },
+  { id: 'mucha', get nombre() { return t('Muy motivado/a'); }, emoji: '😃' },
+  { id: 'total', get nombre() { return t('Totalmente motivado/a'); }, emoji: '🤩' }
 ];
 
 const ACTIVITY = [
-  { id: 'nulo', nombre: 'No hago ejercicio', emoji: '🚫' },
-  { id: 'bajo', nombre: '1-2 días por semana', emoji: '🔥' },
-  { id: 'medio', nombre: '3-4 días por semana', emoji: '🔥' },
-  { id: 'alto', nombre: '5-6 días por semana', emoji: '🔥' },
-  { id: 'diario', nombre: 'Diario', emoji: '🔥' }
+  { id: 'nulo', get nombre() { return t('No hago ejercicio'); }, emoji: '🚫' },
+  { id: 'bajo', get nombre() { return t('1-2 días por semana'); }, emoji: '🔥' },
+  { id: 'medio', get nombre() { return t('3-4 días por semana'); }, emoji: '🔥' },
+  { id: 'alto', get nombre() { return t('5-6 días por semana'); }, emoji: '🔥' },
+  { id: 'diario', get nombre() { return t('Diario'); }, emoji: '🔥' }
 ];
 
 // Mismas 3 opciones que ya existen como ajuste (settings.js, TONOS) --
 // no cambia lo que SuSana dice, solo el estilo (nunca usa culpa en
 // ningún tono, ver ai-assistant).
 const SUSANA_TONOS = [
-  { id: 'calida', nombre: 'Cálida — cercana y suave, el tono de siempre', emoji: '💛' },
-  { id: 'motivadora', nombre: 'Motivadora — más entusiasta, celebra cada avance', emoji: '🌟' },
-  { id: 'directa', nombre: 'Directa — va al punto, menos rodeos', emoji: '🎯' }
+  { id: 'calida', get nombre() { return t('Cálida — cercana y suave, el tono de siempre'); }, emoji: '💛' },
+  { id: 'motivadora', get nombre() { return t('Motivadora — más entusiasta, celebra cada avance'); }, emoji: '🌟' },
+  { id: 'directa', get nombre() { return t('Directa — va al punto, menos rodeos'); }, emoji: '🎯' }
 ];
 
 const FREQ_OPTIONS = [
-  { id: 'nunca', nombre: 'Nunca' },
-  { id: 'casi_nunca', nombre: 'Casi nunca' },
-  { id: 'a_veces', nombre: 'A veces' },
-  { id: 'frecuente', nombre: 'Frecuente' },
-  { id: 'muy_frecuente', nombre: 'Muy frecuente' }
+  { id: 'nunca', get nombre() { return t('Nunca'); } },
+  { id: 'casi_nunca', get nombre() { return t('Casi nunca'); } },
+  { id: 'a_veces', get nombre() { return t('A veces'); } },
+  { id: 'frecuente', get nombre() { return t('Frecuente'); } },
+  { id: 'muy_frecuente', get nombre() { return t('Muy frecuente'); } }
 ];
 
 // Deriva perfiles activos a partir de las respuestas.
@@ -186,7 +187,7 @@ export function renderQuiz(container) {
 
   const steps = [
     {
-      title: '¡Hola! 🌿 Empecemos con NutriRuta',
+      title: t('¡Hola! 🌿 Empecemos con NutriRuta'),
       sub: '',
       render(el) {
         // Bienvenida pura, sin pedir nada todavía (el nombre y el aviso de
@@ -197,27 +198,27 @@ export function renderQuiz(container) {
         // título (h2) sigue igual, no se toca -- el logo+nombre se agrega
         // en draw() ANTES del h2, solo para este paso (ver más abajo).
         el.innerHTML = `
-          <div class="center"><div class="ruti-bubble">Soy Ruti. Vamos a encontrar una Ruta que funcione para ti.</div></div>
+          <div class="center"><div class="ruti-bubble">${t('Soy Ruti. Vamos a encontrar una Ruta que funcione para ti.')}</div></div>
           <div class="center mb">${rutiBienvenidaHtml(150)}</div>`;
         iniciarRutiBienvenida(el, 150);
         el.querySelector('#q-ya-tengo-cuenta')?.addEventListener('click', () => navigate('auth'));
       }
     },
     {
-      title: '¿Cómo te llamas?',
+      title: t('¿Cómo te llamas?'),
       sub: '',
       render(el) {
         // El aviso legal completo ya vive en Ajustes -> Legal (Términos y
         // Privacidad, ver settings.js) -- repetirlo aquí era redundante.
         el.innerHTML = `
-          <input id="q-nombre" type="text" placeholder="Tu nombre o alias" maxlength="60" class="auth-input">`;
+          <input id="q-nombre" type="text" placeholder="${t('Tu nombre o alias')}" maxlength="60" class="auth-input">`;
         const input = el.querySelector('#q-nombre');
         input.value = answers.nombre; // asignación por propiedad: sin riesgo de inyección HTML
         input.addEventListener('input', (e) => { answers.nombre = e.target.value.trim(); });
       }
     },
     {
-      title: '¿Cómo te enteraste de NutriRuta?',
+      title: t('¿Cómo te enteraste de NutriRuta?'),
       sub: '',
       completo: () => !!answers.origen,
       render(el, onChange) {
@@ -233,11 +234,11 @@ export function renderQuiz(container) {
       }
     },
     {
-      title: '¿Qué quieres lograr?',
-      sub: 'Elige todo lo que aplique.',
+      title: t('¿Qué quieres lograr?'),
+      sub: t('Elige todo lo que aplique.'),
       completo: () => answers.objetivos.length > 0 || answers.objetivosOtro.length > 0,
       render: (el, onChange) => renderChipsConOtro(el, GOALS, answers.objetivos, answers.objetivosOtro, {
-        titulo: 'Agrega una meta propia', placeholder: 'Ej. Dormir mejor, tener más disciplina...'
+        titulo: t('Agrega una meta propia'), placeholder: t('Ej. Dormir mejor, tener más disciplina...')
       }, onChange)
     },
     {
@@ -248,13 +249,13 @@ export function renderQuiz(container) {
       // fuente (eso no se copia, ver conversación).
       intro: true,
       icono: '🍽️',
-      title: 'Así se arma tu menú, cada día',
-      sub: 'Con tus respuestas armamos tu menú diario y tu lista de compras solos — cada receta elegida para tus perfiles de salud, no genérica.',
+      title: t('Así se arma tu menú, cada día'),
+      sub: t('Con tus respuestas armamos tu menú diario y tu lista de compras solos — cada receta elegida para tus perfiles de salud, no genérica.'),
       render() {}
     },
     {
-      title: '¿Tienes alguna condición conocida?',
-      sub: 'Solo si te la han mencionado en un chequeo. Puedes elegir varias.',
+      title: t('¿Tienes alguna condición conocida?'),
+      sub: t('Solo si te la han mencionado en un chequeo. Puedes elegir varias.'),
       completo: () => answers.condiciones.length > 0,
       render(el, onChange) {
         chips(el, CONDITIONS, answers.condiciones, true, undefined, false, onChange);
@@ -263,49 +264,49 @@ export function renderQuiz(container) {
         // vive en Ajustes -> Legal), esta es la pregunta de mayor
         // sensibilidad médica del quiz y sí amerita su propia línea corta
         // en el momento exacto en que se pide ese dato.
-        el.insertAdjacentHTML('beforeend', '<div class="legal-note mt">NutriRuta no reemplaza la atención médica ni diagnostica. Consulta siempre a tu profesional de salud.</div>');
+        el.insertAdjacentHTML('beforeend', `<div class="legal-note mt">${t('NutriRuta no reemplaza la atención médica ni diagnostica. Consulta siempre a tu profesional de salud.')}</div>`);
       }
     },
     {
-      title: '¿Qué alimentos no consumes?',
-      sub: 'Alergias, intolerancias o preferencias. Adaptaremos recetas y sustituciones.',
+      title: t('¿Qué alimentos no consumes?'),
+      sub: t('Alergias, intolerancias o preferencias. Adaptaremos recetas y sustituciones.'),
       completo: () => answers.exclusiones.length > 0 || answers.exclusionesOtro.length > 0,
       render: (el, onChange) => renderChipsConOtro(el, EXCLUSIONS, answers.exclusiones, answers.exclusionesOtro, {
-        titulo: 'Agrega una alergia o intolerancia', placeholder: 'Ej. Cilantro, champiñones...'
+        titulo: t('Agrega una alergia o intolerancia'), placeholder: t('Ej. Cilantro, champiñones...')
       }, onChange)
     },
     {
-      title: '¿Con cuáles de estos retos te identificas?',
-      sub: 'Marca lo que te pasa hoy en día. Sin culpa: nos ayuda a acompañarte mejor.',
+      title: t('¿Con cuáles de estos retos te identificas?'),
+      sub: t('Marca lo que te pasa hoy en día. Sin culpa: nos ayuda a acompañarte mejor.'),
       completo: () => answers.habitosDificiles.length > 0,
       render: (el, onChange) => chips(el, HARD_HABITS, answers.habitosDificiles, true, undefined, true, onChange)
     },
     {
-      title: '¿Qué tan motivado/a estás para lograrlo?',
+      title: t('¿Qué tan motivado/a estás para lograrlo?'),
       sub: '',
       completo: () => !!answers.motivacion,
       render: (el, onChange) => chips(el, MOTIVATION, answers, false, 'motivacion', true, onChange)
     },
     {
-      title: '¿Tu nivel de actividad física?',
+      title: t('¿Tu nivel de actividad física?'),
       sub: '',
       completo: () => !!answers.actividad,
       render: (el, onChange) => chips(el, ACTIVITY, answers, false, 'actividad', true, onChange)
     },
     {
-      title: '¿Qué comidas quieres incluir en tu día?',
-      sub: 'Elige las que quieres ver en tu menú diario (ej. si ayunas, puedes dejar fuera el desayuno).',
+      title: t('¿Qué comidas quieres incluir en tu día?'),
+      sub: t('Elige las que quieres ver en tu menú diario (ej. si ayunas, puedes dejar fuera el desayuno).'),
       completo: () => answers.comidasIncluidas.length > 0,
       // "Todas" agregado como 6ta opción (antes 5, quedaba una sola en la
       // última fila ocupando el ancho completo) -- no es una comida real,
       // solo marca/desmarca las otras 5 (ver opt.selectAll en chips()).
-      render: (el, onChange) => chips(el, [...MEALS, { id: 'todas-comidas', nombre: 'Todas', emoji: '✅', selectAll: true }], answers.comidasIncluidas, true, undefined, false, onChange)
+      render: (el, onChange) => chips(el, [...MEALS, { id: 'todas-comidas', get nombre() { return t('Todas'); }, emoji: '✅', selectAll: true }], answers.comidasIncluidas, true, undefined, false, onChange)
     },
     {
       intro: true,
       icono: '💧',
-      title: 'Ahora, un poco sobre ti',
-      sub: 'Con esto afinamos tu meta diaria de agua a tu cuerpo real.',
+      title: t('Ahora, un poco sobre ti'),
+      sub: t('Con esto afinamos tu meta diaria de agua a tu cuerpo real.'),
       render() {}
     },
     {
@@ -316,8 +317,8 @@ export function renderQuiz(container) {
       // siempre, solo mejor ajustado). Edad y estatura no alimentan ningún
       // cálculo todavía -- se guardan para SuSana y usos futuros, nunca
       // inventados como si ya hicieran algo que no hacen.
-      title: 'Sobre ti',
-      sub: 'Con esto afinamos tu meta diaria de agua. Puedes dejar cualquier campo en blanco.',
+      title: t('Sobre ti'),
+      sub: t('Con esto afinamos tu meta diaria de agua. Puedes dejar cualquier campo en blanco.'),
       // Misma estructura de fila (ícono + etiqueta + valor + flecha) que ya
       // usa Ajustes para Tema/Idioma/Unidades (.setting-row), en vez de
       // campos de texto sueltos -- toca la fila, se abre un selector chico,
@@ -326,19 +327,19 @@ export function renderQuiz(container) {
       render(el) {
         el.innerHTML = `
           <div id="sobre-ti-filas"></div>
-          <div class="legal-note">🔒 Es privado, nadie más lo ve, y puedes borrarlo cuando quieras desde Ajustes.</div>`;
+          <div class="legal-note">🔒 ${t('Es privado, nadie más lo ve, y puedes borrarlo cuando quieras desde Ajustes.')}</div>`;
         pintarSobreTiFilas(el.querySelector('#sobre-ti-filas'));
       }
     },
     {
-      title: '¿Con qué frecuencia consumes azúcar?',
-      sub: 'Gaseosas, jugos industriales, postres, dulces, panadería…',
+      title: t('¿Con qué frecuencia consumes azúcar?'),
+      sub: t('Gaseosas, jugos industriales, postres, dulces, panadería…'),
       completo: () => !!answers.azucarFreq,
       render: (el, onChange) => chips(el, FREQ_OPTIONS, answers, false, 'azucarFreq', true, onChange)
     },
     {
-      title: '¿Con qué frecuencia consumes alcohol?',
-      sub: 'Cerveza, vino, licores… Si no tomas, elige "Nunca".',
+      title: t('¿Con qué frecuencia consumes alcohol?'),
+      sub: t('Cerveza, vino, licores… Si no tomas, elige "Nunca".'),
       completo: () => !!answers.alcoholFreq,
       render: (el, onChange) => chips(el, FREQ_OPTIONS, answers, false, 'alcoholFreq', true, onChange)
     },
@@ -348,19 +349,19 @@ export function renderQuiz(container) {
       // preseleccionado igual que en Ajustes, no en blanco: es una
       // preferencia de estilo con un valor por defecto real, no una
       // respuesta que deba forzarse a elegir desde cero.
-      title: `¿Cómo quieres que te hable ${susanaName()}?`,
-      sub: 'Nunca usa culpa ni regaños, solo cambia el estilo. Puedes cambiarlo cuando quieras.',
+      title: t('¿Cómo quieres que te hable {nombre}?', { nombre: susanaName() }),
+      sub: t('Nunca usa culpa ni regaños, solo cambia el estilo. Puedes cambiarlo cuando quieras.'),
       render: (el, onChange) => chips(el, SUSANA_TONOS, answers, false, 'tonoSusana', true, onChange)
     },
     {
       // agrega aquí también, al final, como la última pregunta libre del
       // quiz, para no obligar a nadie a ir a buscarlo después.
-      title: '¿Hay algo más que debamos saber? (opcional)',
-      sub: `Se lo sumamos al contexto que ya tiene ${susanaName()} sobre ti, nunca lo reemplaza.`,
+      title: t('¿Hay algo más que debamos saber? (opcional)'),
+      sub: t('Se lo sumamos al contexto que ya tiene {nombre} sobre ti, nunca lo reemplaza.', { nombre: susanaName() }),
       render(el) {
         const max = 300;
         el.innerHTML = `
-          <textarea id="q-contexto" class="auth-input" rows="4" maxlength="${max}" placeholder="Ej. &quot;no hago ejercicio hace meses&quot; o &quot;estoy en un momento de mucho estrés&quot;"></textarea>
+          <textarea id="q-contexto" class="auth-input" rows="4" maxlength="${max}" placeholder="${t('Ej. &quot;no hago ejercicio hace meses&quot; o &quot;estoy en un momento de mucho estrés&quot;')}"></textarea>
           <p class="small muted mt" id="q-contexto-count"></p>`;
         const input = el.querySelector('#q-contexto');
         input.value = answers.contextoSusana;
@@ -378,7 +379,7 @@ export function renderQuiz(container) {
     const box = el.querySelector('#q-origen-otro-box');
     if (!box) return;
     box.innerHTML = answers.origen === 'otro'
-      ? '<input type="text" id="q-origen-otro-input" placeholder="Cuéntanos dónde" maxlength="80" class="auth-input">'
+      ? `<input type="text" id="q-origen-otro-input" placeholder="${t('Cuéntanos dónde')}" maxlength="80" class="auth-input">`
       : '';
     const input = box.querySelector('#q-origen-otro-input');
     if (input) {
@@ -391,17 +392,17 @@ export function renderQuiz(container) {
   // si aún no se eligió) + flecha -- se repinta después de cada cambio,
   // igual que el resto de los "pintar*" de este archivo.
   const SOBRE_TI_CAMPOS = [
-    { key: 'sexo', icono: '👤', label: 'Sexo' },
-    { key: 'edad', icono: '🎂', label: 'Edad', sufijo: ' años' },
-    { key: 'estaturaCm', icono: '📏', label: 'Estatura', sufijo: ' cm' },
-    { key: 'pesoKg', icono: '⚖️', label: 'Peso', sufijo: ' kg' }
+    { key: 'sexo', icono: '👤', get label() { return t('Sexo'); } },
+    { key: 'edad', icono: '🎂', get label() { return t('Edad'); }, sufijo: ' ' + t('años') },
+    { key: 'estaturaCm', icono: '📏', get label() { return t('Estatura'); }, sufijo: ' cm' },
+    { key: 'pesoKg', icono: '⚖️', get label() { return t('Peso'); }, sufijo: ' kg' }
   ];
   function pintarSobreTiFilas(el) {
     el.innerHTML = SOBRE_TI_CAMPOS.map((c) => {
       const valor = answers[c.key];
       const texto = valor
-        ? (c.key === 'sexo' ? (valor === 'mujer' ? 'Mujer' : 'Hombre') : `${valor}${c.sufijo}`)
-        : 'Seleccionar';
+        ? (c.key === 'sexo' ? (valor === 'mujer' ? t('Mujer') : t('Hombre')) : `${valor}${c.sufijo}`)
+        : t('Seleccionar');
       return `
         <button type="button" class="setting-row" data-campo="${c.key}">
           <span class="setting-row-icon">${c.icono}</span>
@@ -422,9 +423,9 @@ export function renderQuiz(container) {
         // completo del modal (pensado para formularios largos) dejaba un
         // hueco vacío enorme a la derecha.
         modal.style.maxWidth = '280px';
-        modal.insertAdjacentHTML('beforeend', '<h2 class="center">Sexo</h2><div class="mt" id="sexo-opciones" style="display:flex;flex-direction:column;align-items:center;gap:2px"></div>');
+        modal.insertAdjacentHTML('beforeend', `<h2 class="center">${t('Sexo')}</h2><div class="mt" id="sexo-opciones" style="display:flex;flex-direction:column;align-items:center;gap:2px"></div>`);
         const cont = modal.querySelector('#sexo-opciones');
-        for (const op of [{ id: 'mujer', label: 'Mujer' }, { id: 'hombre', label: 'Hombre' }]) {
+        for (const op of [{ id: 'mujer', label: t('Mujer') }, { id: 'hombre', label: t('Hombre') }]) {
           const row = document.createElement('button');
           row.type = 'button';
           row.className = 'habit selector-opcion' + (op.id === answers.sexo ? ' selected' : '');
@@ -454,9 +455,9 @@ export function renderQuiz(container) {
     // 62 para edad), que no representa a nadie realmente. Estos valores
     // son solo un punto de partida más típico para deslizar desde ahí.
     const config = {
-      edad: { titulo: 'Edad', min: 13, max: 110, inicial: 20, sufijo: 'años', unidades: null },
-      estaturaCm: { titulo: 'Estatura', min: 120, max: 230, inicial: 165, sufijo: 'cm', unidades: null },
-      pesoKg: { titulo: 'Peso', min: 30, max: 300, inicial: 60, sufijo: 'kg', unidades: ['kg', 'lbs'] }
+      edad: { titulo: t('Edad'), min: 13, max: 110, inicial: 20, sufijo: t('años'), unidades: null },
+      estaturaCm: { titulo: t('Estatura'), min: 120, max: 230, inicial: 165, sufijo: 'cm', unidades: null },
+      pesoKg: { titulo: t('Peso'), min: 30, max: 300, inicial: 60, sufijo: 'kg', unidades: ['kg', 'lbs'] }
     }[campo];
     const KG_A_LBS = 2.20462;
 
@@ -478,7 +479,7 @@ export function renderQuiz(container) {
           <div class="ruleta-scroll" id="ruleta-scroll"></div>
           <span class="ruleta-sufijo-fijo" id="ruleta-sufijo-fijo">${unidad || config.sufijo}</span>
         </div>
-        <button type="button" class="btn full mt" id="ruleta-guardar">Guardar</button>`);
+        <button type="button" class="btn full mt" id="ruleta-guardar">${t('Guardar')}</button>`);
 
       const scrollEl = modal.querySelector('#ruleta-scroll');
       const sufijoFijoEl = modal.querySelector('#ruleta-sufijo-fijo');
@@ -607,7 +608,7 @@ export function renderQuiz(container) {
       b.type = 'button';
       b.className = 'chip selected';
       b.innerHTML = `<span class="chip-tag-texto">${esc(texto)}</span>${ICONO_QUITAR}`;
-      b.setAttribute('aria-label', `Quitar ${texto}`);
+      b.setAttribute('aria-label', t('Quitar {texto}', { texto }));
       b.addEventListener('click', () => {
         arr.splice(i, 1);
         rep();
@@ -618,7 +619,7 @@ export function renderQuiz(container) {
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'chip';
-    addBtn.textContent = '+ Agregar otro';
+    addBtn.textContent = t('+ Agregar otro');
     addBtn.addEventListener('click', () => abrirModalOtro(el, arr, textos, onChange, rep));
     wrap.appendChild(addBtn);
     if (!sharedWrap) el.appendChild(wrap);
@@ -633,11 +634,11 @@ export function renderQuiz(container) {
   function abrirCanjearCodigo() {
     openModal((modal, closeFn) => {
       modal.insertAdjacentHTML('beforeend', `
-        <h2>🎟️ ¿Tienes el código de un amigo?</h2>
-        <p class="small muted mb">Actívalo después con el plan anual.</p>
-        <input type="text" id="q-canjear-input" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em" maxlength="6" placeholder="CÓDIGO">
+        <h2>🎟️ ${t('¿Tienes el código de un amigo?')}</h2>
+        <p class="small muted mb">${t('Actívalo después con el plan anual.')}</p>
+        <input type="text" id="q-canjear-input" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em" maxlength="6" placeholder="${t('CÓDIGO')}">
         <p class="small" id="q-canjear-error" style="color:var(--red);min-height:1.2em" role="alert"></p>
-        <button type="button" class="btn full" id="q-canjear-btn">Canjear</button>`);
+        <button type="button" class="btn full" id="q-canjear-btn">${t('Canjear')}</button>`);
       const input = modal.querySelector('#q-canjear-input');
       const errEl = modal.querySelector('#q-canjear-error');
       const btn = modal.querySelector('#q-canjear-btn');
@@ -647,20 +648,20 @@ export function renderQuiz(container) {
       btn.addEventListener('click', async () => {
         const codigo = input.value.trim();
         errEl.textContent = '';
-        if (codigo.length < 6) { errEl.textContent = 'Escribe el código completo (6 caracteres).'; return; }
-        btn.disabled = true; btn.textContent = 'Verificando…';
+        if (codigo.length < 6) { errEl.textContent = t('Escribe el código completo (6 caracteres).'); return; }
+        btn.disabled = true; btn.textContent = t('Verificando…');
         try {
           const valido = await validarCodigoReferido(codigo);
           if (valido) {
             setState({ user: { ...getState().user, referidoPor: codigo } });
             closeFn();
           } else {
-            errEl.textContent = 'Ese código no existe. Revísalo con tu amigo.';
+            errEl.textContent = t('Ese código no existe. Revísalo con tu amigo.');
           }
         } catch (e) {
-          errEl.textContent = e.message && e.message.includes('propio') ? 'Ese es tu propio código 😉' : 'No se pudo verificar. Intenta de nuevo.';
+          errEl.textContent = e.message && e.message.includes('propio') ? t('Ese es tu propio código 😉') : t('No se pudo verificar. Intenta de nuevo.');
         } finally {
-          btn.disabled = false; btn.textContent = 'Canjear';
+          btn.disabled = false; btn.textContent = t('Canjear');
         }
       });
       input.focus();
@@ -671,10 +672,10 @@ export function renderQuiz(container) {
     openModal((modal, closeFn) => {
       modal.insertAdjacentHTML('beforeend', `
         <h2>${textos.titulo}</h2>
-        <p class="small muted mb">Escribe y presiona Enter (o coma) para agregar</p>
+        <p class="small muted mb">${t('Escribe y presiona Enter (o coma) para agregar')}</p>
         <input type="text" id="q-otro-nueva" placeholder="${textos.placeholder}" maxlength="40" class="auth-input">
         <div class="chips chips-1col mt" id="q-otro-nueva-tags"></div>
-        <button type="button" class="btn full mt" id="q-otro-listo">Listo</button>`);
+        <button type="button" class="btn full mt" id="q-otro-listo">${t('Listo')}</button>`);
       const input = modal.querySelector('#q-otro-nueva');
       const tagsBox = modal.querySelector('#q-otro-nueva-tags');
       function pintarTags() {
@@ -766,7 +767,7 @@ export function renderQuiz(container) {
       // iconoHtml: logo real de marca (SVG, ver LOGO_* arriba) para las
       // pocas opciones que lo tienen -- el resto sigue usando emoji.
       const iconoPrefijo = opt.iconoHtml || (opt.emoji ? `${opt.emoji} ` : '');
-      b.innerHTML = `${iconoPrefijo}${esc(opt.nombre)}`;
+      b.innerHTML = `${iconoPrefijo}${esc(t(opt.nombre))}`;
       // "Todas" (opt.selectAll): no es un id real que se guarde, es un
       // atajo que marca/desmarca el resto -- se ve seleccionado cuando
       // TODAS las opciones reales ya están elegidas.
@@ -819,7 +820,7 @@ export function renderQuiz(container) {
         <span style="font-weight:800;font-size:1.02rem">NutriRuta</span>
       </div>` : `
       <div class="quiz-topbar">
-        <button class="quiz-topbar-back" aria-label="Atrás"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="quiz-topbar-back" aria-label="${t('Atrás')}"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div class="quiz-progress"><div style="width:${pct}%"></div></div>
       </div>`}
       <div class="quiz-content">
@@ -837,7 +838,7 @@ export function renderQuiz(container) {
     const navEl = view.querySelector('.quiz-nav');
     const next = document.createElement('button');
     next.className = 'btn full';
-    next.textContent = step === 0 ? 'Empezar' : step === steps.length - 1 ? 'Ver mi resultado ✨' : 'Siguiente';
+    next.textContent = step === 0 ? t('Empezar') : step === steps.length - 1 ? t('Ver mi resultado ✨') : t('Siguiente');
     next.disabled = s.completo ? !s.completo() : false;
     next.addEventListener('click', () => {
       if (step === steps.length - 1) result(); else { step++; draw(); }
@@ -850,7 +851,7 @@ export function renderQuiz(container) {
     if (step === 0 && !getState().onboarded) {
       const loginP = document.createElement('p');
       loginP.className = 'center small mt';
-      loginP.innerHTML = '¿Ya tienes cuenta? <button type="button" class="link-btn" id="q-ya-tengo-cuenta">Inicia sesión</button>';
+      loginP.innerHTML = `${t('¿Ya tienes cuenta?')} <button type="button" class="link-btn" id="q-ya-tengo-cuenta">${t('Inicia sesión')}</button>`;
       loginP.querySelector('#q-ya-tengo-cuenta').addEventListener('click', () => navigate('auth'));
       navEl.appendChild(loginP);
     }
@@ -897,11 +898,11 @@ export function renderQuiz(container) {
 
     const [main, ...rest] = perfiles;
     const prioridades = [];
-    if (answers.azucarFreq === 'frecuente' || answers.azucarFreq === 'muy_frecuente') prioridades.push('Reducir el azúcar líquido (jugos y gaseosas)');
-    if (answers.alcoholFreq === 'frecuente' || answers.alcoholFreq === 'muy_frecuente') prioridades.push('Reducir el alcohol de forma gradual (tu hígado lo agradecerá)');
-    if (answers.habitosDificiles.includes('poca_agua')) prioridades.push('Llegar a tu meta diaria de agua');
-    prioridades.push('Proteína en el desayuno todos los días');
-    if (answers.actividad === 'nulo' || answers.actividad === 'bajo') prioridades.push('Caminar 30 minutos, 5 días a la semana');
+    if (answers.azucarFreq === 'frecuente' || answers.azucarFreq === 'muy_frecuente') prioridades.push(t('Reducir el azúcar líquido (jugos y gaseosas)'));
+    if (answers.alcoholFreq === 'frecuente' || answers.alcoholFreq === 'muy_frecuente') prioridades.push(t('Reducir el alcohol de forma gradual (tu hígado lo agradecerá)'));
+    if (answers.habitosDificiles.includes('poca_agua')) prioridades.push(t('Llegar a tu meta diaria de agua'));
+    prioridades.push(t('Proteína en el desayuno todos los días'));
+    if (answers.actividad === 'nulo' || answers.actividad === 'bajo') prioridades.push(t('Caminar 30 minutos, 5 días a la semana'));
 
     armandoPlan(main, prioridades.slice(0, 3), () => mostrarResultado(main, rest, prioridades.slice(0, 3)));
   }
@@ -921,11 +922,11 @@ export function renderQuiz(container) {
     // plan, para que la lista sea más larga y el ritmo se sienta menos
     // apurado (pedido explícito de la usuaria).
     const items = [
-      `Perfil: ${PROFILES[main].nombre}`,
-      ...prioridades.map((p) => `Prioridad: ${esc(p)}`),
-      'Menú del día personalizado',
-      'Lista de compras automática',
-      'Recetario adaptado a ti'
+      t('Perfil: {v}', { v: PROFILES[main].nombre }),
+      ...prioridades.map((p) => t('Prioridad: {v}', { v: esc(p) })),
+      t('Menú del día personalizado'),
+      t('Lista de compras automática'),
+      t('Recetario adaptado a ti')
     ];
     const total = 500 + items.length * 550 + 300;
     const RADIO = 42, CIRC = 2 * Math.PI * 42;
@@ -938,7 +939,7 @@ export function renderQuiz(container) {
     view.innerHTML = `
       <div class="step-body center">
         <div class="center mb">${rutiBienvenidaHtml(90)}</div>
-        <h2 class="mt">Armando tu plan${nombreTxt}…</h2>
+        <h2 class="mt">${t('Armando tu plan{nombreTxt}…', { nombreTxt })}</h2>
         <div class="armando-ring mt">
           <svg viewBox="0 0 96 96">
             <circle class="armando-ring-track" cx="48" cy="48" r="${RADIO}"/>
@@ -990,12 +991,12 @@ export function renderQuiz(container) {
         <div class="step-body">
           <div class="card center">
             ${rutiBienvenidaHtml(100)}
-            <h2 class="mt">${answers.nombre ? `${esc(answers.nombre)}, tu` : 'Tu'} plan está listo</h2>
-            <p class="small mt">Perfil principal: <strong>${PROFILES[main].nombre}</strong></p>
-            ${rest.length ? `<p class="mt">También te conviene seguir: <strong>${rest.map((p) => PROFILES[p].nombre).join(', ')}</strong></p>` : ''}
+            <h2 class="mt">${answers.nombre ? t('{nombre}, tu plan está listo', { nombre: esc(answers.nombre) }) : t('Tu plan está listo')}</h2>
+            <p class="small mt">${t('Perfil principal:')} <strong>${PROFILES[main].nombre}</strong></p>
+            ${rest.length ? `<p class="mt">${t('También te conviene seguir:')} <strong>${rest.map((p) => PROFILES[p].nombre).join(', ')}</strong></p>` : ''}
           </div>
           <div class="card">
-            <h3>Tus primeros pasos 👣</h3>
+            <h3>${t('Tus primeros pasos 👣')}</h3>
             <ul class="steps check mt">${prioridades.map((p) => `<li>${p}</li>`).join('')}</ul>
           </div>
           ${(() => {
@@ -1007,15 +1008,15 @@ export function renderQuiz(container) {
             const imc = calcularIMC(Number(answers.pesoKg), Number(answers.estaturaCm));
             if (!imc) return '';
             return `<div class="card">
-              <h3>⚖️ Tu IMC</h3>
+              <h3>⚖️ ${t('Tu IMC')}</h3>
               <p class="mt"><strong>${imc.valor}</strong> — ${imc.categoria}</p>
-              <p class="small muted mt">Es solo una referencia general (fórmula estándar de la OMS): no distingue masa muscular de grasa, y no es un diagnóstico.</p>
+              <p class="small muted mt">${t('Es solo una referencia general (fórmula estándar de la OMS): no distingue masa muscular de grasa, y no es un diagnóstico.')}</p>
             </div>`;
           })()}
-          <div class="legal-note">La información que diste nos ayuda a personalizar tu experiencia. Esta app es una guía de autoayuda y no reemplaza la atención de un profesional de salud.</div>
+          <div class="legal-note">${t('La información que diste nos ayuda a personalizar tu experiencia. Esta app es una guía de autoayuda y no reemplaza la atención de un profesional de salud.')}</div>
         </div>
       </div>
-      <div class="quiz-nav"><button class="btn accent">Siguiente →</button></div>`;
+      <div class="quiz-nav"><button class="btn accent">${t('Siguiente →')}</button></div>`;
     iniciarRutiBienvenida(view, 100);
     view.querySelector('.btn').addEventListener('click', () => mostrarCompromiso());
     container.appendChild(view);
@@ -1031,9 +1032,9 @@ export function renderQuiz(container) {
     const view = document.createElement('div');
     view.className = 'quiz-step';
     const opciones = [
-      { dias: 3, label: '3 días', sub: 'Para probar tu primer paso' },
-      { dias: 7, label: '7 días', sub: 'Una semana completa' },
-      { dias: 30, label: '30 días', sub: 'Cambiar de verdad' }
+      { dias: 3, label: t('3 días'), sub: t('Para probar tu primer paso') },
+      { dias: 7, label: t('7 días'), sub: t('Una semana completa') },
+      { dias: 30, label: t('30 días'), sub: t('Cambiar de verdad') }
     ];
     // Sin preseleccionar: es un compromiso, tiene que elegirse de verdad.
     // Ya no hay barra de progreso -- el quiz de preguntas terminó, esto es
@@ -1043,14 +1044,14 @@ export function renderQuiz(container) {
     let elegido = null;
     view.innerHTML = `
       <div class="quiz-content">
-        <h2>Antes de empezar: un compromiso contigo 💛</h2>
-        <p>Sé que a veces el día a día no deja espacio para pensar en ti. Pero tu cuerpo lleva la cuenta, incluso cuando tú no la llevas. Comprometerte hoy — aunque sea con un paso chiquito — no es una exigencia más: es una forma real de decirte a ti misma que mereces cuidarte con constancia.</p>
-        <p class="mt" style="font-weight:600">¿Con cuántos días quieres empezar este compromiso?</p>
+        <h2>${t('Antes de empezar: un compromiso contigo 💛')}</h2>
+        <p>${t('Sé que a veces el día a día no deja espacio para pensar en ti. Pero tu cuerpo lleva la cuenta, incluso cuando tú no la llevas. Comprometerte hoy — aunque sea con un paso chiquito — no es una exigencia más: es una forma real de decirte a ti misma que mereces cuidarte con constancia.')}</p>
+        <p class="mt" style="font-weight:600">${t('¿Con cuántos días quieres empezar este compromiso?')}</p>
         <div class="step-body">
           <div class="chips chips-1col" id="compromiso-chips"></div>
         </div>
       </div>
-      <div class="quiz-nav"><button class="btn accent" disabled>Ver mi menú personalizado 🍽️</button></div>`;
+      <div class="quiz-nav"><button class="btn accent" disabled>${t('Ver mi menú personalizado 🍽️')}</button></div>`;
     const chipWrap = view.querySelector('#compromiso-chips');
     const continuarBtn = view.querySelector('.btn');
     for (const o of opciones) {
@@ -1075,7 +1076,7 @@ export function renderQuiz(container) {
     if (!getState().user.referidoPor) {
       const canjearP = document.createElement('p');
       canjearP.className = 'center small mt';
-      canjearP.innerHTML = '<button type="button" class="link-btn" id="q-canjear-codigo">¿Tienes el código de un amigo?</button>';
+      canjearP.innerHTML = `<button type="button" class="link-btn" id="q-canjear-codigo">${t('¿Tienes el código de un amigo?')}</button>`;
       canjearP.querySelector('#q-canjear-codigo').addEventListener('click', () => abrirCanjearCodigo());
       view.querySelector('.quiz-nav').appendChild(canjearP);
     }

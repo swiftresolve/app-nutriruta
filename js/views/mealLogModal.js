@@ -5,6 +5,7 @@
 import { openModal, toast, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON } from '../app.js';
 import { esc, guardarComidaRegistrada, today } from '../store.js';
 import { detectarAlimentosFoto, detectarAlimentosTexto, uploadComidaFoto } from '../supabase-client.js';
+import { t, getIdioma } from '../i18n.js';
 
 // Comprime y redimensiona la foto en el cliente antes de subirla (misma
 // idea que el avatar) — no recorta a cuadrado, una comida no siempre lo es.
@@ -26,7 +27,7 @@ function toJpegBase64(file, maxDim = 1000) {
         resolve({ base64: dataUrl.split(',')[1], mediaType: 'image/jpeg', previewUrl: dataUrl, blob });
       }, 'image/jpeg', 0.82);
     };
-    img.onerror = () => reject(new Error('Imagen inválida.'));
+    img.onerror = () => reject(new Error(t('Imagen inválida.')));
     img.src = URL.createObjectURL(file);
   });
 }
@@ -71,7 +72,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
         fuente = 'foto';
         pantallaConfirmar(detectados, previewUrl);
       } catch (err) {
-        toast(err.message || 'No se pudo procesar la foto.');
+        toast(err.message || t('No se pudo procesar la foto.'));
         pantallaElegir();
       }
     });
@@ -86,12 +87,12 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
     function pantallaElegir() {
       detenerCamara();
       modal.innerHTML = `
-        <h2>¿Qué comiste en ${esc(mealTitle)}?</h2>
-        <p class="small muted mt">Regístralo con foto, voz o texto — puedes corregir la lista antes de guardar.</p>
+        <h2>${t('¿Qué comiste en {mealTitle}?', { mealTitle: esc(mealTitle) })}</h2>
+        <p class="small muted mt">${t('Regístralo con foto, voz o texto — puedes corregir la lista antes de guardar.')}</p>
         <div class="ml-opciones mt">
-          <button type="button" class="ml-opcion" id="ml-foto" aria-label="Foto"><span class="ml-opcion-circle">${CAMERA_SOLID_ICON}</span></button>
-          ${speechRecognitionCtor() ? `<button type="button" class="ml-opcion" id="ml-voz" aria-label="Voz"><span class="ml-opcion-circle">${MIC_ICON}</span></button>` : ''}
-          <button type="button" class="ml-opcion" id="ml-texto" aria-label="Texto"><span class="ml-opcion-circle">${TEXTO_ICON}</span></button>
+          <button type="button" class="ml-opcion" id="ml-foto" aria-label="${t('Foto')}"><span class="ml-opcion-circle">${CAMERA_SOLID_ICON}</span></button>
+          ${speechRecognitionCtor() ? `<button type="button" class="ml-opcion" id="ml-voz" aria-label="${t('Voz')}"><span class="ml-opcion-circle">${MIC_ICON}</span></button>` : ''}
+          <button type="button" class="ml-opcion" id="ml-texto" aria-label="${t('Texto')}"><span class="ml-opcion-circle">${TEXTO_ICON}</span></button>
         </div>`;
 
       modal.querySelector('#ml-foto').addEventListener('click', () => pantallaCamara());
@@ -114,15 +115,15 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       function salirFullscreen() { backdrop.classList.remove('cam-fullscreen'); }
 
       modal.innerHTML = `
-        <div class="camera-top"><button type="button" class="camera-cancelar" id="ml-cam-cancelar">Cancelar</button></div>
-        <p class="camera-instruccion">Toma una foto de tu comida</p>
+        <div class="camera-top"><button type="button" class="camera-cancelar" id="ml-cam-cancelar">${t('Cancelar')}</button></div>
+        <p class="camera-instruccion">${t('Toma una foto de tu comida')}</p>
         <div class="camera-wrap">
           <video id="ml-video" autoplay playsinline muted></video>
           <div class="camera-frame"></div>
         </div>
         <div class="camera-controls">
-          <button type="button" class="camera-icon-btn" id="ml-cam-galeria" aria-label="Elegir de la galería">🖼️</button>
-          <button type="button" id="ml-shutter" class="camera-shutter" aria-label="Tomar foto"></button>
+          <button type="button" class="camera-icon-btn" id="ml-cam-galeria" aria-label="${t('Elegir de la galería')}">🖼️</button>
+          <button type="button" id="ml-shutter" class="camera-shutter" aria-label="${t('Tomar foto')}"></button>
           <span class="camera-icon-btn" style="visibility:hidden" aria-hidden="true"></span>
         </div>`;
 
@@ -135,7 +136,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
         video.srcObject = stream;
       } catch {
         salirFullscreen();
-        toast('No pudimos abrir la cámara. Elige una foto de tu galería.');
+        toast(t('No pudimos abrir la cámara. Elige una foto de tu galería.'));
         fileInput.click();
         return;
       }
@@ -159,7 +160,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
             fuente = 'foto';
             pantallaConfirmar(detectados, previewUrl);
           } catch (err) {
-            toast(err.message || 'No se pudo procesar la foto.');
+            toast(err.message || t('No se pudo procesar la foto.'));
             pantallaElegir();
           }
         }, 'image/jpeg', 0.85);
@@ -168,26 +169,26 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
 
     function pantallaAnalizando(previewUrl) {
       modal.innerHTML = `
-        <h2>Analizando…</h2>
+        <h2>${t('Analizando…')}</h2>
         ${previewUrl ? `<img src="${previewUrl}" alt="" style="width:100%;border-radius:12px;margin-top:10px">` : ''}
-        <p class="small muted mt center">Un momento, estamos identificando lo que comiste.</p>`;
+        <p class="small muted mt center">${t('Un momento, estamos identificando lo que comiste.')}</p>`;
     }
 
     function pantallaVoz() {
       const Ctor = speechRecognitionCtor();
       modal.innerHTML = `
-        <button type="button" class="btn ghost sm" id="ml-voz-cancelar">Cancelar</button>
-        <h2 class="mt">Dime qué comiste</h2>
+        <button type="button" class="btn ghost sm" id="ml-voz-cancelar">${t('Cancelar')}</button>
+        <h2 class="mt">${t('Dime qué comiste')}</h2>
         <div class="center mt">
-          <button type="button" id="ml-mic" class="ml-mic-btn" aria-label="Grabar">${MIC_ICON}</button>
+          <button type="button" id="ml-mic" class="ml-mic-btn" aria-label="${t('Grabar')}">${MIC_ICON}</button>
         </div>
-        <p class="small muted mt center" id="ml-voz-estado">Toca el micrófono y habla.</p>
-        <button type="button" class="btn ghost full mt" id="ml-voz-a-texto" hidden>Escribir en su lugar</button>`;
+        <p class="small muted mt center" id="ml-voz-estado">${t('Toca el micrófono y habla.')}</p>
+        <button type="button" class="btn ghost full mt" id="ml-voz-a-texto" hidden>${t('Escribir en su lugar')}</button>`;
       const estado = modal.querySelector('#ml-voz-estado');
       const micBtn = modal.querySelector('#ml-mic');
       const btnATexto = modal.querySelector('#ml-voz-a-texto');
       const rec = new Ctor();
-      rec.lang = 'es-ES';
+      rec.lang = getIdioma() === 'en' ? 'en-US' : 'es-ES';
       rec.interimResults = false;
       rec.maxAlternatives = 1;
       modal.querySelector('#ml-voz-cancelar').addEventListener('click', () => { try { rec.abort(); } catch {} pantallaElegir(); });
@@ -200,19 +201,19 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       let venceTimeout = null;
       const limpiarTimeout = () => { clearTimeout(venceTimeout); venceTimeout = null; };
       rec.onstart = () => {
-        estado.textContent = 'Escuchando…';
+        estado.textContent = t('Escuchando…');
         micBtn.classList.add('grabando');
         limpiarTimeout();
         venceTimeout = setTimeout(() => {
           try { rec.abort(); } catch {}
           micBtn.classList.remove('grabando');
-          estado.textContent = 'No detectamos audio. Tu navegador puede estar bloqueando el reconocimiento de voz (pasa en Brave) — prueba escribiendo.';
+          estado.textContent = t('No detectamos audio. Tu navegador puede estar bloqueando el reconocimiento de voz (pasa en Brave) — prueba escribiendo.');
           btnATexto.hidden = false;
         }, 8000);
       };
       rec.onerror = () => {
         limpiarTimeout();
-        estado.textContent = 'No se pudo escuchar. Intenta de nuevo o usa texto.';
+        estado.textContent = t('No se pudo escuchar. Intenta de nuevo o usa texto.');
         micBtn.classList.remove('grabando');
         btnATexto.hidden = false;
       };
@@ -225,7 +226,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           fuente = 'voz';
           pantallaConfirmar(detectados);
         } catch (err) {
-          toast(err.message || 'No se pudo procesar eso.');
+          toast(err.message || t('No se pudo procesar eso.'));
           pantallaElegir();
         }
       };
@@ -240,9 +241,9 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
 
     function pantallaTexto() {
       modal.innerHTML = `
-        <h2>¿Qué comiste?</h2>
-        <textarea id="ml-texto-area" class="auth-input" rows="3" placeholder="Ej: dos huevos, avena y un banano" style="margin-top:10px"></textarea>
-        <button type="button" class="btn accent full mt" id="ml-texto-enviar">Analizar</button>`;
+        <h2>${t('¿Qué comiste?')}</h2>
+        <textarea id="ml-texto-area" class="auth-input" rows="3" placeholder="${t('Ej: dos huevos, avena y un banano')}" style="margin-top:10px"></textarea>
+        <button type="button" class="btn accent full mt" id="ml-texto-enviar">${t('Analizar')}</button>`;
       modal.querySelector('#ml-texto-enviar').addEventListener('click', async () => {
         const texto = modal.querySelector('#ml-texto-area').value.trim();
         if (!texto) return;
@@ -252,7 +253,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           fuente = 'texto';
           pantallaConfirmar(detectados);
         } catch (err) {
-          toast(err.message || 'No se pudo procesar eso.');
+          toast(err.message || t('No se pudo procesar eso.'));
           pantallaElegir();
         }
       });
@@ -264,15 +265,15 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
 
       function render() {
         modal.innerHTML = `
-          <h2>Esto es lo que detecté</h2>
+          <h2>${t('Esto es lo que detecté')}</h2>
           ${previewUrl ? `<img src="${previewUrl}" alt="" style="width:100%;border-radius:12px;margin-top:10px">` : ''}
           <div class="mt" id="ml-lista"></div>
           <div class="row mt" style="gap:8px">
-            <input type="text" id="ml-agregar" class="auth-input" placeholder="+ Agregar alimento" style="margin:0">
-            <button type="button" class="btn ghost sm" id="ml-agregar-btn">Agregar</button>
+            <input type="text" id="ml-agregar" class="auth-input" placeholder="${t('+ Agregar alimento')}" style="margin:0">
+            <button type="button" class="btn ghost sm" id="ml-agregar-btn">${t('Agregar')}</button>
           </div>
-          ${alimentos.length ? '<button type="button" class="btn accent full mt" id="ml-guardar">Guardar comida</button>' : '<p class="small muted mt">Agrega al menos un alimento para guardar.</p>'}
-          <p class="small muted mt center">No es un dato médico exacto — es solo tu registro personal.</p>`;
+          ${alimentos.length ? `<button type="button" class="btn accent full mt" id="ml-guardar">${t('Guardar comida')}</button>` : `<p class="small muted mt">${t('Agrega al menos un alimento para guardar.')}</p>`}
+          <p class="small muted mt center">${t('No es un dato médico exacto — es solo tu registro personal.')}</p>`;
 
         const lista = modal.querySelector('#ml-lista');
         alimentos.forEach((a, i) => {
@@ -284,7 +285,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           del.className = 'icon-btn';
           del.style.cssText = 'width:30px;height:30px;font-size:0.9rem';
           del.textContent = '✕';
-          del.setAttribute('aria-label', `Quitar ${a}`);
+          del.setAttribute('aria-label', t('Quitar {a}', { a }));
           del.addEventListener('click', () => { alimentos.splice(i, 1); render(); });
           row.appendChild(del);
           lista.appendChild(row);
@@ -313,7 +314,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
             }
           }
           guardarComidaRegistrada(mealId, alimentos, fuente, today(), fotoUrl);
-          toast('¡Comida registrada! 🌿');
+          toast(t('¡Comida registrada! 🌿'));
           closeFn();
           onSaved?.();
         });

@@ -3,6 +3,7 @@ import { LESSONS, GLOSSARY } from '../data/lessons.js';
 import { PROFILES } from '../data/profiles.js';
 import { getState, isPremium } from '../store.js';
 import { header, openModal, navigate } from '../app.js';
+import { t } from '../i18n.js';
 
 // Lecciones incluidas en el plan gratuito.
 const FREE_LESSONS = 2;
@@ -31,14 +32,14 @@ export function renderLearn(container) {
   // Claves de tus perfiles
   const keys = document.createElement('div');
   keys.className = 'card';
-  keys.innerHTML = '<h2>🎯 Claves para tus perfiles</h2>';
+  keys.innerHTML = `<h2>🎯 ${t('Claves para tus perfiles')}</h2>`;
   for (const pid of user.perfiles) {
     const p = PROFILES[pid];
     keys.insertAdjacentHTML('beforeend', `
       <h3 class="mt">${p.emoji} ${p.nombre}</h3>
       <p class="small">${p.objetivo}</p>
       <ul class="steps small">${p.claves.map((c) => `<li>${c}</li>`).join('')}</ul>
-      ${pid === 'colon_irritable' && user.colonPredominante ? `<p class="small mt"><strong>Tu foco:</strong> ${colonTip(user.colonPredominante)}</p>` : ''}`);
+      ${pid === 'colon_irritable' && user.colonPredominante ? `<p class="small mt"><strong>${t('Tu foco:')}</strong> ${colonTip(user.colonPredominante)}</p>` : ''}`);
   }
   container.appendChild(keys);
 
@@ -50,7 +51,7 @@ export function renderLearn(container) {
   if (combos.length) {
     const comboCard = document.createElement('div');
     comboCard.className = 'card';
-    comboCard.innerHTML = '<h2>🔗 Cuando se combinan tus perfiles</h2>';
+    comboCard.innerHTML = `<h2>🔗 ${t('Cuando se combinan tus perfiles')}</h2>`;
     for (const c of combos) {
       comboCard.insertAdjacentHTML('beforeend', `<p class="small mt">${c.texto}</p>`);
     }
@@ -60,7 +61,7 @@ export function renderLearn(container) {
   // Micro-lecciones
   const lessons = document.createElement('div');
   lessons.className = 'card';
-  lessons.innerHTML = '<h2>📚 Micro-lecciones (3–5 min)</h2>';
+  lessons.innerHTML = `<h2>📚 ${t('Micro-lecciones (3–5 min)')}</h2>`;
   const premium = isPremium();
   LESSONS.forEach((l, i) => {
     const locked = !premium && i >= FREE_LESSONS;
@@ -91,7 +92,7 @@ export function renderLearn(container) {
   // Glosario
   const glos = document.createElement('div');
   glos.className = 'card';
-  glos.innerHTML = '<h2>🔎 Glosario simple</h2>';
+  glos.innerHTML = `<h2>🔎 ${t('Glosario simple')}</h2>`;
   for (const g of GLOSSARY) {
     glos.insertAdjacentHTML('beforeend', `
       <details class="glossary"><summary>${g.t}</summary><p>${g.d}</p></details>`);
@@ -100,6 +101,6 @@ export function renderLearn(container) {
 
   const note = document.createElement('div');
   note.className = 'legal-note';
-  note.textContent = 'Contenido educativo y de autoayuda. No constituye diagnóstico ni tratamiento médico.';
+  note.textContent = t('Contenido educativo y de autoayuda. No constituye diagnóstico ni tratamiento médico.');
   container.appendChild(note);
 }

@@ -4,13 +4,14 @@
 import { openModal } from '../app.js';
 import { esc, getState } from '../store.js';
 import { buscarPorIngredientes, displayRecipe, trafficLight } from '../menu.js';
+import { t } from '../i18n.js';
 
 export function openKitchenSearchModal(onOpenRecipe) {
   openModal((modal) => {
     modal.innerHTML = `
-      <h2>¿Qué tienes en casa?</h2>
-      <p class="small muted mt">Escribe ingredientes o lo que se te antoja, separados por coma.</p>
-      <input type="text" id="ks-input" class="auth-input" placeholder="Ej: huevos, avena, banano" style="margin-top:10px">
+      <h2>${t('¿Qué tienes en casa?')}</h2>
+      <p class="small muted mt">${t('Escribe ingredientes o lo que se te antoja, separados por coma.')}</p>
+      <input type="text" id="ks-input" class="auth-input" placeholder="${t('Ej: huevos, avena, banano')}" style="margin-top:10px">
       <div class="mt" id="ks-resultados"></div>`;
     const input = modal.querySelector('#ks-input');
     const resultados = modal.querySelector('#ks-resultados');
@@ -23,10 +24,10 @@ export function openKitchenSearchModal(onOpenRecipe) {
         return;
       }
       if (!encontradas.length) {
-        resultados.innerHTML = '<p class="small muted mt">No encontré recetas con eso todavía. Prueba con otro ingrediente.</p>';
+        resultados.innerHTML = `<p class="small muted mt">${t('No encontré recetas con eso todavía. Prueba con otro ingrediente.')}</p>`;
         return;
       }
-      resultados.innerHTML = `<p class="small muted">Encontré ${encontradas.length} opción${encontradas.length === 1 ? '' : 'es'}.</p>`;
+      resultados.innerHTML = `<p class="small muted">${t('Encontré {n} opción{s}.', { n: encontradas.length, s: encontradas.length === 1 ? '' : 'es' })}</p>`;
       for (const recipe of encontradas.slice(0, 15)) {
         const shown = displayRecipe(recipe, user.exclusiones);
         const light = trafficLight(recipe, user.perfiles);

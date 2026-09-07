@@ -11,6 +11,7 @@ import { header, navigate, openModal, SHARE_ICON } from '../app.js';
 import { MEALS } from '../data/recipes.js';
 import { broteStage, broteBadge } from '../ruti.js';
 import { abrirCompartirPlantillas } from '../shareUI.js';
+import { t } from '../i18n.js';
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -22,12 +23,12 @@ function todayStr() {
 
 function etiquetaFecha(fecha) {
   const hoy = todayStr();
-  if (fecha === hoy) return 'Hoy';
+  if (fecha === hoy) return t('Hoy');
   const ayer = new Date(`${hoy}T00:00:00`);
   ayer.setDate(ayer.getDate() - 1);
-  if (fecha === ayer.toISOString().slice(0, 10)) return 'Ayer';
+  if (fecha === ayer.toISOString().slice(0, 10)) return t('Ayer');
   const dt = new Date(`${fecha}T00:00:00`);
-  return `${DIAS_SEMANA[dt.getDay()]} ${dt.getDate()} ${MESES[dt.getMonth()]}`;
+  return `${t(DIAS_SEMANA[dt.getDay()])} ${dt.getDate()} ${t(MESES[dt.getMonth()])}`;
 }
 
 // Para la imagen de compartir (crearImagenCompartir) -- ahí "Hoy" queda
@@ -36,8 +37,8 @@ function etiquetaFecha(fecha) {
 // tendría sentido. Siempre la fecha completa, nunca "Hoy"/"Ayer".
 function fechaCompletaCompartir(fecha) {
   const dt = new Date(`${fecha}T00:00:00`);
-  const dia = DIAS_SEMANA[dt.getDay()].toLowerCase();
-  return `${dia}, ${String(dt.getDate()).padStart(2, '0')} ${MESES[dt.getMonth()]} ${dt.getFullYear()}`;
+  const dia = t(DIAS_SEMANA[dt.getDay()]).toLowerCase();
+  return `${dia}, ${String(dt.getDate()).padStart(2, '0')} ${t(MESES[dt.getMonth()])} ${dt.getFullYear()}`;
 }
 
 function mealMeta(mealId) {
@@ -49,13 +50,13 @@ export function renderDiary(container) {
 
   const back = document.createElement('button');
   back.className = 'link-btn small';
-  back.textContent = '← Volver';
+  back.textContent = t('← Volver');
   back.addEventListener('click', () => navigate('dashboard'));
   container.appendChild(back);
 
   const titulo = document.createElement('div');
   titulo.className = 'card center';
-  titulo.innerHTML = '<h2>📔 Mi Diario</h2><p class="small muted mt">Las fotos de lo que fuiste registrando — solo para ti.</p>';
+  titulo.innerHTML = `<h2>📔 ${t('Mi Diario')}</h2><p class="small muted mt">${t('Las fotos de lo que fuiste registrando — solo para ti.')}</p>`;
   container.appendChild(titulo);
 
   const dias = diasConDiario(14);
@@ -63,7 +64,7 @@ export function renderDiary(container) {
   if (!dias.length) {
     const vacio = document.createElement('div');
     vacio.className = 'card center';
-    vacio.innerHTML = '<p class="small muted">Todavía no tienes fotos guardadas. Registra una comida con 📸 desde "Tu ruta de hoy" y aparecerá aquí.</p>';
+    vacio.innerHTML = `<p class="small muted">${t('Todavía no tienes fotos guardadas. Registra una comida con 📸 desde "Tu ruta de hoy" y aparecerá aquí.')}</p>`;
     container.appendChild(vacio);
     return;
   }
@@ -83,8 +84,8 @@ export function renderDiary(container) {
       const fig = document.createElement('div');
       fig.style.cssText = 'width:31%;min-width:90px';
       fig.innerHTML = `
-        <img src="${r.fotoUrl}" alt="${meta.nombre}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block">
-        <p class="small muted center mt-xs">${meta.emoji} ${meta.nombre}</p>`;
+        <img src="${r.fotoUrl}" alt="${t(meta.nombre)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block">
+        <p class="small muted center mt-xs">${meta.emoji} ${t(meta.nombre)}</p>`;
       grid.appendChild(fig);
     });
 
@@ -98,7 +99,7 @@ export function renderDiary(container) {
       cierre.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:center;gap:10px">
           ${broteBadge(etapa, { size: 40, premium: false })}
-          <span>Hoy también cuidaste de ti 💚</span>
+          <span>${t('Hoy también cuidaste de ti 💚')}</span>
         </div>`;
       card.appendChild(cierre);
     }
@@ -107,13 +108,13 @@ export function renderDiary(container) {
     compartirBtn.type = 'button';
     compartirBtn.className = 'btn ghost full mt';
     compartirBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px';
-    compartirBtn.innerHTML = `${SHARE_ICON}Compartir este día`;
+    compartirBtn.innerHTML = `${SHARE_ICON}${t('Compartir este día')}`;
     compartirBtn.addEventListener('click', () => {
       const contenidoBase = {
         tipo: 'diario',
-        titulo: 'Mi Ruta de hoy',
+        titulo: t('Mi Ruta de hoy'),
         subtitulo: fechaCompletaCompartir(dia.fecha),
-        valorGrande: completo ? 'Hoy también cuidaste de ti' : '',
+        valorGrande: completo ? t('Hoy también cuidaste de ti') : '',
         emoji: '💚'
       };
       // Con una sola foto registrada no hay nada que elegir -- directo al
@@ -147,10 +148,10 @@ function elegirFotosParaCompartir(registros, onListo) {
     const seleccionadas = new Set(registros.map((r) => r.fotoUrl));
     const wrap = document.createElement('div');
     wrap.innerHTML = `
-      <h2 class="center">¿Qué fotos incluyes?</h2>
-      <p class="small muted center mt">Toca una para quitarla del collage.</p>
+      <h2 class="center">${t('¿Qué fotos incluyes?')}</h2>
+      <p class="small muted center mt">${t('Toca una para quitarla del collage.')}</p>
       <div class="foto-elegir-grid mt" id="foto-elegir-grid"></div>
-      <button type="button" class="btn accent full mt" id="foto-elegir-continuar">Continuar</button>`;
+      <button type="button" class="btn accent full mt" id="foto-elegir-continuar">${t('Continuar')}</button>`;
     modal.appendChild(wrap);
 
     const grid = wrap.querySelector('#foto-elegir-grid');
@@ -163,7 +164,7 @@ function elegirFotosParaCompartir(registros, onListo) {
       const meta = mealMeta(r.mealId);
       const item = document.createElement('div');
       item.className = 'foto-elegir-item selected';
-      item.innerHTML = `<img src="${r.fotoUrl}" alt="${meta.nombre}"><span class="foto-elegir-check">✓</span>`;
+      item.innerHTML = `<img src="${r.fotoUrl}" alt="${t(meta.nombre)}"><span class="foto-elegir-check">✓</span>`;
       item.addEventListener('click', () => {
         if (seleccionadas.has(r.fotoUrl)) { seleccionadas.delete(r.fotoUrl); item.classList.remove('selected'); }
         else { seleccionadas.add(r.fotoUrl); item.classList.add('selected'); }

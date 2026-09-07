@@ -9,6 +9,7 @@ import { getSession, signIn, signOut, pushProfileState, fetchMyResena, submitRes
 import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, susanaName, ORO_NUTRICOINS, GEAR_ICON, SHARE_ICON, CAMERA_SOLID_ICON } from '../app.js';
 import { iniciarTour } from './tour.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
+import { t, getIdioma } from '../i18n.js';
 
 // Fila de ajuste (ícono + etiqueta + valor + flecha), estilo lista de
 // configuración compacta -- abre un selector chico al tocarla en vez de
@@ -53,16 +54,16 @@ function abrirSelector(titulo, opciones, valorActual, onElegir) {
 // pintar el hub evita el "Cannot access before initialization".
 function settingsSecciones() {
   return [
-    { id: 'cuenta', icon: '👤', label: 'Mi cuenta' },
-    { id: 'sobre-ti', icon: '🧍', label: 'Sobre ti' },
-    { id: 'salud', icon: '🩺', label: 'Salud y alimentación' },
-    { id: 'comidas', icon: '⏰', label: 'Horario de comidas' },
-    { id: 'interfaz', icon: '🌎', label: 'Interfaz y preferencias' },
-    { id: 'notificaciones', icon: '🔔', label: 'Notificaciones', condicion: () => pushSupported() },
-    { id: 'referidos', icon: '🎁', label: 'Referidos y NutriCoins' },
-    { id: 'resena', icon: '🌿', label: 'Califica tu experiencia' },
-    { id: 'datos', icon: GEAR_ICON, label: 'Datos y privacidad' },
-    { id: 'legal', icon: '⚖️', label: 'Legal' }
+    { id: 'cuenta', icon: '👤', label: t('Mi cuenta') },
+    { id: 'sobre-ti', icon: '🧍', label: t('Sobre ti') },
+    { id: 'salud', icon: '🩺', label: t('Salud y alimentación') },
+    { id: 'comidas', icon: '⏰', label: t('Horario de comidas') },
+    { id: 'interfaz', icon: '🌎', label: t('Interfaz y preferencias') },
+    { id: 'notificaciones', icon: '🔔', label: t('Notificaciones'), condicion: () => pushSupported() },
+    { id: 'referidos', icon: '🎁', label: t('Referidos y NutriCoins') },
+    { id: 'resena', icon: '🌿', label: t('Califica tu experiencia') },
+    { id: 'datos', icon: GEAR_ICON, label: t('Datos y privacidad') },
+    { id: 'legal', icon: '⚖️', label: t('Legal') }
   ];
 }
 
@@ -88,7 +89,7 @@ export function renderSettings(container, params = {}) {
     if (!builder) { navigate('settings'); return; }
     const back = document.createElement('button');
     back.className = 'link-btn small';
-    back.textContent = '← Ajustes';
+    back.textContent = t('← Ajustes');
     back.addEventListener('click', () => navigate('settings'));
     container.appendChild(back);
     builder(container);
@@ -100,7 +101,7 @@ export function renderSettings(container, params = {}) {
   // quién eres sin tener que entrar a "Mi cuenta". Tocar cualquiera de
   // las dos abre esa sección, igual que las filas de abajo.
   const { user } = getState();
-  const inicialResumen = esc((user.nombre || 'N').trim().charAt(0).toUpperCase() || 'N');
+  const inicialResumen = esc((user.nombre || t('N')).trim().charAt(0).toUpperCase() || 'N');
   const resumen = document.createElement('div');
   resumen.className = 'row';
   resumen.style.cssText = 'gap:10px;align-items:stretch';
@@ -112,8 +113,8 @@ export function renderSettings(container, params = {}) {
       </span>
     </div>
     <div class="card center" id="resumen-info" style="flex:1;min-width:0;cursor:pointer;padding:14px;display:flex;flex-direction:column;justify-content:center;align-items:center">
-      <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">${esc(user.nombre || 'Sin nombre')}</strong>
-      <span class="small muted mt" id="resumen-plan">Cargando…</span>
+      <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">${esc(user.nombre || t('Sin nombre'))}</strong>
+      <span class="small muted mt" id="resumen-plan">${t('Cargando…')}</span>
       <span class="small muted" id="resumen-cobro"></span>
     </div>`;
   const irACuenta = () => navigate('settings', { seccion: 'cuenta' });
@@ -121,12 +122,12 @@ export function renderSettings(container, params = {}) {
   resumen.querySelector('#resumen-info').addEventListener('click', irACuenta);
   const resumenPlan = resumen.querySelector('#resumen-plan');
   const resumenCobro = resumen.querySelector('#resumen-cobro');
-  resumenPlan.textContent = planExpired() ? 'Premium vencido' : isPremium() ? `✨ Premium ${getPlan().periodo}` : 'Plan gratuito';
+  resumenPlan.textContent = planExpired() ? t('Premium vencido') : isPremium() ? `✨ Premium ${getPlan().periodo}` : t('Plan gratuito');
   // Próximo cobro: solo tiene sentido con un plan Premium vigente -- el
   // plan gratuito y un Premium ya vencido no tienen fecha de cobro real.
   if (isPremium() && !planExpired()) {
     const vence = planExpiry();
-    resumenCobro.textContent = vence ? `Próximo cobro: ${vence.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}` : '';
+    resumenCobro.textContent = vence ? t('Próximo cobro: {fecha}', { fecha: vence.toLocaleDateString(getIdioma(), { day: 'numeric', month: 'long', year: 'numeric' }) }) : '';
   }
   getSession().then((s) => {
     if (!s) return;
@@ -147,7 +148,7 @@ export function renderSettings(container, params = {}) {
 
   const ver = document.createElement('p');
   ver.className = 'muted small center mt';
-  ver.textContent = 'NutriRuta v2.1 · Hecha con 💚 para tu bienestar';
+  ver.textContent = t('NutriRuta v2.1 · Hecha con 💚 para tu bienestar');
   container.appendChild(ver);
 }
 
@@ -159,14 +160,14 @@ function pintarCuenta(container) {
   const plan = getPlan();
   const vence = planExpiry();
   const planHtml = planExpired()
-    ? '<span class="tag rojo">Premium vencido</span> <span class="muted small">renueva en Planes</span>'
+    ? `<span class="tag rojo">${t('Premium vencido')}</span> <span class="muted small">${t('renueva en Planes')}</span>`
     : isPremium()
-      ? `<span class="tag verde">✨ Premium ${plan.periodo}</span> <span class="muted small">activo hasta el ${vence.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}</span>`
-      : '<span class="tag info">Plan gratuito</span>';
+      ? `<span class="tag verde">✨ Premium ${plan.periodo}</span> <span class="muted small">${t('activo hasta el {fecha}', { fecha: vence.toLocaleDateString(getIdioma(), { day: 'numeric', month: 'long', year: 'numeric' }) })}</span>`
+      : `<span class="tag info">${t('Plan gratuito')}</span>`;
   const inicial = esc((user.nombre || 'N').trim().charAt(0).toUpperCase() || 'N');
   account.innerHTML = `
     <div class="center">
-      <label class="avatar-upload" for="avatar-input" aria-label="Cambiar foto de perfil">
+      <label class="avatar-upload" for="avatar-input" aria-label="${t('Cambiar foto de perfil')}">
         <img id="avatar-img" alt="" hidden>
         <span id="avatar-fallback">${inicial}</span>
         <span class="avatar-cam">${CAMERA_SOLID_ICON}</span>
@@ -174,15 +175,15 @@ function pintarCuenta(container) {
       <input type="file" id="avatar-input" accept="image/*" hidden>
       <p class="small muted" id="avatar-estado" style="min-height:1em"></p>
     </div>
-    <h2>👤 Mi cuenta</h2>
-    <p class="small" id="acc-email">Cargando…</p>
+    <h2>👤 ${t('Mi cuenta')}</h2>
+    <p class="small" id="acc-email">${t('Cargando…')}</p>
     <p class="mt">${planHtml}</p>`;
   const avatarImg = account.querySelector('#avatar-img');
   const avatarFallback = account.querySelector('#avatar-fallback');
   const avatarEstado = account.querySelector('#avatar-estado');
   getSession().then((s) => {
     const el = account.querySelector('#acc-email');
-    if (el) el.innerHTML = s ? `Sesión iniciada como <strong>${esc(s.user.email)}</strong> 🔐` : 'Sin sesión activa.';
+    if (el) el.innerHTML = s ? t('Sesión iniciada como {strong}{email}{fin} 🔐', { strong: '<strong>', email: esc(s.user.email), fin: '</strong>' }) : t('Sin sesión activa.');
     if (!s) return;
     avatarImg.src = avatarUrlFor(s.user.id);
     avatarImg.onload = () => { avatarImg.hidden = false; avatarFallback.hidden = true; };
@@ -192,14 +193,14 @@ function pintarCuenta(container) {
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) { toast('Elige un archivo de imagen.'); return; }
-    avatarEstado.textContent = 'Subiendo…';
+    if (!file.type.startsWith('image/')) { toast(t('Elige un archivo de imagen.')); return; }
+    avatarEstado.textContent = t('Subiendo…');
     try {
       const url = await uploadAvatar(file);
       avatarImg.src = url;
       avatarImg.onload = () => { avatarImg.hidden = false; avatarFallback.hidden = true; };
-      avatarEstado.textContent = '¡Foto actualizada! 🌿';
-      setTimeout(() => { if (avatarEstado.textContent === '¡Foto actualizada! 🌿') avatarEstado.textContent = ''; }, 2500);
+      avatarEstado.textContent = t('¡Foto actualizada! 🌿');
+      setTimeout(() => { if (avatarEstado.textContent === t('¡Foto actualizada! 🌿')) avatarEstado.textContent = ''; }, 2500);
     } catch (err) {
       // Antes se mostraba un mensaje genérico que escondía el error real
       // (ej. RLS, CORS, tipo de archivo, sesión vencida) y hacía imposible
@@ -207,12 +208,12 @@ function pintarCuenta(container) {
       // detalle real hasta encontrar la causa de fondo.
       const detalle = err.message || err.error_description || err.error || JSON.stringify(err);
       console.error('Error subiendo avatar:', err);
-      avatarEstado.textContent = `No se pudo subir la foto: ${detalle}`;
+      avatarEstado.textContent = t('No se pudo subir la foto: {detalle}', { detalle });
     }
   });
   const plansBtn = document.createElement('button');
   plansBtn.className = 'btn ghost full mt mb';
-  plansBtn.textContent = '✨ Ver planes (mensual / anual)';
+  plansBtn.textContent = `✨ ${t('Ver planes (mensual / anual)')}`;
   plansBtn.addEventListener('click', () => navigate('plans'));
   account.appendChild(plansBtn);
   // El cobro es 100% externo (Hotmart, ver config.js) -- cancelar o
@@ -223,16 +224,16 @@ function pintarCuenta(container) {
   if (plan.tipo === 'premium') {
     const subBtn = document.createElement('button');
     subBtn.className = 'btn ghost full mb';
-    subBtn.textContent = '🧾 Administrar mi suscripción';
+    subBtn.textContent = `🧾 ${t('Administrar mi suscripción')}`;
     subBtn.addEventListener('click', () => window.open('https://app.hotmart.com/login', '_blank', 'noopener'));
     account.appendChild(subBtn);
   }
   const outBtn = document.createElement('button');
   outBtn.className = 'btn ghost full';
-  outBtn.textContent = '🚪 Cerrar sesión';
+  outBtn.textContent = `🚪 ${t('Cerrar sesión')}`;
   outBtn.addEventListener('click', async () => {
     await signOut();
-    toast('Sesión cerrada. ¡Vuelve pronto! 🌿');
+    toast(t('Sesión cerrada. ¡Vuelve pronto! 🌿'));
   });
   account.appendChild(outBtn);
   // El servidor sigue siendo quien de verdad decide (admin_dashboard
@@ -265,13 +266,13 @@ function pintarReferidos(container) {
   const referidos = document.createElement('div');
   referidos.className = 'card';
   referidos.innerHTML = `
-    <h2>🎁 Invita y gana Premium</h2>
-    <p class="small mb">Comparte tu código. Cuando alguien lo usa y activa el <strong>plan anual</strong> sin cancelarlo en los primeros 7 días, tú ganas <strong>30 días de Premium</strong> gratis.</p>
+    <h2>🎁 ${t('Invita y gana Premium')}</h2>
+    <p class="small mb">${t('Comparte tu código. Cuando alguien lo usa y activa el {strong}plan anual{fin} sin cancelarlo en los primeros 7 días, tú ganas {strong}30 días de Premium{fin} gratis.', { strong: '<strong>', fin: '</strong>' })}</p>
     <div class="row" style="gap:8px">
-      <div id="ref-codigo" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em;flex:1">Cargando…</div>
-      <button type="button" class="btn ghost sm" id="ref-copiar" disabled>Copiar</button>
+      <div id="ref-codigo" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em;flex:1">${t('Cargando…')}</div>
+      <button type="button" class="btn ghost sm" id="ref-copiar" disabled>${t('Copiar')}</button>
     </div>
-    <button type="button" class="btn accent full mt" id="ref-compartir" style="display:flex;align-items:center;justify-content:center;gap:8px" disabled>${SHARE_ICON.replace('var(--primary-dark)', '#fff')}Compartir mi código</button>`;
+    <button type="button" class="btn accent full mt" id="ref-compartir" style="display:flex;align-items:center;justify-content:center;gap:8px" disabled>${SHARE_ICON.replace('var(--primary-dark)', '#fff')}${t('Compartir mi código')}</button>`;
   const refCodigoEl = referidos.querySelector('#ref-codigo');
   const refCopiarBtn = referidos.querySelector('#ref-copiar');
   const refCompartirBtn = referidos.querySelector('#ref-compartir');
@@ -281,19 +282,19 @@ function pintarReferidos(container) {
     refCopiarBtn.disabled = false;
     refCompartirBtn.disabled = false;
     refCopiarBtn.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(link); toast('Enlace copiado 📋'); }
-      catch { toast('No se pudo copiar. Copia el código a mano: ' + codigo); }
+      try { await navigator.clipboard.writeText(link); toast(t('Enlace copiado 📋')); }
+      catch { toast(t('No se pudo copiar. Copia el código a mano: {codigo}', { codigo })); }
     });
     refCompartirBtn.addEventListener('click', async () => {
-      const texto = `Estoy usando NutriRuta y quiero invitarte 🌿 Regístrate con mi código y si activas el plan anual yo gano 30 días de Premium gratis: ${link}`;
+      const texto = t('Estoy usando NutriRuta y quiero invitarte 🌿 Regístrate con mi código y si activas el plan anual yo gano 30 días de Premium gratis: {link}', { link });
       if (navigator.share) {
-        try { await navigator.share({ title: 'Te invito a NutriRuta', text: texto }); } catch { /* canceló, no es un error */ }
+        try { await navigator.share({ title: t('Te invito a NutriRuta'), text: texto }); } catch { /* canceló, no es un error */ }
         return;
       }
-      try { await navigator.clipboard.writeText(texto); toast('Mensaje copiado — pégalo donde quieras 📋'); }
-      catch { toast('No se pudo copiar automáticamente.'); }
+      try { await navigator.clipboard.writeText(texto); toast(t('Mensaje copiado — pégalo donde quieras 📋')); }
+      catch { toast(t('No se pudo copiar automáticamente.')); }
     });
-  }).catch(() => { refCodigoEl.textContent = 'No se pudo cargar tu código.'; });
+  }).catch(() => { refCodigoEl.textContent = t('No se pudo cargar tu código.'); });
   container.appendChild(referidos);
 
   // NutriCoins: a diferencia de las gemas (100% ganadas con constancia,
@@ -305,8 +306,8 @@ function pintarReferidos(container) {
   nutricoinsCard.className = 'card';
   nutricoinsCard.innerHTML = `
     <div class="spread"><h2 style="display:flex;align-items:center;gap:8px">${coinIcon(ORO_NUTRICOINS, 22)} NutriCoins</h2><span class="small muted">${getState().nutricoins || 0}</span></div>
-    <p class="small mt">Se compran con dinero, nunca se ganan -- a diferencia de tus gemas 💎. Sirven para extras puntuales (como preguntas de más a ${susanaName()}), nunca para saltarte tu constancia real.</p>
-    <button type="button" class="btn ghost full mt" id="btn-comprar-nutricoins">Comprar NutriCoins</button>`;
+    <p class="small mt">${t('Se compran con dinero, nunca se ganan -- a diferencia de tus gemas 💎. Sirven para extras puntuales (como preguntas de más a {nombre}), nunca para saltarte tu constancia real.', { nombre: susanaName() })}</p>
+    <button type="button" class="btn ghost full mt" id="btn-comprar-nutricoins">${t('Comprar NutriCoins')}</button>`;
   nutricoinsCard.querySelector('#btn-comprar-nutricoins').addEventListener('click', () => abrirComprarNutricoins());
   container.appendChild(nutricoinsCard);
 
@@ -321,20 +322,20 @@ function pintarReferidos(container) {
   canjear.className = 'card coupon-card';
   const yaGuardado = getState().user.referidoPor;
   canjear.innerHTML = `
-    <h2>🎟️ ¿Tienes el código de un amigo?</h2>
+    <h2>🎟️ ${t('¿Tienes el código de un amigo?')}</h2>
     <p class="small mb" id="canjear-desc"></p>
     <div class="coupon-cut"><span>✂️</span></div>
     <div class="row" style="gap:8px">
-      <input type="text" id="canjear-input" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em;flex:1" maxlength="6" placeholder="CÓDIGO" value="${esc(yaGuardado || '')}">
-      <button type="button" class="btn sm" id="canjear-btn">Canjear</button>
+      <input type="text" id="canjear-input" class="auth-input" style="text-align:center;font-weight:700;letter-spacing:0.1em;flex:1" maxlength="6" placeholder="${t('CÓDIGO')}" value="${esc(yaGuardado || '')}">
+      <button type="button" class="btn sm" id="canjear-btn">${t('Canjear')}</button>
     </div>`;
   const canjearDesc = canjear.querySelector('#canjear-desc');
   const canjearInput = canjear.querySelector('#canjear-input');
   const canjearBtn = canjear.querySelector('#canjear-btn');
   function pintarCanjearDesc() {
     canjearDesc.textContent = getState().user.referidoPor
-      ? `Código guardado: ${getState().user.referidoPor}. Actívalo comprando el plan anual.`
-      : 'Escribe el código y actívalo con el plan anual.';
+      ? t('Código guardado: {codigo}. Actívalo comprando el plan anual.', { codigo: getState().user.referidoPor })
+      : t('Escribe el código y actívalo con el plan anual.');
   }
   pintarCanjearDesc();
   canjearInput.addEventListener('input', () => {
@@ -342,23 +343,23 @@ function pintarReferidos(container) {
   });
   canjearBtn.addEventListener('click', async () => {
     const codigo = canjearInput.value.trim();
-    if (codigo.length < 6) { toast('Escribe el código completo (6 caracteres).'); return; }
+    if (codigo.length < 6) { toast(t('Escribe el código completo (6 caracteres).')); return; }
     canjearBtn.disabled = true;
-    canjearBtn.textContent = 'Verificando…';
+    canjearBtn.textContent = t('Verificando…');
     try {
       const valido = await validarCodigoReferido(codigo);
       if (valido) {
         setState({ user: { ...getState().user, referidoPor: codigo } });
-        toast('¡Código aplicado! 🎉 Actívalo con el plan anual.');
+        toast(t('¡Código aplicado! 🎉 Actívalo con el plan anual.'));
         pintarCanjearDesc();
       } else {
-        toast('Ese código no existe. Revísalo con tu amigo.');
+        toast(t('Ese código no existe. Revísalo con tu amigo.'));
       }
     } catch (e) {
-      toast(e.message && e.message.includes('propio') ? 'Ese es tu propio código 😉' : 'No se pudo verificar. Intenta de nuevo.');
+      toast(e.message && e.message.includes('propio') ? t('Ese es tu propio código 😉') : t('No se pudo verificar. Intenta de nuevo.'));
     }
     canjearBtn.disabled = false;
-    canjearBtn.textContent = 'Canjear';
+    canjearBtn.textContent = t('Canjear');
   });
   container.appendChild(canjear);
 }
@@ -370,12 +371,12 @@ function pintarResena(container) {
   const resena = document.createElement('div');
   resena.className = 'card';
   resena.innerHTML = `
-    <h2>🌿 Califica tu experiencia</h2>
-    <p class="small mt">Tu calificación y reseña pueden mostrarse en nutriruta.com para ayudar a otras personas a decidir — nunca tu correo ni datos de tu cuenta.</p>
+    <h2>🌿 ${t('Califica tu experiencia')}</h2>
+    <p class="small mt">${t('Tu calificación y reseña pueden mostrarse en nutriruta.com para ayudar a otras personas a decidir — nunca tu correo ni datos de tu cuenta.')}</p>
     <div class="row mt" id="resena-hojas" style="gap:4px"></div>
-    <textarea id="resena-texto" maxlength="300" rows="3" placeholder="Cuéntanos brevemente qué te ha parecido"
+    <textarea id="resena-texto" maxlength="300" rows="3" placeholder="${t('Cuéntanos brevemente qué te ha parecido')}"
       class="auth-input" style="resize:vertical"></textarea>
-    <button class="btn full mt" id="resena-guardar" disabled>Guardar calificación</button>
+    <button class="btn full mt" id="resena-guardar" disabled>${t('Guardar calificación')}</button>
     <p class="small muted mt" id="resena-estado"></p>`;
   container.appendChild(resena);
 
@@ -390,7 +391,7 @@ function pintarResena(container) {
     for (let n = 1; n <= 5; n++) {
       const b = document.createElement('button');
       b.type = 'button';
-      b.setAttribute('aria-label', `${n} de 5`);
+      b.setAttribute('aria-label', t('{n} de 5', { n }));
       b.style.cssText = 'font-size:1.6rem;background:none;border:none;cursor:pointer;opacity:' + (n <= calificacionActual ? '1' : '0.3');
       b.textContent = '🍏';
       b.addEventListener('click', () => {
@@ -408,7 +409,7 @@ function pintarResena(container) {
       calificacionActual = mia.calificacion;
       textoEl.value = mia.texto || '';
       guardarBtn.disabled = false;
-      estadoEl.textContent = 'Ya calificaste — puedes actualizarla cuando quieras.';
+      estadoEl.textContent = t('Ya calificaste — puedes actualizarla cuando quieras.');
       pintarHojas();
     }
   }).catch(() => {});
@@ -416,16 +417,16 @@ function pintarResena(container) {
   guardarBtn.addEventListener('click', async () => {
     if (!calificacionActual) return;
     guardarBtn.disabled = true;
-    guardarBtn.textContent = 'Guardando…';
+    guardarBtn.textContent = t('Guardando…');
     try {
       await submitResena(calificacionActual, textoEl.value.trim(), getState().user.nombre);
-      toast('¡Gracias por tu calificación! 🌿');
-      estadoEl.textContent = 'Ya calificaste — puedes actualizarla cuando quieras.';
+      toast(t('¡Gracias por tu calificación! 🌿'));
+      estadoEl.textContent = t('Ya calificaste — puedes actualizarla cuando quieras.');
     } catch (e) {
-      toast('No se pudo guardar. Intenta de nuevo.');
+      toast(t('No se pudo guardar. Intenta de nuevo.'));
     }
     guardarBtn.disabled = false;
-    guardarBtn.textContent = 'Guardar calificación';
+    guardarBtn.textContent = t('Guardar calificación');
   });
 }
 
@@ -435,16 +436,16 @@ function pintarNotificaciones(container) {
   const notif = document.createElement('div');
   notif.className = 'card';
   notif.innerHTML = `
-    <h2>🔔 Notificaciones</h2>
-    <p class="small mt">Avisos para acompañarte durante el día. Tú decides cuáles recibir — nada de spam.</p>
-    <p class="small mt" id="notif-estado">Consultando…</p>
-    <button class="btn full mt" id="notif-btn" disabled>Cargando…</button>
+    <h2>🔔 ${t('Notificaciones')}</h2>
+    <p class="small mt">${t('Avisos para acompañarte durante el día. Tú decides cuáles recibir — nada de spam.')}</p>
+    <p class="small mt" id="notif-estado">${t('Consultando…')}</p>
+    <button class="btn full mt" id="notif-btn" disabled>${t('Cargando…')}</button>
     <div id="notif-prefs" style="display:none">
-      <p class="small mt" style="font-weight:600">Qué avisos quieres recibir:</p>
-      <label class="habit"><input type="checkbox" data-pref="plan"><span>🏁 Tu plan y tu Ruta <span class="muted small">(día nuevo, check-in, recordatorio suave)</span></span></label>
-      <label class="habit"><input type="checkbox" data-pref="comidas"><span>🍽️ Horas de tus comidas <span class="muted small">(a la hora sugerida de cada una)</span></span></label>
-      <label class="habit"><input type="checkbox" data-pref="agua"><span>💧 Recordatorios de agua <span class="muted small">(según tu meta personalizada)</span></span></label>
-      <button class="btn ghost sm mt" id="notif-test">🔔 Enviar notificación de prueba</button>
+      <p class="small mt" style="font-weight:600">${t('Qué avisos quieres recibir:')}</p>
+      <label class="habit"><input type="checkbox" data-pref="plan"><span>🏁 ${t('Tu plan y tu Ruta')} <span class="muted small">(${t('día nuevo, check-in, recordatorio suave')})</span></span></label>
+      <label class="habit"><input type="checkbox" data-pref="comidas"><span>🍽️ ${t('Horas de tus comidas')} <span class="muted small">(${t('a la hora sugerida de cada una')})</span></span></label>
+      <label class="habit"><input type="checkbox" data-pref="agua"><span>💧 ${t('Recordatorios de agua')} <span class="muted small">(${t('según tu meta personalizada')})</span></span></label>
+      <button class="btn ghost sm mt" id="notif-test">🔔 ${t('Enviar notificación de prueba')}</button>
     </div>`;
   container.appendChild(notif);
   const estadoEl = notif.querySelector('#notif-estado');
@@ -462,7 +463,7 @@ function pintarNotificaciones(container) {
       const prefs = { ...(getState().notifPrefs || {}) };
       prefs[chk.dataset.pref] = chk.checked;
       setState({ notifPrefs: prefs });
-      toast(chk.checked ? 'Aviso activado ✅' : 'Aviso desactivado');
+      toast(chk.checked ? t('Aviso activado ✅') : t('Aviso desactivado'));
     });
   });
 
@@ -470,20 +471,20 @@ function pintarNotificaciones(container) {
     try {
       const reg = await navigator.serviceWorker.ready;
       await reg.showNotification('🌿 NutriRuta', {
-        body: '¡Perfecto! Así se verán tus avisos en este dispositivo.',
+        body: t('¡Perfecto! Así se verán tus avisos en este dispositivo.'),
         icon: './icons/icon-192.png',
         badge: './icons/badge-96.png'
       });
     } catch (e) {
-      toast('No se pudo mostrar la prueba. Revisa los permisos de notificación.');
+      toast(t('No se pudo mostrar la prueba. Revisa los permisos de notificación.'));
     }
   });
 
   async function pintarEstadoNotif() {
     const sub = await currentSubscription();
     const activas = !!sub && Notification.permission === 'granted';
-    estadoEl.textContent = activas ? '✅ Activadas en este dispositivo.' : 'Aún no están activadas en este dispositivo.';
-    btn.textContent = activas ? 'Desactivar' : 'Activar notificaciones';
+    estadoEl.textContent = activas ? t('✅ Activadas en este dispositivo.') : t('Aún no están activadas en este dispositivo.');
+    btn.textContent = activas ? t('Desactivar') : t('Activar notificaciones');
     btn.className = activas ? 'btn ghost full mt' : 'btn full mt';
     btn.disabled = false;
     prefsBox.style.display = activas ? 'block' : 'none';
@@ -497,13 +498,13 @@ function pintarNotificaciones(container) {
       const sub = await currentSubscription();
       if (sub) {
         await disablePush();
-        toast('Notificaciones desactivadas.');
+        toast(t('Notificaciones desactivadas.'));
       } else {
         await enablePush();
-        toast('¡Notificaciones activadas! 🔔');
+        toast(t('¡Notificaciones activadas! 🔔'));
       }
     } catch (e) {
-      toast(e.message || 'No se pudo cambiar el estado de las notificaciones.');
+      toast(e.message || t('No se pudo cambiar el estado de las notificaciones.'));
     }
     pintarEstadoNotif();
   });
@@ -517,7 +518,7 @@ function pintarSalud(container) {
   // amontonaban sin orden claro al haber varios activos a la vez).
   const perf = document.createElement('div');
   perf.className = 'card';
-  perf.innerHTML = '<h2>🩺 Mis perfiles de salud</h2><p class="small mb">Activa o desactiva según tu situación.</p>';
+  perf.innerHTML = `<h2>🩺 ${t('Mis perfiles de salud')}</h2><p class="small mb">${t('Activa o desactiva según tu situación.')}</p>`;
   for (const p of Object.values(PROFILES)) {
     const row = document.createElement('label');
     row.className = 'habit';
@@ -528,7 +529,7 @@ function pintarSalud(container) {
       const cur = getState().user;
       const has = cur.perfiles.includes(p.id);
       const perfiles = has ? cur.perfiles.filter((x) => x !== p.id) : [...cur.perfiles, p.id];
-      if (!perfiles.length) { toast('Debes mantener al menos un perfil activo.'); e.target.checked = true; return; }
+      if (!perfiles.length) { toast(t('Debes mantener al menos un perfil activo.')); e.target.checked = true; return; }
       setState({ user: { ...cur, perfiles } });
     });
     perf.appendChild(row);
@@ -539,12 +540,12 @@ function pintarSalud(container) {
   if (user.perfiles.includes('colon_irritable')) {
     const colon = document.createElement('div');
     colon.className = 'card';
-    colon.innerHTML = '<h2>🌱 Tu colon irritable</h2><p class="small mb">¿Qué predomina en tus síntomas?</p><div class="chips"></div>';
+    colon.innerHTML = `<h2>🌱 ${t('Tu colon irritable')}</h2><p class="small mb">${t('¿Qué predomina en tus síntomas?')}</p><div class="chips"></div>`;
     const colonChips = colon.querySelector('.chips');
     const opciones = [
-      { id: 'diarrea', nombre: 'Diarrea' },
-      { id: 'estrenimiento', nombre: 'Estreñimiento' },
-      { id: 'mixto', nombre: 'Mixto' }
+      { id: 'diarrea', nombre: t('Diarrea') },
+      { id: 'estrenimiento', nombre: t('Estreñimiento') },
+      { id: 'mixto', nombre: t('Mixto') }
     ];
     for (const o of opciones) {
       const b = document.createElement('button');
@@ -562,7 +563,7 @@ function pintarSalud(container) {
   // Exclusiones
   const excl = document.createElement('div');
   excl.className = 'card';
-  excl.innerHTML = '<h2>🚫 Alimentos que no consumo</h2><p class="small mb">Filtramos recetas y proponemos sustituciones.</p><div class="chips"></div>';
+  excl.innerHTML = `<h2>🚫 ${t('Alimentos que no consumo')}</h2><p class="small mb">${t('Filtramos recetas y proponemos sustituciones.')}</p><div class="chips"></div>`;
   const exclChips = excl.querySelector('.chips');
   // "Ninguno" es solo para el quiz (evita que el paso quede vacío en la
   // BD) -- en Ajustes no hace falta, aquí ya se ve directo si hay chips
@@ -581,14 +582,14 @@ function pintarSalud(container) {
     exclChips.appendChild(b);
   }
   excl.insertAdjacentHTML('beforeend', `
-    <label class="muted small mt" for="excl-otro" style="display:block">¿Algo más que no comas? (separa varios con coma)</label>
-    <input id="excl-otro" type="text" placeholder="Ej: cilantro, champiñones" maxlength="200" class="auth-input">`);
+    <label class="muted small mt" for="excl-otro" style="display:block">${t('¿Algo más que no comas? (separa varios con coma)')}</label>
+    <input id="excl-otro" type="text" placeholder="${t('Ej: cilantro, champiñones')}" maxlength="200" class="auth-input">`);
   const exclOtroInput = excl.querySelector('#excl-otro');
   exclOtroInput.value = (user.exclusionesOtro || []).join(', ');
   exclOtroInput.addEventListener('change', (e) => {
-    const exclusionesOtro = e.target.value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 10);
+    const exclusionesOtro = e.target.value.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 10);
     setState({ user: { ...getState().user, exclusionesOtro } });
-    toast('Guardado 🌿');
+    toast(t('Guardado 🌿'));
   });
   container.appendChild(excl);
 }
@@ -600,37 +601,37 @@ function pintarSobreTi(container) {
   peso.className = 'card';
   const ultimo = ultimoPeso();
   peso.innerHTML = `
-    <h2>⚖️ Sobre ti</h2>
-    <p class="small mb">Sexo y peso afinan tu meta de agua personalizada (30–35 mL por kg, el rango estándar de nutrición clínica). Edad y estatura se guardan para uso futuro. Es privado: nadie más lo ve, y puedes borrarlo cuando quieras.</p>
+    <h2>⚖️ ${t('Sobre ti')}</h2>
+    <p class="small mb">${t('Sexo y peso afinan tu meta de agua personalizada (30–35 mL por kg, el rango estándar de nutrición clínica). Edad y estatura se guardan para uso futuro. Es privado: nadie más lo ve, y puedes borrarlo cuando quieras.')}</p>
     <div class="chips" id="sexo-chips" style="margin-bottom:12px">
-      <button type="button" class="chip" data-sexo="mujer">Mujer</button>
-      <button type="button" class="chip" data-sexo="hombre">Hombre</button>
+      <button type="button" class="chip" data-sexo="mujer">${t('Mujer')}</button>
+      <button type="button" class="chip" data-sexo="hombre">${t('Hombre')}</button>
     </div>
     <div class="row" style="flex-wrap:wrap;gap:16px 24px">
       <div>
-        <label class="muted small" for="edad-input">Edad</label>
+        <label class="muted small" for="edad-input">${t('Edad')}</label>
         <div class="row" style="align-items:center;gap:8px;margin-top:2px">
-          <input id="edad-input" type="number" min="13" max="110" placeholder="Ej: 33" value="${user.edad ?? ''}" class="auth-input" style="width:90px;margin:0">
-          <span class="muted small">años</span>
+          <input id="edad-input" type="number" min="13" max="110" placeholder="${t('Ej: 33')}" value="${user.edad ?? ''}" class="auth-input" style="width:90px;margin:0">
+          <span class="muted small">${t('años')}</span>
         </div>
       </div>
       <div>
-        <label class="muted small" for="estatura-input">Estatura</label>
+        <label class="muted small" for="estatura-input">${t('Estatura')}</label>
         <div class="row" style="align-items:center;gap:8px;margin-top:2px">
-          <input id="estatura-input" type="number" min="120" max="230" placeholder="Ej: 165" value="${user.estaturaCm ?? ''}" class="auth-input" style="width:90px;margin:0">
+          <input id="estatura-input" type="number" min="120" max="230" placeholder="${t('Ej: 165')}" value="${user.estaturaCm ?? ''}" class="auth-input" style="width:90px;margin:0">
           <span class="muted small">cm</span>
         </div>
       </div>
       <div>
-        <label class="muted small" for="peso-input">Peso</label>
+        <label class="muted small" for="peso-input">${t('Peso')}</label>
         <div class="row" style="align-items:center;gap:8px;margin-top:2px">
-          <input id="peso-input" type="number" min="30" max="300" step="0.1" placeholder="Ej: 65" value="${user.pesoKg ?? ''}" class="auth-input" style="width:90px;margin:0">
+          <input id="peso-input" type="number" min="30" max="300" step="0.1" placeholder="${t('Ej: 65')}" value="${user.pesoKg ?? ''}" class="auth-input" style="width:90px;margin:0">
           <span class="muted small">kg</span>
         </div>
       </div>
     </div>
-    <button class="btn ghost sm mt" id="peso-guardar">Guardar</button>
-    <p class="small mt" id="peso-meta">${user.pesoKg ? `Tu meta de agua con este peso: <strong>${getWaterGoal()} vasos</strong>.` : 'Sin peso registrado, usamos una meta general de 8 vasos.'}</p>
+    <button class="btn ghost sm mt" id="peso-guardar">${t('Guardar')}</button>
+    <p class="small mt" id="peso-meta">${user.pesoKg ? t('Tu meta de agua con este peso: {strong}{n} vasos{fin}.', { strong: '<strong>', n: getWaterGoal(), fin: '</strong>' }) : t('Sin peso registrado, usamos una meta general de 8 vasos.')}</p>
     ${(() => {
       const imc = calcularIMC(user.pesoKg, user.estaturaCm);
       // Con peso + estatura, ademas de la meta de agua, tambien sirve
@@ -638,13 +639,13 @@ function pintarSobreTi(container) {
       // formula estandar de la OMS, no inventada, pero con su
       // advertencia real: no distingue musculo de grasa, es solo una
       // referencia, nunca un diagnostico.
-      return imc ? `<p class="small mt">Tu IMC: <strong>${imc.valor}</strong> (${imc.categoria}). Es solo una referencia general -- no distingue masa muscular de grasa, no es un diagnóstico.</p>` : '';
+      return imc ? `<p class="small mt">${t('Tu IMC: {strong}{valor}{fin} ({categoria}). Es solo una referencia general -- no distingue masa muscular de grasa, no es un diagnóstico.', { strong: '<strong>', valor: imc.valor, fin: '</strong>', categoria: imc.categoria })}</p>` : '';
     })()}
     <label class="row mt" style="cursor:pointer">
       <input type="checkbox" id="peso-track" ${user.trackearPeso ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--primary)">
-      <span class="small">Llevar un registro de mi peso en el tiempo (verás tu tendencia en Progreso)</span>
+      <span class="small">${t('Llevar un registro de mi peso en el tiempo (verás tu tendencia en Progreso)')}</span>
     </label>
-    ${ultimo ? `<p class="muted small mt">Último registro: ${ultimo.kg} kg el ${ultimo.fecha}.</p>` : ''}`;
+    ${ultimo ? `<p class="muted small mt">${t('Último registro: {kg} kg el {fecha}.', { kg: ultimo.kg, fecha: ultimo.fecha })}</p>` : ''}`;
   let sexoElegido = user.sexo || '';
   peso.querySelectorAll('#sexo-chips .chip').forEach((b) => {
     b.classList.toggle('selected', b.dataset.sexo === sexoElegido);
@@ -656,7 +657,7 @@ function pintarSobreTi(container) {
   peso.querySelector('#peso-guardar').addEventListener('click', () => {
     const pesoVal = peso.querySelector('#peso-input').value;
     if (pesoVal && !logPeso(pesoVal)) {
-      toast('Ingresa un peso válido (entre 30 y 300 kg).');
+      toast(t('Ingresa un peso válido (entre 30 y 300 kg).'));
       return;
     }
     const edadVal = Number(peso.querySelector('#edad-input').value);
@@ -670,7 +671,7 @@ function pintarSobreTi(container) {
         estaturaCm: estaturaVal >= 120 && estaturaVal <= 230 ? estaturaVal : null
       }
     });
-    toast('Guardado 🌿');
+    toast(t('Guardado 🌿'));
     navigate('settings', { seccion: 'sobre-ti' });
   });
   peso.querySelector('#peso-track').addEventListener('change', (e) => {
@@ -709,8 +710,8 @@ function pintarComidas(container) {
   };
   const labelHora = (h) => h === 0 ? '12 am' : h < 12 ? `${h} am` : h === 12 ? '12 pm' : `${h - 12} pm`;
   horarios.innerHTML = `
-    <h2>⏰ Horario de comidas</h2>
-    <p class="small mb">Cuáles quieres en tu día y a qué hora sueles comer, de verdad — así "Tu ruta de hoy" arma el menú correcto y sabe cuál comida es "Ahora".</p>
+    <h2>⏰ ${t('Horario de comidas')}</h2>
+    <p class="small mb">${t('Cuáles quieres en tu día y a qué hora sueles comer, de verdad — así "Tu ruta de hoy" arma el menú correcto y sabe cuál comida es "Ahora".')}</p>
     ${MEALS.map((m) => {
       const sugeridas = HORAS_SUGERIDAS[m.id] || [];
       const esOtra = !sugeridas.includes(horaComidas[m.id]);
@@ -718,11 +719,11 @@ function pintarComidas(container) {
       <div class="mt">
         <label class="row" style="align-items:center;gap:8px;cursor:pointer;margin-bottom:8px">
           <input type="checkbox" class="comida-activa" data-meal="${m.id}" ${estaActiva(m.id) ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--primary)">
-          <span class="small">${esc(m.emoji)} ${esc(m.nombre)}</span>
+          <span class="small">${esc(m.emoji)} ${t(esc(m.nombre))}</span>
         </label>
         <div class="chips" ${estaActiva(m.id) ? '' : 'style="opacity:0.5;pointer-events:none"'}>
           ${sugeridas.map((h) => `<button type="button" class="chip small hora-chip${horaComidas[m.id] === h ? ' selected' : ''}" data-meal="${m.id}" data-hora="${h}">${labelHora(h)}</button>`).join('')}
-          <button type="button" class="chip small hora-otro${esOtra ? ' selected' : ''}" data-meal="${m.id}">Otro</button>
+          <button type="button" class="chip small hora-otro${esOtra ? ' selected' : ''}" data-meal="${m.id}">${t('Otro')}</button>
           <select class="hora-sel" data-meal="${m.id}" style="${esOtra ? '' : 'display:none;'}padding:8px;border-radius:10px;border:1.5px solid var(--border);font:inherit;font-size:0.85rem;background:var(--card);color:var(--ink);width:auto">
             ${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${horaComidas[m.id] === h ? 'selected' : ''}>${h === 0 ? '12:00 am' : h < 12 ? `${h}:00 am` : h === 12 ? '12:00 pm' : `${h - 12}:00 pm`}</option>`).join('')}
           </select>
@@ -733,7 +734,7 @@ function pintarComidas(container) {
     const cur = getState().user;
     const nuevo = { ...DEFAULT_HORA_COMIDAS, ...(cur.horaComidas || {}), [mealId]: hora };
     setState({ user: { ...cur, horaComidas: nuevo } });
-    toast('Horario actualizado 🌿');
+    toast(t('Horario actualizado 🌿'));
   }
   horarios.querySelectorAll('.hora-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
@@ -762,7 +763,7 @@ function pintarComidas(container) {
       // Al menos una comida activa siempre -- desactivarlas todas dejaría
       // "Tu ruta de hoy" vacía sin ninguna explicación.
       const activasAhora = MEALS.filter((m) => m.id === chk.dataset.meal ? chk.checked : estaActiva(m.id));
-      if (!activasAhora.length) { toast('Debes mantener al menos una comida activa.'); chk.checked = true; return; }
+      if (!activasAhora.length) { toast(t('Debes mantener al menos una comida activa.')); chk.checked = true; return; }
       const cur = getState().user;
       const nuevo = { ...(cur.comidasActivas || {}), [chk.dataset.meal]: chk.checked };
       setState({ user: { ...cur, comidasActivas: nuevo } });
@@ -782,47 +783,52 @@ function pintarInterfaz(container) {
   // aplican el cambio al instante; solo se actualiza la fila donde estás
   // parada, nunca se navega a ningún lado.
   const TEMAS = [
-    { id: 'sistema', label: 'Sistema del dispositivo' },
-    { id: 'claro', label: 'Claro' },
-    { id: 'oscuro', label: 'Oscuro' }
+    { id: 'sistema', label: t('Sistema del dispositivo') },
+    { id: 'claro', label: t('Claro') },
+    { id: 'oscuro', label: t('Oscuro') }
   ];
   const IDIOMAS_INTERFAZ = [{ id: 'es', label: 'Español' }, { id: 'en', label: 'English' }];
   const UNIDADES = [
-    { id: 'metrico', label: 'Métrico (g, ml)' },
-    { id: 'imperial', label: 'Imperial (oz, lb, cups)' }
+    { id: 'metrico', label: t('Métrico (g, ml)') },
+    { id: 'imperial', label: t('Imperial (oz, lb, cups)') }
   ];
 
   const prefsCard = document.createElement('div');
   prefsCard.className = 'card';
-  prefsCard.innerHTML = '<h2>🌎 Interfaz y preferencias</h2>';
+  prefsCard.innerHTML = `<h2>🌎 ${t('Interfaz y preferencias')}</h2>`;
 
-  let temaActual = TEMAS.find((t) => t.id === getTema()) || TEMAS[0];
-  const temaRow = filaAjuste('🎨', 'Tema', temaActual.label, () => {
-    abrirSelector('Tema', TEMAS, temaActual.id, (id) => {
+  let temaActual = TEMAS.find((tm) => tm.id === getTema()) || TEMAS[0];
+  const temaRow = filaAjuste('🎨', t('Tema'), temaActual.label, () => {
+    abrirSelector(t('Tema'), TEMAS, temaActual.id, (id) => {
       setTema(id);
-      temaActual = TEMAS.find((t) => t.id === id) || TEMAS[0];
+      temaActual = TEMAS.find((tm) => tm.id === id) || TEMAS[0];
       temaRow.querySelector('.setting-row-value').textContent = temaActual.label;
     });
   });
   prefsCard.appendChild(temaRow);
 
   let idiomaActual = IDIOMAS_INTERFAZ.find((i) => i.id === (user.idiomaInterfaz || 'es'));
-  const idiomaRow = filaAjuste('🗣️', 'Idioma de interfaz', idiomaActual.label, () => {
-    abrirSelector('Idioma de interfaz', IDIOMAS_INTERFAZ, idiomaActual.id, (id) => {
+  const idiomaRow = filaAjuste('🗣️', t('Idioma de interfaz'), idiomaActual.label, () => {
+    abrirSelector(t('Idioma de interfaz'), IDIOMAS_INTERFAZ, idiomaActual.id, (id) => {
       setState({ user: { ...getState().user, idiomaInterfaz: id } });
       idiomaActual = IDIOMAS_INTERFAZ.find((i) => i.id === id) || IDIOMAS_INTERFAZ[0];
       idiomaRow.querySelector('.setting-row-value').textContent = idiomaActual.label;
+      // El idioma cambia de inmediato -- se vuelve a pintar toda la
+      // sección para que las filas ya traducidas (y el resto de la app)
+      // reflejen el cambio sin tener que salir y volver a entrar.
+      container.innerHTML = '';
+      pintarInterfaz(container);
     });
   });
   prefsCard.appendChild(idiomaRow);
 
-  prefsCard.appendChild(filaAjuste('🍽️', 'Idioma de alimentos', 'Español', () => {
-    toast('English para las recetas llega pronto — por ahora solo están en español.');
+  prefsCard.appendChild(filaAjuste('🍽️', t('Idioma de alimentos'), t('Español'), () => {
+    toast(t('English para las recetas llega pronto — por ahora solo están en español.'));
   }));
 
   let unidadActual = UNIDADES.find((u) => u.id === (user.unidades || 'metrico'));
-  const unidadRow = filaAjuste('📏', 'Unidades', unidadActual.label, () => {
-    abrirSelector('Unidades', UNIDADES, unidadActual.id, (id) => {
+  const unidadRow = filaAjuste('📏', t('Unidades'), unidadActual.label, () => {
+    abrirSelector(t('Unidades'), UNIDADES, unidadActual.id, (id) => {
       setState({ user: { ...getState().user, unidades: id } });
       unidadActual = UNIDADES.find((u) => u.id === id) || UNIDADES[0];
       unidadRow.querySelector('.setting-row-value').textContent = unidadActual.label;
@@ -838,22 +844,22 @@ function pintarInterfaz(container) {
   const prefsToggles = document.createElement('div');
   prefsToggles.className = 'card';
   prefsToggles.innerHTML = `
-    <h2>🔊 Sonido y Ruti</h2>
+    <h2>🔊 ${t('Sonido y Ruti')}</h2>
     <label class="habit">
       <input type="checkbox" id="sonido-toggle" ${getState().sonidoActivado !== false ? 'checked' : ''}>
-      <span>🔊 Sonido al marcar hábitos, agua o "Tu paso de hoy"</span>
+      <span>🔊 ${t('Sonido al marcar hábitos, agua o "Tu paso de hoy"')}</span>
     </label>
     <label class="habit" style="border-bottom:none">
       <input type="checkbox" id="ruti-oculto-toggle" ${getState().rutiOculto ? 'checked' : ''}>
-      <span>🦦 Ocultar a Ruti (modo minimalista)</span>
+      <span>🦦 ${t('Ocultar a Ruti (modo minimalista)')}</span>
     </label>`;
   prefsToggles.querySelector('#sonido-toggle').addEventListener('change', (e) => {
     setState({ sonidoActivado: e.target.checked });
-    toast(e.target.checked ? 'Sonido activado 🔊' : 'Sonido desactivado');
+    toast(e.target.checked ? t('Sonido activado 🔊') : t('Sonido desactivado'));
   });
   prefsToggles.querySelector('#ruti-oculto-toggle').addEventListener('change', (e) => {
     setState({ rutiOculto: e.target.checked });
-    toast(e.target.checked ? 'Ruti ya no aparecerá en la app' : '¡Ruti está de vuelta! 🦦');
+    toast(e.target.checked ? t('Ruti ya no aparecerá en la app') : t('¡Ruti está de vuelta! 🦦'));
   });
   container.appendChild(prefsToggles);
 }
@@ -862,10 +868,10 @@ function pintarInterfaz(container) {
 function pintarDatos(container) {
   const actions = document.createElement('div');
   actions.className = 'card';
-  actions.innerHTML = `<h2>${GEAR_ICON} Datos y privacidad</h2>`;
+  actions.innerHTML = `<h2>${GEAR_ICON} ${t('Datos y privacidad')}</h2>`;
   const redoBtn = document.createElement('button');
   redoBtn.className = 'btn ghost full mb';
-  redoBtn.textContent = '📝 Rehacer el quiz inicial';
+  redoBtn.textContent = `📝 ${t('Rehacer el quiz inicial')}`;
   redoBtn.addEventListener('click', () => navigate('quiz'));
   actions.appendChild(redoBtn);
 
@@ -876,7 +882,7 @@ function pintarDatos(container) {
   // la app).
   const tourBtn = document.createElement('button');
   tourBtn.className = 'btn ghost full mb';
-  tourBtn.textContent = '🧭 Ver el tutorial de nuevo';
+  tourBtn.textContent = `🧭 ${t('Ver el tutorial de nuevo')}`;
   tourBtn.addEventListener('click', () => {
     navigate('dashboard');
     if (!document.querySelector('.tour-overlay')) iniciarTour();
@@ -889,7 +895,7 @@ function pintarDatos(container) {
   // cambiar de cuenta o solo para tenerla.
   const exportBtn = document.createElement('button');
   exportBtn.className = 'btn ghost full mb';
-  exportBtn.innerHTML = `${SHARE_ICON}Exportar mis datos`;
+  exportBtn.innerHTML = `${SHARE_ICON}${t('Exportar mis datos')}`;
   exportBtn.addEventListener('click', () => {
     const datos = getState();
     const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
@@ -901,13 +907,13 @@ function pintarDatos(container) {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    toast('Descarga lista 📤');
+    toast(t('Descarga lista 📤'));
   });
   actions.appendChild(exportBtn);
 
   const wipeBtn = document.createElement('button');
   wipeBtn.className = 'btn danger full';
-  wipeBtn.textContent = '🗑️ Borrar todos mis datos';
+  wipeBtn.textContent = `🗑️ ${t('Borrar todos mis datos')}`;
   wipeBtn.addEventListener('click', async () => {
     const session = await getSession();
     // Cuentas por Google (sin contraseña propia) no tienen nada que
@@ -929,22 +935,22 @@ function pintarDatos(container) {
       const wrap = document.createElement('div');
       modal.appendChild(wrap);
       wrap.innerHTML = `
-        <h2>Confirma tu contraseña</h2>
-        <p class="mt small muted">Por seguridad, antes de borrar tus datos necesitamos confirmar que eres tú.</p>
-        <input type="password" id="wipe-pass" class="auth-input mt" placeholder="Tu contraseña" autocomplete="current-password">
-        <button type="button" class="btn danger full mt" id="wipe-pass-continuar">Continuar</button>`;
+        <h2>${t('Confirma tu contraseña')}</h2>
+        <p class="mt small muted">${t('Por seguridad, antes de borrar tus datos necesitamos confirmar que eres tú.')}</p>
+        <input type="password" id="wipe-pass" class="auth-input mt" placeholder="${t('Tu contraseña')}" autocomplete="current-password">
+        <button type="button" class="btn danger full mt" id="wipe-pass-continuar">${t('Continuar')}</button>`;
       const passInput = wrap.querySelector('#wipe-pass');
       const continuarBtn = wrap.querySelector('#wipe-pass-continuar');
       continuarBtn.addEventListener('click', async () => {
         const pass = passInput.value;
-        if (!pass) { toast('Escribe tu contraseña.'); return; }
+        if (!pass) { toast(t('Escribe tu contraseña.')); return; }
         continuarBtn.disabled = true;
-        continuarBtn.textContent = 'Verificando…';
+        continuarBtn.textContent = t('Verificando…');
         const { error } = await signIn(email, pass);
         if (error) {
           continuarBtn.disabled = false;
-          continuarBtn.textContent = 'Continuar';
-          toast('Contraseña incorrecta.');
+          continuarBtn.textContent = t('Continuar');
+          toast(t('Contraseña incorrecta.'));
           return;
         }
         close();
@@ -959,17 +965,17 @@ function pintarDatos(container) {
   function abrirAdvertenciaBorrado() {
     openModal((modal, close) => {
       modal.insertAdjacentHTML('beforeend', `
-        <h2>¿Borrar todo?</h2>
-        <p class="mt">Se eliminarán tu perfil, progreso, Días en Ruta y registros de este dispositivo. Esta acción no se puede deshacer.</p>`);
+        <h2>${t('¿Borrar todo?')}</h2>
+        <p class="mt">${t('Se eliminarán tu perfil, progreso, Días en Ruta y registros de este dispositivo. Esta acción no se puede deshacer.')}</p>`);
       const yes = document.createElement('button');
       yes.className = 'btn danger full mt';
-      yes.textContent = 'Sí, borrar todo';
+      yes.textContent = t('Sí, borrar todo');
       yes.addEventListener('click', () => {
         resetState();
         pushProfileState({}, '').catch(() => {}); // también vacía la copia en la nube
         close();
         navigate('quiz');
-        toast('Datos eliminados. Empecemos de nuevo 🌿');
+        toast(t('Datos eliminados. Empecemos de nuevo 🌿'));
       });
       modal.appendChild(yes);
     });
@@ -981,18 +987,18 @@ function pintarDatos(container) {
 function pintarLegal(container) {
   const legal = document.createElement('div');
   legal.className = 'card';
-  legal.innerHTML = '<h2>⚖️ Legal</h2>';
+  legal.innerHTML = `<h2>⚖️ ${t('Legal')}</h2>`;
   const sections = [
-    ['📄 Términos de uso', TERMS],
-    ['🔒 Privacidad y datos', PRIVACY],
-    ['🩺 Descargo médico', DISCLAIMER]
+    [`📄 ${t('Términos de uso')}`, TERMS],
+    [`🔒 ${t('Privacidad y datos')}`, PRIVACY],
+    [`🩺 ${t('Descargo médico')}`, DISCLAIMER]
   ];
   for (const [label, text] of sections) {
     const b = document.createElement('button');
     b.className = 'recipe-item lesson-item';
     b.innerHTML = `<span class="info"><strong>${label}</strong></span><span>›</span>`;
     b.addEventListener('click', () => openModal((modal) => {
-      modal.insertAdjacentHTML('beforeend', text);
+      modal.insertAdjacentHTML('beforeend', t(text));
     }));
     legal.appendChild(b);
   }

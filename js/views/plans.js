@@ -3,6 +3,7 @@ import { getPlan, setPlanCache, isPremium, planExpired, planExpiry } from '../st
 import { downgradeToFree } from '../supabase-client.js';
 import { HOTMART_CHECKOUT } from '../config.js';
 import { header, navigate, toast, CART_ICON } from '../app.js';
+import { t, getIdioma } from '../i18n.js';
 
 const PLANS = [
   {
@@ -17,13 +18,13 @@ const PLANS = [
   }
 ];
 
-const FREE_FEATURES = [
-  '📋 Quiz y perfiles de salud personalizados',
-  '🍽️ Menú diario adaptado a ti',
-  '💧 Seguimiento de agua, hábitos y tu Ruta',
-  '💚 Botón SOS antojo con respiración guiada',
-  '📚 2 micro-lecciones',
-  '🎯 Semana 1 de la Misión (prueba)'
+const FREE_FEATURES = () => [
+  `📋 ${t('Quiz y perfiles de salud personalizados')}`,
+  `🍽️ ${t('Menú diario adaptado a ti')}`,
+  `💧 ${t('Seguimiento de agua, hábitos y tu Ruta')}`,
+  `💚 ${t('Botón SOS antojo con respiración guiada')}`,
+  `📚 ${t('2 micro-lecciones')}`,
+  `🎯 ${t('Semana 1 de la Misión (prueba)')}`
 ];
 
 // Función, no un array fijo -- app.js importa este módulo y este módulo
@@ -34,12 +35,12 @@ const FREE_FEATURES = [
 // app en el splash. Adentro de una función, CART_ICON recién se lee
 // cuando de verdad se llama (mucho después, ya con todo cargado).
 const premiumFeatures = () => [
-  '🎯 Misión 12 semanas completa',
-  '🥗 Recetario completo (el plan gratis ve una selección)',
-  `${CART_ICON} Lista de compras automática`,
-  '💡 Detección de patrones de antojos',
-  '📚 Todas las micro-lecciones',
-  'Todo lo del plan gratuito, sin límites'
+  `🎯 ${t('Misión 12 semanas completa')}`,
+  `🥗 ${t('Recetario completo (el plan gratis ve una selección)')}`,
+  `${CART_ICON} ${t('Lista de compras automática')}`,
+  `💡 ${t('Detección de patrones de antojos')}`,
+  `📚 ${t('Todas las micro-lecciones')}`,
+  t('Todo lo del plan gratuito, sin límites')
 ];
 
 export function renderPlans(container) {
@@ -50,8 +51,8 @@ export function renderPlans(container) {
   hero.className = 'card center';
   hero.innerHTML = `
     <div style="font-size:2.6rem">✨</div>
-    <h2>Planes NutriRuta</h2>
-    <p class="small">Invierte en tu salud lo que cuestan un par de comidas fuera.</p>
+    <h2>${t('Planes NutriRuta')}</h2>
+    <p class="small">${t('Invierte en tu salud lo que cuestan un par de comidas fuera.')}</p>
     ${planBadge(plan)}`;
   container.appendChild(hero);
 
@@ -59,12 +60,12 @@ export function renderPlans(container) {
   const free = document.createElement('div');
   free.className = 'card';
   free.innerHTML = `
-    <div class="spread"><h3>🍃 Plan Gratuito</h3><strong>USD 0</strong></div>
-    <ul class="steps small mt">${FREE_FEATURES.map((f) => `<li>${f}</li>`).join('')}</ul>`;
+    <div class="spread"><h3>🍃 ${t('Plan Gratuito')}</h3><strong>USD 0</strong></div>
+    <ul class="steps small mt">${FREE_FEATURES().map((f) => `<li>${f}</li>`).join('')}</ul>`;
   if (plan.tipo === 'premium') {
     const back = document.createElement('button');
     back.className = 'btn ghost sm mt';
-    back.textContent = 'Volver al plan gratuito';
+    back.textContent = t('Volver al plan gratuito');
     back.addEventListener('click', () => choose(container));
     free.appendChild(back);
   }
@@ -79,14 +80,14 @@ export function renderPlans(container) {
   premCard.innerHTML = `
     <h3>✨ Premium</h3>
     <div class="plan-options mt" id="plan-options"></div>
-    <p class="small mt" style="font-weight:700">Todo lo que desbloqueas:</p>
+    <p class="small mt" style="font-weight:700">${t('Todo lo que desbloqueas:')}</p>
     <ul class="steps check small mt">${premiumFeatures().map((f) => `<li>${f}</li>`).join('')}</ul>
     <button class="btn accent full mt" id="plan-elegir"></button>
     <div class="plan-guarantees mt">
-      <div class="pg-item">✅ Cancelas cuando quieras desde Hotmart</div>
-      <div class="pg-item">✅ Tu Premium se activa automático al confirmarse el pago</div>
-      <div class="pg-item">✅ Pago procesado de forma segura por Hotmart</div>
-      <div class="pg-item">✅ 7 días de garantía de reembolso desde tu compra</div>
+      <div class="pg-item">✅ ${t('Cancelas cuando quieras desde Hotmart')}</div>
+      <div class="pg-item">✅ ${t('Tu Premium se activa automático al confirmarse el pago')}</div>
+      <div class="pg-item">✅ ${t('Pago procesado de forma segura por Hotmart')}</div>
+      <div class="pg-item">✅ ${t('7 días de garantía de reembolso desde tu compra')}</div>
     </div>`;
   const optsEl = premCard.querySelector('#plan-options');
   const btnEl = premCard.querySelector('#plan-elegir');
@@ -102,18 +103,18 @@ export function renderPlans(container) {
         <span class="plan-radio"></span>
         <span class="plan-option-body">
           <span class="spread">
-            <strong>${p.emoji} ${p.nombre}</strong>
-            ${p.destacado ? '<span class="tag verde">Ahorra 17%</span>' : ''}
+            <strong>${p.emoji} ${t(p.nombre)}</strong>
+            ${p.destacado ? `<span class="tag verde">${t('Ahorra 17%')}</span>` : ''}
           </span>
-          <span class="price-anchor mt"><span class="price-big">${p.precioMes}</span><span class="muted small">&nbsp;/ mes</span></span>
-          <span class="small muted" style="display:block">${p.cobro}</span>
-          ${isCurrent ? '<span class="tag info mt" style="display:inline-block">Tu plan actual</span>' : ''}
+          <span class="price-anchor mt"><span class="price-big">${p.precioMes}</span><span class="muted small">&nbsp;${t('/ mes')}</span></span>
+          <span class="small muted" style="display:block">${t(p.cobro)}</span>
+          ${isCurrent ? `<span class="tag info mt" style="display:inline-block">${t('Tu plan actual')}</span>` : ''}
         </span>`;
       row.addEventListener('click', () => { elegido = p; pintarOpciones(); });
       optsEl.appendChild(row);
     }
     const isCurrentElegido = isPremium() && plan.periodo === elegido.id;
-    btnEl.textContent = isCurrentElegido ? '✓ Tu plan actual' : `Elegir ${elegido.nombre}`;
+    btnEl.textContent = isCurrentElegido ? t('✓ Tu plan actual') : t('Elegir {nombre}', { nombre: t(elegido.nombre) });
     btnEl.disabled = isCurrentElegido;
     btnEl.className = isCurrentElegido ? 'btn ghost full mt' : 'btn accent full mt';
   }
@@ -123,35 +124,36 @@ export function renderPlans(container) {
 
   const note = document.createElement('div');
   note.className = 'legal-note';
-  note.innerHTML = 'ℹ️ El pago se procesa de forma segura a través de <strong>Hotmart</strong>. Tras completar tu compra, tu plan Premium se activará en tu cuenta.';
+  note.innerHTML = t('ℹ️ El pago se procesa de forma segura a través de <strong>Hotmart</strong>. Tras completar tu compra, tu plan Premium se activará en tu cuenta.');
   container.appendChild(note);
 }
 
 function planBadge(plan) {
   if (planExpired()) {
-    return '<p class="mt"><span class="tag rojo">Tu plan Premium venció</span></p><p class="small">Renueva para recuperar tus funciones Premium. Tu progreso está guardado.</p>';
+    return `<p class="mt"><span class="tag rojo">${t('Tu plan Premium venció')}</span></p><p class="small">${t('Renueva para recuperar tus funciones Premium. Tu progreso está guardado.')}</p>`;
   }
   if (isPremium()) {
     const vence = planExpiry();
-    const fecha = vence ? vence.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-    return `<p class="mt"><span class="tag verde">Plan actual: Premium ${plan.periodo}</span></p><p class="small">Activo hasta el ${fecha}.</p>`;
+    const idioma = getIdioma();
+    const fecha = vence ? vence.toLocaleDateString(idioma, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    return `<p class="mt"><span class="tag verde">${t('Plan actual: Premium {periodo}', { periodo: plan.periodo })}</span></p><p class="small">${t('Activo hasta el {fecha}.', { fecha })}</p>`;
   }
-  return '<p class="mt"><span class="tag info">Plan actual: Gratuito</span></p>';
+  return `<p class="mt"><span class="tag info">${t('Plan actual: Gratuito')}</span></p>`;
 }
 
 function confirmPlan(p) {
   window.open(HOTMART_CHECKOUT[p.id], '_blank', 'noopener');
-  toast('Completa tu compra en Hotmart; tu plan se activará al confirmarse el pago.');
+  toast(t('Completa tu compra en Hotmart; tu plan se activará al confirmarse el pago.'));
 }
 
 async function choose(container) {
   try {
     await downgradeToFree();
     setPlanCache('free', null, null);
-    toast('Plan gratuito activado.');
+    toast(t('Plan gratuito activado.'));
     container.innerHTML = '';
     renderPlans(container);
   } catch (e) {
-    toast('No se pudo actualizar el plan. Revisa tu conexión.');
+    toast(t('No se pudo actualizar el plan. Revisa tu conexión.'));
   }
 }

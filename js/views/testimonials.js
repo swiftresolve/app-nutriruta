@@ -4,20 +4,21 @@
 import { getState, esc } from '../store.js';
 import { header, toast, navigate } from '../app.js';
 import { labelAnimo, labelExperiencia } from './checkin.js';
+import { t } from '../i18n.js';
 
 export function renderTestimonials(container) {
   header(container);
 
   const back = document.createElement('button');
   back.className = 'link-btn small';
-  back.textContent = '← Volver a Progreso';
+  back.textContent = t('← Volver a Progreso');
   back.addEventListener('click', () => navigate('progress'));
   container.appendChild(back);
 
   const title = document.createElement('div');
   title.className = 'card';
-  title.innerHTML = `<h2>🎙️ Tus testimonios</h2>
-    <p class="small">Solo aparecen aquí tus check-ins y reflexiones del plan de 7 días que autorizaste compartir. Copia el texto y úsalo donde quieras.</p>`;
+  title.innerHTML = `<h2>🎙️ ${t('Tus testimonios')}</h2>
+    <p class="small">${t('Solo aparecen aquí tus check-ins y reflexiones del plan de 7 días que autorizaste compartir. Copia el texto y úsalo donde quieras.')}</p>`;
   container.appendChild(title);
 
   const { checkins, emergencia } = getState();
@@ -29,7 +30,7 @@ export function renderTestimonials(container) {
   if (emergencia?.compartirReflexiones === true && emergencia.reflexiones) {
     for (const [diaN, texto] of Object.entries(emergencia.reflexiones)) {
       if (!texto || !texto.trim()) continue;
-      reflexionesCompartidas.push({ fecha: `Plan de 7 días · Día ${diaN}`, texto });
+      reflexionesCompartidas.push({ fecha: t('Plan de 7 días · Día {n}', { n: diaN }), texto });
     }
   }
 
@@ -38,24 +39,24 @@ export function renderTestimonials(container) {
   if (!todos.length) {
     const empty = document.createElement('div');
     empty.className = 'card';
-    empty.innerHTML = '<p class="small muted">Todavía no tienes testimonios autorizados.</p>';
+    empty.innerHTML = `<p class="small muted">${t('Todavía no tienes testimonios autorizados.')}</p>`;
     container.appendChild(empty);
     return;
   }
 
-  for (const t of [...todos].reverse()) {
+  for (const item of [...todos].reverse()) {
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
-      <p class="small muted">${esc(t.fecha)}</p>
-      <p class="mt">${esc(t.texto)}</p>
-      <button class="btn ghost sm mt">📋 Copiar texto</button>`;
+      <p class="small muted">${esc(item.fecha)}</p>
+      <p class="mt">${esc(item.texto)}</p>
+      <button class="btn ghost sm mt">📋 ${t('Copiar texto')}</button>`;
     card.querySelector('.btn').addEventListener('click', async () => {
       try {
-        await navigator.clipboard.writeText(t.texto);
-        toast('Copiado ✅');
+        await navigator.clipboard.writeText(item.texto);
+        toast(t('Copiado ✅'));
       } catch {
-        toast('No se pudo copiar. Selecciona el texto manualmente.');
+        toast(t('No se pudo copiar. Selecciona el texto manualmente.'));
       }
     });
     container.appendChild(card);
@@ -63,7 +64,7 @@ export function renderTestimonials(container) {
 }
 
 function buildTextoCheckin(c) {
-  const partes = [`Ánimo: ${labelAnimo(c.animo)}`, `Menú: ${labelExperiencia(c.menuExperiencia)}`];
+  const partes = [t('Ánimo: {v}', { v: labelAnimo(c.animo) }), t('Menú: {v}', { v: labelExperiencia(c.menuExperiencia) })];
   if (c.notas) partes.push(`"${c.notas}"`);
   return partes.join(' · ');
 }
