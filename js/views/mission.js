@@ -183,7 +183,13 @@ function renderTramos(container, items) {
   const camino = document.createElement('div');
   container.appendChild(camino);
   let activeIndex = items.findIndex((it) => it.now);
-  if (activeIndex !== -1 && items[activeIndex].done && activeIndex < items.length - 1) activeIndex += 1;
+  if (activeIndex !== -1 && items[activeIndex].done) {
+    // Igual que "Tu ruta de hoy" (dashboard.js): si la semana "ahora" ya
+    // está completada Y es la ÚLTIMA (Semana 12), no hay hacia dónde
+    // avanzar -- sin este caso, la línea se quedaba titilando ahí para
+    // siempre en vez de asentarse al terminar la Misión completa.
+    activeIndex = activeIndex < items.length - 1 ? activeIndex + 1 : -1;
+  }
   // skipSegments: el tramo justo donde va un banner divisor ("Tramo 2 ·
   // Semanas 4-6", etc.) no debe tener línea -- ni color ni gris, un hueco
   // real. Esos tramos son los que conectan el último nodo de un grupo de

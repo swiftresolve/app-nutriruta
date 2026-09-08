@@ -1713,13 +1713,16 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 }
 .path-node.done:active { box-shadow: inset 0 3px 5px rgba(255,255,255,0.42), inset 0 -10px 12px rgba(0,0,0,0.18), 0 1px 0 #166B44; }
 /* "Tu ruta de hoy" con las 5 comidas ya chuleadas -- mismo esquema de
-   esfera de vidrio que .done, en dorado (mismo tono de --yellow que
-   NutriCoins/favoritos) en vez de verde, para celebrar el día completo. */
+   esfera de vidrio que .done, en dorado brillante (referencia real: la
+   moneda de Duolingo que mostró la usuaria -- amarillo-oro saturado con
+   un borde/sombra ámbar, NUNCA bronce ni marrón oscuro, que es lo que el
+   primer intento tenía en las sombras) en vez de verde, para celebrar el
+   día completo. */
 .path-node.all-done {
-  background: radial-gradient(circle at 33% 28%, #FFF3D6 0%, #F8CE6A 40%, var(--yellow) 74%, #B8791E 100%);
-  box-shadow: inset 0 3px 5px rgba(255,255,255,0.45), inset 0 -10px 12px rgba(0,0,0,0.18), 0 6px 0 #8A5A12, 0 9px 12px rgba(20,50,80,0.2);
+  background: radial-gradient(circle at 33% 28%, #FFFAE0 0%, #FFE985 28%, #FFC700 58%, #F2A900 88%, #D98C00 100%);
+  box-shadow: inset 0 3px 5px rgba(255,250,225,0.6), inset 0 -10px 12px rgba(150,90,0,0.25), 0 6px 0 #B36F00, 0 9px 12px rgba(20,50,80,0.2);
 }
-.path-node.all-done:active { box-shadow: inset 0 3px 5px rgba(255,255,255,0.45), inset 0 -10px 12px rgba(0,0,0,0.18), 0 1px 0 #8A5A12; }
+.path-node.all-done:active { box-shadow: inset 0 3px 5px rgba(255,250,225,0.6), inset 0 -10px 12px rgba(150,90,0,0.25), 0 1px 0 #B36F00; }
 .path-node.now {
   /* Mismo tamaño que el resto -- la usuaria pidió no agrandar el botón
      activo, el anillo de alrededor (::before en path-node-col) es lo que
