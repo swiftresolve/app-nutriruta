@@ -2034,15 +2034,35 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    historial de chats) -- texto plano, más aire vertical, y la
    conversación actual se distingue con un fondo propio, no con un check. */
 .hist-row {
-  display: block; width: 100%; text-align: left; border: none; background: none;
-  padding: 13px 10px; border-radius: 12px; font-size: 0.94rem; color: var(--ink);
+  display: flex; align-items: center; width: 100%; border-radius: 12px;
+}
+.hist-row-main {
+  flex: 1; min-width: 0; text-align: left; border: none; background: none;
+  padding: 13px 10px; font-size: 0.94rem; color: var(--ink);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.hist-row-menu {
+  flex: none; width: 34px; height: 34px; border: none; background: none;
+  color: var(--ink-soft); font-size: 1.2rem; font-weight: 700; line-height: 1;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.hist-row-menu:active { background: var(--primary-soft); }
 /* var(--primary-soft)/var(--primary-dark), NO var(--accent) -- el accent
    es coral/rojizo (se usa para CTAs), y una conversación "seleccionada"
    no es una acción destructiva ni de alerta. Mismo patrón que ya usan
    .filtro-select.selected y .plan-option.selected en el resto de la app. */
-.hist-row.selected { background: var(--primary-soft); color: var(--primary-dark); font-weight: 700; }
+.hist-row.selected { background: var(--primary-soft); }
+.hist-row.selected .hist-row-main { color: var(--primary-dark); font-weight: 700; }
+
+/* Menú de los tres puntos de cada conversación (Fijar/Cambiar nombre/
+   Archivar, ver assistant.js) -- lista simple de botones de ancho
+   completo, mismo lenguaje visual que el resto de modales de la app. */
+.hist-menu { display: flex; flex-direction: column; gap: 4px; }
+.hist-menu-item {
+  display: block; width: 100%; text-align: left; border: none; background: none;
+  padding: 13px 10px; border-radius: 12px; font-size: 0.95rem; color: var(--ink);
+}
+.hist-menu-item:active { background: var(--primary-soft); }
 /* Deslizar para eliminar (referencia real: Fitia Coach) -- el botón rojo
    vive DEBAJO de la fila, a la derecha, y la fila se desliza encima con
    translateX para revelarlo. overflow:hidden en el wrap recorta el botón

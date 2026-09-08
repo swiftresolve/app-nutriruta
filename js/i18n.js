@@ -520,6 +520,13 @@ const EN = {
   'Buscar en el historial': 'Search history',
   'Buscar por palabra clave…': 'Search by keyword…',
   'No encontramos conversaciones con esa palabra.': 'We couldn\'t find any conversations with that word.',
+  'Más opciones': 'More options',
+  'Fijar conversación': 'Pin conversation',
+  'Desfijar conversación': 'Unpin conversation',
+  'Fijadas': 'Pinned',
+  'Cambiar nombre': 'Rename',
+  'Archivar': 'Archive',
+  'Desarchivar': 'Unarchive',
 
   // --- settings.js ---
   'Mi cuenta': 'My account', 'Sobre ti': 'About you', 'Salud y alimentación': 'Health and food',

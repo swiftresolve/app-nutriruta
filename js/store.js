@@ -78,7 +78,8 @@ const DEFAULT_STATE = {
   reflexionesHabitos: {},        // { fecha: texto } — la frase real que se pide al completar el 3er hábito del día
   comidasRegistradas: {},          // { 'fecha|mealId': { alimentos: [texto], fuente: 'foto'|'voz'|'texto', hora } } — lo que la usuaria dijo que REALMENTE comió, no la sugerencia del menú
   favoritas: [],                  // ids de RECIPES marcadas con la estrella en el Recetario (ver planner.js)
-  misRecetas: []                  // recetas creadas a mano por la usuaria (ver agregarRecetaPropia)
+  misRecetas: [],                 // recetas creadas a mano por la usuaria (ver agregarRecetaPropia)
+  chatMeta: {}                    // { conversationId: { titulo?, fijado?, archivado? } } -- metadatos del historial de SuSana (menú de los tres puntos, ver assistant.js). Solo vive acá, nunca en el servidor -- son preferencias de organización de la usuaria, no parte de la conversación real.
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).

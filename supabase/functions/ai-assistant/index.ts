@@ -125,11 +125,17 @@ Deno.serve(async (req) => {
     // hubiera un mensaje real. Por eso el título se fija SOLO cuando de
     // verdad se ve una fila "user" (con tituloFijado), sin importar en
     // qué orden llegaron las filas con timestamp empatado.
-    const porConversacion = new Map<string, { title: string; created_at: string; updated_at: string; tituloFijado: boolean }>();
+    // `contenido` junta todo el texto de la conversación (ya lo teníamos
+    // en memoria para armar el título, no cuesta un segundo viaje) -- para
+    // que la búsqueda del historial encuentre por palabras del CONTENIDO
+    // del chat, no solo del título (pedido explícito). Se recorta a 4000
+    // caracteres por conversación para no inflar la respuesta de más en
+    // chats muy largos; alcanza de sobra para un filtro de palabra clave.
+    const porConversacion = new Map<string, { title: string; created_at: string; updated_at: string; tituloFijado: boolean; contenido: string }>();
     for (const r of rows ?? []) {
       let existente = porConversacion.get(r.conversation_id);
       if (!existente) {
-        existente = { title: 'Nueva conversación', created_at: r.created_at, updated_at: r.created_at, tituloFijado: false };
+        existente = { title: 'Nueva conversación', created_at: r.created_at, updated_at: r.created_at, tituloFijado: false, contenido: '' };
         porConversacion.set(r.conversation_id, existente);
       }
       existente.updated_at = r.created_at;
@@ -137,9 +143,10 @@ Deno.serve(async (req) => {
         existente.title = r.content;
         existente.tituloFijado = true;
       }
+      if (existente.contenido.length < 4000) existente.contenido += ` ${r.content}`;
     }
     const conversations = [...porConversacion.entries()]
-      .map(([conversation_id, v]) => ({ conversation_id, title: v.title, created_at: v.created_at, updated_at: v.updated_at }))
+      .map(([conversation_id, v]) => ({ conversation_id, title: v.title, created_at: v.created_at, updated_at: v.updated_at, contenido: v.contenido.slice(0, 4000) }))
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
       .slice(0, 50);
     return json({ conversations });
