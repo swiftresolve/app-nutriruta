@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-ed1f7dc59c';
+const CACHE = 'nutriruta-71592db28c';
 const ASSETS = [
   './',
   './index.html',
@@ -48,6 +48,8 @@ const ASSETS = [
   './img/mapa-ruta-hoy.webp',
   './img/mapa-ruta-hoy-claro.webp',
   './audio/agua.mp3',
+  './audio/inhala.mp3',
+  './audio/exhala.mp3',
   './fonts/karla-variable.woff2'
 ];
 
