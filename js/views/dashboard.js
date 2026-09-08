@@ -775,7 +775,13 @@ export function openRecipe(recipe, hoy = null) {
       }
       // Análisis real con IA (acción 'analyze' del servidor) para poder
       // pintarlo con la misma tarjeta visual que la instantánea de catálogo.
-      navigate('assistant', { nuevaConversacion: true, recetaNombre: shown.nombre, descripcionAnalisis: shown.nombre });
+      // Se le manda la descripción y los ingredientes (editados por la
+      // usuaria si los tocó), no solo el nombre -- el nombre solo no le
+      // daba a la IA la misma información que ya usa trafficLightRecetaPropia()
+      // para calcular el semáforo (ver menu.js), lo que podía hacer que
+      // SuSana calificara bien algo que el semáforo de la app ya marcó mal.
+      const descripcionAnalisis = `${shown.nombre}${recipe.descripcion ? `: ${recipe.descripcion}` : ''}${ingredientesTexto.length ? ` (Ingredientes: ${ingredientesTexto.join(', ')})` : ''}`;
+      navigate('assistant', { nuevaConversacion: true, recetaNombre: shown.nombre, descripcionAnalisis });
     });
     modal.querySelector('#rc-agregar-ing').addEventListener('click', () => {
       ingredientesTexto.push('');

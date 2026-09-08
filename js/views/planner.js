@@ -216,8 +216,14 @@ function abrirRecetaPropia(receta, onEliminada) {
       closeFn();
       // Misma ruta que el branch "sin apto" de openRecipe(): análisis real
       // con IA (acción 'analyze' del servidor) para pintarlo con la misma
-      // tarjeta visual que la instantánea de catálogo.
-      const descripcionAnalisis = `${receta.nombre}${receta.ingredientes.length ? ` (${receta.ingredientes.join(', ')})` : ''}`;
+      // tarjeta visual que la instantánea de catálogo. Incluye
+      // receta.descripcion a propósito -- es el mismo texto que usa
+      // trafficLightRecetaPropia() para calcular el semáforo (ver menu.js:
+      // busca palabras como "frito" ahí, no solo en los ingredientes), así
+      // que si no se lo pasamos también a la IA, puede analizar y calificar
+      // bien algo que el propio semáforo de la app ya marcó en rojo por esa
+      // misma palabra -- una inconsistencia real que reportó la usuaria.
+      const descripcionAnalisis = `${receta.nombre}${receta.descripcion ? `: ${receta.descripcion}` : ''}${receta.ingredientes.length ? ` (Ingredientes: ${receta.ingredientes.join(', ')})` : ''}`;
       navigate('assistant', { nuevaConversacion: true, recetaNombre: receta.nombre, descripcionAnalisis });
     });
     modal.querySelector('#rp-eliminar').addEventListener('click', () => {

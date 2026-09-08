@@ -41,6 +41,11 @@ const MAX_EVITAR_NOMBRES = 30;
 const MAX_HTML_BYTES = 800_000;
 const MAX_TEXTO_PAGINA = 6000;
 const FETCH_TIMEOUT_MS = 8000;
+// Mismo tope que log-meal (~4MB en base64, foto ya comprimida en el
+// cliente) -- antes esta función confiaba solo en que el cliente
+// comprimiera la imagen; sin este candado, una imagen sin comprimir podía
+// costar mucho más de lo esperado en tokens de Anthropic.
+const MAX_IMAGE_B64_LEN = 5_500_000;
 
 const ALLOWED_ORIGIN = Deno.env.get('APP_URL') ?? 'https://nutriruta.app';
 const CORS_HEADERS: Record<string, string> = {
@@ -55,13 +60,14 @@ const MEAL_LABELS: Record<string, string> = {
   media_tarde: 'snack de media tarde', cena: 'cena'
 };
 
-const JSON_SHAPE = `{"nombre": string (máximo 60 caracteres), "emoji": string (un solo emoji de comida), "descripcion": string (máximo 140 caracteres, una frase), "ingredientes": string[] (cada uno "cantidad + ingrediente", máximo 12 items), "pasos": string[] (instrucciones cortas y claras, máximo 8 items), "reconstruida": boolean}`;
+const JSON_SHAPE = `{"nombre": string (máximo 60 caracteres), "emoji": string (un solo emoji de comida), "descripcion": string (máximo 140 caracteres, una frase), "ingredientes": string[] (cada uno "cantidad + ingrediente", máximo 12 items), "pasos": string[] (instrucciones claras y con nivel de detalle real de cocina, máximo 8 items -- ver regla de calidad de pasos abajo), "reconstruida": boolean}`;
 
 const REGLAS_COMUNES = `Reglas que NUNCA rompes:
 - JAMÁS incluyas calorías, kilocalorías, macronutrientes (proteína/carbohidratos/grasas en gramos), ni ningún dato numérico nutricional en ningún campo. NutriRuta no cuenta calorías bajo ninguna circunstancia.
 - Respeta estrictamente los ingredientes que la usuaria NO puede consumir (te los doy abajo) -- nunca los incluyas ni una versión disfrazada de ellos.
 - La receta debe ser real, preparable con ingredientes comunes, y corresponder a la comida del día que se te pide (desayuno, almuerzo, etc.).
-- No agregues ninguna clave extra al JSON ni texto fuera de él.`;
+- No agregues ninguna clave extra al JSON ni texto fuera de él.
+- Calidad de los pasos (pedido explícito: quedaban demasiado básicos, tipo "cocinar el pollo", "servir") -- esto aplica SOLO cuando tú compones los pasos (generando desde cero, o reconstruyendo un plato ya preparado a partir de una foto), NUNCA cuando transcribes una receta real ya escrita (ahí manda fielmente lo que diga la fuente, ver regla de transcripción de cada modo). Al componer tú misma, cada paso debe sonar a alguien que sí sabe cocinar, no a un resumen de una frase: incluye tiempo aproximado, nivel de fuego o temperatura cuando aplique, la técnica concreta (ej. "sofríe la cebolla a fuego medio 3-4 minutos, revolviendo seguido, hasta que esté transparente" en vez de solo "sofríe la cebolla"), y una señal sensorial de que quedó listo (color, textura, olor) cuando tenga sentido. Nunca un paso de una sola palabra o acción vaga como "cocinar" o "mezclar todo".`;
 
 const SYSTEM_PROMPT_TEXTO = `Generas UNA receta de cocina real y preparable en casa para la app NutriRuta. Respondes SIEMPRE con un único objeto JSON, sin texto antes ni después, sin markdown, con exactamente estas claves:
 ${JSON_SHAPE}
@@ -140,6 +146,7 @@ Deno.serve(async (req) => {
     if (!imagenBase64 || !['image/jpeg', 'image/png', 'image/webp'].includes(imagenMediaType)) {
       return json({ error: 'Falta la foto o el formato no es válido.' }, 400);
     }
+    if (imagenBase64.length > MAX_IMAGE_B64_LEN) return json({ error: 'La imagen es demasiado grande.' }, 400);
     system = SYSTEM_PROMPT_FOTO;
     let texto = `Comida del día: ${mealLabel}.`;
     texto += `\nAlimentos que la usuaria NO puede consumir: ${listaExclusiones || 'ninguno indicado'}.`;
@@ -192,7 +199,10 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 900,
+        // 900 se quedaba corto para pasos con el nivel de detalle real que
+        // se pidió (tiempos, técnica, señal de punto) -- una respuesta
+        // cortada a mitad del JSON hacía fallar parseReceta() entero.
+        max_tokens: 1300,
         system,
         messages: [{ role: 'user', content: userContent }]
       })

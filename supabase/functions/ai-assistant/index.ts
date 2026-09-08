@@ -354,9 +354,10 @@ Deno.serve(async (req) => {
 });
 
 // Filtro liviano contra ruido puro (solo espacios, un solo carácter repetido,
-// puro emoji/símbolos). No es una barrera de seguridad — el tope real de
-// costo es la cuota dura de 25/mes — esto solo evita gastar una llamada real
-// en algo que obviamente no es una pregunta.
+// puro emoji/símbolos). No es una barrera de seguridad -- no hay cuota dura
+// que limite el costo (ver nota al inicio del archivo, decisión explícita):
+// esto solo evita gastar una llamada real en algo que obviamente no es una
+// pregunta.
 function esMensajeValido(texto: string): boolean {
   const letras = texto.replace(/[^a-zA-Za-üÑñ]/g, '');
   if (letras.length < 2) return false;
