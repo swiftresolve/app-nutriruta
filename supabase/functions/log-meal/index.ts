@@ -28,7 +28,15 @@ const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
-const PROMPT_FOTO = `Identifica los alimentos y preparaciones que se ven en esta foto de una comida. Responde ÚNICAMENTE con un array JSON de strings en español, cada uno un alimento o preparación (ejemplo: ["arroz blanco","pollo a la plancha","aguacate"]). No incluyas calorías, porciones exactas ni ningún otro texto fuera del array. Si no logras identificar nada con claridad razonable, responde [].`;
+const PROMPT_FOTO = `Identifica ÚNICAMENTE los alimentos y preparaciones reales que se ven en esta foto de una comida -- comida latinoamericana/colombiana, ten en cuenta preparaciones típicas de la región (arepas, patacones, ajiaco, etc.) al reconocer texturas y formas antes de nombrar algo.
+
+Reglas estrictas:
+- NUNCA incluyas cubiertos, platos, vasos, servilletas, empaques, manteles, manos, ni ningún objeto que no sea comida -- aunque aparezcan claramente en la foto, no son alimentos.
+- Mira con cuidado la forma, textura y color antes de nombrar cada alimento -- no adivines rápido por una primera impresión (ej. no confundas un filete de pollo dorado con huevo revuelto solo por el color amarillo/dorado; no confundas pan o una arepa con un churro solo por la forma alargada).
+- Si dudas seriamente entre dos alimentos, elige el más probable según la forma Y la textura juntas, no solo el color.
+- Si un elemento no se ve con claridad razonable, no lo incluyas -- es mejor una lista corta y correcta que una larga con errores.
+
+Responde ÚNICAMENTE con un array JSON de strings en español, cada uno un alimento o preparación (ejemplo: ["arroz blanco","pollo a la plancha","aguacate"]). No incluyas calorías, porciones exactas ni ningún otro texto fuera del array. Si no logras identificar ningún alimento real con claridad razonable, responde [].`;
 
 function promptTexto(texto: string): string {
   return `Extrae la lista de alimentos mencionados en este texto (puede venir de una transcripción de voz, con errores menores): "${texto}". Responde ÚNICAMENTE con un array JSON de strings en español, cada uno un alimento o preparación tal como lo describió la persona (ejemplo: ["dos huevos","avena","un banano"]). No incluyas calorías, porciones exactas en gramos ni ningún otro texto fuera del array. Si el texto no describe comida real, responde [].`;
