@@ -1364,10 +1364,23 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   width: 34px; height: 34px; line-height: 34px; text-align: center; float: none;
 }
 .foto-lightbox-wrap {
-  flex: 1; display: flex; align-items: center; justify-content: center;
+  position: relative; flex: 1; display: flex; align-items: center; justify-content: center;
   overflow: hidden; touch-action: none;
 }
 .foto-lightbox-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+/* Flechitas para navegar entre las fotos del MISMO día (pedido explícito:
+   nunca entre el total de fotos del diario). Ocultas por completo en el
+   extremo correspondiente (:disabled), en vez de solo atenuadas -- no
+   hay a dónde ir desde ahí. */
+.foto-lightbox-flecha {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 1;
+  width: 40px; height: 40px; border-radius: 50%; line-height: 1;
+  background: rgba(255,255,255,0.15); color: #fff; font-size: 1.6rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.foto-lightbox-flecha.izq { left: 10px; }
+.foto-lightbox-flecha.der { right: 10px; }
+.foto-lightbox-flecha:disabled { display: none; }
 
 .camera-top { display: flex; justify-content: flex-start; flex: none; }
 .camera-cancelar {

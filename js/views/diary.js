@@ -50,7 +50,10 @@ function mealMeta(mealId) {
 // doble toque para alternar zoom -- mismo gesto que cualquier galería
 // nativa, y el mismo patrón de pellizco que ya usa la cámara en vivo
 // (mealLogModal.js), aplicado aquí sobre translate+scale del <img>.
-function abrirFotoCompleta(url, alt) {
+// `registros` es SOLO el día que se abrió (nunca el total de fotos del
+// diario) -- las flechitas navegan entre las comidas de ESE día, pedido
+// explícito: la navegación es por día, no por el total de fotos.
+function abrirFotoCompleta(registros, indexInicial, metaFn) {
   openModal((modal, closeFn) => {
     // modal todavía no tiene padre en este punto -- openModal llama a este
     // callback ANTES de colgar el modal del backdrop (ver app.js), así que
@@ -59,10 +62,19 @@ function abrirFotoCompleta(url, alt) {
     // que ya usa abrirHistorialSuSana en assistant.js para su propia clase
     // de pantalla completa (drawer-izq).
     setTimeout(() => modal.parentElement?.classList.add('foto-lightbox'), 0);
-    modal.innerHTML = `<div class="foto-lightbox-wrap"><img src="${url}" alt="${alt}" class="foto-lightbox-img"></div>`;
+    const flechas = registros.length > 1;
+    modal.innerHTML = `
+      <div class="foto-lightbox-wrap">
+        <img src="" alt="" class="foto-lightbox-img">
+        ${flechas ? `<button type="button" class="foto-lightbox-flecha izq" aria-label="${t('Foto anterior')}">‹</button>` : ''}
+        ${flechas ? `<button type="button" class="foto-lightbox-flecha der" aria-label="${t('Foto siguiente')}">›</button>` : ''}
+      </div>`;
     const wrap = modal.querySelector('.foto-lightbox-wrap');
     const img = modal.querySelector('.foto-lightbox-img');
+    const flechaIzq = modal.querySelector('.foto-lightbox-flecha.izq');
+    const flechaDer = modal.querySelector('.foto-lightbox-flecha.der');
 
+    let indice = indexInicial;
     let scale = 1, panX = 0, panY = 0;
     let distanciaInicial = 0, scaleInicial = 1;
     let panInicial = null;
@@ -71,6 +83,23 @@ function abrirFotoCompleta(url, alt) {
       img.style.transition = conTransicion ? 'transform 0.2s ease' : 'none';
       img.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
+
+    function mostrar(i) {
+      indice = i;
+      const r = registros[indice];
+      img.src = r.fotoUrl;
+      img.alt = metaFn(r);
+      scale = 1; panX = 0; panY = 0;
+      aplicar(false);
+      if (flechas) {
+        flechaIzq.disabled = indice === 0;
+        flechaDer.disabled = indice === registros.length - 1;
+      }
+    }
+    mostrar(indexInicial);
+
+    flechaIzq?.addEventListener('click', (e) => { e.stopPropagation(); if (indice > 0) mostrar(indice - 1); });
+    flechaDer?.addEventListener('click', (e) => { e.stopPropagation(); if (indice < registros.length - 1) mostrar(indice + 1); });
 
     wrap.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
@@ -148,14 +177,14 @@ export function renderDiary(container) {
     const grid = document.createElement('div');
     grid.className = 'row wrap';
     grid.style.gap = '8px';
-    dia.registros.forEach((r) => {
+    dia.registros.forEach((r, i) => {
       const meta = mealMeta(r.mealId);
       const fig = document.createElement('div');
       fig.style.cssText = 'width:31%;min-width:90px';
       fig.innerHTML = `
         <img src="${r.fotoUrl}" alt="${t(meta.nombre)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block;cursor:pointer">
         <p class="small muted center mt-xs">${meta.emoji} ${t(meta.nombre)}</p>`;
-      fig.querySelector('img').addEventListener('click', () => abrirFotoCompleta(r.fotoUrl, t(meta.nombre)));
+      fig.querySelector('img').addEventListener('click', () => abrirFotoCompleta(dia.registros, i, (reg) => t(mealMeta(reg.mealId).nombre)));
       grid.appendChild(fig);
     });
 

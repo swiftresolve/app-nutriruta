@@ -121,6 +121,8 @@ const EN = {
   'Atrás': 'Back',
   'Cerrar': 'Close',
   'Nuevo chat': 'New chat',
+  'Foto anterior': 'Previous photo',
+  'Foto siguiente': 'Next photo',
   'Continuar': 'Continue',
   'Continuar →': 'Continue →',
   'Guardar': 'Save',
