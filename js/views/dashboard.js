@@ -7,9 +7,9 @@
 // tarjetas grandes de cosas que no se usan todos los días.
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
-import { dailyMenu, swapMeal, trafficLight, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
+import { dailyMenu, swapMeal, trafficLight, trafficLightRecetaPropia, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, CART_ICON, SHARE_ICON } from '../app.js';
-import { t } from '../i18n.js';
+import { t, getIdioma } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
 import { renderPathMap } from '../pathMap.js';
@@ -303,7 +303,18 @@ export function renderDashboard(container) {
     const logBtn = menuCard.querySelector(`[data-row-idx="${i}"] .log-btn`);
     if (logBtn) logBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      openMealLogModal(meal.id, meal.nombre, () => renderDashboard(clearAndGet(container)));
+      // El lápiz solo aparece cuando ya hay un registro real (ver
+      // extraHtml más arriba: registro ? PENCIL_ICON : CAMERA_SOLID_ICON)
+      // -- así que si está el lápiz, primero se muestra lo que de verdad
+      // se registró (abrirComidaRegistrada), nunca se salta directo a
+      // rehacer el registro desde cero. El botón principal de la fila
+      // sigue abriendo la receta sugerida, sin tocar ese flujo.
+      const registro = comidaRegistrada(meal.id);
+      if (registro) {
+        abrirComidaRegistrada(meal, registro, () => renderDashboard(clearAndGet(container)));
+      } else {
+        openMealLogModal(meal.id, meal.nombre, () => renderDashboard(clearAndGet(container)));
+      }
     });
     if (!recipe) return;
     const btn = menuCard.querySelector(`[data-row-idx="${i}"] .swap-btn`);
@@ -586,6 +597,67 @@ export function semaforoIcon(light) {
 // etc.) esta misma modal se ve exactamente igual que antes, sin esa
 // sección, porque "marcar como comido HOY" solo tiene sentido para una
 // comida real del día, no para cualquier receta que se está mirando.
+const FUENTE_LABEL = { foto: () => `📷 ${t('Registrado por NutriCam')}`, voz: () => `🎙️ ${t('Registrado por voz')}`, texto: () => `⌨️ ${t('Registrado por texto')}` };
+
+// Tarjeta de LO QUE DE VERDAD SE REGISTRÓ para una comida (foto/voz/texto),
+// no la receta sugerida -- pedido explícito de la usuaria tras notar que
+// el lápiz reabría el registro desde cero en vez de mostrar primero lo
+// que ya había guardado (mismo criterio que Fitia: una vez hay un
+// registro real, la app muestra ESO, no la sugerencia). Vive separada de
+// openRecipe() porque un registro no es una receta -- alimentos en texto
+// libre, sin ingredientes estructurados ni semáforo curado.
+function abrirComidaRegistrada(meal, registro, onChange) {
+  const { user } = getState();
+  const light = trafficLightRecetaPropia({ ingredientes: registro.alimentos, descripcion: '' }, user.perfiles);
+  openModal((modal, closeFn) => {
+    const horaTexto = new Date(registro.hora).toLocaleTimeString(getIdioma() === 'en' ? 'en-US' : 'es', { hour: 'numeric', minute: '2-digit' });
+    const fuenteTexto = (FUENTE_LABEL[registro.fuente] || (() => ''))();
+    modal.insertAdjacentHTML('beforeend', `
+      ${registro.fotoUrl
+        ? `<img src="${registro.fotoUrl}" alt="${esc(t(meal.nombre))}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block">`
+        : `<div class="center" style="font-size:2.4rem">${meal.emoji}</div>`}
+      <h2 class="center mt">${t(meal.nombre)}</h2>
+      <p class="row" style="gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:2px">${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span></p>
+      <p class="small muted center mt">${fuenteTexto}${fuenteTexto ? ' · ' : ''}${horaTexto}</p>
+      <button type="button" class="btn-susana mt" id="cr-analizar-susana"><span class="susana-sparkle">${SPARKLE_ICON}</span> ${t('Analizar con SuSana')}</button>
+      <h3 class="mt">${t('Lo que registraste')}</h3>
+      ${registro.alimentos.map((a) => `<div class="ingredient">• ${esc(a)}</div>`).join('')}
+      <button type="button" class="btn ghost full mt" id="cr-editar">✏️ ${t('Editar registro')}</button>
+      <button type="button" class="btn danger full mt" id="cr-deshacer">🗑️ ${t('Deshacer registro')}</button>`);
+    modal.querySelector('#cr-analizar-susana').addEventListener('click', () => {
+      closeFn();
+      // Misma ruta que el branch "sin apto" de openRecipe()/abrirRecetaPropia():
+      // acá tampoco hay clasificación curada a mano, así que se analiza de
+      // verdad con IA en vez de armar la tarjeta instantánea del catálogo.
+      const aiPrompt = `Analiza esta comida que registré (no está en tu catálogo curado): ${registro.alimentos.join(', ')}. Responde ÚNICAMENTE con un bloque JSON, sin texto antes ni después, con este formato exacto: {"nutritivo":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Óptima/Buena/Regular","texto":"una frase explicando por qué"},"integracion":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Excelente/Buena/Regular","texto":"una frase de cómo encaja en mi día según lo que ya he comido"},"semaforo":"verde|amarillo|rojo","cierre":"una pregunta corta sobre cómo la voy a preparar"}`;
+      navigate('assistant', { nuevaConversacion: true, recetaNombre: t(meal.nombre), aiPrompt });
+    });
+    modal.querySelector('#cr-editar').addEventListener('click', () => {
+      closeFn();
+      openMealLogModal(meal.id, meal.nombre, onChange);
+    });
+    modal.querySelector('#cr-deshacer').addEventListener('click', () => {
+      const deshacer = () => { borrarComidaRegistrada(meal.id); closeFn(); onChange?.(); };
+      // Mismo aviso que ya existe en openRecipe() para el círculo "Comí
+      // esto" -- nunca perder una foto en silencio (bug real ya ocurrido).
+      if (registro.fotoUrl) {
+        openModal((modalConfirmar, closeConfirmar) => {
+          modalConfirmar.insertAdjacentHTML('beforeend', `
+            <h2>${t('¿Deshacer este registro?')}</h2>
+            <p class="mt">${t('Ya habías registrado esta comida con una foto -- deshacerlo la quita de Mi Diario.')}</p>`);
+          const yes = document.createElement('button');
+          yes.className = 'btn danger full mt';
+          yes.textContent = t('Sí, deshacer');
+          yes.addEventListener('click', () => { closeConfirmar(); deshacer(); });
+          modalConfirmar.appendChild(yes);
+        });
+        return;
+      }
+      deshacer();
+    });
+  });
+}
+
 export function openRecipe(recipe, hoy = null) {
   const { user } = getState();
   openModal((modal, closeFn) => {

@@ -832,5 +832,16 @@ const EN = {
   'Receta sugerida para hoy': 'Suggested recipe for today',
   'Receta sugerida para esta semana': 'Suggested recipe for this week',
   'Ver receta': 'View recipe',
-  'Tus hábitos esta semana': 'Your habits this week'
+  'Tus hábitos esta semana': 'Your habits this week',
+
+  // --- Ver lo que de verdad se registró (dashboard.js) ---
+  'Registrado por NutriCam': 'Logged by NutriCam',
+  'Registrado por voz': 'Logged by voice',
+  'Registrado por texto': 'Logged by text',
+  'Lo que registraste': 'What you logged',
+  'Editar registro': 'Edit log',
+  'Deshacer registro': 'Undo log',
+  '¿Deshacer este registro?': 'Undo this log?',
+  'Ya habías registrado esta comida con una foto -- deshacerlo la quita de Mi Diario.': 'You had already logged this meal with a photo -- undoing it removes it from My Diary.',
+  'Sí, deshacer': 'Yes, undo'
 };
