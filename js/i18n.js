@@ -838,7 +838,6 @@ const EN = {
   'Registrado por NutriCam': 'Logged by NutriCam',
   'Registrado por voz': 'Logged by voice',
   'Registrado por texto': 'Logged by text',
-  'Lo que registraste': 'What you logged',
   'Editar registro': 'Edit log',
   'Deshacer registro': 'Undo log',
   '¿Deshacer este registro?': 'Undo this log?',

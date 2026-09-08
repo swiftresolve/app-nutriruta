@@ -8,7 +8,7 @@
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, trafficLightRecetaPropia, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
-import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, CART_ICON, SHARE_ICON } from '../app.js';
+import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON, CART_ICON, SHARE_ICON } from '../app.js';
 import { t, getIdioma } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
@@ -597,7 +597,14 @@ export function semaforoIcon(light) {
 // etc.) esta misma modal se ve exactamente igual que antes, sin esa
 // sección, porque "marcar como comido HOY" solo tiene sentido para una
 // comida real del día, no para cualquier receta que se está mirando.
-const FUENTE_LABEL = { foto: () => `📷 ${t('Registrado por NutriCam')}`, voz: () => `🎙️ ${t('Registrado por voz')}`, texto: () => `⌨️ ${t('Registrado por texto')}` };
+// Mismos íconos ya definidos para cámara/voz/texto (app.js), a tamaño de
+// texto en vez del tamaño de botón -- nunca un emoji genérico en su lugar.
+const iconoInline = (svg) => `<span class="row" style="display:inline-flex;width:14px;height:14px;vertical-align:-2px">${svg}</span>`;
+const FUENTE_LABEL = {
+  foto: () => `${iconoInline(CAMERA_SOLID_ICON)} ${t('Registrado por NutriCam')}`,
+  voz: () => `${iconoInline(MIC_ICON)} ${t('Registrado por voz')}`,
+  texto: () => `${iconoInline(TEXTO_ICON)} ${t('Registrado por texto')}`
+};
 
 // Tarjeta de LO QUE DE VERDAD SE REGISTRÓ para una comida (foto/voz/texto),
 // no la receta sugerida -- pedido explícito de la usuaria tras notar que
@@ -612,17 +619,21 @@ function abrirComidaRegistrada(meal, registro, onChange) {
   openModal((modal, closeFn) => {
     const horaTexto = new Date(registro.hora).toLocaleTimeString(getIdioma() === 'en' ? 'en-US' : 'es', { hour: 'numeric', minute: '2-digit' });
     const fuenteTexto = (FUENTE_LABEL[registro.fuente] || (() => ''))();
+    // El título es lo que de verdad comiste (los alimentos registrados),
+    // no el nombre de la estación ("Desayuno") -- eso ya se sabe por la
+    // fila desde la que se abrió esta tarjeta, repetirlo era redundante.
+    const tituloComida = registro.alimentos.join(', ');
     modal.insertAdjacentHTML('beforeend', `
+      <h2 class="center">${esc(tituloComida)}</h2>
       ${registro.fotoUrl
-        ? `<img src="${registro.fotoUrl}" alt="${esc(t(meal.nombre))}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block">`
-        : `<div class="center" style="font-size:2.4rem">${meal.emoji}</div>`}
-      <h2 class="center mt">${t(meal.nombre)}</h2>
+        ? `<img src="${registro.fotoUrl}" alt="${esc(tituloComida)}" class="mt" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block">`
+        : `<div class="center mt" style="font-size:2.4rem">${meal.emoji}</div>`}
       <p class="row" style="gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:2px">${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span></p>
       <p class="small muted center mt">${fuenteTexto}${fuenteTexto ? ' · ' : ''}${horaTexto}</p>
       <button type="button" class="btn-susana mt" id="cr-analizar-susana"><span class="susana-sparkle">${SPARKLE_ICON}</span> ${t('Analizar con SuSana')}</button>
-      <h3 class="mt">${t('Lo que registraste')}</h3>
+      <h3 class="mt">${t('Ingredientes')}</h3>
       ${registro.alimentos.map((a) => `<div class="ingredient">• ${esc(a)}</div>`).join('')}
-      <button type="button" class="btn ghost full mt" id="cr-editar">✏️ ${t('Editar registro')}</button>
+      <button type="button" class="btn ghost full mt row" id="cr-editar" style="gap:6px;justify-content:center;align-items:center">${PENCIL_ICON}${t('Editar registro')}</button>
       <button type="button" class="btn danger full mt" id="cr-deshacer">🗑️ ${t('Deshacer registro')}</button>`);
     modal.querySelector('#cr-analizar-susana').addEventListener('click', () => {
       closeFn();
