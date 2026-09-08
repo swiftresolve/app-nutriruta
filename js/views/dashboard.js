@@ -5,7 +5,7 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, buildAnalysisPrompt, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, trafficLightRecetaPropia, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON, CART_ICON, SHARE_ICON } from '../app.js';
@@ -650,8 +650,7 @@ function abrirComidaRegistrada(meal, registro, onChange) {
       // Misma ruta que el branch "sin apto" de openRecipe()/abrirRecetaPropia():
       // acá tampoco hay clasificación curada a mano, así que se analiza de
       // verdad con IA en vez de armar la tarjeta instantánea del catálogo.
-      const aiPrompt = buildAnalysisPrompt(alimentosCap.join(', '));
-      navigate('assistant', { nuevaConversacion: true, recetaNombre: t(meal.nombre), aiPrompt });
+      navigate('assistant', { nuevaConversacion: true, recetaNombre: t(meal.nombre), descripcionAnalisis: alimentosCap.join(', ') });
     });
     modal.querySelector('#cr-editar').addEventListener('click', () => {
       closeFn();
@@ -765,11 +764,9 @@ export function openRecipe(recipe, hoy = null) {
         });
         return;
       }
-      // La IA responde en JSON puro (nunca se muestra este prompt tal
-      // cual, ver assistant.js) para poder pintarlo con la misma tarjeta
-      // visual que la instantánea de catálogo, en vez de texto plano.
-      const aiPrompt = buildAnalysisPrompt(shown.nombre);
-      navigate('assistant', { nuevaConversacion: true, recetaNombre: shown.nombre, aiPrompt });
+      // Análisis real con IA (acción 'analyze' del servidor) para poder
+      // pintarlo con la misma tarjeta visual que la instantánea de catálogo.
+      navigate('assistant', { nuevaConversacion: true, recetaNombre: shown.nombre, descripcionAnalisis: shown.nombre });
     });
     modal.querySelector('#rc-agregar-ing').addEventListener('click', () => {
       ingredientesTexto.push('');

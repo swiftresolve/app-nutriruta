@@ -1,5 +1,5 @@
 // Recetario + lista de compras.
-import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc, buildAnalysisPrompt } from '../store.js';
+import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
 import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, CLOCK_ICON, SPARKLE_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
@@ -214,12 +214,11 @@ function abrirRecetaPropia(receta, onEliminada) {
       <button type="button" class="btn danger full mt" id="rp-eliminar">🗑️ ${t('Eliminar receta')}</button>`);
     modal.querySelector('#rp-analizar-susana').addEventListener('click', () => {
       closeFn();
-      // Misma ruta que el branch "sin apto" de openRecipe(): la IA responde
-      // en JSON puro (nunca se muestra el prompt tal cual) para pintarlo
-      // con la misma tarjeta visual que la instantánea de catálogo.
-      const descripcion = `${receta.nombre}${receta.ingredientes.length ? ` (${receta.ingredientes.join(', ')})` : ''}`;
-      const aiPrompt = buildAnalysisPrompt(descripcion);
-      navigate('assistant', { nuevaConversacion: true, recetaNombre: receta.nombre, aiPrompt });
+      // Misma ruta que el branch "sin apto" de openRecipe(): análisis real
+      // con IA (acción 'analyze' del servidor) para pintarlo con la misma
+      // tarjeta visual que la instantánea de catálogo.
+      const descripcionAnalisis = `${receta.nombre}${receta.ingredientes.length ? ` (${receta.ingredientes.join(', ')})` : ''}`;
+      navigate('assistant', { nuevaConversacion: true, recetaNombre: receta.nombre, descripcionAnalisis });
     });
     modal.querySelector('#rp-eliminar').addEventListener('click', () => {
       confirmarEliminarReceta(receta.nombre, () => {

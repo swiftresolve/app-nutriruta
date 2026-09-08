@@ -2,7 +2,7 @@
 // Cuota, verificación de plan y la llamada a la IA viven en el servidor
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, eliminarMemoria, MEMORIA_MAX } from '../store.js';
-import { fetchGuideHistory, askGuide, listGuideConversations } from '../supabase-client.js';
+import { fetchGuideHistory, askGuide, analyzeFood, listGuideConversations } from '../supabase-client.js';
 import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON, THUMBS_UP_SOLID_ICON, THUMBS_DOWN_SOLID_ICON, ARROW_UP_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
 import { t } from '../i18n.js';
@@ -203,19 +203,6 @@ export function renderAssistant(container, params = {}) {
     if (scroll) scrollToView(b);
     return b;
   }
-  // La IA (fuera de catálogo) responde con un bloque JSON puro -- se
-  // intenta extraer y parsear; si no calza con la forma esperada, se cae
-  // a mostrar la respuesta como texto plano en vez de romper el chat.
-  function parseAnalysisJSON(text) {
-    try {
-      const match = text.match(/\{[\s\S]*\}/);
-      if (!match) return null;
-      const data = JSON.parse(match[0]);
-      if (data && data.nutritivo && data.integracion) return data;
-    } catch { /* no era JSON válido, se cae a texto plano */ }
-    return null;
-  }
-
   // Sin cuota rígida (decisión explícita: la competencia tampoco limita
   // el número de consultas), y tampoco se muestra un contador -- mostrar
   // "X mensajes este mes" contradecía el mensaje de "casi ilimitado" con
@@ -302,12 +289,14 @@ export function renderAssistant(container, params = {}) {
     }
   }
 
-  // "Analizar con SuSana" para una receta fuera de catálogo (dashboard.js)
-  // -- llamada real a la IA, pero sin mostrar el prompt técnico (le pide
-  // JSON puro) como si fuera un mensaje escrito por la usuaria; en vez de
-  // eso, va directo al "escribiendo…" y pinta la tarjeta de análisis,
-  // igual que la instantánea de catálogo.
-  async function enviarAnalisis(recetaNombre, apiPrompt) {
+  // "Analizar con SuSana" para una receta fuera de catálogo (dashboard.js/
+  // planner.js) -- acción de servidor aparte (analyzeFood, no askGuide):
+  // el system prompt de chat normal bloquea a propósito que un mensaje de
+  // la usuaria pida JSON crudo (blindaje contra fuga de datos), así que
+  // esto no puede disfrazarse de mensaje de chat -- necesita su propia
+  // ruta de confianza con su propio system prompt (ver
+  // ANALYSIS_SYSTEM_PROMPT en ai-assistant/index.ts).
+  async function enviarAnalisis(recetaNombre, descripcion) {
     sendBtn.disabled = true;
     input.disabled = true;
     const typing = document.createElement('div');
@@ -316,14 +305,11 @@ export function renderAssistant(container, params = {}) {
     log.appendChild(typing);
     scrollToView(typing);
     try {
-      const data = await askGuide(apiPrompt, conversationId);
+      const data = await analyzeFood(descripcion, conversationId);
       conversationId = data.conversationId;
       typing.remove();
-      const parsed = parseAnalysisJSON(data.reply);
-      const bubble = parsed
-        ? addCardBubble('assistant', renderAnalysisCard(recetaNombre, parsed))
-        : addBubble('assistant', data.reply);
-      setQuota(data.usedCount);
+      const bubble = addCardBubble('assistant', renderAnalysisCard(recetaNombre, data.analysis));
+      setQuota();
       scrollToView(bubble);
       sendBtn.disabled = false;
       input.disabled = false;
@@ -358,13 +344,13 @@ export function renderAssistant(container, params = {}) {
   //   análisis (curado a mano), se pinta directo sin gastar IA. No queda
   //   en el historial real porque nunca se manda un mensaje de verdad al
   //   servidor (nada que guardar, ver comentario en el branch de abajo).
-  // - params.aiPrompt: receta fuera de catálogo -- análisis real con IA.
-  //   conversationId arranca en null a propósito: askGuide() genera su
-  //   propio id en el servidor y guarda el mensaje ahí mismo (ver
-  //   ai-assistant/index.ts), así que UN solo viaje de red basta -- antes
-  //   se pedía un id nuevo con newGuideConversation() y LUEGO se llamaba
-  //   a askGuide(), dos viajes de red seguidos para lo mismo, y esta
-  //   conversación ya queda en el historial real desde el primer mensaje.
+  // - params.descripcionAnalisis: receta fuera de catálogo -- análisis
+  //   real con IA vía analyzeFood() (acción 'analyze' del servidor, con
+  //   su propio system prompt -- ver ANALYSIS_SYSTEM_PROMPT en
+  //   ai-assistant/index.ts). conversationId arranca en null a propósito:
+  //   el servidor genera su propio id y guarda el intercambio ahí mismo,
+  //   un solo viaje de red, y esta conversación ya queda en el historial
+  //   real desde el primer mensaje.
   if (params.nuevaConversacion) {
     conversationId = null;
     ultimaFirma = null;
@@ -372,8 +358,8 @@ export function renderAssistant(container, params = {}) {
     setQuota();
     if (params.instantCard) {
       addCardBubble('assistant', renderAnalysisCard(params.instantCard.recetaNombre, params.instantCard));
-    } else if (params.aiPrompt) {
-      enviarAnalisis(params.recetaNombre, params.aiPrompt);
+    } else if (params.descripcionAnalisis) {
+      enviarAnalisis(params.recetaNombre, params.descripcionAnalisis);
     }
   } else {
     // Abrir SuSana desde el menú SIEMPRE empieza una conversación nueva --

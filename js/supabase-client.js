@@ -368,6 +368,28 @@ export async function askGuide(message, conversationId) {
   return data;
 }
 
+// "Analizar con SuSana" para algo fuera del catálogo curado (receta propia,
+// o lo que de verdad se registró) -- acción aparte de askGuide() porque el
+// servidor usa un system prompt distinto para esto (ver ANALYSIS_SYSTEM_PROMPT
+// en ai-assistant/index.ts): el de chat normal bloquea a propósito que un
+// mensaje de la usuaria pida JSON crudo (blindaje contra fuga de datos), así
+// que un análisis estructurado necesita su propia ruta de confianza, del
+// lado de la app, no disfrazada de mensaje de chat.
+export async function analyzeFood(descripcion, conversationId) {
+  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'analyze', descripcion, conversationId } });
+  if (error) {
+    let body = null;
+    try { body = await error.context.clone().json(); } catch { /* respuesta no era JSON */ }
+    if (body) {
+      const e = new Error(body.message || body.error || 'No se pudo analizar.');
+      e.code = body.error;
+      throw e;
+    }
+    throw error;
+  }
+  return data;
+}
+
 // Identifica alimentos en una foto o un texto libre (dictado por voz o
 // escrito) — no cuenta contra la cuota de SuSana ni requiere Premium (ver
 // log-meal). Devuelve la lista cruda de nombres; quien llama la muestra

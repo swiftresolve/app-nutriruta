@@ -132,12 +132,24 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
 
       const video = modal.querySelector('#ml-video');
       try {
-        // aspectRatio 1 (ideal, no obligatorio): la foto final YA es un
-        // recorte cuadrado (ver el shutter más abajo) -- pedirle al
-        // navegador un feed más cuadrado desde el inicio reduce cuánto
-        // tiene que recortar/ampliar object-fit:cover en el preview.
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, aspectRatio: { ideal: 1 } }, audio: false });
+        // Sin aspectRatio: pedirle al navegador un feed cuadrado (probado
+        // antes) hace que varios Android recorten el sensor en vez de solo
+        // escalarlo -- se sentía MÁS zoom, no menos. Se deja que el
+        // navegador entregue su resolución nativa; el recorte cuadrado
+        // pasa solo en CSS (.camera-wrap) y al capturar (más abajo).
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
         video.srcObject = stream;
+        // Muchos teléfonos Android exponen varias lentes traseras y el
+        // navegador a veces elige la telefoto (2x) por defecto para
+        // "environment" -- si el track expone control de zoom, se fuerza
+        // al mínimo (la lente/ángulo más amplio) apenas arranca el video.
+        // No todos los navegadores exponen esta capability; si no existe,
+        // simplemente no se toca nada.
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track?.getCapabilities?.();
+        if (capabilities?.zoom) {
+          try { await track.applyConstraints({ advanced: [{ zoom: capabilities.zoom.min }] }); } catch { /* el dispositivo no lo permite, se deja como está */ }
+        }
       } catch {
         salirFullscreen();
         toast(t('No pudimos abrir la cámara. Elige una foto de tu galería.'));

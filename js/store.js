@@ -530,24 +530,6 @@ export function esTextoReal(texto, minLen = 40) {
   return true;
 }
 
-// "Analizar con SuSana" para algo FUERA del catálogo curado (receta
-// propia, o lo que de verdad se registró) -- un solo prompt compartido
-// entre dashboard.js/planner.js para que el límite de 600 caracteres del
-// servidor (ai-assistant/index.ts, MAX_MESSAGE_LEN) no se rompa por
-// duplicar el bloque de instrucciones JSON en cada lugar con una
-// redacción distinta. `descripcion` es lo único variable; con textos
-// largos (recetas con varios ingredientes) sigue dejando margen real
-// bajo el límite.
-export function buildAnalysisPrompt(descripcion) {
-  // Tope defensivo: una receta propia puede traer hasta 20 ingredientes
-  // (ver agregarRecetaPropia) -- sin este corte, una lista larga por sí
-  // sola ya rompería el límite de 600 caracteres del servidor (el resto
-  // del prompt, fijo, ya ocupa 300; 250 de margen deja el total bien
-  // por debajo de 600 aun con acentos/caracteres especiales).
-  const desc = String(descripcion || '').slice(0, 250);
-  return `Analiza (fuera de catálogo): ${desc}. Responde SOLO JSON: {"nutritivo":{"nivel":"alto|medio|bajo","rating":"1-2 palabras","texto":"por qué"},"integracion":{"nivel":"alto|medio|bajo","rating":"1-2 palabras","texto":"cómo encaja hoy"},"semaforo":"verde|amarillo|rojo","cierre":"pregunta corta de preparación"}`;
-}
-
 // --- Pausas de Ruta (antes "escudos"): acompañan cuando se falla
 // exactamente un día. Se ganan 1 cada 7 Días en Ruta. Tope 2 en el plan
 // gratuito, 4 en Premium (mismo espíritu que el "streak freeze" de
