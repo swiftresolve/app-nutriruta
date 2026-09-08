@@ -8,7 +8,7 @@
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, trafficLightRecetaPropia, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
-import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON, CART_ICON, SHARE_ICON } from '../app.js';
+import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON, CART_ICON, SHARE_ICON, TRASH_ICON } from '../app.js';
 import { t, getIdioma } from '../i18n.js';
 import { celebrateStreak, habitCheckPop } from '../streakAnim.js';
 import { playCheckSound, playWaterSound, playSparkleSound, playCelebrateSound } from '../sound.js';
@@ -658,7 +658,7 @@ function abrirComidaRegistrada(meal, registro, onChange) {
       <h3 class="mt">${t('Ingredientes')}</h3>
       ${alimentosCap.map((a) => `<div class="ingredient">• ${esc(a)}</div>`).join('')}
       <button type="button" class="btn ghost full mt row" id="cr-editar" style="gap:6px;justify-content:center;align-items:center">${PENCIL_ICON}${t('Editar registro')}</button>
-      <button type="button" class="btn danger full mt" id="cr-deshacer">🗑️ ${t('Deshacer registro')}</button>`);
+      <button type="button" class="btn danger full mt" id="cr-deshacer">${TRASH_ICON} ${t('Deshacer registro')}</button>`);
     modal.querySelector('#cr-analizar-susana').addEventListener('click', () => {
       closeFn();
       // Misma ruta que el branch "sin apto" de openRecipe()/abrirRecetaPropia():

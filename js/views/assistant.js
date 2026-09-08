@@ -472,7 +472,7 @@ function abrirMemorias() {
         for (const m of memorias) {
           const row = document.createElement('div');
           row.className = 'habit';
-          row.innerHTML = `<label style="flex:1">${esc(m.texto)}</label><button type="button" class="link-btn small" aria-label="${t('Eliminar')}">🗑️</button>`;
+          row.innerHTML = `<label style="flex:1">${esc(m.texto)}</label><button type="button" class="icon-btn plain" aria-label="${t('Eliminar')}">${TRASH_ICON}</button>`;
           row.querySelector('button').addEventListener('click', () => { eliminarMemoria(m.id); pintar(); });
           lista.appendChild(row);
         }
@@ -594,10 +594,16 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
     function crearFilaHistorial(c) {
       const wrap = document.createElement('div');
       wrap.className = 'hist-row-wrap';
+      const meta = getState().chatMeta?.[c.conversation_id] || {};
+      const tituloMostrado = (meta.titulo || c.title || '').slice(0, 60);
       wrap.innerHTML = `
         <div class="hist-row-bg"><button type="button" class="hist-row-delete" aria-label="${t('Eliminar conversación')}">${TRASH_ICON}</button></div>
-        <button type="button" class="hist-row${c.conversation_id === conversationIdActual ? ' selected' : ''}">${esc(c.title.slice(0, 60))}</button>`;
+        <div class="hist-row${c.conversation_id === conversationIdActual ? ' selected' : ''}">
+          <button type="button" class="hist-row-main">${meta.fijado ? '📌 ' : ''}${esc(tituloMostrado)}</button>
+          <button type="button" class="hist-row-menu" aria-label="${t('Más opciones')}">⋯</button>
+        </div>`;
       const row = wrap.querySelector('.hist-row');
+      const rowMain = wrap.querySelector('.hist-row-main');
       let inicioX = 0, inicioY = 0, offsetActual = 0, arrastrando = false, esHorizontal = null, rowWidth = 0;
       const quitarDeCacheYLista = () => {
         const eraActual = c.conversation_id === conversationIdActual;
@@ -650,7 +656,7 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
         wrap.classList.remove('armado');
         filaAbierta = abierta ? wrap : (filaAbierta === wrap ? null : filaAbierta);
       });
-      row.addEventListener('click', (e) => {
+      rowMain.addEventListener('click', (e) => {
         if (filaAbierta === wrap) { e.preventDefault(); cerrar(); return; }
         closeFn(); onElegir(c.conversation_id);
       });
@@ -660,8 +666,69 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
           colapsarYQuitar(wrap, () => { if (eraActual) { closeFn(); onNueva(); } });
         });
       });
+      wrap.querySelector('.hist-row-menu').addEventListener('click', (e) => {
+        e.stopPropagation();
+        abrirMenuFila(c, meta, () => pintarLista(todasConversaciones));
+      });
       wrap.cerrarFilaAbierta = cerrar;
       return wrap;
+    }
+
+    // Menú de los tres puntos de cada conversación (referencia real:
+    // ChatGPT) -- "Eliminar" queda AFUERA a propósito, pedido explícito:
+    // ya existe con el deslizar, no hacía falta repetirlo acá. "Compartir"
+    // también queda afuera por ahora: estas conversaciones pueden incluir
+    // perfiles de salud y síntomas, mejor no ofrecer compartirlas hasta
+    // pensar bien cómo (qué se excluye, en qué formato).
+    function abrirMenuFila(c, meta, onCambio) {
+      openModal((modal, closeMenu) => {
+        modal.insertAdjacentHTML('beforeend', `
+          <div class="hist-menu">
+            <button type="button" class="hist-menu-item" id="hm-fijar">📌 ${meta.fijado ? t('Desfijar conversación') : t('Fijar conversación')}</button>
+            <button type="button" class="hist-menu-item" id="hm-renombrar">✏️ ${t('Cambiar nombre')}</button>
+            <button type="button" class="hist-menu-item" id="hm-archivar">🗄️ ${meta.archivado ? t('Desarchivar') : t('Archivar')}</button>
+          </div>`);
+        modal.querySelector('#hm-fijar').addEventListener('click', () => {
+          const chatMeta = { ...(getState().chatMeta || {}) };
+          chatMeta[c.conversation_id] = { ...(chatMeta[c.conversation_id] || {}), fijado: !meta.fijado };
+          setState({ chatMeta });
+          closeMenu();
+          onCambio();
+        });
+        modal.querySelector('#hm-renombrar').addEventListener('click', () => {
+          closeMenu();
+          abrirRenombrarConversacion(c, meta, onCambio);
+        });
+        modal.querySelector('#hm-archivar').addEventListener('click', () => {
+          const chatMeta = { ...(getState().chatMeta || {}) };
+          chatMeta[c.conversation_id] = { ...(chatMeta[c.conversation_id] || {}), archivado: !meta.archivado };
+          setState({ chatMeta });
+          closeMenu();
+          onCambio();
+        });
+      });
+    }
+
+    function abrirRenombrarConversacion(c, meta, onCambio) {
+      openModal((modal, closeRenombrar) => {
+        modal.insertAdjacentHTML('beforeend', `
+          <h2>${t('Cambiar nombre')}</h2>
+          <input type="text" id="hr-input" class="auth-input mt" maxlength="60">
+          <button type="button" class="btn full mt" id="hr-guardar">${t('Guardar')}</button>`);
+        const input = modal.querySelector('#hr-input');
+        input.value = (meta.titulo || c.title || '').slice(0, 60);
+        input.focus();
+        input.select();
+        modal.querySelector('#hr-guardar').addEventListener('click', () => {
+          const nuevo = input.value.trim().slice(0, 60);
+          if (!nuevo) return;
+          const chatMeta = { ...(getState().chatMeta || {}) };
+          chatMeta[c.conversation_id] = { ...(chatMeta[c.conversation_id] || {}), titulo: nuevo };
+          setState({ chatMeta });
+          closeRenombrar();
+          onCambio();
+        });
+      });
     }
 
     // Guarda la lista completa aparte de lo que se pinta -- la búsqueda
@@ -670,14 +737,32 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
     let todasConversaciones = [];
 
     function pintarLista(conversations, mensajeVacio) {
-      if (!conversations.length) {
+      const chatMeta = getState().chatMeta || {};
+      const visibles = conversations.filter((c) => !chatMeta[c.conversation_id]?.archivado);
+      if (!visibles.length) {
         cont.innerHTML = `<p class="small muted center">${mensajeVacio || t('Aún no tienes conversaciones.')}</p>`;
         return;
       }
       cont.innerHTML = '';
       filaAbierta = null;
+
+      // Fijadas en su propia sección arriba (referencia real: ChatGPT),
+      // fuera del agrupado por fecha -- si no, una fijada vieja quedaría
+      // enterrada entre las fechas de hace semanas.
+      const fijadas = visibles.filter((c) => chatMeta[c.conversation_id]?.fijado);
+      const resto = visibles.filter((c) => !chatMeta[c.conversation_id]?.fijado);
+      if (fijadas.length) {
+        const divider = document.createElement('p');
+        divider.className = 'small muted mt';
+        divider.style.fontWeight = '700';
+        divider.textContent = `📌 ${t('Fijadas')}`;
+        cont.appendChild(divider);
+        for (const c of fijadas) cont.appendChild(crearFilaHistorial(c));
+        if (resto.length) cont.appendChild(document.createElement('hr')).className = 'hist-day-divider';
+      }
+
       let grupoActual = null;
-      for (const c of conversations) {
+      for (const c of resto) {
         const grupo = etiquetaFecha(c.updated_at);
         if (grupo !== grupoActual) {
           if (grupoActual !== null) cont.appendChild(document.createElement('hr')).className = 'hist-day-divider';
@@ -693,14 +778,15 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
     }
 
     // Sin tildes/mayúsculas -- mismo criterio que el resto de búsquedas de
-    // la app (ver normaliza en menu.js), solo por título (lo único que
-    // list_conversations trae de cada conversación, no el contenido
-    // completo de los mensajes).
+    // la app (ver normaliza en menu.js). Busca por título Y por el
+    // contenido de la conversación (c.contenido, que list_conversations ya
+    // manda recortado a 4000 caracteres -- pedido explícito: no alcanzaba
+    // con solo el título).
     const normalizaBusqueda = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     inputBuscar.addEventListener('input', () => {
       const q = normalizaBusqueda(inputBuscar.value.trim());
       if (!q) { pintarLista(todasConversaciones); return; }
-      const filtradas = todasConversaciones.filter((c) => normalizaBusqueda(c.title).includes(q));
+      const filtradas = todasConversaciones.filter((c) => normalizaBusqueda(c.title).includes(q) || normalizaBusqueda(c.contenido).includes(q));
       pintarLista(filtradas, t('No encontramos conversaciones con esa palabra.'));
     });
 

@@ -2,7 +2,7 @@
 import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
-import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, CLOCK_ICON, SPARKLE_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
+import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, CLOCK_ICON, SPARKLE_ICON, TRASH_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
 import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace } from '../supabase-client.js';
 import { openRecipe, semaforoIcon, SEMAFORO_TEXTO } from './dashboard.js';
 import { t, getIdioma } from '../i18n.js';
@@ -212,7 +212,7 @@ function abrirRecetaPropia(receta, onEliminada) {
             <ol class="steps">${receta.pasos.map((p) => `<li>${esc(p)}</li>`).join('')}</ol>
           </div>
         </details>` : ''}
-      <button type="button" class="btn danger full mt" id="rp-eliminar">🗑️ ${t('Eliminar receta')}</button>`);
+      <button type="button" class="btn danger full mt" id="rp-eliminar">${TRASH_ICON} ${t('Eliminar receta')}</button>`);
     modal.querySelector('#rp-analizar-susana').addEventListener('click', () => {
       closeFn();
       // Misma ruta que el branch "sin apto" de openRecipe(): análisis real

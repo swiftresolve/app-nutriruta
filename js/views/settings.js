@@ -7,7 +7,7 @@ import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { PAISES_ALIMENTOS } from '../data/regionalismos.js';
 import { MEALS } from '../data/recipes.js';
 import { getSession, signIn, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
-import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, susanaName, ORO_NUTRICOINS, GEAR_ICON, SHARE_ICON, CAMERA_SOLID_ICON } from '../app.js';
+import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, susanaName, ORO_NUTRICOINS, GEAR_ICON, SHARE_ICON, CAMERA_SOLID_ICON, TRASH_ICON } from '../app.js';
 import { iniciarTour } from './tour.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 import { t, getIdioma } from '../i18n.js';
@@ -924,7 +924,7 @@ function pintarDatos(container) {
 
   const wipeBtn = document.createElement('button');
   wipeBtn.className = 'btn danger full';
-  wipeBtn.textContent = `🗑️ ${t('Borrar todos mis datos')}`;
+  wipeBtn.innerHTML = `${TRASH_ICON} ${t('Borrar todos mis datos')}`;
   wipeBtn.addEventListener('click', async () => {
     const session = await getSession();
     // Cuentas por Google (sin contraseña propia) no tienen nada que

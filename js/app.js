@@ -258,13 +258,14 @@ function attachStatTooltip(btn, html, { onRender, duracion = 3500 } = {}) {
       // "translateX(Npx)" se pierde ese centrado entero.
       if (corrimiento) tip.style.transform = `translateX(calc(-50% + ${corrimiento}px))`;
     };
-    // La animación de entrada (tooltip-in) sigue controlando el transform
-    // mientras corre, así que medir en el primer frame (rAF) da un tamaño/
-    // posición todavía interpolando -- una corrección calculada ahí sale
-    // mal. requestAnimationFrame cubre el caso sin animación (prefers-
-    // reduced-motion), y "animationend" recalcula ya con el layout final.
-    requestAnimationFrame(corregirPosicion);
-    tip.addEventListener('animationend', corregirPosicion, { once: true });
+    // Se corrige UNA sola vez, ya, apenas se cuelga del DOM -- la animación
+    // de entrada (tooltip-in) solo anima opacity/translateY/scale, nunca el
+    // translateX(-50%) que decide si se desborda, así que medir de una vez
+    // ya da la posición horizontal final real. Antes se esperaba a
+    // "animationend" para "estar segura" del layout, pero eso hacía que la
+    // burbuja se viera nacer desbordada y recién al final de la animación
+    // saltara a su lugar correcto -- un salto visible real que se reportó.
+    corregirPosicion();
     const cerrar = () => { tip.remove(); document.removeEventListener('click', fuera); };
     const timer = setTimeout(cerrar, duracion);
     const fuera = (ev) => { if (!btn.contains(ev.target)) { clearTimeout(timer); cerrar(); } };
@@ -646,6 +647,11 @@ function unlockBodyScroll() {
 
 // Modal reutilizable.
 export function openModal(contentBuilder) {
+  // Cierra cualquier tooltip de header que hubiera quedado abierto (gemas/
+  // escudos/nutricoins) -- sin esto, abrir un modal encima (ej. "Comprar
+  // NutriCoins" desde el tooltip de escudos) dejaba las dos ventanas
+  // visibles a la vez, una tapando a la otra.
+  document.querySelectorAll('.header-tooltip').forEach((t) => t.remove());
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
   const modal = document.createElement('div');
