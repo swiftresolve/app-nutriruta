@@ -9,9 +9,11 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
 
-// Chulo de nodo completado -- vuelto al original (texto plano "✓",
-// delgado): la usuaria probó las variantes gruesas (beige, blanco con
-// contorno, café/ámbar) y pidió explícitamente volver a este.
+// Chulo de nodo completado -- forma original (texto plano "✓", delgado).
+// El color café/ámbar de la estrella de Duolingo SOLO aplica cuando el
+// nodo está dorado (.all-done) -- en verde normal se queda blanco, como
+// siempre. Como es texto plano, hereda el "color" de CSS solo; el cambio
+// de color vive en styles.css (.path-node.all-done), no acá.
 const CHECK_ICON = '✓';
 
 // items: [{ icon, title, subtitle, done, now, locked, nowLabel, onClick, extraHtml }]
