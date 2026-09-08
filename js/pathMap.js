@@ -9,12 +9,10 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
 
-// Chulo de nodo completado -- grueso (nunca un "✓" de texto plano, que
-// con la tipografía del sistema se veía casi invisible de lo delgado).
-// Mismo café/ámbar oscuro que la estrella de la moneda de Duolingo que
-// mostró la usuaria -- se ve nítido tanto contra el dorado como contra
-// el verde de siempre, sin necesitar contorno ni sombra aparte.
-const CHECK_ICON = `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#8B5A1E" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M4 12.5l5 5L20 6"/></svg>`;
+// Chulo de nodo completado -- vuelto al original (texto plano "✓",
+// delgado): la usuaria probó las variantes gruesas (beige, blanco con
+// contorno, café/ámbar) y pidió explícitamente volver a este.
+const CHECK_ICON = '✓';
 
 // items: [{ icon, title, subtitle, done, now, locked, nowLabel, onClick, extraHtml }]
 // extraHtml: HTML adicional dentro de la etiqueta (ej. un botón de acción
