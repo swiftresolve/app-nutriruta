@@ -517,6 +517,9 @@ const EN = {
   'Nueva conversación': 'New conversation',
   'Aún no tienes conversaciones.': 'You don\'t have any conversations yet.',
   'No pudimos cargar tu historial.': 'We couldn\'t load your history.',
+  'Buscar en el historial': 'Search history',
+  'Buscar por palabra clave…': 'Search by keyword…',
+  'No encontramos conversaciones con esa palabra.': 'We couldn\'t find any conversations with that word.',
 
   // --- settings.js ---
   'Mi cuenta': 'My account', 'Sobre ti': 'About you', 'Salud y alimentación': 'Health and food',

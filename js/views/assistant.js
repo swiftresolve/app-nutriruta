@@ -3,7 +3,7 @@
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, eliminarMemoria, MEMORIA_MAX } from '../store.js';
 import { fetchGuideHistory, askGuide, analyzeFood, listGuideConversations, deleteGuideConversation } from '../supabase-client.js';
-import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, TRASH_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON, THUMBS_UP_SOLID_ICON, THUMBS_DOWN_SOLID_ICON, ARROW_UP_ICON } from '../app.js';
+import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, TRASH_ICON, SEARCH_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON, THUMBS_UP_SOLID_ICON, THUMBS_DOWN_SOLID_ICON, ARROW_UP_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
 import { t } from '../i18n.js';
 
@@ -61,9 +61,21 @@ export function renderAssistant(container, params = {}) {
       <strong>${susanaName()}</strong>
       <span class="small muted" id="chatQuota">${t('Cargando…')}</span>
     </div>
+    <button type="button" class="icon-btn plain" id="chatNueva" aria-label="${t('Nueva conversación')}">${PENCIL_ICON}</button>
     <button type="button" class="icon-btn plain" id="chatPersonalizar" aria-label="${t('Personalizar a SuSana')}">${GEAR_ICON}</button>`;
   container.appendChild(chatHeader);
   chatHeader.querySelector('#chatPersonalizar').addEventListener('click', () => abrirPersonalizarSuSana());
+  // "Nueva conversación" vivía como lápiz dentro del panel de historial --
+  // pedido explícito: no era necesario ahí (ese espacio ahora es para
+  // buscar), así que se mueve acá, al header principal del chat, para no
+  // perder la forma de empezar de cero.
+  function empezarNuevaConversacion() {
+    conversationId = null;
+    log.innerHTML = '';
+    addBubble('system', t('¡Hola! Soy SuSana 🌿 {apertura}', { apertura: sanaApertura() }));
+    ultimaFirma = null;
+  }
+  chatHeader.querySelector('#chatNueva').addEventListener('click', empezarNuevaConversacion);
   chatHeader.querySelector('#chatHistorial').addEventListener('click', () => {
     abrirHistorialSuSana(conversationId, {
       onElegir: (id) => loadHistory(id),
@@ -71,12 +83,7 @@ export function renderAssistant(container, params = {}) {
       // mensaje, esta conversación no debe existir en el historial real
       // (askGuide ya genera su propio id cuando conversationId es null,
       // ver ai-assistant/index.ts).
-      onNueva: () => {
-        conversationId = null;
-        log.innerHTML = '';
-        addBubble('system', t('¡Hola! Soy SuSana 🌿 {apertura}', { apertura: sanaApertura() }));
-        ultimaFirma = null;
-      }
+      onNueva: empezarNuevaConversacion
     });
   });
 
@@ -540,13 +547,20 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
     modal.insertAdjacentHTML('beforeend', `
       <div class="spread">
         <h2>${t('Historial de {nombre}', { nombre: susanaName() })}</h2>
-        <button type="button" class="icon-btn plain" id="hist-nueva" aria-label="${t('Nueva conversación')}">${PENCIL_ICON}</button>
+        <button type="button" class="icon-btn plain" id="hist-buscar" aria-label="${t('Buscar en el historial')}">${SEARCH_ICON}</button>
       </div>
+      <input type="text" id="hist-buscar-input" class="auth-input mt hidden" placeholder="${t('Buscar por palabra clave…')}">
       <div class="mt" id="hist-lista"></div>`);
 
-    modal.querySelector('#hist-nueva').addEventListener('click', () => {
-      closeFn();
-      onNueva();
+    const inputBuscar = modal.querySelector('#hist-buscar-input');
+    modal.querySelector('#hist-buscar').addEventListener('click', () => {
+      inputBuscar.classList.toggle('hidden');
+      if (!inputBuscar.classList.contains('hidden')) {
+        inputBuscar.focus();
+      } else {
+        inputBuscar.value = '';
+        pintarLista(todasConversaciones);
+      }
     });
 
     const cont = modal.querySelector('#hist-lista');
@@ -589,6 +603,7 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
         const eraActual = c.conversation_id === conversationIdActual;
         const cacheada2 = leerHistCache();
         if (cacheada2) guardarHistCache(cacheada2.filter((x) => x.conversation_id !== c.conversation_id));
+        todasConversaciones = todasConversaciones.filter((x) => x.conversation_id !== c.conversation_id);
         return eraActual;
       };
       const eliminarConGesto = () => {
@@ -649,9 +664,14 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
       return wrap;
     }
 
-    function pintarLista(conversations) {
+    // Guarda la lista completa aparte de lo que se pinta -- la búsqueda
+    // filtra sobre esta, nunca vuelve a pedirle al servidor (list_conversations
+    // ya trae hasta 50, suficiente para filtrar en el cliente).
+    let todasConversaciones = [];
+
+    function pintarLista(conversations, mensajeVacio) {
       if (!conversations.length) {
-        cont.innerHTML = `<p class="small muted center">${t('Aún no tienes conversaciones.')}</p>`;
+        cont.innerHTML = `<p class="small muted center">${mensajeVacio || t('Aún no tienes conversaciones.')}</p>`;
         return;
       }
       cont.innerHTML = '';
@@ -672,12 +692,25 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
       }
     }
 
+    // Sin tildes/mayúsculas -- mismo criterio que el resto de búsquedas de
+    // la app (ver normaliza en menu.js), solo por título (lo único que
+    // list_conversations trae de cada conversación, no el contenido
+    // completo de los mensajes).
+    const normalizaBusqueda = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    inputBuscar.addEventListener('input', () => {
+      const q = normalizaBusqueda(inputBuscar.value.trim());
+      if (!q) { pintarLista(todasConversaciones); return; }
+      const filtradas = todasConversaciones.filter((c) => normalizaBusqueda(c.title).includes(q));
+      pintarLista(filtradas, t('No encontramos conversaciones con esa palabra.'));
+    });
+
     const cacheada = leerHistCache();
-    if (cacheada) pintarLista(cacheada);
+    if (cacheada) { todasConversaciones = cacheada; pintarLista(cacheada); }
 
     listGuideConversations()
       .then((conversations) => {
         guardarHistCache(conversations);
+        todasConversaciones = conversations;
         pintarLista(conversations);
       })
       .catch(() => {
