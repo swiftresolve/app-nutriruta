@@ -1,5 +1,5 @@
 // Recetario + lista de compras.
-import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
+import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc, buildAnalysisPrompt } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
 import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, CLOCK_ICON, SPARKLE_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
@@ -217,7 +217,8 @@ function abrirRecetaPropia(receta, onEliminada) {
       // Misma ruta que el branch "sin apto" de openRecipe(): la IA responde
       // en JSON puro (nunca se muestra el prompt tal cual) para pintarlo
       // con la misma tarjeta visual que la instantánea de catálogo.
-      const aiPrompt = `Analiza "${receta.nombre}" que estoy por comer (no está en tu catálogo curado). Ingredientes: ${receta.ingredientes.join(', ') || 'no especificados'}. Responde ÚNICAMENTE con un bloque JSON, sin texto antes ni después, con este formato exacto: {"nutritivo":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Óptima/Buena/Regular","texto":"una frase explicando por qué"},"integracion":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Excelente/Buena/Regular","texto":"una frase de cómo encaja en mi día según lo que ya he comido"},"semaforo":"verde|amarillo|rojo","cierre":"una pregunta corta sobre cómo la voy a preparar"}`;
+      const descripcion = `${receta.nombre}${receta.ingredientes.length ? ` (${receta.ingredientes.join(', ')})` : ''}`;
+      const aiPrompt = buildAnalysisPrompt(descripcion);
       navigate('assistant', { nuevaConversacion: true, recetaNombre: receta.nombre, aiPrompt });
     });
     modal.querySelector('#rp-eliminar').addEventListener('click', () => {

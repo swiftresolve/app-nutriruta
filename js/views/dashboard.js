@@ -5,7 +5,7 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, buildAnalysisPrompt, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, trafficLightRecetaPropia, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON, CART_ICON, SHARE_ICON } from '../app.js';
@@ -650,7 +650,7 @@ function abrirComidaRegistrada(meal, registro, onChange) {
       // Misma ruta que el branch "sin apto" de openRecipe()/abrirRecetaPropia():
       // acá tampoco hay clasificación curada a mano, así que se analiza de
       // verdad con IA en vez de armar la tarjeta instantánea del catálogo.
-      const aiPrompt = `Analiza esta comida que registré (no está en tu catálogo curado): ${registro.alimentos.join(', ')}. Responde ÚNICAMENTE con un bloque JSON, sin texto antes ni después, con este formato exacto: {"nutritivo":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Óptima/Buena/Regular","texto":"una frase explicando por qué"},"integracion":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Excelente/Buena/Regular","texto":"una frase de cómo encaja en mi día según lo que ya he comido"},"semaforo":"verde|amarillo|rojo","cierre":"una pregunta corta sobre cómo la voy a preparar"}`;
+      const aiPrompt = buildAnalysisPrompt(alimentosCap.join(', '));
       navigate('assistant', { nuevaConversacion: true, recetaNombre: t(meal.nombre), aiPrompt });
     });
     modal.querySelector('#cr-editar').addEventListener('click', () => {
@@ -768,7 +768,7 @@ export function openRecipe(recipe, hoy = null) {
       // La IA responde en JSON puro (nunca se muestra este prompt tal
       // cual, ver assistant.js) para poder pintarlo con la misma tarjeta
       // visual que la instantánea de catálogo, en vez de texto plano.
-      const aiPrompt = `Analiza "${shown.nombre}" que estoy por comer (no está en tu catálogo curado). Responde ÚNICAMENTE con un bloque JSON, sin texto antes ni después, con este formato exacto: {"nutritivo":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Óptima/Buena/Regular","texto":"una frase explicando por qué"},"integracion":{"nivel":"alto|medio|bajo","rating":"una o dos palabras como Excelente/Buena/Regular","texto":"una frase de cómo encaja en mi día según lo que ya he comido"},"semaforo":"verde|amarillo|rojo","cierre":"una pregunta corta sobre cómo la voy a preparar"}`;
+      const aiPrompt = buildAnalysisPrompt(shown.nombre);
       navigate('assistant', { nuevaConversacion: true, recetaNombre: shown.nombre, aiPrompt });
     });
     modal.querySelector('#rc-agregar-ing').addEventListener('click', () => {
