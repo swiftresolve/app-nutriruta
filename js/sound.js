@@ -52,39 +52,22 @@ export function playCheckSound() {
   });
 }
 
-// Agua: un "plink" de gota (barrido de frecuencia hacia abajo) + un
-// soplo corto de ruido filtrado para la textura de splash.
+// Agua: a diferencia del resto (sintetizado con Web Audio), este es un
+// archivo real (./audio/agua.mp3) -- pedido explícito de la usuaria, que
+// mandó el sonido exacto que quiere para el vaso de agua. Se precarga UNA
+// vez y se clona en cada toque (audio.cloneNode) para que dos toques
+// seguidos no corten el sonido anterior a la mitad, cada uno suena
+// completo aunque se superpongan.
+let aguaAudio = null;
 export function playWaterSound() {
-  conAudio((audioCtx) => {
-    const start = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(950, start);
-    osc.frequency.exponentialRampToValueAtTime(320, start + 0.16);
-    gain.gain.setValueAtTime(0.22, start);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.2);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start(start);
-    osc.stop(start + 0.22);
-
-    // Splash: ráfaga breve de ruido pasada por un filtro pasa-banda.
-    const bufferSize = Math.floor(audioCtx.sampleRate * 0.12);
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-    const noise = audioCtx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 1800;
-    filter.Q.value = 0.7;
-    const noiseGain = audioCtx.createGain();
-    noiseGain.gain.setValueAtTime(0.12, start);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.12);
-    noise.connect(filter).connect(noiseGain).connect(audioCtx.destination);
-    noise.start(start);
-  });
+  if (!sonidoActivado()) return;
+  try {
+    if (!aguaAudio) aguaAudio = new Audio('./audio/agua.mp3');
+    const instancia = aguaAudio.cloneNode();
+    instancia.play().catch(() => { /* autoplay bloqueado por el navegador -- silencioso */ });
+  } catch {
+    // Audio no disponible -- nunca debe romper el registro de agua real.
+  }
 }
 
 // "Tu paso de hoy": un pequeño destello — arpegio ascendente de 4 notas
