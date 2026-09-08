@@ -2,7 +2,7 @@
 // Cuota, verificación de plan y la llamada a la IA viven en el servidor
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, eliminarMemoria, MEMORIA_MAX } from '../store.js';
-import { fetchGuideHistory, askGuide, analyzeFood, listGuideConversations } from '../supabase-client.js';
+import { fetchGuideHistory, askGuide, analyzeFood, listGuideConversations, deleteGuideConversation } from '../supabase-client.js';
 import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON, THUMBS_UP_SOLID_ICON, THUMBS_DOWN_SOLID_ICON, ARROW_UP_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
 import { t } from '../i18n.js';
@@ -506,6 +506,31 @@ function etiquetaFecha(fechaISO) {
 // setTimeout abajo; durante el propio contentBuilder el modal todavía no
 // tiene padre). Tocar una fila cierra el panel y carga esa conversación
 // en el chat que ya está abierto (no navega a otra pantalla).
+// Confirmación antes de borrar -- irreversible (no hay papelera), mismo
+// criterio que confirmarEliminarReceta en planner.js: nunca un solo toque.
+function confirmarEliminarConversacion(c, onConfirmado) {
+  openModal((modalConfirmar, closeConfirmar) => {
+    modalConfirmar.insertAdjacentHTML('beforeend', `
+      <h2>${t('¿Eliminar "{nombre}"?', { nombre: esc(c.title.slice(0, 60)) })}</h2>
+      <p class="mt">${t('Esta acción no se puede deshacer.')}</p>`);
+    const yes = document.createElement('button');
+    yes.className = 'btn danger full mt';
+    yes.textContent = t('Sí, eliminar');
+    yes.addEventListener('click', async () => {
+      yes.disabled = true;
+      try {
+        await deleteGuideConversation(c.conversation_id);
+        closeConfirmar();
+        onConfirmado();
+      } catch (e) {
+        toast(e.message || t('No se pudo eliminar la conversación.'));
+        yes.disabled = false;
+      }
+    });
+    modalConfirmar.appendChild(yes);
+  });
+}
+
 function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
   openModal((modal, closeFn) => {
     setTimeout(() => modal.parentElement?.classList.add('drawer-izq'), 0);
@@ -525,16 +550,82 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
     });
 
     const cont = modal.querySelector('#hist-lista');
+    // Deslizar una fila hacia la izquierda revela "Eliminar" debajo (misma
+    // referencia visual que mostró la usuaria) -- ANCHO_BOTON es lo que se
+    // asoma. Solo una fila puede estar abierta a la vez: abrir otra cierra
+    // la anterior, mismo comportamiento esperado en cualquier lista así.
+    const ANCHO_BOTON = 76;
+    let filaAbierta = null;
+    function crearFilaHistorial(c) {
+      const wrap = document.createElement('div');
+      wrap.className = 'hist-row-wrap';
+      wrap.innerHTML = `
+        <button type="button" class="hist-row-delete" aria-label="${t('Eliminar conversación')}">🗑️</button>
+        <button type="button" class="hist-row${c.conversation_id === conversationIdActual ? ' selected' : ''}">${esc(c.title.slice(0, 60))}</button>`;
+      const row = wrap.querySelector('.hist-row');
+      let inicioX = 0, inicioY = 0, offsetActual = 0, arrastrando = false, esHorizontal = null;
+      const cerrar = () => {
+        offsetActual = 0;
+        row.style.transition = 'transform 0.2s ease';
+        row.style.transform = 'translateX(0)';
+        if (filaAbierta === wrap) filaAbierta = null;
+      };
+      row.addEventListener('touchstart', (e) => {
+        if (filaAbierta && filaAbierta !== wrap) cerrarFilaAbierta();
+        inicioX = e.touches[0].clientX; inicioY = e.touches[0].clientY;
+        arrastrando = true; esHorizontal = null;
+        row.style.transition = 'none';
+      });
+      row.addEventListener('touchmove', (e) => {
+        if (!arrastrando) return;
+        const dx = e.touches[0].clientX - inicioX;
+        const dy = e.touches[0].clientY - inicioY;
+        if (esHorizontal === null) esHorizontal = Math.abs(dx) > Math.abs(dy);
+        if (!esHorizontal) return;
+        e.preventDefault();
+        const base = filaAbierta === wrap ? -ANCHO_BOTON : 0;
+        offsetActual = Math.max(-ANCHO_BOTON, Math.min(0, base + dx));
+        row.style.transform = `translateX(${offsetActual}px)`;
+      }, { passive: false });
+      row.addEventListener('touchend', () => {
+        arrastrando = false;
+        if (!esHorizontal) return;
+        row.style.transition = 'transform 0.2s ease';
+        const abierta = offsetActual < -ANCHO_BOTON / 2;
+        offsetActual = abierta ? -ANCHO_BOTON : 0;
+        row.style.transform = `translateX(${offsetActual}px)`;
+        filaAbierta = abierta ? wrap : (filaAbierta === wrap ? null : filaAbierta);
+      });
+      row.addEventListener('click', (e) => {
+        if (filaAbierta === wrap) { e.preventDefault(); cerrar(); return; }
+        closeFn(); onElegir(c.conversation_id);
+      });
+      wrap.querySelector('.hist-row-delete').addEventListener('click', () => {
+        confirmarEliminarConversacion(c, () => {
+          const eraActual = c.conversation_id === conversationIdActual;
+          wrap.remove();
+          const cacheada2 = leerHistCache();
+          if (cacheada2) guardarHistCache(cacheada2.filter((x) => x.conversation_id !== c.conversation_id));
+          if (eraActual) { closeFn(); onNueva(); }
+        });
+      });
+      wrap.cerrarFilaAbierta = cerrar;
+      return wrap;
+    }
+    function cerrarFilaAbierta() { filaAbierta?.cerrarFilaAbierta?.(); }
+
     function pintarLista(conversations) {
       if (!conversations.length) {
         cont.innerHTML = `<p class="small muted center">${t('Aún no tienes conversaciones.')}</p>`;
         return;
       }
       cont.innerHTML = '';
+      filaAbierta = null;
       let grupoActual = null;
       for (const c of conversations) {
         const grupo = etiquetaFecha(c.updated_at);
         if (grupo !== grupoActual) {
+          if (grupoActual !== null) cont.appendChild(document.createElement('hr')).className = 'hist-day-divider';
           grupoActual = grupo;
           const divider = document.createElement('p');
           divider.className = 'small muted mt';
@@ -542,12 +633,7 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
           divider.textContent = grupo;
           cont.appendChild(divider);
         }
-        const row = document.createElement('button');
-        row.type = 'button';
-        row.className = 'hist-row' + (c.conversation_id === conversationIdActual ? ' selected' : '');
-        row.textContent = c.title.slice(0, 60);
-        row.addEventListener('click', () => { closeFn(); onElegir(c.conversation_id); });
-        cont.appendChild(row);
+        cont.appendChild(crearFilaHistorial(c));
       }
     }
 

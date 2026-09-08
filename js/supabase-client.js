@@ -368,6 +368,17 @@ export async function askGuide(message, conversationId) {
   return data;
 }
 
+// Eliminar una conversación del historial (deslizar en la lista, ver
+// assistant.js) -- irreversible, el servidor valida que sea del usuario.
+export async function deleteGuideConversation(conversationId) {
+  const { error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'delete_conversation', conversationId } });
+  if (error) {
+    let body = null;
+    try { body = await error.context.clone().json(); } catch { /* respuesta no era JSON */ }
+    throw new Error(body?.message || body?.error || 'No se pudo eliminar la conversación.');
+  }
+}
+
 // "Analizar con SuSana" para algo fuera del catálogo curado (receta propia,
 // o lo que de verdad se registró) -- acción aparte de askGuide() porque el
 // servidor usa un system prompt distinto para esto (ver ANALYSIS_SYSTEM_PROMPT

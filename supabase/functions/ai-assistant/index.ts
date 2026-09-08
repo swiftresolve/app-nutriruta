@@ -179,6 +179,21 @@ Deno.serve(async (req) => {
     return json({ conversationId: crypto.randomUUID() });
   }
 
+  // --- Eliminar una conversación (deslizar en el historial) -- filtra
+  // SIEMPRE por user_id además de conversation_id, para que nadie pueda
+  // borrar una conversación ajena mandando un id que no es suyo.
+  if (action === 'delete_conversation') {
+    const idParaBorrar = String(payload.conversationId ?? '').trim();
+    if (!idParaBorrar) return json({ error: 'Falta la conversación a eliminar.' }, 400);
+    const { error: deleteError } = await admin
+      .from('ai_conversations')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('conversation_id', idParaBorrar);
+    if (deleteError) return json({ error: 'No se pudo eliminar la conversación.' }, 500);
+    return json({ ok: true });
+  }
+
   // --- "Analizar con SuSana" para algo FUERA del catálogo curado (receta
   // propia, o lo que de verdad se registró) -- acción aparte de "ask"
   // porque necesita su propio system prompt que sí permite JSON (ver
