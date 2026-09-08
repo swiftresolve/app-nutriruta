@@ -92,6 +92,24 @@ let authed = false;
 
 export function setAuthed(v) { authed = v; }
 
+// La navegación interna nunca tocaba el historial real del navegador (solo
+// reemplazaba app.innerHTML) -- sin una entrada de historial por pantalla,
+// un gesto de "deslizar para atrás" (Android) o el botón atrás no tenían a
+// dónde volver DENTRO de la app, y el gesto se le pasaba de largo al
+// sistema, que sacaba/minimizaba la PWA entera en vez de solo retroceder
+// una pantalla (pedido explícito: corregir eso). No se toca la URL --
+// nunca se enrutó por URL en esta app, el historial se usa solo como una
+// pila de pantallas.
+let primerNavigate = true;
+let enPopstate = false;
+
+window.addEventListener('popstate', (e) => {
+  if (!e.state) return; // entrada sin estado (ver resetPassword.js) -- no hay a dónde volver
+  enPopstate = true;
+  navigate(e.state.route, e.state.params || {});
+  enPopstate = false;
+});
+
 export function navigate(route, params = {}) {
   if (!authed && !PUBLIC_ROUTES.includes(route)) route = 'auth';
   const render = ROUTES[route] || renderDashboard;
@@ -150,6 +168,20 @@ export function navigate(route, params = {}) {
     if (el.dataset.label === 'SuSana') el.innerHTML = susanaName();
     else el.textContent = t(el.dataset.label);
   });
+
+  // Un solo intento de guardar la entrada de historial -- si algún param
+  // no fuera clonable (una función, por ejemplo) esto lanzaría y no debe
+  // tumbar la navegación, que para este punto ya pintó la pantalla nueva
+  // sin problema; en el peor caso, esa pantalla puntual se queda sin
+  // deslizar-para-atrás, no rompe nada más.
+  if (!enPopstate) {
+    try {
+      const entry = { route, params };
+      if (primerNavigate) history.replaceState(entry, '');
+      else history.pushState(entry, '');
+      primerNavigate = false;
+    } catch (e) { console.warn('No se pudo registrar el historial de navegación:', e); }
+  }
 }
 
 nav.addEventListener('click', (e) => {
