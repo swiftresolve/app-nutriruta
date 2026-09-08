@@ -7,25 +7,46 @@ import { esc, guardarComidaRegistrada, today } from '../store.js';
 import { detectarAlimentosFoto, detectarAlimentosTexto, uploadComidaFoto } from '../supabase-client.js';
 import { t, getIdioma } from '../i18n.js';
 
-// Comprime y redimensiona la foto en el cliente antes de subirla (misma
+// Tamaño de la foto que se GUARDA en el diario visual -- nítida en
+// cualquier pantalla, sin disparar el peso del archivo.
+const MAX_DIM_GUARDAR = 1600;
+// Tamaño de la copia aparte que ve la IA para reconocer alimentos -- más
+// grande no reconoce mejor la comida, solo cuesta más tokens de imagen en
+// Anthropic (cobra por píxeles). Al mandar SIEMPRE esta misma copia
+// normalizada, el costo por foto queda fijo sin importar qué resolución
+// entregue el celular -- por eso el cobro en NutriCoins puede ser un
+// número fijo por registro, no algo variable según la calidad de la foto
+// (pedido explícito: la calidad que ve la usuaria en su diario nunca debe
+// bajar por esto).
+const MAX_DIM_IA = 1000;
+
+function reescalar(canvasOrigen, maxDim, calidad) {
+  const scale = Math.min(1, maxDim / Math.max(canvasOrigen.width, canvasOrigen.height));
+  const w = Math.round(canvasOrigen.width * scale);
+  const h = Math.round(canvasOrigen.height * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(canvasOrigen, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', calidad);
+}
+
+// Comprime la foto elegida de galería en el cliente antes de subirla (misma
 // idea que el avatar) — no recorta a cuadrado, una comida no siempre lo es.
-// Devuelve tanto el base64 (para que la IA identifique alimentos) como el
-// Blob (para guardarla de verdad en el diario visual).
-function toJpegBase64(file, maxDim = 1000) {
+// Devuelve el Blob de buena calidad para guardar en el diario y, aparte,
+// el base64 chico solo para que la IA identifique alimentos.
+function toJpegBase64(file, maxDim = MAX_DIM_GUARDAR) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-      const w = Math.round(img.width * scale);
-      const h = Math.round(img.height * scale);
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      const origen = document.createElement('canvas');
+      origen.width = img.width; origen.height = img.height;
+      origen.getContext('2d').drawImage(img, 0, 0);
+      const dataUrlGuardar = reescalar(origen, maxDim, 0.85);
+      const dataUrlIA = reescalar(origen, MAX_DIM_IA, 0.82);
       URL.revokeObjectURL(img.src);
-      canvas.toBlob((blob) => {
-        resolve({ base64: dataUrl.split(',')[1], mediaType: 'image/jpeg', previewUrl: dataUrl, blob });
-      }, 'image/jpeg', 0.82);
+      fetch(dataUrlGuardar).then((r) => r.blob()).then((blob) => {
+        resolve({ base64: dataUrlIA.split(',')[1], mediaType: 'image/jpeg', previewUrl: dataUrlGuardar, blob });
+      });
     };
     img.onerror = () => reject(new Error(t('Imagen inválida.')));
     img.src = URL.createObjectURL(file);
@@ -121,6 +142,8 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           <video id="ml-video" autoplay playsinline muted></video>
           <div class="camera-frame"></div>
         </div>
+        <div class="camera-lentes-row" id="ml-cam-lentes" hidden></div>
+        <div class="camera-zoom-row" id="ml-cam-zoom" hidden></div>
         <div class="camera-controls">
           <button type="button" class="camera-icon-btn" id="ml-cam-galeria" aria-label="${t('Elegir de la galería')}">🖼️</button>
           <button type="button" id="ml-shutter" class="camera-shutter" aria-label="${t('Tomar foto')}"></button>
@@ -131,76 +154,175 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       modal.querySelector('#ml-cam-galeria').addEventListener('click', () => { detenerCamara(); salirFullscreen(); fileInput.click(); });
 
       const video = modal.querySelector('#ml-video');
-      try {
-        // Sin aspectRatio: pedirle al navegador un feed cuadrado (probado
-        // antes) hace que varios Android recorten el sensor en vez de solo
-        // escalarlo -- se sentía MÁS zoom, no menos. Se deja que el
-        // navegador entregue su resolución nativa; el recorte cuadrado
-        // pasa solo en CSS (.camera-wrap) y al capturar (más abajo).
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      const wrap = modal.querySelector('.camera-wrap');
+      const lentesRow = modal.querySelector('#ml-cam-lentes');
+      const zoomRow = modal.querySelector('#ml-cam-zoom');
+      // Recuerda la última lente elegida a mano -- para no obligar a
+      // repetir la elección cada vez que se abre la cámara (pedido
+      // explícito). Solo el id, nunca datos de la usuaria.
+      const LENTE_KEY = 'nutriruta_camara_lente_id';
+      let trackActual = null;
+      let capsActuales = null;
+
+      // "1x", "2x", "3.5x" -- redondeado a 1 decimal, sin el ".0" cuando
+      // es un número entero.
+      function formatoX(v) {
+        const r = Math.round(v * 10) / 10;
+        return `${Number.isInteger(r) ? r : r.toFixed(1)}x`;
+      }
+
+      // Fila de botones de zoom CON NÚMEROS REALES (min/medio/máx que
+      // reporta la propia lente activa) -- a diferencia de "qué lente es
+      // la gran angular", el nivel de zoom sí es un dato que el navegador
+      // entrega con exactitud, así que aquí sí podemos mostrar números
+      // verificables en vez de adivinar etiquetas.
+      function renderZoom() {
+        if (!capsActuales?.zoom) { zoomRow.innerHTML = ''; zoomRow.hidden = true; return; }
+        const { min, max } = capsActuales.zoom;
+        const crudos = max > min ? [min, min + (max - min) / 2, max] : [min];
+        const valores = [...new Set(crudos.map((v) => Math.round(v * 10) / 10))];
+        zoomRow.innerHTML = valores.map((v) => `<button type="button" class="camera-zoom-btn" data-zoom="${v}">${formatoX(v)}</button>`).join('');
+        zoomRow.hidden = false;
+        marcarActivo(trackActual.getSettings().zoom ?? min);
+        zoomRow.querySelectorAll('.camera-zoom-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const v = Number(btn.dataset.zoom);
+            trackActual.applyConstraints({ advanced: [{ zoom: v }] }).then(() => marcarActivo(v)).catch(() => {});
+          });
+        });
+      }
+      function marcarActivo(zoomActual) {
+        zoomRow.querySelectorAll('.camera-zoom-btn').forEach((b) => {
+          b.classList.toggle('active', Math.abs(Number(b.dataset.zoom) - zoomActual) < 0.05);
+        });
+      }
+
+      // Arranca (o reinicia, al cambiar de lente) el stream de video. Sin
+      // aspectRatio: pedirle al navegador un feed cuadrado (probado antes)
+      // hace que varios Android recorten el sensor en vez de solo
+      // escalarlo -- se sentía MÁS zoom, no menos. Se deja que el
+      // navegador entregue su resolución nativa; el recorte cuadrado pasa
+      // solo en CSS (.camera-wrap) y al capturar (más abajo).
+      async function iniciarStream(deviceId) {
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+        const videoConstraint = deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: 'environment' } };
+        stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint, audio: false });
         video.srcObject = stream;
+        trackActual = stream.getVideoTracks()[0];
+        capsActuales = trackActual?.getCapabilities?.();
         // Muchos teléfonos Android exponen varias lentes traseras y el
         // navegador a veces elige la telefoto (2x) por defecto para
         // "environment" -- si el track expone control de zoom, se fuerza
         // al mínimo (la lente/ángulo más amplio) apenas arranca el video.
         // No todos los navegadores exponen esta capability; si no existe,
         // simplemente no se toca nada.
-        const track = stream.getVideoTracks()[0];
-        const capabilities = track?.getCapabilities?.();
-        if (capabilities?.zoom) {
-          try { await track.applyConstraints({ advanced: [{ zoom: capabilities.zoom.min }] }); } catch { /* el dispositivo no lo permite, se deja como está */ }
-          // Gesto de pellizco para acercar/alejar, como cualquier cámara
-          // nativa (pedido explícito, referencia real: Fitia) -- un
-          // <video> de getUserMedia no trae este gesto solo, hay que
-          // armarlo a mano sobre la distancia entre los 2 dedos.
-          const wrap = modal.querySelector('.camera-wrap');
-          let zoomInicial = capabilities.zoom.min;
-          let distanciaInicial = 0;
-          wrap.addEventListener('touchstart', (e) => {
-            if (e.touches.length !== 2) return;
-            distanciaInicial = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            zoomInicial = track.getSettings().zoom ?? capabilities.zoom.min;
-          });
-          wrap.addEventListener('touchmove', (e) => {
-            if (e.touches.length !== 2 || !distanciaInicial) return;
-            e.preventDefault();
-            const distanciaActual = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            const factor = distanciaActual / distanciaInicial;
-            const nuevoZoom = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min, zoomInicial * factor));
-            track.applyConstraints({ advanced: [{ zoom: nuevoZoom }] }).catch(() => {});
-          }, { passive: false });
-          wrap.addEventListener('touchend', () => { distanciaInicial = 0; });
+        if (capsActuales?.zoom) {
+          try { await trackActual.applyConstraints({ advanced: [{ zoom: capsActuales.zoom.min }] }); } catch { /* el dispositivo no lo permite, se deja como está */ }
         }
-      } catch {
-        salirFullscreen();
-        toast(t('No pudimos abrir la cámara. Elige una foto de tu galería.'));
-        fileInput.click();
-        return;
+        renderZoom();
+        try { localStorage.setItem(LENTE_KEY, trackActual.getSettings().deviceId || ''); } catch { /* localStorage no disponible, no es crítico */ }
       }
+
+      // Gesto de pellizco para acercar/alejar, como cualquier cámara nativa
+      // (pedido explícito, referencia real: Fitia). Se registra UNA sola
+      // vez y siempre lee trackActual/capsActuales (variables mutables),
+      // así sigue funcionando si la usuaria cambia de lente a mitad de la
+      // sesión de cámara.
+      let zoomInicial = 1, distanciaInicial = 0;
+      wrap.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 2 || !capsActuales?.zoom) return;
+        distanciaInicial = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        zoomInicial = trackActual.getSettings().zoom ?? capsActuales.zoom.min;
+      });
+      wrap.addEventListener('touchmove', (e) => {
+        if (e.touches.length !== 2 || !distanciaInicial || !capsActuales?.zoom) return;
+        e.preventDefault();
+        const distanciaActual = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        const factor = distanciaActual / distanciaInicial;
+        const nuevoZoom = Math.min(capsActuales.zoom.max, Math.max(capsActuales.zoom.min, zoomInicial * factor));
+        trackActual.applyConstraints({ advanced: [{ zoom: nuevoZoom }] }).catch(() => {});
+      }, { passive: false });
+      wrap.addEventListener('touchend', () => { distanciaInicial = 0; });
+
+      // Si la usuaria ya había elegido una lente antes, se intenta esa
+      // primero -- si el dispositivo ya no existe (celular distinto,
+      // navegador distinto) OverconstrainedError cae al intento genérico.
+      let lenteGuardada = null;
+      try { lenteGuardada = localStorage.getItem(LENTE_KEY); } catch { /* localStorage no disponible */ }
+      try {
+        await iniciarStream(lenteGuardada || undefined);
+      } catch {
+        try {
+          await iniciarStream();
+        } catch {
+          salirFullscreen();
+          toast(t('No pudimos abrir la cámara. Elige una foto de tu galería.'));
+          fileInput.click();
+          return;
+        }
+      }
+
+      // Fila de botones, uno por cada lente trasera física que detecte el
+      // celular (pedido explícito: el zoom mínimo que reporta la lente que
+      // el navegador elige por defecto puede seguir sintiéndose "cerca" en
+      // algunos Android). No se pueden etiquetar como "gran angular/1x/2x"
+      // -- el navegador no expone qué multiplicador óptico tiene cada
+      // lente física, solo cuántas hay, así que se numeran y la usuaria
+      // prueba cuál es la que busca. Las etiquetas de los dispositivos
+      // solo están disponibles DESPUÉS de dar permiso de cámara, por eso
+      // se enumera acá y no antes. iOS Safari no da pistas útiles en el
+      // label -- si no hay más de un candidato claro, la fila se queda
+      // oculta en vez de ofrecer un cambio que no serviría de nada.
+      try {
+        const dispositivos = await navigator.mediaDevices.enumerateDevices();
+        const traseras = dispositivos.filter((d) => d.kind === 'videoinput' && !/front|user|selfie|frontal/i.test(d.label));
+        if (traseras.length > 1) {
+          lentesRow.hidden = false;
+          lentesRow.innerHTML = traseras.map((d, i) => `<button type="button" class="camera-lente-btn" data-device-id="${d.deviceId}">${t('Lente')} ${i + 1}</button>`).join('');
+          function marcarLenteActiva() {
+            const idActual = trackActual?.getSettings().deviceId;
+            lentesRow.querySelectorAll('.camera-lente-btn').forEach((b) => b.classList.toggle('active', b.dataset.deviceId === idActual));
+          }
+          marcarLenteActiva();
+          lentesRow.querySelectorAll('.camera-lente-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              try { await iniciarStream(btn.dataset.deviceId); marcarLenteActiva(); }
+              catch { toast(t('No se pudo cambiar de lente.')); }
+            });
+          });
+        }
+      } catch { /* enumerar dispositivos falló -- se deja sin fila de lentes */ }
 
       modal.querySelector('#ml-shutter').addEventListener('click', () => {
         // Recorte cuadrado centrado del frame actual del video, coherente
-        // con el encuadre que se le muestra a la usuaria.
+        // con el encuadre que se le muestra a la usuaria. El lado del
+        // recorte se limita a MAX_DIM_GUARDAR para no disparar el peso del
+        // archivo, pero la que se guarda de verdad en el diario mantiene
+        // buena calidad -- la copia chica para la IA (MAX_DIM_IA) es
+        // aparte, la usuaria nunca la ve. Ver comentario de MAX_DIM_IA
+        // arriba: por qué el costo de la IA queda fijo sin importar la
+        // resolución que entregue el celular.
         const w = video.videoWidth, h = video.videoHeight;
-        const side = Math.min(w, h);
-        const canvas = document.createElement('canvas');
-        canvas.width = side; canvas.height = side;
-        canvas.getContext('2d').drawImage(video, (w - side) / 2, (h - side) / 2, side, side, 0, 0, side, side);
+        const cropSide = Math.min(w, h);
+        const origen = document.createElement('canvas');
+        origen.width = cropSide; origen.height = cropSide;
+        origen.getContext('2d').drawImage(video, (w - cropSide) / 2, (h - cropSide) / 2, cropSide, cropSide, 0, 0, cropSide, cropSide);
         detenerCamara();
         salirFullscreen();
-        canvas.toBlob(async (blob) => {
-          const previewUrl = canvas.toDataURL('image/jpeg', 0.85);
+        const previewUrl = reescalar(origen, MAX_DIM_GUARDAR, 0.85);
+        const base64IA = reescalar(origen, MAX_DIM_IA, 0.82).split(',')[1];
+        fetch(previewUrl).then((r) => r.blob()).then(async (blob) => {
           fotoBlob = blob;
           pantallaAnalizando(previewUrl);
           try {
-            const detectados = await detectarAlimentosFoto(previewUrl.split(',')[1], 'image/jpeg');
+            const detectados = await detectarAlimentosFoto(base64IA, 'image/jpeg');
             fuente = 'foto';
             pantallaConfirmar(detectados, previewUrl);
           } catch (err) {
             toast(err.message || t('No se pudo procesar la foto.'));
             pantallaElegir();
           }
-        }, 'image/jpeg', 0.85);
+        });
       });
     }
 

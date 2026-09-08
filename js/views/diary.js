@@ -45,6 +45,69 @@ function mealMeta(mealId) {
   return MEALS.find((m) => m.id === mealId) || { nombre: mealId, emoji: '🍴' };
 }
 
+// Visor de foto a pantalla completa (pedido explícito: las miniaturas del
+// diario no se podían abrir para verlas bien). Pellizcar para acercar,
+// doble toque para alternar zoom -- mismo gesto que cualquier galería
+// nativa, y el mismo patrón de pellizco que ya usa la cámara en vivo
+// (mealLogModal.js), aplicado aquí sobre translate+scale del <img>.
+function abrirFotoCompleta(url, alt) {
+  openModal((modal, closeFn) => {
+    modal.parentElement.classList.add('foto-lightbox');
+    modal.innerHTML = `<div class="foto-lightbox-wrap"><img src="${url}" alt="${alt}" class="foto-lightbox-img"></div>`;
+    const wrap = modal.querySelector('.foto-lightbox-wrap');
+    const img = modal.querySelector('.foto-lightbox-img');
+
+    let scale = 1, panX = 0, panY = 0;
+    let distanciaInicial = 0, scaleInicial = 1;
+    let panInicial = null;
+
+    function aplicar(conTransicion) {
+      img.style.transition = conTransicion ? 'transform 0.2s ease' : 'none';
+      img.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
+
+    wrap.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        distanciaInicial = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        scaleInicial = scale;
+      } else if (e.touches.length === 1 && scale > 1) {
+        panInicial = { x: e.touches[0].clientX - panX, y: e.touches[0].clientY - panY };
+      }
+    }, { passive: true });
+
+    wrap.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && distanciaInicial) {
+        e.preventDefault();
+        const distanciaActual = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        scale = Math.min(4, Math.max(1, scaleInicial * (distanciaActual / distanciaInicial)));
+        aplicar(false);
+      } else if (e.touches.length === 1 && panInicial) {
+        e.preventDefault();
+        panX = e.touches[0].clientX - panInicial.x;
+        panY = e.touches[0].clientY - panInicial.y;
+        aplicar(false);
+      }
+    }, { passive: false });
+
+    wrap.addEventListener('touchend', (e) => {
+      if (e.touches.length > 0) return;
+      distanciaInicial = 0; panInicial = null;
+      if (scale <= 1) { scale = 1; panX = 0; panY = 0; aplicar(true); }
+    });
+
+    let ultimoTap = 0;
+    wrap.addEventListener('touchend', () => {
+      const ahora = Date.now();
+      if (ahora - ultimoTap < 300) {
+        scale = scale > 1 ? 1 : 2.5;
+        panX = 0; panY = 0;
+        aplicar(true);
+      }
+      ultimoTap = ahora;
+    });
+  });
+}
+
 export function renderDiary(container) {
   header(container);
 
@@ -84,8 +147,9 @@ export function renderDiary(container) {
       const fig = document.createElement('div');
       fig.style.cssText = 'width:31%;min-width:90px';
       fig.innerHTML = `
-        <img src="${r.fotoUrl}" alt="${t(meta.nombre)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block">
+        <img src="${r.fotoUrl}" alt="${t(meta.nombre)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block;cursor:pointer">
         <p class="small muted center mt-xs">${meta.emoji} ${t(meta.nombre)}</p>`;
+      fig.querySelector('img').addEventListener('click', () => abrirFotoCompleta(r.fotoUrl, t(meta.nombre)));
       grid.appendChild(fig);
     });
 
