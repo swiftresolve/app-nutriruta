@@ -1,6 +1,7 @@
 // Motor de menús: filtra por exclusiones, prioriza perfiles y genera el menú del día.
 import { RECIPES, MEALS } from './data/recipes.js';
 import { REGIONALISMOS } from './data/regionalismos.js';
+import { categoriasDeIngredientes } from './data/categoriasAlimentos.js';
 import { getState, setState, today } from './store.js';
 
 // "Idioma de alimentos" (Ajustes) -- cambia solo palabras puntuales que sí
@@ -198,6 +199,48 @@ function daySeed(dateStr) {
   return h;
 }
 
+const MEALS_PRINCIPALES = ['desayuno', 'almuerzo', 'cena'];
+
+// Asegura que el día cubra proteína y vegetales/fruta -- pedido explícito:
+// el menú se elegía SOLO por perfil (apto/moderar/evitar) y rotación,
+// nunca revisaba si el conjunto del día quedaba nutricionalmente completo
+// (aplica a cualquier persona, tenga o no un perfil de salud). Si falta
+// una categoría entre las comidas principales, busca en el propio pool ya
+// filtrado (perfil-apto, nunca rojo) de almuerzo/cena/desayuno -- en ese
+// orden -- la opción mejor rankeada que sí la cubra, y la intercambia. Si
+// el catálogo no tiene ninguna opción que cubra la categoría para ese
+// perfil+comida, se deja como está (nunca inventa un ingrediente ni
+// fuerza algo que no existe en el catálogo real).
+function asegurarCobertura(menu) {
+  const principales = menu.filter((m) => MEALS_PRINCIPALES.includes(m.meal.id) && m.recipe);
+  if (!principales.length) return;
+
+  const categoriasDelDia = () => {
+    const set = new Set();
+    for (const m of principales) for (const c of categoriasDeIngredientes(m.recipe.ingredientes)) set.add(c);
+    return set;
+  };
+
+  function intentarCubrir(categoria, comidasEnOrden) {
+    if (categoriasDelDia().has(categoria)) return;
+    for (const idComida of comidasEnOrden) {
+      const item = principales.find((m) => m.meal.id === idComida);
+      // Nunca pisa una comida que la usuaria ya cambió a mano (🔄 "cambiar
+      // receta") -- una elección explícita suya siempre gana sobre este
+      // ajuste automático.
+      if (!item?.options || item.manual) continue;
+      const reemplazo = item.options.find((r) => r.id !== item.recipe.id && categoriasDeIngredientes(r.ingredientes).has(categoria));
+      if (reemplazo) { item.recipe = reemplazo; return; }
+    }
+  }
+
+  intentarCubrir('proteina', ['almuerzo', 'cena', 'desayuno']);
+  // Vegetal solo en almuerzo/cena -- el desayuno tradicional no siempre
+  // lleva verdura, forzarla ahí sería menos real que lo que de verdad se
+  // desayuna.
+  intentarCubrir('vegetal', ['almuerzo', 'cena']);
+}
+
 // Menú del día: por comida, elige entre los mejores candidatos rotando por fecha
 // y aplicando el desplazamiento manual ("cambiar receta").
 export function dailyMenu(dateStr = today()) {
@@ -206,13 +249,14 @@ export function dailyMenu(dateStr = today()) {
   const menu = [];
   for (const meal of mealsActivas(user)) {
     const options = candidatesFor(meal.id);
-    if (!options.length) { menu.push({ meal, recipe: null }); continue; }
+    if (!options.length) { menu.push({ meal, recipe: null, options }); continue; }
     const pool = options.slice(0, Math.min(4, options.length)); // rotar entre los 4 mejores
     const shift = menuOverrides[`${dateStr}|${meal.id}`] || 0;
     const idx = (seed + MEALS.indexOf(meal) + shift) % pool.length;
-    menu.push({ meal, recipe: pool[idx] });
+    menu.push({ meal, recipe: pool[idx], options, manual: shift !== 0 });
   }
-  return menu;
+  asegurarCobertura(menu);
+  return menu.map(({ meal, recipe }) => ({ meal, recipe }));
 }
 
 // Sugiere UNA receta real del catálogo para acompañar el tema de un día

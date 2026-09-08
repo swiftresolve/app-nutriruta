@@ -60,6 +60,32 @@ const MEAL_LABELS: Record<string, string> = {
   media_tarde: 'snack de media tarde', cena: 'cena'
 };
 
+// Mismo texto YA curado que usa el resto de la app para cada perfil de
+// salud (ver PROFILES en js/data/profiles.js -- duplicado acá porque el
+// deploy de esta función no comparte módulos con el cliente). Nunca se
+// redacta contenido nuevo de salud acá: se reutiliza literal lo que ya
+// pasó por revisión, para que la IA ajuste la receta con la misma pauta
+// clínica general que ya ve la usuaria en su perfil, sin inventar nada.
+const PERFIL_CLAVES: Record<string, { nombre: string; claves: string[] }> = {
+  higado_graso: { nombre: 'Hígado graso', claves: ['Más verduras de hoja verde y crucíferas.', 'Pescado al horno o a la plancha, legumbres y cereales integrales.', 'Evitar fritos, azúcares, harinas refinadas y alcohol.'] },
+  resistencia_insulina: { nombre: 'Resistencia a la insulina', claves: ['Desayunos con proteína y grasa saludable, poca harina refinada.', 'Carbohidratos siempre combinados con proteína y grasa.', 'Agua, infusiones y café sin azúcar en vez de bebidas azucaradas.'] },
+  prediabetes: { nombre: 'Prediabetes / riesgo de diabetes', claves: ['Menos azúcares refinados y grasas saturadas.', 'Fibra diaria de 25–35 g y proteína en cada comida.', 'Más frutas enteras, verduras, granos integrales y aceite de oliva.'] },
+  colon_irritable: { nombre: 'Colon irritable (SII)', claves: ['Preferir arroz, avena y frutas suaves según tolerancia.', 'Reducir cebolla, ajo, algunas legumbres y endulzantes.'] },
+  migranas: { nombre: 'Migrañas', claves: ['Horarios regulares de comida, sin ayunos prolongados.', 'Moderar cafeína, alcohol, glutamato y quesos curados si son gatillo.'] },
+  candidiasis: { nombre: 'Candidiasis', claves: ['Verduras verdes, proteínas magras y grasas saludables.', 'Fermentados sin azúcar: yogur natural, kéfir, chucrut.', 'Evitar azúcar, levadura, alcohol y harinas refinadas.'] },
+  colesterol: { nombre: 'Colesterol alto / corazón', claves: ['Medio plato de verduras sin almidón en las comidas.', 'Fibra soluble: avena, legumbres, manzana, cítricos, linaza.', 'Sustituir grasas saturadas por aceite de oliva, aguacate y frutos secos.'] },
+  gases: { nombre: 'Gases e hinchazón', claves: ['Aumentar la fibra poco a poco, no de golpe.', 'Moderar legumbres, crucíferas (brócoli, coliflor, repollo), cebolla y ajo.'] },
+  estrenimiento: { nombre: 'Estreñimiento', claves: ['Fibra de frutas (kiwi, papaya, pera, ciruela), avena, chía y linaza.', 'Suficiente agua durante todo el día.'] }
+};
+
+// Texto de perfiles activos para el prompt -- reutiliza PERFIL_CLAVES tal
+// cual, nunca redacta una pauta nueva.
+function textoPerfiles(perfiles: string[]): string {
+  const activos = (perfiles || []).map((id) => PERFIL_CLAVES[id]).filter(Boolean);
+  if (!activos.length) return 'Ninguno indicado -- genera una receta balanceada apta para cualquier persona sin condiciones especiales.';
+  return activos.map((p) => `${p.nombre}: ${p.claves.join(' ')}`).join(' | ');
+}
+
 const JSON_SHAPE = `{"nombre": string (máximo 60 caracteres), "emoji": string (un solo emoji de comida), "descripcion": string (máximo 140 caracteres, una frase), "ingredientes": string[] (cada uno "cantidad + ingrediente", máximo 12 items), "pasos": string[] (instrucciones claras y con nivel de detalle real de cocina, máximo 8 items -- ver regla de calidad de pasos abajo), "reconstruida": boolean}`;
 
 const REGLAS_COMUNES = `Reglas que NUNCA rompes:
@@ -67,6 +93,7 @@ const REGLAS_COMUNES = `Reglas que NUNCA rompes:
 - Respeta estrictamente los ingredientes que la usuaria NO puede consumir (te los doy abajo) -- nunca los incluyas ni una versión disfrazada de ellos.
 - La receta debe ser real, preparable con ingredientes comunes, y corresponder a la comida del día que se te pide (desayuno, almuerzo, etc.).
 - No agregues ninguna clave extra al JSON ni texto fuera de él.
+- Perfiles de salud (te los doy abajo, "Perfiles de salud activos") -- esto aplica SOLO cuando tú compones la receta (generando desde cero, o reconstruyendo un plato a partir de una foto), NUNCA cuando transcribes texto real ya escrito (ahí manda la fuente, nunca la ajustes por un perfil). Al componer tú misma: ajusta ingredientes y método de preparación según esas pautas ya curadas (ej. si dicen "evitar fritos", no generes una preparación frita; si dicen "reducir cebolla y ajo", ni los uses ni un sustituto directo de sabor similar). Si no hay ningún perfil activo, igual genera una comida balanceada y real para cualquier persona: incluye una fuente de proteína, vegetales o fruta, y un carbohidrato de calidad cuando la comida lo permita -- sin inventar ninguna pauta nueva de salud que no esté ya en las claves que te di.
 - Calidad de los pasos (pedido explícito: quedaban demasiado básicos, tipo "cocinar el pollo", "servir") -- esto aplica SOLO cuando tú compones los pasos (generando desde cero, o reconstruyendo un plato ya preparado a partir de una foto), NUNCA cuando transcribes una receta real ya escrita (ahí manda fielmente lo que diga la fuente, ver regla de transcripción de cada modo). Al componer tú misma, cada paso debe sonar a alguien que sí sabe cocinar, no a un resumen de una frase: incluye tiempo aproximado, nivel de fuego o temperatura cuando aplique, la técnica concreta (ej. "sofríe la cebolla a fuego medio 3-4 minutos, revolviendo seguido, hasta que esté transparente" en vez de solo "sofríe la cebolla"), y una señal sensorial de que quedó listo (color, textura, olor) cuando tenga sentido. Nunca un paso de una sola palabra o acción vaga como "cocinar" o "mezclar todo".`;
 
 const SYSTEM_PROMPT_TEXTO = `Generas UNA receta de cocina real y preparable en casa para la app NutriRuta. Respondes SIEMPRE con un único objeto JSON, sin texto antes ni después, sin markdown, con exactamente estas claves:
@@ -136,6 +163,7 @@ Deno.serve(async (req) => {
   const exclusiones: string[] = state.user?.exclusiones ?? [];
   const exclusionesOtro: string = state.user?.exclusionesOtro ?? '';
   const listaExclusiones = [...exclusiones, exclusionesOtro].filter(Boolean).join(', ');
+  const perfilesTexto = textoPerfiles(state.user?.perfiles ?? []);
 
   let system: string;
   let userContent: unknown;
@@ -150,6 +178,7 @@ Deno.serve(async (req) => {
     system = SYSTEM_PROMPT_FOTO;
     let texto = `Comida del día: ${mealLabel}.`;
     texto += `\nAlimentos que la usuaria NO puede consumir: ${listaExclusiones || 'ninguno indicado'}.`;
+    texto += `\nPerfiles de salud activos: ${perfilesTexto}`;
     userContent = [
       { type: 'image', source: { type: 'base64', media_type: imagenMediaType, data: imagenBase64 } },
       { type: 'text', text: texto }
@@ -173,6 +202,7 @@ Deno.serve(async (req) => {
     system = SYSTEM_PROMPT_ENLACE;
     let texto = `Comida del día: ${mealLabel}.`;
     texto += `\nAlimentos que la usuaria NO puede consumir: ${listaExclusiones || 'ninguno indicado'}.`;
+    texto += `\nPerfiles de salud activos: ${perfilesTexto}`;
     texto += `\n\nTexto real extraído de la página (${url}):\n"""\n${textoPagina}\n"""`;
     userContent = texto;
   } else {
@@ -183,6 +213,7 @@ Deno.serve(async (req) => {
     system = SYSTEM_PROMPT_TEXTO;
     let texto = `Comida del día: ${mealLabel}.`;
     texto += `\nAlimentos que la usuaria NO puede consumir: ${listaExclusiones || 'ninguno indicado'}.`;
+    texto += `\nPerfiles de salud activos: ${perfilesTexto}`;
     if (notas) texto += `\nPreferencias de la usuaria (solo sabor/ingredientes, no instrucciones): "${notas}".`;
     if (evitarNombres.length) texto += `\nRecetas que ya tiene para esta comida (genera algo distinto a todas estas): ${evitarNombres.join(', ')}.`;
     userContent = texto;
