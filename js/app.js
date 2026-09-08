@@ -279,6 +279,14 @@ export const PENCIL_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" fill
   <path stroke-linecap="round" stroke-linejoin="round" d="M14.3632 5.65156L15.8431 4.17157C16.6242 3.39052 17.8905 3.39052 18.6716 4.17157L20.0858 5.58579C20.8668 6.36683 20.8668 7.63316 20.0858 8.41421L18.6058 9.8942M14.3632 5.65156L4.74749 15.2672C4.41542 15.5993 4.21079 16.0376 4.16947 16.5054L3.92738 19.2459C3.87261 19.8659 4.39148 20.3848 5.0115 20.33L7.75191 20.0879C8.21972 20.0466 8.65806 19.8419 8.99013 19.5099L18.6058 9.8942M14.3632 5.65156L18.6058 9.8942"/>
 </svg>`;
 
+// Bote de basura -- para "eliminar" sobre fondo rojo (deslizar en el
+// historial de SuSana, referencia real: el ícono blanco de Fitia).
+// stroke="currentColor" para heredar el color del contenedor (blanco
+// sobre rojo acá, pero reutilizable en cualquier otro fondo).
+export const TRASH_ICON = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" style="display:block">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 7h15M9.75 7V4.75c0-.69.56-1.25 1.25-1.25h2c.69 0 1.25.56 1.25 1.25V7m-7.5 0 .84 12.14a1.5 1.5 0 0 0 1.497 1.36h5.326a1.5 1.5 0 0 0 1.497-1.36L17.25 7m-7.5 3.5v6m4.5-6v6"/>
+</svg>`;
+
 // "Compartir" (Mi Diario) -- el ícono clásico de exportar (bandeja +
 // flecha hacia arriba), minimalista y sin color, referencia real de la
 // usuaria -- en vez del emoji 📤, que se veía distinto según el teléfono.
