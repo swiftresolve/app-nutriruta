@@ -2003,11 +2003,16 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    mientras la fila está cerrada, para que no se asome ni un pixel. */
 .hist-row-wrap { position: relative; overflow: hidden; border-radius: 12px; touch-action: pan-y; }
 .hist-row-wrap .hist-row { position: relative; z-index: 1; background: var(--card); touch-action: pan-y; }
-.hist-row-delete {
-  position: absolute; top: 0; right: 0; bottom: 0; width: 76px;
-  background: var(--red); color: #fff; font-size: 1.2rem;
-  display: flex; align-items: center; justify-content: center; border: none;
-}
+/* Capa roja de ancho completo DEBAJO de la fila -- al deslizar más allá
+   de los 76px del ícono, se sigue revelando la MISMA capa (no un botón
+   que se estira), por eso se ve como un solo rojo continuo creciendo,
+   con el ícono siempre anclado a la derecha. */
+.hist-row-bg { position: absolute; inset: 0; background: var(--red); display: flex; align-items: center; justify-content: flex-end; }
+.hist-row-delete { width: 76px; height: 100%; border: none; background: none; color: #fff; display: flex; align-items: center; justify-content: center; }
+/* "Armado" -- se pasó el umbral de borrado automático (deslizamiento
+   sostenido); el ícono crece un poco como retroalimentación de "suelta
+   para eliminar", igual que el patrón ya conocido de Gmail/Mail. */
+.hist-row-wrap.armado .hist-row-delete { transform: scale(1.2); transition: transform 0.15s ease; }
 .hist-day-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0 0; }
 .chat-divider::before, .chat-divider::after { content: ''; flex: 1; height: 1px; background: var(--primary-soft); }
 .chat-divider span { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--primary-dark); white-space: nowrap; }

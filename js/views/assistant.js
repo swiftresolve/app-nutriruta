@@ -3,7 +3,7 @@
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, eliminarMemoria, MEMORIA_MAX } from '../store.js';
 import { fetchGuideHistory, askGuide, analyzeFood, listGuideConversations, deleteGuideConversation } from '../supabase-client.js';
-import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON, THUMBS_UP_SOLID_ICON, THUMBS_DOWN_SOLID_ICON, ARROW_UP_ICON } from '../app.js';
+import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, TRASH_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON, THUMBS_UP_SOLID_ICON, THUMBS_DOWN_SOLID_ICON, ARROW_UP_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
 import { t } from '../i18n.js';
 
@@ -551,28 +551,64 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
 
     const cont = modal.querySelector('#hist-lista');
     // Deslizar una fila hacia la izquierda revela "Eliminar" debajo (misma
-    // referencia visual que mostró la usuaria) -- ANCHO_BOTON es lo que se
-    // asoma. Solo una fila puede estar abierta a la vez: abrir otra cierra
-    // la anterior, mismo comportamiento esperado en cualquier lista así.
+    // referencia visual que mostró la usuaria, ícono real en vez de un
+    // emoji genérico) -- ANCHO_BOTON es lo que se asoma con un deslizar
+    // corto. Si el deslizamiento CONTINÚA más allá de COMMIT_FRACCION del
+    // ancho de la fila, se suelta y se borra sola -- como descartar una
+    // carta -- sin pedir confirmación aparte (el gesto sostenido YA es la
+    // decisión deliberada; el tap corto sobre el ícono revelado sí sigue
+    // pidiendo confirmación, para quien prefiere ese camino más lento).
+    // Solo una fila puede estar abierta (revelada) a la vez.
     const ANCHO_BOTON = 76;
+    const COMMIT_FRACCION = 0.5;
     let filaAbierta = null;
+    function cerrarFilaAbierta() { filaAbierta?.cerrarFilaAbierta?.(); }
+    // Colapsa la fila (alto -> 0) antes de quitarla del DOM, para que la
+    // conversación de abajo "suba" con una animación en vez de saltar de
+    // golpe al lugar que deja libre la eliminada.
+    function colapsarYQuitar(wrap, onDone) {
+      const h = wrap.getBoundingClientRect().height;
+      wrap.style.height = `${h}px`;
+      wrap.style.overflow = 'hidden';
+      requestAnimationFrame(() => {
+        wrap.style.transition = 'height 0.2s ease, opacity 0.2s ease';
+        wrap.style.height = '0px';
+        wrap.style.opacity = '0';
+      });
+      wrap.addEventListener('transitionend', () => { wrap.remove(); onDone?.(); }, { once: true });
+    }
     function crearFilaHistorial(c) {
       const wrap = document.createElement('div');
       wrap.className = 'hist-row-wrap';
       wrap.innerHTML = `
-        <button type="button" class="hist-row-delete" aria-label="${t('Eliminar conversación')}">🗑️</button>
+        <div class="hist-row-bg"><button type="button" class="hist-row-delete" aria-label="${t('Eliminar conversación')}">${TRASH_ICON}</button></div>
         <button type="button" class="hist-row${c.conversation_id === conversationIdActual ? ' selected' : ''}">${esc(c.title.slice(0, 60))}</button>`;
       const row = wrap.querySelector('.hist-row');
-      let inicioX = 0, inicioY = 0, offsetActual = 0, arrastrando = false, esHorizontal = null;
+      let inicioX = 0, inicioY = 0, offsetActual = 0, arrastrando = false, esHorizontal = null, rowWidth = 0;
+      const quitarDeCacheYLista = () => {
+        const eraActual = c.conversation_id === conversationIdActual;
+        const cacheada2 = leerHistCache();
+        if (cacheada2) guardarHistCache(cacheada2.filter((x) => x.conversation_id !== c.conversation_id));
+        return eraActual;
+      };
+      const eliminarConGesto = () => {
+        row.style.transition = 'transform 0.18s ease';
+        row.style.transform = `translateX(-${rowWidth}px)`;
+        deleteGuideConversation(c.conversation_id).catch(() => toast(t('No se pudo eliminar la conversación.')));
+        const eraActual = quitarDeCacheYLista();
+        setTimeout(() => colapsarYQuitar(wrap, () => { if (eraActual) { closeFn(); onNueva(); } }), 180);
+      };
       const cerrar = () => {
         offsetActual = 0;
         row.style.transition = 'transform 0.2s ease';
         row.style.transform = 'translateX(0)';
+        wrap.classList.remove('armado');
         if (filaAbierta === wrap) filaAbierta = null;
       };
       row.addEventListener('touchstart', (e) => {
         if (filaAbierta && filaAbierta !== wrap) cerrarFilaAbierta();
         inicioX = e.touches[0].clientX; inicioY = e.touches[0].clientY;
+        rowWidth = row.getBoundingClientRect().width;
         arrastrando = true; esHorizontal = null;
         row.style.transition = 'none';
       });
@@ -584,16 +620,19 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
         if (!esHorizontal) return;
         e.preventDefault();
         const base = filaAbierta === wrap ? -ANCHO_BOTON : 0;
-        offsetActual = Math.max(-ANCHO_BOTON, Math.min(0, base + dx));
+        offsetActual = Math.max(-rowWidth, Math.min(0, base + dx));
         row.style.transform = `translateX(${offsetActual}px)`;
+        wrap.classList.toggle('armado', offsetActual <= -rowWidth * COMMIT_FRACCION);
       }, { passive: false });
       row.addEventListener('touchend', () => {
         arrastrando = false;
         if (!esHorizontal) return;
+        if (offsetActual <= -rowWidth * COMMIT_FRACCION) { eliminarConGesto(); return; }
         row.style.transition = 'transform 0.2s ease';
         const abierta = offsetActual < -ANCHO_BOTON / 2;
         offsetActual = abierta ? -ANCHO_BOTON : 0;
         row.style.transform = `translateX(${offsetActual}px)`;
+        wrap.classList.remove('armado');
         filaAbierta = abierta ? wrap : (filaAbierta === wrap ? null : filaAbierta);
       });
       row.addEventListener('click', (e) => {
@@ -602,17 +641,13 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
       });
       wrap.querySelector('.hist-row-delete').addEventListener('click', () => {
         confirmarEliminarConversacion(c, () => {
-          const eraActual = c.conversation_id === conversationIdActual;
-          wrap.remove();
-          const cacheada2 = leerHistCache();
-          if (cacheada2) guardarHistCache(cacheada2.filter((x) => x.conversation_id !== c.conversation_id));
-          if (eraActual) { closeFn(); onNueva(); }
+          const eraActual = quitarDeCacheYLista();
+          colapsarYQuitar(wrap, () => { if (eraActual) { closeFn(); onNueva(); } });
         });
       });
       wrap.cerrarFilaAbierta = cerrar;
       return wrap;
     }
-    function cerrarFilaAbierta() { filaAbierta?.cerrarFilaAbierta?.(); }
 
     function pintarLista(conversations) {
       if (!conversations.length) {
