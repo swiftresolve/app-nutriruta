@@ -9,6 +9,11 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
 
+// Chulo de nodo completado -- referencia real: el de Duolingo (grueso,
+// beige/crema, nunca un "✓" de texto plano, que con la tipografía del
+// sistema se veía casi invisible de lo delgado).
+const CHECK_ICON = `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#F5E8C8" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M4 12.5l5 5L20 6"/></svg>`;
+
 // items: [{ icon, title, subtitle, done, now, locked, nowLabel, onClick, extraHtml }]
 // extraHtml: HTML adicional dentro de la etiqueta (ej. un botón de acción
 // secundaria) — quien llama a renderPathMap puede engancharle sus propios
@@ -139,7 +144,10 @@ export function renderPathMap(container, items, opts = {}) {
   const rowsHtml = items.map((it, i) => {
     const offset = offsets ? (offsets[i] ?? 0) : AMPLITUD * Math.sin((i / PERIODO + FASE) * Math.PI * 2);
     const stateClass = (it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '') + (allDone && it.done ? ' all-done' : '');
-    const icon = it.done ? '✓' : (it.locked ? '🔒' : esc(it.icon));
+    // El "✓" de texto plano quedaba muy delgado con la tipografía del
+    // sistema -- referencia real: el chulo grueso y beige de Duolingo.
+    // Trazo grueso (stroke-width 4.5) en vez de un carácter de fuente.
+    const icon = it.done ? CHECK_ICON : (it.locked ? '🔒' : esc(it.icon));
     const tag = it.now ? `<span class="path-tag path-tag-now">${esc(it.nowLabel || 'Actual')}</span>` : '';
     const mascot = it.now ? '<div class="path-mascot">🌿</div>' : '';
     return `<div class="path-row" data-row-idx="${i}" style="margin-left:${(22 + offset).toFixed(1)}%">
