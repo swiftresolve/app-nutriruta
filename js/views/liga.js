@@ -9,7 +9,7 @@
 // lista de posiciones de Duolingo (la usuaria mandó capturas), adaptado
 // a los 10 niveles propios de NutriRuta (sinónimos de "ruta/camino").
 import { esc } from '../store.js';
-import { header } from '../app.js';
+import { header, CLOCK_ICON } from '../app.js';
 import { fetchLigaEstado, fetchMiNivelLiga } from '../supabase-client.js';
 import { t } from '../i18n.js';
 
@@ -37,22 +37,43 @@ const ZONAS = [
   { desde: 12, hasta: 20, label: () => `⬇️ ${t('Bajan de nivel')}` }
 ];
 const TOTAL_GRUPO = 20;
+
+// Días restantes de la semana de liga (referencia real: Duolingo, "5 DÍAS"
+// arriba del carrusel) -- calculado contra el cron real que rota la liga
+// cada semana (liga_rotar_semana, lunes 04:59 UTC = domingo 11:59pm hora
+// Bogotá), no un número fijo inventado.
+function proximoResetUTC() {
+  const ahora = new Date();
+  const candidato = new Date(Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate(), 4, 59, 0));
+  let diasHastaLunes = (1 - candidato.getUTCDay() + 7) % 7;
+  if (diasHastaLunes === 0 && candidato.getTime() <= ahora.getTime()) diasHastaLunes = 7;
+  candidato.setUTCDate(candidato.getUTCDate() + diasHastaLunes);
+  return candidato;
+}
+function diasRestantesLiga() {
+  return Math.max(1, Math.ceil((proximoResetUTC().getTime() - Date.now()) / 86400000));
+}
 // Relleno para cuando el grupo real tiene menos de 20 personas (grupo
 // nuevo, semana recién empezada) -- así la liga siempre se ve completa,
 // con las 3 zonas visibles, en vez de cortarse a la mitad. Pedido
-// explícito: NUNCA con nombres inventados que parezcan personas reales
-// (antes decía "Caminante 4", "Viajero 7") -- eso es falso prueba social,
-// aunque estuviera atenuado. Ahora es explícitamente un cupo vacío, sin
-// nombre de persona ni cantidad de gemas (el guión dice "acá no hay
-// nadie todavía", 0 💎 diría "hay alguien real que no ganó nada").
+// explícito (segunda vuelta, tras probar el cupo vacío): nombre + apellido
+// que se sientan como personas reales, como en Duolingo -- no las
+// palabras temáticas de ruta de antes ("Caminante 4"). Las gemas SIEMPRE
+// quedan en 0: nunca se inventa actividad/competencia real, solo el
+// nombre para que el grupo no se vea vacío.
+const NOMBRES_RELLENO = [
+  'Camila Rojas', 'Andrés Peña', 'Valentina Ríos', 'Santiago Cruz', 'Mariana Ortiz',
+  'Daniel Vargas', 'Sofía Morales', 'Juan Restrepo', 'Isabella Gómez', 'Sebastián Duarte',
+  'Luciana Herrera', 'Nicolás Salazar'
+];
 function rellenarConDummies(participantes) {
   if (participantes.length >= TOTAL_GRUPO) return participantes;
   const relleno = [];
   for (let i = participantes.length; i < TOTAL_GRUPO; i++) {
     relleno.push({
       user_id: `dummy-${i}`,
-      nombre: null,
-      gemas_semana: null,
+      nombre: NOMBRES_RELLENO[i % NOMBRES_RELLENO.length],
+      gemas_semana: 0,
       es_yo: false,
       dummy: true
     });
@@ -98,14 +119,21 @@ function pintar(wrap, participantes, nivel) {
   const tier = NIVELES[nivel] || NIVELES[1];
   wrap.innerHTML = '';
 
+  const dias = diasRestantesLiga();
+  const cabecera = document.createElement('div');
+  cabecera.className = 'center mt';
+  cabecera.innerHTML = `
+    <h2>${esc(tier.nombre)}</h2>
+    <p class="small muted row" style="justify-content:center;gap:5px;margin-top:2px">${CLOCK_ICON}${t('{n} día{s}', { n: dias, s: dias === 1 ? '' : 's' })}</p>`;
+  wrap.appendChild(cabecera);
+
   const carrusel = pintarCarrusel(nivel);
   wrap.appendChild(carrusel);
 
   const intro = document.createElement('div');
   intro.className = 'center mt mb';
   intro.innerHTML = `
-    <h2>${esc(tier.nombre)}</h2>
-    <p class="small muted mt">${t('Ganas tu lugar con las gemas 💎 de esta semana. Los primeros 6 suben de nivel, los últimos 8 bajan -- la semana reinicia cada domingo.')}</p>`;
+    <p class="small muted">${t('Ganas tu lugar con las gemas 💎 de esta semana. Los primeros 6 suben de nivel, los últimos 8 bajan -- la semana reinicia cada domingo.')}</p>`;
   wrap.appendChild(intro);
 
   if (!participantes.length) {
@@ -138,13 +166,10 @@ function pintar(wrap, participantes, nivel) {
         // la zona siguiente ya marca el corte, la línea extra era
         // redundante (feedback real de la usuaria).
         row.className = 'habit' + (p.es_yo ? ' liga-yo' : '') + (esUltimaDeZona ? ' liga-sin-borde' : '') + (p.dummy ? ' liga-dummy' : '');
-        row.innerHTML = p.dummy
-          ? `<span class="liga-rank">${rank}</span>
-             <label style="flex:1" class="muted">${t('Cupo libre')}</label>
-             <span class="small muted">—</span>`
-          : `<span class="liga-rank">${rank <= 3 ? MEDALLAS[rank - 1] : rank}</span>
-             <label style="flex:1">${esc(p.nombre || t('Alguien en tu ruta'))}${p.es_yo ? ` <span class="tag verde">${t('Tú')}</span>` : ''}</label>
-             <span class="small" style="font-weight:700;white-space:nowrap">${p.gemas_semana} 💎</span>`;
+        row.innerHTML = `
+          <span class="liga-rank">${rank <= 3 && !p.dummy ? MEDALLAS[rank - 1] : rank}</span>
+          <label style="flex:1">${esc(p.nombre || t('Alguien en tu ruta'))}${p.es_yo ? ` <span class="tag verde">${t('Tú')}</span>` : ''}</label>
+          <span class="small" style="font-weight:700;white-space:nowrap">${p.gemas_semana} 💎</span>`;
         lista.appendChild(row);
       });
     }

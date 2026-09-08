@@ -122,6 +122,7 @@ const EN = {
   'Cerrar': 'Close',
   'Nuevo chat': 'New chat',
   'Cupo libre': 'Open spot',
+  '{n} día{s}': '{n} day{s}',
   'Foto anterior': 'Previous photo',
   'Foto siguiente': 'Next photo',
   'Continuar': 'Continue',
