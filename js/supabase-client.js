@@ -240,8 +240,8 @@ async function invocarGenerarReceta(body) {
 // mismo plato de siempre, sobre todo cuando no hay notas de por medio
 // (sin ninguna preferencia que lo oriente, el modelo tiende a converger
 // siempre en la opción más "obvia" para esa comida).
-export async function generarRecetaIA(comida, notas, evitarNombres = []) {
-  return invocarGenerarReceta({ comida, modo: 'texto', notas, evitarNombres });
+export async function generarRecetaIA(comida, notas, evitarNombres = [], aceptarIndulgente = false) {
+  return invocarGenerarReceta({ comida, modo: 'texto', notas, evitarNombres, aceptarIndulgente });
 }
 
 // "Desde una foto": la propia foto puede ser (a) una receta escrita/

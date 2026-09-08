@@ -199,6 +199,7 @@ function abrirRecetaPropia(receta, onEliminada) {
       </p>
       <p class="small muted center mt">${meal ? `${meal.emoji} ${t(meal.nombre)}` : ''} · ${origenLabel(receta)}${receta.porciones ? ` · 🍽️ ${t('{n} porción{s}', { n: receta.porciones, s: receta.porciones === 1 ? '' : 'es' })}` : ''}</p>
       ${receta.reconstruida ? `<p class="small mt" style="background:var(--accent-soft);border-radius:var(--radius);padding:10px 12px">⚠️ ${t('La IA reconstruyó esta receta a partir de la foto del plato, no de una receta escrita -- revisa cantidades y pasos antes de prepararla.')}</p>` : ''}
+      ${receta.notaSalud ? `<p class="small mt receta-nota-salud${receta.advertencia ? ' advertencia' : ''}">${receta.advertencia ? '⚠️' : '🌿'} ${esc(receta.notaSalud)}${receta.advertencia ? ` ${t('Elegiste la versión original -- queda bajo tu decisión.')}` : ''}</p>` : ''}
       ${receta.descripcion ? `<p class="small mt center">${esc(receta.descripcion)}</p>` : ''}
       <button type="button" class="btn-susana mt" id="rp-analizar-susana"><span class="susana-sparkle">${SPARKLE_ICON}</span> ${t('Analizar con SuSana')}</button>
       ${receta.ingredientes.length ? `
@@ -474,6 +475,10 @@ export function renderPlanner(container, params = {}) {
           <textarea id="ia-notas" class="auth-input mt" rows="5" maxlength="${NOTAS_MAX}" placeholder="${t('Ej: con pollo, sin lácteos, algo rápido…')}" style="resize:none"></textarea>
           <p class="small muted" id="ia-contador" style="text-align:right;margin-top:-6px">${t('{n} caracteres restantes', { n: NOTAS_MAX })}</p>
         </div>
+        <label class="row mt" style="gap:8px;align-items:flex-start;cursor:pointer">
+          <input type="checkbox" id="ia-indulgente" style="margin-top:3px">
+          <span class="small muted">${t('Si pides algo típicamente indulgente (ej. salchipapa, hamburguesa cargada), prefiero la versión original tal cual, no una versión casera más saludable — bajo mi responsabilidad.')}</span>
+        </label>
         <button type="button" class="btn full" id="ia-generar" style="display:flex;align-items:center;justify-content:center;gap:6px">${cantidad === 1 ? t('Generar receta') : t('Generar {n} recetas', { n: cantidad })} · ${cantidad * COSTO_RECETA_IA} ${coinIcon(ORO_NUTRICOINS, 18)}</button>`);
 
       const { getComida } = montarSelectorComida(modal, modal.querySelector('#ia-comida-btn'), modal.querySelector('#ia-comida-menu'), comidaElegida);
@@ -486,8 +491,9 @@ export function renderPlanner(container, params = {}) {
 
       modal.querySelector('#ia-generar').addEventListener('click', () => {
         const notas = notasEl.value.trim();
+        const aceptarIndulgente = modal.querySelector('#ia-indulgente').checked;
         closeFn();
-        generarRecetasInline(cantidad, getComida(), notas);
+        generarRecetasInline(cantidad, getComida(), notas, aceptarIndulgente);
       });
     });
   }
@@ -736,7 +742,7 @@ export function renderPlanner(container, params = {}) {
     }
   }
 
-  function generarRecetasInline(cantidad, comida, notas) {
+  function generarRecetasInline(cantidad, comida, notas, aceptarIndulgente = false) {
     if (iaEstado === 'generando') return;
     iaEstado = 'generando';
     iaCantidad = cantidad;
@@ -771,7 +777,7 @@ export function renderPlanner(container, params = {}) {
 
     async function generarUna() {
       try {
-        const receta = await generarRecetaIA(comida, notas, nombresExistentes);
+        const receta = await generarRecetaIA(comida, notas, nombresExistentes, aceptarIndulgente);
         gastarNutricoins(COSTO_RECETA_IA);
         // header() no es reactivo -- pinta el saldo una sola vez al montar
         // la vista, así que sin este parche el número del header se queda

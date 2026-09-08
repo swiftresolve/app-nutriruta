@@ -303,6 +303,8 @@ const EN = {
   'Si un día no puedes cumplir, una Pausa cubre ese día sin romper tu racha -- se gana 1 cada 7 Días en Ruta, o se compra con gemas. Nunca te castiga por un mal día.': 'If you can\'t make it one day, a Pause covers that day without breaking your streak -- you earn 1 every 7 Days on Track, or buy one with gems. It never punishes you for a bad day.',
   'Tu ruta de hoy': 'Your route today',
   'Ver plan completo →': 'See full plan →',
+  'Si pides algo típicamente indulgente (ej. salchipapa, hamburguesa cargada), prefiero la versión original tal cual, no una versión casera más saludable — bajo mi responsabilidad.': 'If you ask for something typically indulgent (e.g. loaded fries, a stacked burger), I prefer the original version as-is, not a healthier homemade version — my own call.',
+  'Elegiste la versión original -- queda bajo tu decisión.': 'You chose the original version -- it\'s your call.',
   'El menú de cada comida, elegido según tu perfil de salud. Tócala para ver la receta, o el 🔄 para cambiarla al instante por otra opción que también te sirva.': 'The menu for each meal, chosen based on your health profile. Tap it to see the recipe, or the 🔄 to instantly swap it for another option that also works for you.',
   'Tu paso de hoy': 'Your step today',
   'Una sola acción pequeña y concreta, pensada para tu situación real. Tócala cuando la hagas -- no hace falta más para empezar cada día.': 'One small, concrete action, designed for your real situation. Tap it when you do it -- that\'s all it takes to start each day.',

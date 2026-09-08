@@ -579,7 +579,7 @@ export function toggleFavorita(recipeId) {
 // del catálogo curado -- por eso no pasan por isRecipeAvailable/
 // matchesSearch/trafficLight (esas funciones esperan esa estructura).
 const ORIGENES_RECETA_PROPIA = ['ia', 'foto', 'enlace', 'manual'];
-export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingredientes, pasos, porciones, tiempoMin, origen, reconstruida }) {
+export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingredientes, pasos, porciones, tiempoMin, origen, reconstruida, notaSalud, advertencia }) {
   const receta = {
     id: `propia-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     nombre: String(nombre || '').trim().slice(0, 80),
@@ -596,6 +596,15 @@ export function agregarRecetaPropia({ nombre, comida, emoji, descripcion, ingred
     // así que es una estimación -- se muestra con aviso, nunca como fuente
     // verificada (ver [[feedback-solo-info-comprobada]]).
     reconstruida: origen === 'foto' && !!reconstruida,
+    // Cuando la usuaria pide algo típicamente indulgente/ultraprocesado
+    // (ej. "salchipapa", "hamburguesa cargada"), el servidor por defecto
+    // genera una versión casera más saludable y explica el cambio acá. Si
+    // la usuaria pidió explícitamente la versión original (checkbox "la
+    // prefiero tal cual"), advertencia queda true y notaSalud explica por
+    // qué es la opción menos recomendada -- nunca se le niega el plato,
+    // solo se le informa, bajo su propia decisión.
+    notaSalud: String(notaSalud || '').trim().slice(0, 200),
+    advertencia: !!advertencia,
     creada: today()
   };
   setState({ misRecetas: [...(state.misRecetas || []), receta] });

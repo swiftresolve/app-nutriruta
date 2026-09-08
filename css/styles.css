@@ -582,6 +582,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .tag.info { background: var(--secondary-soft); color: #2E6396; }
 .tag.perfil { background: var(--primary-soft); color: var(--primary-dark); }
 
+/* Nota de salud en una receta generada por IA (planner.js) -- mismos
+   colores que .tag.verde/.rojo del semáforo, para que se lea con el
+   mismo lenguaje visual: verde cuando la IA ofreció por defecto la
+   versión casera más saludable, rojo cuando la usuaria pidió la versión
+   original/indulgente tal cual y queda bajo su propia decisión. */
+.receta-nota-salud { border-radius: var(--radius); padding: 10px 12px; background: #E3F5E9; color: #21753C; }
+.receta-nota-salud.advertencia { background: #FBE3E0; color: #A33124; }
+
 /* Semáforo dot */
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .dot.verde { background: var(--green); }

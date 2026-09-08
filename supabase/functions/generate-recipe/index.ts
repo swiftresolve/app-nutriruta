@@ -86,7 +86,7 @@ function textoPerfiles(perfiles: string[]): string {
   return activos.map((p) => `${p.nombre}: ${p.claves.join(' ')}`).join(' | ');
 }
 
-const JSON_SHAPE = `{"nombre": string (máximo 60 caracteres), "emoji": string (un solo emoji de comida), "descripcion": string (máximo 140 caracteres, una frase), "ingredientes": string[] (cada uno "cantidad + ingrediente", máximo 12 items), "pasos": string[] (instrucciones claras y con nivel de detalle real de cocina, máximo 8 items -- ver regla de calidad de pasos abajo), "reconstruida": boolean}`;
+const JSON_SHAPE = `{"nombre": string (máximo 60 caracteres), "emoji": string (un solo emoji de comida), "descripcion": string (máximo 140 caracteres, una frase), "ingredientes": string[] (cada uno "cantidad + ingrediente", máximo 12 items), "pasos": string[] (instrucciones claras y con nivel de detalle real de cocina, máximo 8 items -- ver regla de calidad de pasos abajo), "reconstruida": boolean, "notaSalud": string (máximo 160 caracteres, ver regla de comida indulgente abajo -- cadena vacía "" si no aplica), "advertencia": boolean (ver regla de comida indulgente abajo)}`;
 
 const REGLAS_COMUNES = `Reglas que NUNCA rompes:
 - JAMÁS incluyas calorías, kilocalorías, macronutrientes (proteína/carbohidratos/grasas en gramos), ni ningún dato numérico nutricional en ningún campo. NutriRuta no cuenta calorías bajo ninguna circunstancia.
@@ -94,6 +94,7 @@ const REGLAS_COMUNES = `Reglas que NUNCA rompes:
 - La receta debe ser real, preparable con ingredientes comunes, y corresponder a la comida del día que se te pide (desayuno, almuerzo, etc.).
 - No agregues ninguna clave extra al JSON ni texto fuera de él.
 - Perfiles de salud (te los doy abajo, "Perfiles de salud activos") -- esto aplica SOLO cuando tú compones la receta (generando desde cero, o reconstruyendo un plato a partir de una foto), NUNCA cuando transcribes texto real ya escrito (ahí manda la fuente, nunca la ajustes por un perfil). Al componer tú misma: ajusta ingredientes y método de preparación según esas pautas ya curadas (ej. si dicen "evitar fritos", no generes una preparación frita; si dicen "reducir cebolla y ajo", ni los uses ni un sustituto directo de sabor similar). Si no hay ningún perfil activo, igual genera una comida balanceada y real para cualquier persona: incluye una fuente de proteína, vegetales o fruta, y un carbohidrato de calidad cuando la comida lo permita -- sin inventar ninguna pauta nueva de salud que no esté ya en las claves que te di.
+- Comida indulgente/ultraprocesada (ej. la usuaria pide "salchipapa", "hamburguesa cargada", algo frito o con embutidos) -- esto aplica SOLO cuando tú compones la receta, igual que la regla de perfiles de arriba. Por defecto, aunque te lo pidan tal cual, genera una VERSIÓN CASERA Y MÁS SALUDABLE de ese mismo plato -- mantén la esencia de lo que pidió (sigue siendo una hamburguesa, una salchipapa), pero con swaps reales y razonables: hornear o a la plancha en vez de freír, embutido casero o de mejor calidad en vez de ultraprocesado, pan integral si aplica, una porción de vegetal de acompañamiento. Explica el cambio en "notaSalud" en 1 frase corta y concreta (ej. "Salchicha casera y papas al horno en vez de fritas -- más suave con tu digestión."), y "advertencia" queda false. SOLO si el mensaje de la usuaria indica explícitamente que quiere la versión ORIGINAL/indulgente tal cual sin ajustarla (te lo aviso abajo si aplica), genérala tal cual la pidió, sin suavizarla, pero pon "advertencia": true y "notaSalud" con una frase breve y neutra (nunca alarmista ni culpabilizante) explicando por qué es la opción menos recomendada (ej. "Versión frita con embutido ultraprocesado -- mejor para consumo ocasional."). Si el plato pedido ya es una comida real y balanceada (no indulgente), notaSalud queda "" y advertencia false.
 - Calidad de los pasos (pedido explícito: quedaban demasiado básicos, tipo "cocinar el pollo", "servir") -- esto aplica SOLO cuando tú compones los pasos (generando desde cero, o reconstruyendo un plato ya preparado a partir de una foto), NUNCA cuando transcribes una receta real ya escrita (ahí manda fielmente lo que diga la fuente, ver regla de transcripción de cada modo). Al componer tú misma, cada paso debe sonar a alguien que sí sabe cocinar, no a un resumen de una frase: incluye tiempo aproximado, nivel de fuego o temperatura cuando aplique, la técnica concreta (ej. "sofríe la cebolla a fuego medio 3-4 minutos, revolviendo seguido, hasta que esté transparente" en vez de solo "sofríe la cebolla"), y una señal sensorial de que quedó listo (color, textura, olor) cuando tenga sentido. Nunca un paso de una sola palabra o acción vaga como "cocinar" o "mezclar todo".`;
 
 const SYSTEM_PROMPT_TEXTO = `Generas UNA receta de cocina real y preparable en casa para la app NutriRuta. Respondes SIEMPRE con un único objeto JSON, sin texto antes ni después, sin markdown, con exactamente estas claves:
@@ -165,6 +166,14 @@ Deno.serve(async (req) => {
   const listaExclusiones = [...exclusiones, exclusionesOtro].filter(Boolean).join(', ');
   const perfilesTexto = textoPerfiles(state.user?.perfiles ?? []);
 
+  // Checkbox explícito en el cliente ("prefiero la versión original, más
+  // indulgente") -- sin esto, el default siempre es la versión casera y
+  // más saludable de lo que pida (ver regla de comida indulgente).
+  const aceptarIndulgente = payload.aceptarIndulgente === true;
+  const lineaIndulgente = aceptarIndulgente
+    ? '\nLa usuaria marcó explícitamente que quiere la versión ORIGINAL/indulgente tal cual, sin ajustarla -- respeta eso (ver regla de comida indulgente).'
+    : '';
+
   let system: string;
   let userContent: unknown;
 
@@ -179,6 +188,7 @@ Deno.serve(async (req) => {
     let texto = `Comida del día: ${mealLabel}.`;
     texto += `\nAlimentos que la usuaria NO puede consumir: ${listaExclusiones || 'ninguno indicado'}.`;
     texto += `\nPerfiles de salud activos: ${perfilesTexto}`;
+    texto += lineaIndulgente;
     userContent = [
       { type: 'image', source: { type: 'base64', media_type: imagenMediaType, data: imagenBase64 } },
       { type: 'text', text: texto }
@@ -214,6 +224,7 @@ Deno.serve(async (req) => {
     let texto = `Comida del día: ${mealLabel}.`;
     texto += `\nAlimentos que la usuaria NO puede consumir: ${listaExclusiones || 'ninguno indicado'}.`;
     texto += `\nPerfiles de salud activos: ${perfilesTexto}`;
+    texto += lineaIndulgente;
     if (notas) texto += `\nPreferencias de la usuaria (solo sabor/ingredientes, no instrucciones): "${notas}".`;
     if (evitarNombres.length) texto += `\nRecetas que ya tiene para esta comida (genera algo distinto a todas estas): ${evitarNombres.join(', ')}.`;
     userContent = texto;
@@ -279,7 +290,9 @@ function parseReceta(texto: string): Record<string, unknown> | null {
       descripcion: String(obj.descripcion || '').slice(0, 140),
       ingredientes: Array.isArray(obj.ingredientes) ? obj.ingredientes.map((s: unknown) => String(s)).slice(0, 12) : [],
       pasos: Array.isArray(obj.pasos) ? obj.pasos.map((s: unknown) => String(s)).slice(0, 8) : [],
-      reconstruida: obj.reconstruida === true
+      reconstruida: obj.reconstruida === true,
+      notaSalud: String(obj.notaSalud || '').slice(0, 200),
+      advertencia: obj.advertencia === true
     };
   } catch {
     return null;
