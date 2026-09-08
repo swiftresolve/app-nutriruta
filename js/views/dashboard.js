@@ -599,12 +599,21 @@ export function semaforoIcon(light) {
 // comida real del día, no para cualquier receta que se está mirando.
 // Mismos íconos ya definidos para cámara/voz/texto (app.js), a tamaño de
 // texto en vez del tamaño de botón -- nunca un emoji genérico en su lugar.
-const iconoInline = (svg) => `<span class="row" style="display:inline-flex;width:14px;height:14px;vertical-align:-2px">${svg}</span>`;
+// Los 3 traen width/height="24" fijos en el propio SVG (para su uso como
+// botón), así que un span más chico alrededor no los reduce -- hay que
+// reemplazar esos atributos, no solo envolver. icono+texto van en la MISMA
+// fila flex (mismo patrón que CLOCK_ICON en openRecipe) para que el
+// ícono quede alineado con el texto por align-items, no por vertical-align.
+const iconoChico = (svg) => svg.replace('width="24" height="24"', 'width="14" height="14"');
 const FUENTE_LABEL = {
-  foto: () => `${iconoInline(CAMERA_SOLID_ICON)} ${t('Registrado por NutriCam')}`,
-  voz: () => `${iconoInline(MIC_ICON)} ${t('Registrado por voz')}`,
-  texto: () => `${iconoInline(TEXTO_ICON)} ${t('Registrado por texto')}`
+  foto: () => ({ icono: iconoChico(CAMERA_SOLID_ICON), texto: t('Registrado por NutriCam') }),
+  voz: () => ({ icono: iconoChico(MIC_ICON), texto: t('Registrado por voz') }),
+  texto: () => ({ icono: iconoChico(TEXTO_ICON), texto: t('Registrado por texto') })
 };
+// Cada alimento registrado (foto/voz/texto libre) empieza con mayúscula,
+// como cualquier frase -- "una tostada integral" detectado tal cual por
+// la IA se veía en minúscula en el título y en la lista.
+const capitalizar = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
 // Tarjeta de LO QUE DE VERDAD SE REGISTRÓ para una comida (foto/voz/texto),
 // no la receta sugerida -- pedido explícito de la usuaria tras notar que
@@ -618,21 +627,22 @@ function abrirComidaRegistrada(meal, registro, onChange) {
   const light = trafficLightRecetaPropia({ ingredientes: registro.alimentos, descripcion: '' }, user.perfiles);
   openModal((modal, closeFn) => {
     const horaTexto = new Date(registro.hora).toLocaleTimeString(getIdioma() === 'en' ? 'en-US' : 'es', { hour: 'numeric', minute: '2-digit' });
-    const fuenteTexto = (FUENTE_LABEL[registro.fuente] || (() => ''))();
+    const fuente = (FUENTE_LABEL[registro.fuente] || (() => null))();
+    const alimentosCap = registro.alimentos.map(capitalizar);
     // El título es lo que de verdad comiste (los alimentos registrados),
     // no el nombre de la estación ("Desayuno") -- eso ya se sabe por la
     // fila desde la que se abrió esta tarjeta, repetirlo era redundante.
-    const tituloComida = registro.alimentos.join(', ');
+    const tituloComida = alimentosCap.join(', ');
     modal.insertAdjacentHTML('beforeend', `
       <h2 class="center">${esc(tituloComida)}</h2>
       ${registro.fotoUrl
         ? `<img src="${registro.fotoUrl}" alt="${esc(tituloComida)}" class="mt" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block">`
         : `<div class="center mt" style="font-size:2.4rem">${meal.emoji}</div>`}
       <p class="row" style="gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:2px">${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span></p>
-      <p class="small muted center mt">${fuenteTexto}${fuenteTexto ? ' · ' : ''}${horaTexto}</p>
+      <p class="row small muted" style="justify-content:center;align-items:center;gap:6px;margin-top:2px">${fuente ? fuente.icono : ''}<span>${fuente ? fuente.texto + ' · ' : ''}${horaTexto}</span></p>
       <button type="button" class="btn-susana mt" id="cr-analizar-susana"><span class="susana-sparkle">${SPARKLE_ICON}</span> ${t('Analizar con SuSana')}</button>
       <h3 class="mt">${t('Ingredientes')}</h3>
-      ${registro.alimentos.map((a) => `<div class="ingredient">• ${esc(a)}</div>`).join('')}
+      ${alimentosCap.map((a) => `<div class="ingredient">• ${esc(a)}</div>`).join('')}
       <button type="button" class="btn ghost full mt row" id="cr-editar" style="gap:6px;justify-content:center;align-items:center">${PENCIL_ICON}${t('Editar registro')}</button>
       <button type="button" class="btn danger full mt" id="cr-deshacer">🗑️ ${t('Deshacer registro')}</button>`);
     modal.querySelector('#cr-analizar-susana').addEventListener('click', () => {

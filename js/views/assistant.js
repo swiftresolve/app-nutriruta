@@ -2,7 +2,7 @@
 // Cuota, verificación de plan y la llamada a la IA viven en el servidor
 // (Edge Function ai-assistant) — aquí solo se pinta el chat y se envía.
 import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, eliminarMemoria, MEMORIA_MAX } from '../store.js';
-import { fetchGuideHistory, askGuide, listGuideConversations, newGuideConversation } from '../supabase-client.js';
+import { fetchGuideHistory, askGuide, listGuideConversations } from '../supabase-client.js';
 import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON, THUMBS_UP_SOLID_ICON, THUMBS_DOWN_SOLID_ICON, ARROW_UP_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
 import { t } from '../i18n.js';
@@ -355,22 +355,26 @@ export function renderAssistant(container, params = {}) {
   // el resultado como tarjeta visual (barras + etiquetas, referencia
   // real: Fitia Coach), no como mensaje de texto suelto:
   // - params.instantCard: receta del CATÁLOGO -- el semáforo ya ES el
-  //   análisis (curado a mano), se pinta directo sin gastar IA.
-  // - params.aiPrompt: receta fuera de catálogo -- análisis real, la IA
-  //   responde en JSON puro (parseado en enviarAnalisis) para poder
-  //   pintarlo con la misma tarjeta.
+  //   análisis (curado a mano), se pinta directo sin gastar IA. No queda
+  //   en el historial real porque nunca se manda un mensaje de verdad al
+  //   servidor (nada que guardar, ver comentario en el branch de abajo).
+  // - params.aiPrompt: receta fuera de catálogo -- análisis real con IA.
+  //   conversationId arranca en null a propósito: askGuide() genera su
+  //   propio id en el servidor y guarda el mensaje ahí mismo (ver
+  //   ai-assistant/index.ts), así que UN solo viaje de red basta -- antes
+  //   se pedía un id nuevo con newGuideConversation() y LUEGO se llamaba
+  //   a askGuide(), dos viajes de red seguidos para lo mismo, y esta
+  //   conversación ya queda en el historial real desde el primer mensaje.
   if (params.nuevaConversacion) {
-    newGuideConversation().then((nuevaId) => {
-      conversationId = nuevaId;
-      ultimaFirma = null;
-      log.innerHTML = '';
-      setQuota();
-      if (params.instantCard) {
-        addCardBubble('assistant', renderAnalysisCard(params.instantCard.recetaNombre, params.instantCard));
-      } else if (params.aiPrompt) {
-        enviarAnalisis(params.recetaNombre, params.aiPrompt);
-      }
-    });
+    conversationId = null;
+    ultimaFirma = null;
+    log.innerHTML = '';
+    setQuota();
+    if (params.instantCard) {
+      addCardBubble('assistant', renderAnalysisCard(params.instantCard.recetaNombre, params.instantCard));
+    } else if (params.aiPrompt) {
+      enviarAnalisis(params.recetaNombre, params.aiPrompt);
+    }
   } else {
     // Abrir SuSana desde el menú SIEMPRE empieza una conversación nueva --
     // pedido explícito, antes reanudaba la última guardada. La anterior
