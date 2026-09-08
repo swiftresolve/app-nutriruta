@@ -132,7 +132,11 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
 
       const video = modal.querySelector('#ml-video');
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+        // aspectRatio 1 (ideal, no obligatorio): la foto final YA es un
+        // recorte cuadrado (ver el shutter más abajo) -- pedirle al
+        // navegador un feed más cuadrado desde el inicio reduce cuánto
+        // tiene que recortar/ampliar object-fit:cover en el preview.
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, aspectRatio: { ideal: 1 } }, audio: false });
         video.srcObject = stream;
       } catch {
         salirFullscreen();

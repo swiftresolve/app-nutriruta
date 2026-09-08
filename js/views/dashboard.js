@@ -638,7 +638,7 @@ function abrirComidaRegistrada(meal, registro, onChange) {
       ${registro.fotoUrl
         ? `<img src="${registro.fotoUrl}" alt="${esc(tituloComida)}" class="mt" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block">`
         : `<div class="center mt" style="font-size:2.4rem">${meal.emoji}</div>`}
-      <p class="row" style="gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:2px">${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span></p>
+      <p class="row mt" style="gap:8px;justify-content:center;align-items:center;flex-wrap:wrap">${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span></p>
       <p class="row small muted" style="justify-content:center;align-items:center;gap:6px;margin-top:2px">${fuente ? fuente.icono : ''}<span>${fuente ? fuente.texto + ' · ' : ''}${horaTexto}</span></p>
       <button type="button" class="btn-susana mt" id="cr-analizar-susana"><span class="susana-sparkle">${SPARKLE_ICON}</span> ${t('Analizar con SuSana')}</button>
       <h3 class="mt">${t('Ingredientes')}</h3>
