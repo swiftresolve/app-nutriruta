@@ -61,21 +61,18 @@ export function renderAssistant(container, params = {}) {
       <strong>${susanaName()}</strong>
       <span class="small muted" id="chatQuota">${t('Cargando…')}</span>
     </div>
-    <button type="button" class="icon-btn plain" id="chatNueva" aria-label="${t('Nueva conversación')}">${PENCIL_ICON}</button>
     <button type="button" class="icon-btn plain" id="chatPersonalizar" aria-label="${t('Personalizar a SuSana')}">${GEAR_ICON}</button>`;
   container.appendChild(chatHeader);
   chatHeader.querySelector('#chatPersonalizar').addEventListener('click', () => abrirPersonalizarSuSana());
-  // "Nueva conversación" vivía como lápiz dentro del panel de historial --
-  // pedido explícito: no era necesario ahí (ese espacio ahora es para
-  // buscar), así que se mueve acá, al header principal del chat, para no
-  // perder la forma de empezar de cero.
+  // "Nuevo chat" vive DENTRO del panel de historial (referencia real:
+  // ChatGPT, mostrada por la usuaria -- lupa arriba, "Nuevo chat" con
+  // lápiz justo debajo, ambos en el propio panel).
   function empezarNuevaConversacion() {
     conversationId = null;
     log.innerHTML = '';
     addBubble('system', t('¡Hola! Soy SuSana 🌿 {apertura}', { apertura: sanaApertura() }));
     ultimaFirma = null;
   }
-  chatHeader.querySelector('#chatNueva').addEventListener('click', empezarNuevaConversacion);
   chatHeader.querySelector('#chatHistorial').addEventListener('click', () => {
     abrirHistorialSuSana(conversationId, {
       onElegir: (id) => loadHistory(id),
@@ -544,13 +541,26 @@ function abrirHistorialSuSana(conversationIdActual, { onElegir, onNueva }) {
     // Sin texto de "Cargando…" -- si hay una lista en caché se pinta de
     // inmediato (ver abajo); si no, queda vacío hasta que llegue la real
     // en vez de mostrar un mensaje que solo dura una fracción de segundo.
+    // Cierre propio junto a la lupa, en la MISMA fila (referencia real:
+    // ChatGPT, mostrada por la usuaria) -- la "✕" genérica que agrega
+    // openModal() vive suelta (position:sticky + float:right), fuera de
+    // este header, y terminaba quedando descuadrada respecto a la lupa.
+    // Se oculta esa por CSS (.drawer-izq .modal-close) y se usa esta,
+    // ambas dentro del mismo .spread con align-items:center.
     modal.insertAdjacentHTML('beforeend', `
       <div class="spread">
         <h2>${t('Historial de {nombre}', { nombre: susanaName() })}</h2>
-        <button type="button" class="icon-btn plain" id="hist-buscar" aria-label="${t('Buscar en el historial')}">${SEARCH_ICON}</button>
+        <div class="row" style="gap:2px">
+          <button type="button" class="icon-btn plain" id="hist-buscar" aria-label="${t('Buscar en el historial')}">${SEARCH_ICON}</button>
+          <button type="button" class="icon-btn plain" id="hist-cerrar" aria-label="${t('Cerrar')}">✕</button>
+        </div>
       </div>
       <input type="text" id="hist-buscar-input" class="auth-input mt hidden" placeholder="${t('Buscar por palabra clave…')}">
+      <button type="button" class="hist-menu-item" id="hist-nuevo-chat" style="display:flex;gap:10px;align-items:center;margin-top:6px">${PENCIL_ICON}<span>${t('Nuevo chat')}</span></button>
       <div class="mt" id="hist-lista"></div>`);
+
+    modal.querySelector('#hist-cerrar').addEventListener('click', () => closeFn());
+    modal.querySelector('#hist-nuevo-chat').addEventListener('click', () => { closeFn(); onNueva(); });
 
     const inputBuscar = modal.querySelector('#hist-buscar-input');
     modal.querySelector('#hist-buscar').addEventListener('click', () => {

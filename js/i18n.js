@@ -120,6 +120,7 @@ const EN = {
   '← Volver a la Misión': '← Back to Mission',
   'Atrás': 'Back',
   'Cerrar': 'Close',
+  'Nuevo chat': 'New chat',
   'Continuar': 'Continue',
   'Continuar →': 'Continue →',
   'Guardar': 'Save',

@@ -1333,6 +1333,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @media (prefers-reduced-motion: reduce) {
   .modal-backdrop.drawer-izq .modal { animation: none; }
 }
+/* El historial de SuSana usa su propio botón de cerrar, en la misma fila
+   que la lupa (ver abrirHistorialSuSana en assistant.js) -- la "✕"
+   genérica que agrega openModal() queda suelta (sticky + float), fuera
+   de esa fila, y se veía descuadrada respecto a la lupa. Se oculta acá. */
+.modal-backdrop.drawer-izq .modal-close { display: none; }
 
 /* ===== Cámara en vivo (registro de comida) — pantalla completa, mismo
    lenguaje visual que la cámara de Fitia (referencia de la usuaria):
