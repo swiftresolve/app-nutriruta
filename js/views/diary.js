@@ -52,7 +52,13 @@ function mealMeta(mealId) {
 // (mealLogModal.js), aplicado aquí sobre translate+scale del <img>.
 function abrirFotoCompleta(url, alt) {
   openModal((modal, closeFn) => {
-    modal.parentElement.classList.add('foto-lightbox');
+    // modal todavía no tiene padre en este punto -- openModal llama a este
+    // callback ANTES de colgar el modal del backdrop (ver app.js), así que
+    // modal.parentElement es null aquí mismo. Se difiere con setTimeout(0)
+    // hasta el próximo tick, cuando el backdrop ya existe -- mismo patrón
+    // que ya usa abrirHistorialSuSana en assistant.js para su propia clase
+    // de pantalla completa (drawer-izq).
+    setTimeout(() => modal.parentElement?.classList.add('foto-lightbox'), 0);
     modal.innerHTML = `<div class="foto-lightbox-wrap"><img src="${url}" alt="${alt}" class="foto-lightbox-img"></div>`;
     const wrap = modal.querySelector('.foto-lightbox-wrap');
     const img = modal.querySelector('.foto-lightbox-img');
