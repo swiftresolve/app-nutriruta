@@ -131,9 +131,14 @@ export function renderPathMap(container, items, opts = {}) {
   // pantalla con línea (no solo "Tu ruta de hoy") use la misma curva.
   const curvaAuto = (showLine && !opts.offsets) ? curvaRepetida(items.length) : null;
   const offsets = opts.offsets || (curvaAuto && curvaAuto.offsets);
+  // opts.allDone (PREVIEW): "Tu ruta de hoy" pinta nodos y línea en
+  // dorado cuando las 5 comidas del día ya quedaron chuleadas -- pedido
+  // puntual de esa pantalla, no cambia el look de Plan de 7 días ni
+  // Misión (ninguna de las dos pasa este flag).
+  const allDone = opts.allDone === true;
   const rowsHtml = items.map((it, i) => {
     const offset = offsets ? (offsets[i] ?? 0) : AMPLITUD * Math.sin((i / PERIODO + FASE) * Math.PI * 2);
-    const stateClass = it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '';
+    const stateClass = (it.done ? 'done' : it.now ? 'now' : it.locked ? 'locked' : '') + (allDone && it.done ? ' all-done' : '');
     const icon = it.done ? '✓' : (it.locked ? '🔒' : esc(it.icon));
     const tag = it.now ? `<span class="path-tag path-tag-now">${esc(it.nowLabel || 'Actual')}</span>` : '';
     const mascot = it.now ? '<div class="path-mascot">🌿</div>' : '';
@@ -305,6 +310,15 @@ function drawCurve(wrap, opts = {}) {
     run.map((i) => richSegments.slice(i * richFactor, (i + 1) * richFactor).map((s) => s.slice(s.indexOf(' C'))).join('')).join('');
   const activeIndex = opts.activeIndex;
   const DASH = '6 11';
+  if (opts.allDone) {
+    // Las 5 comidas del día ya quedaron chuleadas -- la línea entera
+    // sólida y dorada, sin punteado ni parpadeo (ya no hay ningún tramo
+    // "en camino", el recorrido de hoy se cerró completo).
+    const todosIdx = Array.from({ length: points.length - 1 }, (_, i) => i);
+    const html = runsDe(todosIdx).map((run) => `<path d="${pathDeRun(run)}" fill="none" stroke="var(--yellow)" stroke-width="4.5" stroke-linecap="round"/>`).join('');
+    svg.innerHTML = html;
+    return;
+  }
   if (activeIndex == null) {
     // "Tu ruta de hoy" pasa activeIndex indefinido cuando, según la hora
     // real y los horarios configurados por la usuaria, ninguna comida cae

@@ -290,15 +290,24 @@ export function renderDashboard(container) {
   // PREVIEW -- línea punteada que se traza sola hasta la comida actual y
   // titila ahí. Si la comida "ahora" ya quedó chuleada (registrada), el
   // trazo avanza un nodo más -- "en camino hacia lo siguiente" en vez de
-  // quedarse titilando sobre algo que ya se completó.
+  // quedarse titilando sobre algo que ya se completó. Si esa comida es
+  // la ÚLTIMA del día (cena) y ya está completada, no hay "siguiente"
+  // hacia dónde avanzar -- sin este caso, el trazo se quedaba titilando
+  // ahí para siempre (se veía como "cargando" sin terminar nunca).
   let activeIndex = menuItems.findIndex((it) => it.now);
-  if (activeIndex !== -1 && menuItems[activeIndex].done && activeIndex < menuItems.length - 1) activeIndex += 1;
+  if (activeIndex !== -1 && menuItems[activeIndex].done) {
+    activeIndex = activeIndex < menuItems.length - 1 ? activeIndex + 1 : -1;
+  }
   // La curva (medida del boceto real de la usuaria) y la posición de cada
   // nodo sobre ella se generan solas dentro de renderPathMap cuando
   // showLine viene activo -- ver curvaRepetida en pathMap.js. Así "Tu
   // ruta de hoy", Plan de 7 días y Misión comparten EXACTAMENTE la misma
   // forma, en vez de cada pantalla traer su propia copia del boceto.
-  renderPathMap(menuCard.querySelector('#menu-path'), menuItems, { showLine: true, activeIndex: activeIndex === -1 ? undefined : activeIndex });
+  // Las 5 comidas del día ya registradas -- línea y nodos en dorado en
+  // vez del verde/celeste de siempre, para celebrar el día completo
+  // (pedido explícito de la usuaria, solo en esta pantalla).
+  const allDone = menuItems.length > 0 && menuItems.every((it) => it.done);
+  renderPathMap(menuCard.querySelector('#menu-path'), menuItems, { showLine: true, activeIndex: activeIndex === -1 ? undefined : activeIndex, allDone });
   menuHoy.forEach(({ meal, recipe }, i) => {
     const logBtn = menuCard.querySelector(`[data-row-idx="${i}"] .log-btn`);
     if (logBtn) logBtn.addEventListener('click', (e) => {

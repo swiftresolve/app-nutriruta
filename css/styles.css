@@ -1343,22 +1343,23 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   padding: 7px 16px; font-size: 0.85rem; font-weight: 600;
 }
 .camera-instruccion { color: #fff; text-align: center; font-weight: 600; margin: 10px 0; flex: none; }
-/* Cuadrado, no "flex:1 1 auto" estirado a toda la altura disponible --
-   la foto que de verdad se guarda YA es un recorte cuadrado centrado
-   (ver pantallaCamara en mealLogModal.js), así que estirar el marco a
-   un rectángulo alto obligaba a object-fit:cover a recortar mucho más
-   de lo que en realidad se captura -- se veía como zoom exagerado, y
-   había que alejarse mucho para que el sujeto cupiera. Cuadrado = lo
-   que se ve es lo que se guarda. margin:auto lo centra en el espacio
-   que sobra entre la instrucción y los controles.
+/* Vuelve a llenar todo el alto disponible (referencia real: la cámara de
+   Fitia que mostró la usuaria -- video a pantalla completa, el marco es
+   solo una guía visual ENCIMA, nunca recorta el feed). El cuadrado que
+   se probó antes no era el problema real: lo que hacía ver "con zoom" es
+   que el navegador arranca la cámara trasera con un nivel de zoom/lente
+   que no es el más amplio -- eso se corrige en mealLogModal.js forzando
+   el zoom mínimo real de la cámara, y ahora también con el gesto de
+   pellizco (pinch) para acercar/alejar, como cualquier cámara nativa.
 */
 .camera-wrap {
-  position: relative; flex: none; width: 100%; aspect-ratio: 1; max-height: 100%;
-  margin: auto 0; border-radius: 28px; overflow: hidden; background: #16211d;
+  position: relative; flex: 1 1 auto; min-height: 0; width: 100%; border-radius: 28px;
+  overflow: hidden; background: #16211d; touch-action: none;
 }
 .camera-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* Encuadre tipo "scan": un box-shadow con spread enorme oscurece todo
-   fuera del rectángulo central, sin necesitar 4 divs para las esquinas. */
+   fuera del rectángulo central, sin necesitar 4 divs para las esquinas.
+   Es solo una guía -- no recorta el video de abajo. */
 .camera-frame {
   position: absolute; inset: 4%; border: 3px solid rgba(255,255,255,0.9);
   border-radius: 20px; pointer-events: none;
@@ -1711,6 +1712,14 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
   box-shadow: inset 0 3px 5px rgba(255,255,255,0.42), inset 0 -10px 12px rgba(0,0,0,0.18), 0 6px 0 #166B44, 0 9px 12px rgba(20,50,80,0.2);
 }
 .path-node.done:active { box-shadow: inset 0 3px 5px rgba(255,255,255,0.42), inset 0 -10px 12px rgba(0,0,0,0.18), 0 1px 0 #166B44; }
+/* "Tu ruta de hoy" con las 5 comidas ya chuleadas -- mismo esquema de
+   esfera de vidrio que .done, en dorado (mismo tono de --yellow que
+   NutriCoins/favoritos) en vez de verde, para celebrar el día completo. */
+.path-node.all-done {
+  background: radial-gradient(circle at 33% 28%, #FFF3D6 0%, #F8CE6A 40%, var(--yellow) 74%, #B8791E 100%);
+  box-shadow: inset 0 3px 5px rgba(255,255,255,0.45), inset 0 -10px 12px rgba(0,0,0,0.18), 0 6px 0 #8A5A12, 0 9px 12px rgba(20,50,80,0.2);
+}
+.path-node.all-done:active { box-shadow: inset 0 3px 5px rgba(255,255,255,0.45), inset 0 -10px 12px rgba(0,0,0,0.18), 0 1px 0 #8A5A12; }
 .path-node.now {
   /* Mismo tamaño que el resto -- la usuaria pidió no agrandar el botón
      activo, el anillo de alrededor (::before en path-node-col) es lo que

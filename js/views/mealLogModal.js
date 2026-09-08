@@ -149,6 +149,27 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
         const capabilities = track?.getCapabilities?.();
         if (capabilities?.zoom) {
           try { await track.applyConstraints({ advanced: [{ zoom: capabilities.zoom.min }] }); } catch { /* el dispositivo no lo permite, se deja como está */ }
+          // Gesto de pellizco para acercar/alejar, como cualquier cámara
+          // nativa (pedido explícito, referencia real: Fitia) -- un
+          // <video> de getUserMedia no trae este gesto solo, hay que
+          // armarlo a mano sobre la distancia entre los 2 dedos.
+          const wrap = modal.querySelector('.camera-wrap');
+          let zoomInicial = capabilities.zoom.min;
+          let distanciaInicial = 0;
+          wrap.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 2) return;
+            distanciaInicial = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            zoomInicial = track.getSettings().zoom ?? capabilities.zoom.min;
+          });
+          wrap.addEventListener('touchmove', (e) => {
+            if (e.touches.length !== 2 || !distanciaInicial) return;
+            e.preventDefault();
+            const distanciaActual = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            const factor = distanciaActual / distanciaInicial;
+            const nuevoZoom = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min, zoomInicial * factor));
+            track.applyConstraints({ advanced: [{ zoom: nuevoZoom }] }).catch(() => {});
+          }, { passive: false });
+          wrap.addEventListener('touchend', () => { distanciaInicial = 0; });
         }
       } catch {
         salirFullscreen();
