@@ -1,6 +1,32 @@
 // Motor de menús: filtra por exclusiones, prioriza perfiles y genera el menú del día.
 import { RECIPES, MEALS } from './data/recipes.js';
+import { REGIONALISMOS } from './data/regionalismos.js';
 import { getState, setState, today } from './store.js';
+
+// "Idioma de alimentos" (Ajustes) -- cambia solo palabras puntuales que sí
+// varían de país en país, nunca traduce nada más. Reemplazo por límites de
+// palabra reales (incluye vocales acentuadas: \b de JS no las reconoce
+// como parte de una palabra, así que un \bmaní\b no calzaría bien después
+// de la "í"). Preserva mayúscula inicial si la palabra original la tenía.
+// LIMITACIÓN CONOCIDA: es un reemplazo de texto, no un análisis gramatical
+// -- no ajusta género/número de adjetivos cercanos. "½ aguacate pequeño"
+// en Argentina queda "½ palta pequeño" (debería ser "pequeña", palta es
+// femenino). Aceptable como primera versión -- resolverlo de verdad
+// necesitaría procesar la gramática de cada frase, no solo la palabra.
+function regionalizarTexto(texto, pais) {
+  if (!texto || !pais || pais === 'co') return texto;
+  let resultado = texto;
+  for (const [canon, variantes] of Object.entries(REGIONALISMOS)) {
+    const variante = variantes[pais];
+    if (!variante) continue;
+    const regex = new RegExp(`(^|[^a-zA-ZÀ-ÿ])(${canon})(?=[^a-zA-ZÀ-ÿ]|$)`, 'gi');
+    resultado = resultado.replace(regex, (_m, pre, palabra) => {
+      const conMayuscula = palabra[0] === palabra[0].toUpperCase() && palabra[0] !== palabra[0].toLowerCase();
+      return pre + (conMayuscula ? variante.charAt(0).toUpperCase() + variante.slice(1) : variante);
+    });
+  }
+  return resultado;
+}
 
 // Grupos presentes en una receta considerando sustituciones.
 function blockingGroups(recipe, exclusiones) {
@@ -244,25 +270,37 @@ export function swapMeal(mealId, dateStr = today(), targetIndex = null) {
 // título está excluido (p. ej. "Tilapia al horno" cuando no se come pescado),
 // se muestra el título alternativo en vez del original, no solo por dentro.
 export function displayRecipe(recipe, exclusiones) {
+  const pais = getState().user.paisAlimentos;
   if (recipe.tituloSub) {
     for (const grupo of Object.keys(recipe.tituloSub)) {
-      if (exclusiones.includes(grupo)) return recipe.tituloSub[grupo];
+      if (exclusiones.includes(grupo)) {
+        const alterno = recipe.tituloSub[grupo];
+        return { ...alterno, nombre: regionalizarTexto(alterno.nombre, pais) };
+      }
     }
   }
-  return { nombre: recipe.nombre, emoji: recipe.emoji };
+  return { nombre: regionalizarTexto(recipe.nombre, pais), emoji: recipe.emoji };
 }
 
-// Ingrediente a mostrar (aplica sustitución si el grupo está excluido).
+// Ingrediente a mostrar (aplica sustitución si el grupo está excluido, y
+// "idioma de alimentos" -- ver regionalizarTexto arriba).
 export function displayIngredient(ing, exclusiones) {
+  const pais = getState().user.paisAlimentos;
   if (ing.grupo && exclusiones.includes(ing.grupo) && ing.sub) {
-    return { texto: ing.sub, sustituido: true, original: ing.n, cantidad: null, resto: null };
+    return { texto: regionalizarTexto(ing.sub, pais), sustituido: true, original: ing.n, cantidad: null, resto: null };
   }
   // cantidad/resto vienen de recipes.js (número + el texto sin ese número,
   // ej. "1 taza de espinaca" -> cantidad:1, resto:"taza de espinaca") --
   // permiten sumar cantidades reales en la lista de compras proyectada en
   // vez de solo contar apariciones. No todos los ingredientes lo tienen
-  // (ej. "Canela al gusto" no tiene una cantidad real que sumar).
-  return { texto: ing.n, sustituido: false, cantidad: ing.cantidad ?? null, resto: ing.resto ?? null };
+  // (ej. "Canela al gusto" no tiene una cantidad real que sumar). resto
+  // también se regionaliza -- textoConCantidad() lo muestra directo.
+  return {
+    texto: regionalizarTexto(ing.n, pais),
+    sustituido: false,
+    cantidad: ing.cantidad ?? null,
+    resto: ing.resto ? regionalizarTexto(ing.resto, pais) : (ing.resto ?? null)
+  };
 }
 
 // Conversión métrico → imperial (Ajustes → Unidades). Solo convierte

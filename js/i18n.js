@@ -842,5 +842,8 @@ const EN = {
   'Deshacer registro': 'Undo log',
   '¿Deshacer este registro?': 'Undo this log?',
   'Ya habías registrado esta comida con una foto -- deshacerlo la quita de Mi Diario.': 'You had already logged this meal with a photo -- undoing it removes it from My Diary.',
-  'Sí, deshacer': 'Yes, undo'
+  'Sí, deshacer': 'Yes, undo',
+
+  // --- Idioma de alimentos (regionalismos.js / settings.js) ---
+  'como está escrito hoy': 'as written today'
 };

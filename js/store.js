@@ -46,7 +46,8 @@ const DEFAULT_STATE = {
     memorias: [],           // { id, texto, fecha } — datos puntuales que ella le pidió a SuSana recordar (ver assistant.js), se suman al contexto de ai-assistant
     referidoPor: null,      // código de quien la invitó (capturado de "?ref=" en app.js), ver hotmart-webhook/referral-check
     unidades: 'metrico',    // 'metrico' | 'imperial' — ver textoConCantidad en menu.js
-    idiomaInterfaz: 'es'    // 'es' | 'en' — ver i18n.js (t()). Las recetas siguen solo en español por ahora.
+    idiomaInterfaz: 'es',   // 'es' | 'en' — ver i18n.js (t()). Las recetas siguen solo en español por ahora.
+    paisAlimentos: 'co'     // 'co'|'mx'|'ar'|'es'|'pe' — "Idioma de alimentos" en Ajustes, ver regionalizarTexto en menu.js. 'co' = como está escrito el catálogo, sin cambios.
   },
   agua: { fecha: '', vasos: 0 },
   comidasSeguidas: { fecha: '', ids: [] }, // recetas del menú real de hoy que se abrieron — para auto-marcar "seguí el menú"

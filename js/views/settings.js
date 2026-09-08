@@ -4,6 +4,7 @@
 // { seccion })), en vez de mostrar todas las tarjetas apiladas de una vez.
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, calcularIMC, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
+import { PAISES_ALIMENTOS } from '../data/regionalismos.js';
 import { MEALS } from '../data/recipes.js';
 import { getSession, signIn, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
 import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, susanaName, ORO_NUTRICOINS, GEAR_ICON, SHARE_ICON, CAMERA_SOLID_ICON } from '../app.js';
@@ -822,9 +823,19 @@ function pintarInterfaz(container) {
   });
   prefsCard.appendChild(idiomaRow);
 
-  prefsCard.appendChild(filaAjuste('🍽️', t('Idioma de alimentos'), t('Español'), () => {
-    toast(t('English para las recetas llega pronto — por ahora solo están en español.'));
-  }));
+  // Solo el nombre del país es traducible tal cual (proper noun, igual en
+  // inglés); "Colombia (como está escrito hoy)" sí lleva la aclaración en
+  // español -- se traduce por separado con t().
+  const nombrePais = (p) => p.id === 'co' ? `Colombia (${t('como está escrito hoy')})` : p.nombre;
+  let paisActual = PAISES_ALIMENTOS.find((p) => p.id === (user.paisAlimentos || 'co')) || PAISES_ALIMENTOS[0];
+  const paisRow = filaAjuste('🍽️', t('Idioma de alimentos'), nombrePais(paisActual), () => {
+    abrirSelector(t('Idioma de alimentos'), PAISES_ALIMENTOS.map((p) => ({ id: p.id, label: nombrePais(p) })), paisActual.id, (id) => {
+      setState({ user: { ...getState().user, paisAlimentos: id } });
+      paisActual = PAISES_ALIMENTOS.find((p) => p.id === id) || PAISES_ALIMENTOS[0];
+      paisRow.querySelector('.setting-row-value').textContent = nombrePais(paisActual);
+    });
+  });
+  prefsCard.appendChild(paisRow);
 
   let unidadActual = UNIDADES.find((u) => u.id === (user.unidades || 'metrico'));
   const unidadRow = filaAjuste('📏', t('Unidades'), unidadActual.label, () => {
