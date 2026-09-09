@@ -1,5 +1,5 @@
 // Recetario + lista de compras.
-import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, gastarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
+import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, sincronizarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
 import { RECIPES, MEALS } from '../data/recipes.js';
 import { isRecipeAvailable, trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
 import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, CLOCK_ICON, SPARKLE_ICON, TRASH_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
@@ -719,12 +719,11 @@ export function renderPlanner(container, params = {}) {
     }, 350);
 
     try {
-      const receta = await llamada();
+      const { receta, nutricoins: saldo } = await llamada();
       clearInterval(iaTimer);
-      gastarNutricoins(COSTO_RECETA_IA);
+      sincronizarNutricoins(saldo);
       const nutricoinsBtn = document.querySelector('#hs-nutricoins');
       if (nutricoinsBtn) {
-        const saldo = getState().nutricoins || 0;
         nutricoinsBtn.classList.toggle('sin-saldo', saldo <= 0);
         nutricoinsBtn.innerHTML = `${coinIcon(saldo > 0 ? ORO_NUTRICOINS : PLATA_NUTRICOINS, 15)}<span class="value">${saldo}</span>`;
       }
@@ -777,15 +776,14 @@ export function renderPlanner(container, params = {}) {
 
     async function generarUna() {
       try {
-        const receta = await generarRecetaIA(comida, notas, nombresExistentes, aceptarIndulgente);
-        gastarNutricoins(COSTO_RECETA_IA);
+        const { receta, nutricoins: saldo } = await generarRecetaIA(comida, notas, nombresExistentes, aceptarIndulgente);
+        sincronizarNutricoins(saldo);
         // header() no es reactivo -- pinta el saldo una sola vez al montar
         // la vista, así que sin este parche el número del header se queda
         // desactualizado hasta la próxima navegación (mismo parche que ya
         // existe para gemas/escudos en app.js tras comprar una Pausa de Ruta).
         const nutricoinsBtn = document.querySelector('#hs-nutricoins');
         if (nutricoinsBtn) {
-          const saldo = getState().nutricoins || 0;
           nutricoinsBtn.classList.toggle('sin-saldo', saldo <= 0);
           nutricoinsBtn.innerHTML = `${coinIcon(saldo > 0 ? ORO_NUTRICOINS : PLATA_NUTRICOINS, 15)}<span class="value">${saldo}</span>`;
         }

@@ -1,7 +1,8 @@
 // Router mínimo + arranque con puerta de autenticación.
-import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo, diasDelMes, today } from './store.js';
+import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo, diasDelMes, today, sincronizarNutricoins } from './store.js';
 import { t } from './i18n.js';
-import { getSession, supabase, avatarUrlFor } from './supabase-client.js';
+import { getSession, supabase, avatarUrlFor, fetchNutricoins } from './supabase-client.js';
+import { HOTMART_CHECKOUT_NUTRICOINS } from './config.js';
 import { broteStage, broteBadge } from './ruti.js';
 import { frozenFlameIcon } from './streakAnim.js';
 import { renderAuth } from './views/auth.js';
@@ -707,9 +708,10 @@ export function coinIcon(color, size = 16) {
 export const ORO_NUTRICOINS = '#D4A017';
 export const PLATA_NUTRICOINS = '#9AA5A0';
 
-// Paquetes de NutriCoins -- MAQUETA (ver nota abajo). Precios en COP,
-// provisionales: hay que reemplazarlos por los reales una vez existan los
-// productos de compra única en Hotmart. Vive en app.js (no en
+// Paquetes de NutriCoins -- precios en COP. El `cant` de cada uno es la
+// clave que los conecta con su link de pago real en
+// HOTMART_CHECKOUT_NUTRICOINS (config.js) y con el mapeo de vuelta en el
+// secreto HOTMART_OFERTA_NUTRICOINS del webhook. Vive en app.js (no en
 // views/settings.js) para que el header (arriba) también pueda abrirla
 // directamente al tocar el ícono 🪙, sin crear un import circular con
 // settings.js (que ya importa varias cosas de aquí).
@@ -723,12 +725,18 @@ const PAQUETES_NUTRICOINS = [
 // El precio de cada paquete se formatea con 'es-CO' y no 'es' a secas: el
 // locale genérico 'es' no separa miles por debajo de 10.000 (el paquete
 // de 100 mostraba "$3900" sin punto, mientras los demás sí lo tenían).
+//
+// Cobro real: cada paquete abre su checkout de Hotmart en pestaña nueva
+// (HOTMART_CHECKOUT_NUTRICOINS en config.js) -- el webhook hotmart-webhook
+// acredita el saldo apenas Hotmart confirma el pago. Mientras un paquete
+// no tenga su link configurado (null) el botón sigue mostrando "Muy
+// pronto", igual que antes.
 export function abrirComprarNutricoins() {
   openModal((modal) => {
-    const nutricoins = getState().nutricoins || 0;
+    let nutricoins = getState().nutricoins || 0;
     modal.insertAdjacentHTML('beforeend', `
       <h2>Tus NutriCoins</h2>
-      <p class="num mt" style="margin:2px 0 0;display:flex;align-items:center;gap:8px">${coinIcon(ORO_NUTRICOINS, 26)}${nutricoins}</p>
+      <p class="num mt" id="fc-saldo" style="margin:2px 0 0;display:flex;align-items:center;gap:8px">${coinIcon(ORO_NUTRICOINS, 26)}${nutricoins}</p>
       <p class="small muted mt">Se usan para extras puntuales -- nunca para saltarte hábitos ni comprar Pausas de Ruta, eso sigue siendo solo con constancia.</p>
       <p class="small mt" style="font-weight:600">Comprar NutriCoins</p>
       <div class="farol-grid mt">
@@ -741,12 +749,35 @@ export function abrirComprarNutricoins() {
             <span class="farol-precio">$${p.precio.toLocaleString('es-CO')}</span>
           </button>`).join('')}
       </div>
-      <p class="small muted mt">Los paquetes y precios todavía son provisionales -- esta pantalla es una maqueta mientras se conecta el cobro real.</p>`);
-    modal.querySelectorAll('.farol-pack').forEach((btn) => {
+      <p class="small muted mt">Después de pagar, tu saldo se actualiza solo en cuanto Hotmart confirma la compra (puede tardar unos segundos).</p>`);
+    modal.querySelectorAll('.farol-pack').forEach((btn, i) => {
       btn.addEventListener('click', () => {
-        toast('Muy pronto vas a poder comprar NutriCoins aquí mismo 🪙');
+        const link = HOTMART_CHECKOUT_NUTRICOINS[PAQUETES_NUTRICOINS[i].cant];
+        if (!link) {
+          toast('Muy pronto vas a poder comprar NutriCoins aquí mismo 🪙');
+          return;
+        }
+        window.open(link, '_blank', 'noopener');
       });
     });
+    // Al volver de pagar en la pestaña de Hotmart (o si la compra se
+    // acreditó mientras el modal seguía abierto), refresca el saldo real
+    // apenas la pestaña de la app recupera el foco -- sin esto, la única
+    // forma de verlo actualizado era cerrar y reabrir esta pantalla.
+    const refrescar = async () => {
+      if (!document.body.contains(modal)) {
+        document.removeEventListener('visibilitychange', refrescar);
+        return;
+      }
+      const real = await fetchNutricoins();
+      if (real == null || real === nutricoins) return;
+      nutricoins = real;
+      sincronizarNutricoins(real);
+      const saldoEl = modal.querySelector('#fc-saldo');
+      if (saldoEl) saldoEl.innerHTML = `${coinIcon(ORO_NUTRICOINS, 26)}${real}`;
+    };
+    document.addEventListener('visibilitychange', refrescar);
+    refrescar();
   });
 }
 

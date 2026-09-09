@@ -20,9 +20,16 @@
 //  - verify_jwt=true en config.toml (o equivalente): igual resolvemos el
 //    usuario nosotros mismos vía un cliente con la clave anon + el
 //    Authorization header reenviado (mismo patrón que ai-assistant).
-//  - El costo en NutriCoins (10, ver store.js COSTO_RECETA_IA) lo cobra el
-//    cliente después de una respuesta exitosa -- mismo modelo de confianza
-//    que el resto de la moneda de la app.
+//  - El costo en NutriCoins (10, ver store.js COSTO_RECETA_IA) se cobra AQUÍ
+//    mismo, en el servidor, con la función atómica gastar_nutricoins()
+//    sobre profiles.nutricoins (columna propia, separada del JSONB state) --
+//    solo tras una generación exitosa, nunca antes. Antes el descuento lo
+//    hacía el cliente sobre su copia local de state.nutricoins, lo cual (a)
+//    no evitaba gastar más de lo que había si se disparaban dos solicitudes
+//    casi al tiempo, y (b) podía chocar con una recarga de NutriCoins
+//    comprada justo en ese momento (ver hotmart-webhook), ya que el push de
+//    estado del cliente sobrescribe TODO el JSONB. La columna aparte + el
+//    cobro atómico del lado del servidor cierran ambos huecos.
 //  - Modo 'enlace': el servidor descarga una URL que escribe la usuaria --
 //    para evitar SSRF (que use esta función para tocar servicios internos)
 //    se exige http/https y se bloquean hosts localhost/privados/link-local
@@ -147,13 +154,13 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const { data: profile, error: profileError } = await admin
     .from('profiles')
-    .select('state')
+    .select('state, nutricoins')
     .eq('id', user.id)
     .maybeSingle();
   if (profileError) return json({ error: 'No se pudo verificar tu saldo' }, 500);
 
   const state = (profile?.state ?? {}) as Record<string, any>;
-  const saldo = Number(state.nutricoins ?? 0);
+  const saldo = Number(profile?.nutricoins ?? 0);
   if (saldo < COSTO_RECETA_IA) {
     return json({ error: 'nutricoins_insuficientes', message: `Necesitas ${COSTO_RECETA_IA} NutriCoins para generar una receta.` }, 402);
   }
@@ -271,7 +278,20 @@ Deno.serve(async (req) => {
     return json({ error: mensaje }, 502);
   }
 
-  return json({ receta });
+  // Cobro atómico solo ahora que la receta ya se generó de verdad -- si
+  // esto fallara (nunca debería, salvo saldo cambiado a mitad de camino
+  // entre solicitudes simultáneas) igual se entrega la receta: es un
+  // fallo de nuestro lado, no algo que la usuaria deba pagar dos veces
+  // por reintentar.
+  let nutricoins = saldo;
+  const { data: nuevoSaldo, error: cobroError } = await admin.rpc('gastar_nutricoins', {
+    p_user_id: user.id,
+    p_monto: COSTO_RECETA_IA
+  });
+  if (cobroError) console.error('No se pudo cobrar NutriCoins:', cobroError.message);
+  else nutricoins = nuevoSaldo;
+
+  return json({ receta, nutricoins });
 });
 
 // El modelo debe devolver JSON puro, pero a veces lo envuelve en ```json.

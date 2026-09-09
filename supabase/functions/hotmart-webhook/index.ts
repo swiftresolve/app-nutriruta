@@ -8,6 +8,13 @@
 // Secretos requeridos en Supabase (Edge Functions → Secrets):
 //   HOTMART_HOTTOK        → el "hottok" que muestra Hotmart al crear el webhook. (ya configurado)
 //   HOTMART_OFERTA_ANUAL  → 'ti1e49b3' (código de oferta del plan anual, offer.code).
+//   HOTMART_OFERTA_NUTRICOINS → JSON {"código_off":cantidad,...} para cada paquete de
+//                            NutriCoins (ver PAQUETES_NUTRICOINS en app.js y
+//                            HOTMART_CHECKOUT_NUTRICOINS en config.js) -- ej.
+//                            {"ab12cd34":100,"ef56gh78":500}. Mientras no exista este
+//                            secreto, ninguna compra se confunde con NutriCoins: solo
+//                            entra por esta rama si el código "off" de la compra
+//                            aparece en este mapa.
 //   APP_URL (opcional)    → https://nutriruta.app (por defecto si no se define).
 //   CRON_SECRET            → mismo secreto que usa push-notify (ya configurado), para poder
 //                            avisarle a esa función que envíe una notificación puntual de evento.
@@ -89,6 +96,47 @@ Deno.serve(async (req) => {
 
   const { data: userId, error: lookupError } = await admin.rpc('user_id_por_email', { p_email: email });
   if (lookupError) return json({ error: 'Error buscando usuario' }, 500);
+
+  // Compra de un paquete de NutriCoins: se identifica por el código de
+  // oferta ("off"), no por el evento -- usa los MISMOS eventos de compra
+  // que el plan Premium (PURCHASE_APPROVED/COMPLETE), así que hay que
+  // resolver esto ANTES de la rama de activación de plan, o una compra de
+  // monedas activaría Premium por error. Si el código no está en el mapa
+  // (secreto sin configurar, u otra oferta), sigue de largo al flujo normal.
+  const ofertaNutricoins = String(data?.purchase?.offer?.code ?? '');
+  const mapaNutricoins = parsearMapaNutricoins();
+  const cantidadNutricoins = mapaNutricoins[ofertaNutricoins];
+  if (ACTIVAR.has(event) && cantidadNutricoins) {
+    if (!userId) {
+      // No hay forma de acreditar monedas a una cuenta que no existe --
+      // a diferencia de Premium, no tiene sentido invitarla solo por
+      // esto (las monedas se compran DESDE dentro de la app, ya con
+      // sesión abierta). Se registra para revisión manual, igual que el
+      // caso de Premium sin cuenta.
+      await admin.from('compras_sin_vincular').insert({
+        email_hotmart: email, evento: `compra_nutricoins:${cantidadNutricoins}`, periodo: null
+      });
+      console.warn(`Compra de ${cantidadNutricoins} NutriCoins de ${email} sin cuenta en la app -- registrada para revisión manual.`);
+      return json({ ok: true, aviso: 'Compra de NutriCoins sin cuenta vinculada; registrada para revisión manual.' });
+    }
+
+    const { data: saldoNuevo, error: creditoError } = await admin.rpc('acreditar_nutricoins', {
+      p_user_id: userId,
+      p_monto: cantidadNutricoins
+    });
+    if (creditoError) {
+      console.error('No se pudo acreditar NutriCoins:', creditoError.message);
+      return json({ error: 'No se pudo acreditar NutriCoins' }, 500);
+    }
+    await registrarPago(admin, userId, email, event, null, (data?.purchase?.price?.value ?? 0), transactionId);
+    console.log(`${cantidadNutricoins} NutriCoins acreditados a ${email} (saldo nuevo: ${saldoNuevo}).`);
+    await enviarPush(userId, {
+      title: `🪙 +${cantidadNutricoins} NutriCoins`,
+      body: 'Ya están en tu cuenta, listos para usar en Crear con IA.',
+      url: './'
+    });
+    return json({ ok: true, nutricoins_acreditados: cantidadNutricoins, saldo: saldoNuevo });
+  }
 
   if (!userId) {
     if (ACTIVAR.has(event)) {
@@ -276,6 +324,22 @@ async function enviarPush(userId: string, payload: { title: string; body: string
     });
   } catch (e) {
     console.error('No se pudo enviar push de evento:', e instanceof Error ? e.message : e);
+  }
+}
+
+// Lee HOTMART_OFERTA_NUTRICOINS (JSON {"código_off": cantidad}). Si el
+// secreto no existe todavía o viene mal formado, devuelve {} -- así ninguna
+// compra se confunde con NutriCoins mientras la usuaria no termine de
+// configurar las ofertas en Hotmart.
+function parsearMapaNutricoins(): Record<string, number> {
+  const crudo = Deno.env.get('HOTMART_OFERTA_NUTRICOINS');
+  if (!crudo) return {};
+  try {
+    const mapa = JSON.parse(crudo);
+    return mapa && typeof mapa === 'object' ? mapa : {};
+  } catch {
+    console.error('HOTMART_OFERTA_NUTRICOINS no es JSON válido.');
+    return {};
   }
 }
 

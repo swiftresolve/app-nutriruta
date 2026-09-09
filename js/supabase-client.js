@@ -215,10 +215,11 @@ export async function newGuideConversation() {
 
 // --- Crear con IA (Recetario) ---
 // Genera UNA receta vía Edge Function (generate-recipe): valida saldo de
-// NutriCoins en el servidor antes de llamar a la IA, pero el descuento real
-// del saldo lo hace el cliente tras una respuesta exitosa (ver
-// gastarNutricoins en store.js) -- mismo modelo de confianza que el resto
-// de la moneda de la app.
+// NutriCoins Y cobra el costo en el servidor de forma atómica (columna
+// profiles.nutricoins, ver migración nutricoins_columna_propia) -- ya no es
+// el cliente quien resta el saldo de su copia local. La función devuelve el
+// saldo real ya actualizado (data.nutricoins) para que la UI se sincronice
+// de inmediato sin depender del próximo pushProfileState.
 async function invocarGenerarReceta(body) {
   const { data, error } = await supabase.functions.invoke('generate-recipe', { body });
   if (error) {
@@ -231,7 +232,7 @@ async function invocarGenerarReceta(body) {
     }
     throw error;
   }
-  return data.receta;
+  return data;
 }
 
 // evitarNombres: nombres de recetas propias que la usuaria ya tiene para
@@ -321,6 +322,21 @@ export async function fetchMiNivelLiga() {
   const { data, error } = await supabase.from('profiles').select('liga_nivel').eq('id', session.user.id).maybeSingle();
   if (error) return 1;
   return data?.liga_nivel ?? 1;
+}
+
+// Saldo real de NutriCoins: vive en profiles.nutricoins (columna propia,
+// no en el state JSONB -- ver migración nutricoins_columna_propia), igual
+// que liga_nivel arriba, y por la misma razón: así una compra acreditada
+// por el webhook de Hotmart nunca puede quedar tapada por un push de
+// estado del cliente que traiga un número viejo. Se llama al abrir la
+// pantalla de compra y al iniciar sesión, para que el saldo mostrado
+// siempre refleje lo que hay de verdad en el servidor.
+export async function fetchNutricoins() {
+  const session = await getSession();
+  if (!session) return null;
+  const { data, error } = await supabase.from('profiles').select('nutricoins').eq('id', session.user.id).maybeSingle();
+  if (error) return null;
+  return data?.nutricoins ?? null;
 }
 
 // Código propio de referido (se crea la primera vez que se pide, ver

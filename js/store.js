@@ -209,6 +209,15 @@ export async function initCloud() {
       state = { ...state, user: { ...state.user, nombre: profile.nombre } };
       localStorage.setItem(activeKey, JSON.stringify(state));
     }
+    // profiles.nutricoins es la fuente real (columna propia, no el JSONB
+    // de arriba -- ver migración nutricoins_columna_propia): la pisa acá
+    // para que una compra acreditada por el webhook mientras la usuaria
+    // no tenía sesión abierta se vea correcta desde el primer render, sin
+    // esperar a abrir la pantalla de compra.
+    if (typeof profile.nutricoins === 'number') {
+      state = { ...state, nutricoins: profile.nutricoins };
+      localStorage.setItem(activeKey, JSON.stringify(state));
+    }
     cloudReady = true;
   } catch (e) {
     // Sin conexión: la app sigue funcionando offline con localStorage.
@@ -622,8 +631,13 @@ export function eliminarRecetaPropia(id) {
 // costo real de la llamada a la IA. No valida saldo -- eso lo hace quien
 // llama (planner.js), antes de invocar la función de generación.
 export const COSTO_RECETA_IA = 10;
-export function gastarNutricoins(n) {
-  setState({ nutricoins: Math.max(0, (state.nutricoins || 0) - n) });
+// El cobro real ya lo hace el servidor de forma atómica sobre
+// profiles.nutricoins (ver generate-recipe/index.ts y la migración
+// nutricoins_columna_propia) -- esto solo refleja en la copia local el
+// saldo real que la respuesta del servidor ya trae, para que el header se
+// vea actualizado al instante sin esperar el próximo pushProfileState.
+export function sincronizarNutricoins(saldoReal) {
+  setState({ nutricoins: Math.max(0, Number(saldoReal) || 0) });
 }
 
 function updateStreak() {
