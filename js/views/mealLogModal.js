@@ -197,6 +197,35 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
         });
       }
 
+      // Muchos Android exponen sensores auxiliares (macro, profundidad,
+      // monocromo) como si fueran lentes traseras normales en
+      // enumerateDevices() -- no hay ninguna capability que diga "esta es
+      // una cámara de foto real", así que la única forma de saberlo es
+      // real: pedirle un frame y mirar si es negro. Si lo es, esa lente
+      // simplemente no sirve para tomar fotos en este teléfono, aunque el
+      // navegador la haya dejado abrir sin error.
+      function esperarPrimerFrame(timeoutMs = 500) {
+        return new Promise((resolve) => {
+          if (video.readyState >= 2) { resolve(); return; }
+          const listo = () => { video.removeEventListener('loadeddata', listo); resolve(); };
+          video.addEventListener('loadeddata', listo);
+          setTimeout(() => { video.removeEventListener('loadeddata', listo); resolve(); }, timeoutMs);
+        });
+      }
+      const canvasSonda = document.createElement('canvas');
+      canvasSonda.width = 6; canvasSonda.height = 6;
+      const ctxSonda = canvasSonda.getContext('2d', { willReadFrequently: true });
+      function esFrameNegro() {
+        if (!video.videoWidth) return true;
+        try {
+          ctxSonda.drawImage(video, 0, 0, 6, 6);
+          const { data } = ctxSonda.getImageData(0, 0, 6, 6);
+          let total = 0;
+          for (let i = 0; i < data.length; i += 4) total += data[i] + data[i + 1] + data[i + 2];
+          return total / (data.length / 4) < 6; // promedio casi cero en los 3 canales
+        } catch { return false; } // canvas contaminado u otro fallo -- no bloquear por esto
+      }
+
       // Arranca (o reinicia, al cambiar de lente) el stream de video. Sin
       // aspectRatio: pedirle al navegador un feed cuadrado (probado antes)
       // hace que varios Android recorten el sensor en vez de solo
@@ -261,6 +290,14 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           return;
         }
       }
+      await esperarPrimerFrame();
+      // La lente guardada de una sesión anterior resultó ser un sensor
+      // negro (ver esFrameNegro arriba) -- se olvida y se reintenta con el
+      // criterio genérico, que normalmente sí cae en la cámara real.
+      if (lenteGuardada && esFrameNegro()) {
+        try { localStorage.removeItem(LENTE_KEY); } catch { /* no crítico */ }
+        try { await iniciarStream(); await esperarPrimerFrame(); } catch { /* se deja como está, sigue mejor que nada */ }
+      }
 
       // Fila de botones, uno por cada lente trasera física que detecte el
       // celular (pedido explícito: el zoom mínimo que reporta la lente que
@@ -286,14 +323,36 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           marcarLenteActiva();
           lentesRow.querySelectorAll('.camera-lente-btn').forEach((btn) => {
             btn.addEventListener('click', async () => {
-              try { await iniciarStream(btn.dataset.deviceId); marcarLenteActiva(); }
-              catch { toast(t('No se pudo cambiar de lente.')); }
+              const deviceIdAnterior = trackActual?.getSettings().deviceId;
+              try {
+                await iniciarStream(btn.dataset.deviceId);
+                marcarLenteActiva();
+                await esperarPrimerFrame();
+                if (esFrameNegro()) {
+                  // Esta lente física existe y el navegador la deja abrir,
+                  // pero no entrega una imagen real (sensor auxiliar de
+                  // macro/profundidad, no una cámara de foto normal) --
+                  // se vuelve a la anterior en vez de dejar el cuadro negro.
+                  toast(t('Esa lente no sirve para fotos en este celular -- volviendo a la anterior.'));
+                  await iniciarStream(deviceIdAnterior);
+                  marcarLenteActiva();
+                }
+              } catch { toast(t('No se pudo cambiar de lente.')); }
             });
           });
         }
       } catch { /* enumerar dispositivos falló -- se deja sin fila de lentes */ }
 
       modal.querySelector('#ml-shutter').addEventListener('click', () => {
+        // Último control antes de gastar una llamada de IA en una foto
+        // inservible: si el frame actual sigue negro (lente auxiliar que
+        // se coló sin que el chequeo de arriba lo detectara a tiempo),
+        // mejor avisar que dejar a la usuaria esperando un análisis que
+        // nunca va a reconocer nada en un cuadro negro.
+        if (esFrameNegro()) {
+          toast(t('No se ve nada en la cámara -- prueba con otra lente o elige una foto de tu galería.'));
+          return;
+        }
         // Recorte cuadrado centrado del frame actual del video, coherente
         // con el encuadre que se le muestra a la usuaria. El lado del
         // recorte se limita a MAX_DIM_GUARDAR para no disparar el peso del

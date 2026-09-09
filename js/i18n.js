@@ -459,6 +459,8 @@ const EN = {
   'Elegir de la galería': 'Choose from gallery',
   'Tomar foto': 'Take photo',
   'No pudimos abrir la cámara. Elige una foto de tu galería.': 'We couldn\'t open the camera. Choose a photo from your gallery.',
+  'Esa lente no sirve para fotos en este celular -- volviendo a la anterior.': "That lens doesn't work for photos on this phone -- switching back.",
+  'No se ve nada en la cámara -- prueba con otra lente o elige una foto de tu galería.': "The camera isn't showing anything -- try another lens or choose a photo from your gallery.",
   'Analizando…': 'Analyzing…',
   'Un momento, estamos identificando lo que comiste.': 'One moment, we\'re identifying what you ate.',
   'Dime qué comiste': 'Tell me what you ate',
