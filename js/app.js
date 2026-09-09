@@ -257,6 +257,15 @@ function attachStatTooltip(btn, html, { onRender, duracion = 3500 } = {}) {
       // translateX(-50%) es el centrado base del CSS -- si se pisa con solo
       // "translateX(Npx)" se pierde ese centrado entero.
       if (corrimiento) tip.style.transform = `translateX(calc(-50% + ${corrimiento}px))`;
+      // El triangulito (::after) es descendiente de la burbuja, así que el
+      // corrimiento de arriba también lo mueve a él -- sin esto, cuando la
+      // burbuja se desliza para no salirse de pantalla, el triangulito deja
+      // de apuntar al botón real y apunta a otro ícono del header (bug real
+      // reportado: en "escudos" el triangulito terminaba sobre "monedas").
+      // Se contrarresta con una variable CSS que el propio ::after resta en
+      // su transform (ver .header-tooltip::after), para que quede fijo
+      // sobre el botón sin importar cuánto se desplazó la burbuja.
+      tip.style.setProperty('--flecha-offset', `${corrimiento}px`);
     };
     // Se corrige UNA sola vez, ya, apenas se cuelga del DOM -- la animación
     // de entrada (tooltip-in) solo anima opacity/translateY/scale, nunca el

@@ -923,8 +923,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   width: max-content; max-width: 240px; text-align: left; white-space: normal;
   animation: tooltip-in 0.18s cubic-bezier(.34,1.56,.64,1);
 }
+/* --flecha-offset (JS, attachStatTooltip): resta el mismo corrimiento que
+   se le aplica a la burbuja para no salirse de pantalla -- así el
+   triangulito se queda apuntando al botón real en vez de desplazarse junto
+   con toda la burbuja. 0px cuando no hizo falta corregir nada. */
 .header-tooltip::after {
-  content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  content: ''; position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(calc(-50% - var(--flecha-offset, 0px)));
   border: 6px solid transparent; border-bottom-color: var(--modal-bg);
 }
 @keyframes tooltip-in { from { opacity: 0; transform: translateX(-50%) translateY(-6px) scale(0.95); } to { opacity: 1; transform: translateX(-50%); } }
