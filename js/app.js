@@ -229,19 +229,22 @@ function attachStatTooltip(btn, html, { onRender, duracion = 3500 } = {}) {
     const tip = document.createElement('div');
     tip.className = 'header-tooltip';
     tip.innerHTML = typeof html === 'function' ? html() : html;
+    // La animación de entrada (tooltip-in) controla TODA la propiedad
+    // transform mientras corre -- una CSS animation activa gana sobre
+    // cualquier transform que JS ponga por style inline, así que corregir
+    // la posición horizontal DESPUÉS de que la animación ya arrancó no
+    // servía de nada hasta que la animación terminaba (bug real reportado:
+    // se veía cortada del lado derecho y recién "saltaba" a acomodarse al
+    // final). Se apaga la animación mientras se mide y corrige, y solo
+    // se reactiva cuando ya está lista -- así arranca ya bien desde el
+    // primer frame, sin nada que corregir a mitad de camino.
+    tip.style.animation = 'none';
     btn.appendChild(tip);
     // Por defecto se centra bajo el botón (ver CSS) -- si eso la saca del
     // viewport (el de la izquierda, con "gemas"; el derecho, con
     // "escudos", pegado al borde de la pantalla) se corrige lo justo con
-    // esta función.
+    // esta función, ANTES de dejar correr la animación.
     const corregirPosicion = () => {
-      // Se llama más de una vez (ver abajo) -- tiene que ser idempotente.
-      // Sin este reset, la 2da llamada medía la posición YA corregida por
-      // la 1ra, veía "no se desborda" y borraba esa misma corrección
-      // (volviendo al centrado base, que sí se desborda). Siempre se
-      // vuelve a medir desde cero, nunca sobre el resultado de la vez
-      // anterior.
-      tip.style.transform = '';
       const margen = 10;
       // window.innerWidth NO sirve de referencia acá: con la burbuja de
       // "escudos" (pegada al borde derecho) desbordándose, ese mismo
@@ -254,26 +257,26 @@ function attachStatTooltip(btn, html, { onRender, duracion = 3500 } = {}) {
       let corrimiento = 0;
       if (rect.left < margen) corrimiento = margen - rect.left;
       else if (rect.right > anchoReal - margen) corrimiento = (anchoReal - margen) - rect.right;
-      // translateX(-50%) es el centrado base del CSS -- si se pisa con solo
-      // "translateX(Npx)" se pierde ese centrado entero.
-      if (corrimiento) tip.style.transform = `translateX(calc(-50% + ${corrimiento}px))`;
-      // El triangulito (::after) es descendiente de la burbuja, así que el
-      // corrimiento de arriba también lo mueve a él -- sin esto, cuando la
+      // --tip-offset lo usa tanto el transform base de .header-tooltip como
+      // los propios keyframes de tooltip-in (ver CSS) -- así la animación
+      // arranca YA con la posición corregida en vez de pisarla.
+      tip.style.setProperty('--tip-offset', `${corrimiento}px`);
+      // El triangulito (::after) es descendiente de la burbuja, así que ese
+      // mismo corrimiento también lo movería a él -- sin esto, cuando la
       // burbuja se desliza para no salirse de pantalla, el triangulito deja
       // de apuntar al botón real y apunta a otro ícono del header (bug real
       // reportado: en "escudos" el triangulito terminaba sobre "monedas").
-      // Se contrarresta con una variable CSS que el propio ::after resta en
-      // su transform (ver .header-tooltip::after), para que quede fijo
-      // sobre el botón sin importar cuánto se desplazó la burbuja.
+      // Se contrarresta con una variable CSS aparte que el propio ::after
+      // resta en su transform, para que quede fijo sobre el botón sin
+      // importar cuánto se desplazó la burbuja.
       tip.style.setProperty('--flecha-offset', `${corrimiento}px`);
+      // Reactiva la animación ya con --tip-offset puesto -- offsetWidth
+      // fuerza el reflow que hace falta para que el navegador de verdad
+      // "vea" el animation:none de arriba antes de quitarlo, si no,
+      // podría no reiniciar la animación desde el principio.
+      void tip.offsetWidth;
+      tip.style.animation = '';
     };
-    // Se corrige UNA sola vez, ya, apenas se cuelga del DOM -- la animación
-    // de entrada (tooltip-in) solo anima opacity/translateY/scale, nunca el
-    // translateX(-50%) que decide si se desborda, así que medir de una vez
-    // ya da la posición horizontal final real. Antes se esperaba a
-    // "animationend" para "estar segura" del layout, pero eso hacía que la
-    // burbuja se viera nacer desbordada y recién al final de la animación
-    // saltara a su lugar correcto -- un salto visible real que se reportó.
     corregirPosicion();
     const cerrar = () => { tip.remove(); document.removeEventListener('click', fuera); };
     const timer = setTimeout(cerrar, duracion);

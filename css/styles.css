@@ -916,8 +916,18 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
    tocó. Ahora se centra bajo el botón por defecto; app.js la corre lo
    justo con JS solo si así se saldría de la pantalla (el caso del botón
    de Pausas, pegado al borde derecho). */
+/* --tip-offset (JS, attachStatTooltip): corrimiento para no salirse de la
+   pantalla (el caso real de "escudos", pegado al borde derecho). Tiene que
+   estar en el transform BASE y también dentro de los keyframes de
+   tooltip-in -- una animación CSS activa controla toda la propiedad
+   transform mientras corre, así que corregir por JS con un style.transform
+   aparte no servía de nada hasta que la animación terminaba (se veía
+   nacer cortada y "saltar" a acomodarse al final, bug real reportado). Con
+   la variable adentro de los propios keyframes, arranca ya bien desde el
+   primer frame. */
 .header-tooltip {
-  position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 90;
+  position: absolute; top: calc(100% + 8px); left: 50%;
+  transform: translateX(calc(-50% + var(--tip-offset, 0px))); z-index: 90;
   background: var(--modal-bg); color: var(--ink); border: 1px solid var(--border);
   border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px;
   width: max-content; max-width: 240px; text-align: left; white-space: normal;
@@ -932,7 +942,10 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   transform: translateX(calc(-50% - var(--flecha-offset, 0px)));
   border: 6px solid transparent; border-bottom-color: var(--modal-bg);
 }
-@keyframes tooltip-in { from { opacity: 0; transform: translateX(-50%) translateY(-6px) scale(0.95); } to { opacity: 1; transform: translateX(-50%); } }
+@keyframes tooltip-in {
+  from { opacity: 0; transform: translateX(calc(-50% + var(--tip-offset, 0px))) translateY(-6px) scale(0.95); }
+  to { opacity: 1; transform: translateX(calc(-50% + var(--tip-offset, 0px))); }
+}
 @media (prefers-reduced-motion: reduce) {
   .header-tooltip { animation: none; }
 }
