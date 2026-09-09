@@ -5,7 +5,7 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, today, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { dailyMenu, swapMeal, trafficLight, trafficLightRecetaPropia, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON, CART_ICON, SHARE_ICON, TRASH_ICON } from '../app.js';
@@ -643,10 +643,14 @@ function abrirComidaRegistrada(meal, registro, onChange) {
     const horaTexto = new Date(registro.hora).toLocaleTimeString(getIdioma() === 'en' ? 'en-US' : 'es', { hour: 'numeric', minute: '2-digit' });
     const fuente = (FUENTE_LABEL[registro.fuente] || (() => null))();
     const alimentosCap = registro.alimentos.map(capitalizar);
-    // El título es lo que de verdad comiste (los alimentos registrados),
-    // no el nombre de la estación ("Desayuno") -- eso ya se sabe por la
-    // fila desde la que se abrió esta tarjeta, repetirlo era redundante.
-    const tituloComida = alimentosCap.join(', ');
+    // El título es lo que de verdad comiste, no el nombre de la estación
+    // ("Desayuno") -- eso ya se sabe por la fila desde la que se abrió
+    // esta tarjeta, repetirlo era redundante. Si el registro viene de
+    // confirmar una receta sugerida tal cual, usa su nombre real
+    // (registro.nombre) -- unir los ingredientes ahí daba un título
+    // ilegible, porque esos "alimentos" son la lista de ingredientes de
+    // la receta, no una descripción pensada para leerse de corrido.
+    const tituloComida = registro.nombre || alimentosCap.join(', ');
     modal.insertAdjacentHTML('beforeend', `
       <h2 class="center">${esc(tituloComida)}</h2>
       ${registro.fotoUrl
@@ -807,7 +811,7 @@ export function openRecipe(recipe, hoy = null) {
       const teniaFotoAlAbrir = !!hoy.registro?.fotoUrl;
       const aplicarToggle = () => {
         registradoAhora = !registradoAhora;
-        if (registradoAhora) guardarComidaRegistrada(hoy.mealId, ingredientesTexto.filter(Boolean), 'sugerencia');
+        if (registradoAhora) guardarComidaRegistrada(hoy.mealId, ingredientesTexto.filter(Boolean), 'sugerencia', today(), null, shown.nombre);
         else borrarComidaRegistrada(hoy.mealId);
         toggleBtn.classList.toggle('done', registradoAhora);
         toggleBtn.textContent = registradoAhora ? '✓' : '';

@@ -76,7 +76,7 @@ const DEFAULT_STATE = {
   rutiOculto: false,            // modo minimalista: oculta la ilustración de Ruti donde aparece
   diasCongelados: [],           // fechas ISO cubiertas por una Pausa de Ruta (racha "congelada", no rota)
   reflexionesHabitos: {},        // { fecha: texto } — la frase real que se pide al completar el 3er hábito del día
-  comidasRegistradas: {},          // { 'fecha|mealId': { alimentos: [texto], fuente: 'foto'|'voz'|'texto', hora } } — lo que la usuaria dijo que REALMENTE comió, no la sugerencia del menú
+  comidasRegistradas: {},          // { 'fecha|mealId': { alimentos: [texto], fuente: 'foto'|'voz'|'texto'|'sugerencia', hora, nombre? } } — lo que la usuaria dijo que REALMENTE comió, no la sugerencia del menú. `nombre` solo existe cuando fuente es 'sugerencia' (confirmó una receta tal cual): ahí `alimentos` es su lista de ingredientes, no algo pensado como título.
   favoritas: [],                  // ids de RECIPES marcadas con la estrella en el Recetario (ver planner.js)
   misRecetas: [],                 // recetas creadas a mano por la usuaria (ver agregarRecetaPropia)
   chatMeta: {}                    // { conversationId: { titulo?, fijado?, archivado? } } -- metadatos del historial de SuSana (menú de los tres puntos, ver assistant.js). Solo vive acá, nunca en el servidor -- son preferencias de organización de la usuaria, no parte de la conversación real.
@@ -478,10 +478,16 @@ export function comidaRegistrada(mealId, dateStr = today()) {
   return state.comidasRegistradas[claveComida(mealId, dateStr)] || null;
 }
 
-export function guardarComidaRegistrada(mealId, alimentos, fuente, dateStr = today(), fotoUrl = null) {
+export function guardarComidaRegistrada(mealId, alimentos, fuente, dateStr = today(), fotoUrl = null, nombre = null) {
   const clave = claveComida(mealId, dateStr);
   const registro = { alimentos, fuente, hora: new Date().toISOString() };
   if (fotoUrl) registro.fotoUrl = fotoUrl;
+  // Cuando el registro viene de confirmar una receta sugerida (fuente
+  // 'sugerencia'), alimentos es la LISTA DE INGREDIENTES de esa receta, no
+  // algo pensado para leerse como título -- sin este nombre aparte, la
+  // tarjeta de "lo que registraste" (abrirComidaRegistrada) terminaba
+  // mostrando todos los ingredientes pegados como si fueran el título.
+  if (nombre) registro.nombre = nombre;
   setState({ comidasRegistradas: { ...state.comidasRegistradas, [clave]: registro } });
   return registro;
 }
