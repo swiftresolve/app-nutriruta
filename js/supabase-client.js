@@ -347,6 +347,59 @@ export async function miCodigoReferido() {
   return data;
 }
 
+// --- Amigos (ver migración amigos_fundacion) ---
+// Un solo identificador (username) sirve para buscar dentro de la app y
+// para compartir un link fuera de ella (?amigo=<username>) -- nunca se
+// mezcla con referido_codigo, que sigue siendo solo del sistema de bono
+// Premium. Todos los errores del servidor llegan como código corto
+// (username_invalido, username_tomado, ya_son_amigos, etc.) en
+// error.message -- las pantallas los traducen a texto legible.
+export async function setUsername(username) {
+  const { error } = await supabase.rpc('set_username', { p_username: username });
+  if (error) throw error;
+}
+
+export async function miUsername() {
+  const session = await getSession();
+  if (!session) return null;
+  const { data, error } = await supabase.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
+  if (error) return null;
+  return data?.username ?? null;
+}
+
+export async function buscarAmigoPorUsername(username) {
+  const { data, error } = await supabase.rpc('buscar_amigo_por_username', { p_username: username });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+export async function solicitarAmistad(receptorId) {
+  const { error } = await supabase.rpc('solicitar_amistad', { p_receptor_id: receptorId });
+  if (error) throw error;
+}
+
+export async function responderSolicitudAmistad(solicitudId, aceptar) {
+  const { error } = await supabase.rpc('responder_solicitud_amistad', { p_id: solicitudId, p_aceptar: aceptar });
+  if (error) throw error;
+}
+
+export async function eliminarAmistad(amigoId) {
+  const { error } = await supabase.rpc('eliminar_amistad', { p_amigo_id: amigoId });
+  if (error) throw error;
+}
+
+export async function misSolicitudesPendientes() {
+  const { data, error } = await supabase.rpc('mis_solicitudes_pendientes');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function misAmigos() {
+  const { data, error } = await supabase.rpc('mis_amigos');
+  if (error) throw error;
+  return data ?? [];
+}
+
 // Canjear el código de un amigo desde Ajustes (para quien ya tiene
 // cuenta y no llegó por un link "?ref="). Solo valida que exista y no
 // sea el propio -- ver validar_codigo_referido() en la migración.

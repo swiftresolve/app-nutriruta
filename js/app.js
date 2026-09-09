@@ -1,7 +1,7 @@
 // Router mínimo + arranque con puerta de autenticación.
 import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo, diasDelMes, today, sincronizarNutricoins } from './store.js';
 import { t } from './i18n.js';
-import { getSession, supabase, avatarUrlFor, fetchNutricoins } from './supabase-client.js';
+import { getSession, supabase, avatarUrlFor, fetchNutricoins, buscarAmigoPorUsername, solicitarAmistad } from './supabase-client.js';
 import { HOTMART_CHECKOUT_NUTRICOINS } from './config.js';
 import { broteStage, broteBadge } from './ruti.js';
 import { frozenFlameIcon } from './streakAnim.js';
@@ -24,6 +24,7 @@ import { renderAdmin } from './views/admin.js';
 import { renderWeekMenu } from './views/weekMenu.js';
 import { renderDiary } from './views/diary.js';
 import { renderLiga } from './views/liga.js';
+import { renderFriends } from './views/friends.js';
 import { abrirCompartirPlantillas } from './shareUI.js';
 
 const app = document.getElementById('app');
@@ -82,7 +83,8 @@ const ROUTES = {
   admin: renderAdmin,
   weekMenu: renderWeekMenu,
   diary: renderDiary,
-  liga: renderLiga
+  liga: renderLiga,
+  friends: renderFriends
 };
 
 // 'quiz' es público: ahora se responde ANTES de crear cuenta (ver spec de
@@ -871,6 +873,33 @@ if ('serviceWorker' in navigator) {
     // - onboarded=false: nunca lo completó en este dispositivo (sea porque
     //   es nueva o porque tiene sesión pero no lo ha hecho) → quiz.
     navigate(getState().onboarded ? 'dashboard' : 'quiz', { mode: 'signup' });
+
+    // Link de amigo compartido ("?amigo=usuario", ver friends.js) -- solo
+    // tiene sentido con sesión ya iniciada (hace falta una cuenta para
+    // mandar la solicitud); si alguien nuevo abre el link sin cuenta, se
+    // ignora en silencio y sigue el flujo normal de registro. No navega
+    // directo a "friends": solo muestra un aviso encima de donde sea que
+    // haya aterrizado, para no interrumpir el flujo normal de apertura.
+    const amigoUsername = new URLSearchParams(window.location.search).get('amigo');
+    if (session && amigoUsername) {
+      buscarAmigoPorUsername(amigoUsername).then((encontrado) => {
+        if (!encontrado) return;
+        openModal((modal, closeFn) => {
+          modal.insertAdjacentHTML('beforeend', `
+            <h2>👥 ${t('¿Agregar a {nombre} como amiga?', { nombre: encontrado.nombre || encontrado.username })}</h2>
+            <p class="small muted mt">@${encontrado.username}</p>`);
+          const btn = document.createElement('button');
+          btn.className = 'btn accent full mt';
+          btn.textContent = t('Enviar solicitud');
+          btn.addEventListener('click', async () => {
+            try { await solicitarAmistad(encontrado.id); toast(t('¡Solicitud enviada! 🌿')); }
+            catch { /* ya son amigas, o ya se la mandaste -- no hace falta avisar de nuevo */ }
+            closeFn();
+          });
+          modal.appendChild(btn);
+        });
+      }).catch(() => {});
+    }
   }
 
   supabase.auth.onAuthStateChange((event) => {

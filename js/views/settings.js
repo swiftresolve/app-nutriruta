@@ -56,6 +56,7 @@ function abrirSelector(titulo, opciones, valorActual, onElegir) {
 function settingsSecciones() {
   return [
     { id: 'cuenta', icon: '👤', label: t('Mi cuenta') },
+    { id: 'amigos', icon: '👥', label: t('Amigos'), esNavegacionExterna: true },
     { id: 'sobre-ti', icon: '🧍', label: t('Sobre ti') },
     { id: 'salud', icon: '🩺', label: t('Salud y alimentación') },
     { id: 'comidas', icon: '⏰', label: t('Horario de comidas') },
@@ -143,7 +144,8 @@ export function renderSettings(container, params = {}) {
   menu.className = 'card mt';
   for (const s of settingsSecciones()) {
     if (s.condicion && !s.condicion()) continue;
-    menu.appendChild(filaAjuste(s.icon, s.label, '', () => navigate('settings', { seccion: s.id })));
+    const ir = s.esNavegacionExterna ? () => navigate(s.id) : () => navigate('settings', { seccion: s.id });
+    menu.appendChild(filaAjuste(s.icon, s.label, '', ir));
   }
   container.appendChild(menu);
 

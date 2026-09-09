@@ -9,8 +9,8 @@
 // lista de posiciones de Duolingo (la usuaria mandó capturas), adaptado
 // a los 10 niveles propios de NutriRuta (sinónimos de "ruta/camino").
 import { esc } from '../store.js';
-import { header, CLOCK_ICON } from '../app.js';
-import { fetchLigaEstado, fetchMiNivelLiga } from '../supabase-client.js';
+import { header, CLOCK_ICON, navigate } from '../app.js';
+import { fetchLigaEstado, fetchMiNivelLiga, misAmigos } from '../supabase-client.js';
 import { t } from '../i18n.js';
 
 const NIVELES = [
@@ -87,8 +87,11 @@ export function renderLiga(container) {
   wrap.innerHTML = `<div class="card center"><p class="muted">${t('Cargando tu liga…')}</p></div>`;
   container.appendChild(wrap);
 
-  Promise.all([fetchLigaEstado(), fetchMiNivelLiga()])
-    .then(([participantes, nivel]) => pintar(wrap, participantes, nivel))
+  // misAmigos() aparte, con su propio catch -- si falla (o la usuaria
+  // simplemente no tiene amigas agregadas todavía) la Liga se pinta igual,
+  // solo sin el resaltado de "es tu amiga".
+  Promise.all([fetchLigaEstado(), fetchMiNivelLiga(), misAmigos().catch(() => [])])
+    .then(([participantes, nivel, amigos]) => pintar(wrap, participantes, nivel, new Set(amigos.map((a) => a.id))))
     .catch(() => {
       wrap.innerHTML = `<div class="card center"><p class="muted">${t('No pudimos cargar tu liga. Intenta de nuevo más tarde.')}</p></div>`;
     });
@@ -115,7 +118,7 @@ function pintarCarrusel(nivelActual) {
   return carrusel;
 }
 
-function pintar(wrap, participantes, nivel) {
+function pintar(wrap, participantes, nivel, amigosIds = new Set()) {
   const tier = NIVELES[nivel] || NIVELES[1];
   wrap.innerHTML = '';
 
@@ -124,8 +127,10 @@ function pintar(wrap, participantes, nivel) {
   cabecera.className = 'center mt';
   cabecera.innerHTML = `
     <h2>${esc(tier.nombre)}</h2>
-    <p class="small muted row" style="justify-content:center;gap:5px;margin-top:2px">${CLOCK_ICON}${t('{n} día{s}', { n: dias, s: dias === 1 ? '' : 's' })}</p>`;
+    <p class="small muted row" style="justify-content:center;gap:5px;margin-top:2px">${CLOCK_ICON}${t('{n} día{s}', { n: dias, s: dias === 1 ? '' : 's' })}</p>
+    <button type="button" class="btn ghost sm mt" id="liga-amigos-btn">👥 ${t('Amigos')}</button>`;
   wrap.appendChild(cabecera);
+  cabecera.querySelector('#liga-amigos-btn').addEventListener('click', () => navigate('friends'));
 
   const carrusel = pintarCarrusel(nivel);
   wrap.appendChild(carrusel);
@@ -161,6 +166,7 @@ function pintar(wrap, participantes, nivel) {
       items.forEach((p, idx) => {
         const rank = zona.desde + idx + 1;
         const esUltimaDeZona = idx === items.length - 1;
+        const esAmiga = !p.dummy && amigosIds.has(p.user_id);
         const row = document.createElement('div');
         // Sin borde abajo en la última fila de cada zona -- el divisor de
         // la zona siguiente ya marca el corte, la línea extra era
@@ -168,7 +174,7 @@ function pintar(wrap, participantes, nivel) {
         row.className = 'habit' + (p.es_yo ? ' liga-yo' : '') + (esUltimaDeZona ? ' liga-sin-borde' : '') + (p.dummy ? ' liga-dummy' : '');
         row.innerHTML = `
           <span class="liga-rank">${rank <= 3 && !p.dummy ? MEDALLAS[rank - 1] : rank}</span>
-          <label style="flex:1">${esc(p.nombre || t('Alguien en tu ruta'))}${p.es_yo ? ` <span class="tag verde">${t('Tú')}</span>` : ''}</label>
+          <label style="flex:1">${esc(p.nombre || t('Alguien en tu ruta'))}${p.es_yo ? ` <span class="tag verde">${t('Tú')}</span>` : esAmiga ? ' 👥' : ''}</label>
           <span class="small" style="font-weight:700;white-space:nowrap">${p.gemas_semana} 💎</span>`;
         lista.appendChild(row);
       });
