@@ -530,6 +530,9 @@ const EN = {
   'Desfijar conversación': 'Unpin conversation',
   'Fijadas': 'Pinned',
   'Cambiar nombre': 'Rename',
+  'Así te vas a ver en la Liga y en el resto de la app.': "This is how you'll show up in the League and the rest of the app.",
+  'Escribe un nombre.': 'Write a name.',
+  '¡Nombre actualizado! 🌿': 'Name updated! 🌿',
   'Archivar': 'Archive',
   'Desarchivar': 'Unarchive',
 

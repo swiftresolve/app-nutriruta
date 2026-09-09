@@ -7,7 +7,7 @@ import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { PAISES_ALIMENTOS } from '../data/regionalismos.js';
 import { MEALS } from '../data/recipes.js';
 import { getSession, signIn, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
-import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, susanaName, ORO_NUTRICOINS, GEAR_ICON, SHARE_ICON, CAMERA_SOLID_ICON, TRASH_ICON } from '../app.js';
+import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, susanaName, ORO_NUTRICOINS, GEAR_ICON, SHARE_ICON, CAMERA_SOLID_ICON, TRASH_ICON, PENCIL_ICON } from '../app.js';
 import { iniciarTour } from './tour.js';
 import { pushSupported, currentSubscription, enablePush, disablePush } from '../push.js';
 import { t, getIdioma } from '../i18n.js';
@@ -153,6 +153,33 @@ export function renderSettings(container, params = {}) {
   container.appendChild(ver);
 }
 
+// El nombre solo se pedía UNA vez, al crear la cuenta ("Nombre o alias
+// (opcional)" en auth.js) -- no había ninguna forma de corregirlo después
+// (una errata, o simplemente cambiar de opinión sobre qué alias mostrar
+// en la Liga). setState ya dispara el push a la nube solo (scheduleCloudPush),
+// y pushProfileState manda el nombre nuevo a profiles.nombre aparte del
+// state -- no hace falta nada más para que se sincronice.
+function abrirEditarNombre() {
+  const actual = getState().user.nombre || '';
+  openModal((modal, closeFn) => {
+    modal.insertAdjacentHTML('beforeend', `
+      <h2>${t('Cambiar nombre')}</h2>
+      <p class="small muted mt">${t('Así te vas a ver en la Liga y en el resto de la app.')}</p>
+      <input type="text" id="nombre-nuevo" maxlength="60" class="auth-input mt" value="${esc(actual)}">
+      <button type="button" class="btn full mt" id="nombre-guardar">${t('Guardar')}</button>`);
+    const input = modal.querySelector('#nombre-nuevo');
+    input.focus();
+    modal.querySelector('#nombre-guardar').addEventListener('click', () => {
+      const nuevo = input.value.trim().slice(0, 60);
+      if (!nuevo) { toast(t('Escribe un nombre.')); return; }
+      setState({ user: { ...getState().user, nombre: nuevo } });
+      closeFn();
+      toast(t('¡Nombre actualizado! 🌿'));
+      navigate('settings', { seccion: 'cuenta' });
+    });
+  });
+}
+
 // ---------- Mi cuenta ----------
 function pintarCuenta(container) {
   const { user } = getState();
@@ -178,10 +205,15 @@ function pintarCuenta(container) {
     </div>
     <h2>👤 ${t('Mi cuenta')}</h2>
     <p class="small" id="acc-email">${t('Cargando…')}</p>
-    <p class="mt">${planHtml}</p>`;
+    <p class="mt">${planHtml}</p>
+    <div class="row mt" style="gap:8px;align-items:center;justify-content:center">
+      <strong id="acc-nombre" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">${esc(user.nombre || t('Sin nombre'))}</strong>
+      <button type="button" class="icon-btn plain" id="acc-editar-nombre" aria-label="${t('Cambiar nombre')}">${PENCIL_ICON}</button>
+    </div>`;
   const avatarImg = account.querySelector('#avatar-img');
   const avatarFallback = account.querySelector('#avatar-fallback');
   const avatarEstado = account.querySelector('#avatar-estado');
+  account.querySelector('#acc-editar-nombre').addEventListener('click', () => abrirEditarNombre());
   getSession().then((s) => {
     const el = account.querySelector('#acc-email');
     if (el) el.innerHTML = s ? t('Sesión iniciada como {strong}{email}{fin} 🔐', { strong: '<strong>', email: esc(s.user.email), fin: '</strong>' }) : t('Sin sesión activa.');
