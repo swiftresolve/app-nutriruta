@@ -157,10 +157,6 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       const wrap = modal.querySelector('.camera-wrap');
       const lentesRow = modal.querySelector('#ml-cam-lentes');
       const zoomRow = modal.querySelector('#ml-cam-zoom');
-      // Recuerda la última lente elegida a mano -- para no obligar a
-      // repetir la elección cada vez que se abre la cámara (pedido
-      // explícito). Solo el id, nunca datos de la usuaria.
-      const LENTE_KEY = 'nutriruta_camara_lente_id';
       let trackActual = null;
       let capsActuales = null;
 
@@ -258,7 +254,6 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           try { await trackActual.applyConstraints({ advanced: [{ zoom: capsActuales.zoom.min }] }); } catch { /* el dispositivo no lo permite, se deja como está */ }
         }
         renderZoom();
-        try { localStorage.setItem(LENTE_KEY, trackActual.getSettings().deviceId || ''); } catch { /* localStorage no disponible, no es crítico */ }
       }
 
       // Gesto de pellizco para acercar/alejar, como cualquier cámara nativa
@@ -282,30 +277,22 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       }, { passive: false });
       wrap.addEventListener('touchend', () => { distanciaInicial = 0; });
 
-      // Si la usuaria ya había elegido una lente antes, se intenta esa
-      // primero -- si el dispositivo ya no existe (celular distinto,
-      // navegador distinto) OverconstrainedError cae al intento genérico.
-      let lenteGuardada = null;
-      try { lenteGuardada = localStorage.getItem(LENTE_KEY); } catch { /* localStorage no disponible */ }
+      // SIEMPRE arranca con el criterio genérico (facingMode environment),
+      // nunca recordando una lente elegida en una sesión anterior. Esto
+      // reemplaza un intento anterior que sí la recordaba (localStorage) --
+      // si esa lente recordada resultaba ser un sensor auxiliar sin
+      // imagen real (macro/profundidad, ver esFrameNegro), la cámara
+      // quedaba en negro CADA VEZ que se abría, sin ninguna forma visible
+      // de arreglarlo desde la propia pantalla. La fila de lentes de abajo
+      // sigue dejando probar otra lente dentro de esta misma sesión de
+      // cámara, pero nunca se guarda para la próxima vez.
       try {
-        await iniciarStream(lenteGuardada || undefined);
+        await iniciarStream();
       } catch {
-        try {
-          await iniciarStream();
-        } catch {
-          salirFullscreen();
-          toast(t('No pudimos abrir la cámara. Elige una foto de tu galería.'));
-          fileInput.click();
-          return;
-        }
-      }
-      await esperarPrimerFrame();
-      // La lente guardada de una sesión anterior resultó ser un sensor
-      // negro (ver esFrameNegro arriba) -- se olvida y se reintenta con el
-      // criterio genérico, que normalmente sí cae en la cámara real.
-      if (lenteGuardada && esFrameNegro()) {
-        try { localStorage.removeItem(LENTE_KEY); } catch { /* no crítico */ }
-        try { await iniciarStream(); await esperarPrimerFrame(); } catch { /* se deja como está, sigue mejor que nada */ }
+        salirFullscreen();
+        toast(t('No pudimos abrir la cámara. Elige una foto de tu galería.'));
+        fileInput.click();
+        return;
       }
 
       // Fila de botones, uno por cada lente trasera física que detecte el
