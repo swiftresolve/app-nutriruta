@@ -244,15 +244,16 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
         video.srcObject = stream;
         trackActual = stream.getVideoTracks()[0];
         capsActuales = trackActual?.getCapabilities?.();
-        // Muchos teléfonos Android exponen varias lentes traseras y el
-        // navegador a veces elige la telefoto (2x) por defecto para
-        // "environment" -- si el track expone control de zoom, se fuerza
-        // al mínimo (la lente/ángulo más amplio) apenas arranca el video.
-        // No todos los navegadores exponen esta capability; si no existe,
-        // simplemente no se toca nada.
-        if (capsActuales?.zoom) {
-          try { await trackActual.applyConstraints({ advanced: [{ zoom: capsActuales.zoom.min }] }); } catch { /* el dispositivo no lo permite, se deja como está */ }
-        }
+        // ANTES se forzaba el zoom al mínimo automáticamente aquí mismo,
+        // apenas arrancaba el video (para no heredar el 2x que "environment"
+        // a veces elegía por defecto). Se quita: aplicar una constraint de
+        // zoom con applyConstraints() justo al abrir el stream es una causa
+        // real y documentada de video en negro en versiones recientes de
+        // Chrome para Android, en varios modelos a la vez -- coincide
+        // exactamente con lo reportado (todas las lentes en negro, en
+        // varios celulares, algo que antes sí funcionaba). El zoom real
+        // (fila de botones y pellizco) sigue intacto, pero ahora solo se
+        // aplica cuando la usuaria lo toca a propósito, nunca solo.
         renderZoom();
       }
 
