@@ -204,7 +204,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       // real: pedirle un frame y mirar si es negro. Si lo es, esa lente
       // simplemente no sirve para tomar fotos en este teléfono, aunque el
       // navegador la haya dejado abrir sin error.
-      function esperarPrimerFrame(timeoutMs = 500) {
+      function esperarPrimerFrame(timeoutMs = 1200) {
         return new Promise((resolve) => {
           if (video.readyState >= 2) { resolve(); return; }
           const listo = () => { video.removeEventListener('loadeddata', listo); resolve(); };
@@ -215,8 +215,17 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       const canvasSonda = document.createElement('canvas');
       canvasSonda.width = 6; canvasSonda.height = 6;
       const ctxSonda = canvasSonda.getContext('2d', { willReadFrequently: true });
+      // BUG real de la primera versión de esto: si el video todavía no
+      // tenía dimensiones (cámara lenta en arrancar, no le había dado
+      // tiempo a los 500ms de espera), se trataba como "está en negro" y
+      // eso disparaba el reintento/reversión de lente -- rompiendo la
+      // cámara por defecto para CUALQUIERA cuyo teléfono tardara un poco
+      // más en entregar el primer frame, no solo a quien tuviera un
+      // sensor auxiliar real. "No sé todavía" nunca debe tratarse igual
+      // que "confirmé que está negro" -- si no hay certeza, se asume que
+      // la cámara está bien y se sigue de largo.
       function esFrameNegro() {
-        if (!video.videoWidth) return true;
+        if (!video.videoWidth) return false;
         try {
           ctxSonda.drawImage(video, 0, 0, 6, 6);
           const { data } = ctxSonda.getImageData(0, 0, 6, 6);
