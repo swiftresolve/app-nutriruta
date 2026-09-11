@@ -724,7 +724,7 @@ const PAQUETES_NUTRICOINS = [
   { cant: 100, precio: 1.99 },
   { cant: 500, precio: 5.99 },
   { cant: 1000, precio: 9.99, popular: true },
-  { cant: 2500, precio: 19.99 }
+  { cant: 2500, precio: 18.99 }
 ];
 
 // Cobro real: cada paquete abre su checkout de Hotmart en pestaña nueva
