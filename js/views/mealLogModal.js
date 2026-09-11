@@ -142,6 +142,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
           <video id="ml-video" autoplay playsinline muted></video>
           <div class="camera-frame"></div>
         </div>
+        <p id="ml-cam-debug" style="font-family:monospace;font-size:11px;color:#9be;white-space:pre-wrap;line-height:1.4;margin:6px 2px 0;min-height:1em"></p>
         <div class="camera-lentes-row" id="ml-cam-lentes" hidden></div>
         <div class="camera-zoom-row" id="ml-cam-zoom" hidden></div>
         <div class="camera-controls">
@@ -211,6 +212,20 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       const canvasSonda = document.createElement('canvas');
       canvasSonda.width = 6; canvasSonda.height = 6;
       const ctxSonda = canvasSonda.getContext('2d', { willReadFrequently: true });
+      // Devuelve el promedio de brillo del frame actual (0-255), o null si
+      // todavía no se puede saber (sin dimensiones) o el canvas falló --
+      // separado de esFrameNegro() para poder MOSTRAR el número real en el
+      // panel de diagnóstico, no solo un sí/no.
+      function promedioLuminancia() {
+        if (!video.videoWidth) return null;
+        try {
+          ctxSonda.drawImage(video, 0, 0, 6, 6);
+          const { data } = ctxSonda.getImageData(0, 0, 6, 6);
+          let total = 0;
+          for (let i = 0; i < data.length; i += 4) total += data[i] + data[i + 1] + data[i + 2];
+          return total / (data.length / 4);
+        } catch { return null; } // canvas contaminado u otro fallo
+      }
       // BUG real de la primera versión de esto: si el video todavía no
       // tenía dimensiones (cámara lenta en arrancar, no le había dado
       // tiempo a los 500ms de espera), se trataba como "está en negro" y
@@ -221,14 +236,26 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       // que "confirmé que está negro" -- si no hay certeza, se asume que
       // la cámara está bien y se sigue de largo.
       function esFrameNegro() {
-        if (!video.videoWidth) return false;
-        try {
-          ctxSonda.drawImage(video, 0, 0, 6, 6);
-          const { data } = ctxSonda.getImageData(0, 0, 6, 6);
-          let total = 0;
-          for (let i = 0; i < data.length; i += 4) total += data[i] + data[i + 1] + data[i + 2];
-          return total / (data.length / 4) < 6; // promedio casi cero en los 3 canales
-        } catch { return false; } // canvas contaminado u otro fallo -- no bloquear por esto
+        const p = promedioLuminancia();
+        return p !== null && p < 6;
+      }
+
+      // Panel de diagnóstico visible en pantalla (temporal, mientras se
+      // investiga el reporte real de cámara en negro en varios celulares
+      // -- ver feedback de la usuaria). Muestra datos que antes solo se
+      // podían ver con la consola del navegador, para poder diagnosticar
+      // desde una simple captura de pantalla en vez de seguir adivinando
+      // arreglos a ciegas.
+      const debugEl = modal.querySelector('#ml-cam-debug');
+      function actualizarDebug() {
+        if (!debugEl) return;
+        const s = trackActual?.getSettings?.() ?? {};
+        const lum = promedioLuminancia();
+        debugEl.textContent =
+          `video: ${video.videoWidth}x${video.videoHeight} readyState=${video.readyState}\n` +
+          `track: ${trackActual?.label || '(sin label)'}\n` +
+          `settings: zoom=${s.zoom ?? '-'} frameRate=${s.frameRate ?? '-'} facingMode=${s.facingMode ?? '-'}\n` +
+          `brillo promedio: ${lum === null ? 'sin datos' : lum.toFixed(1)} (negro si <6)`;
       }
 
       // Arranca (o reinicia, al cambiar de lente) el stream de video. Sin
@@ -295,6 +322,12 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
         fileInput.click();
         return;
       }
+      await esperarPrimerFrame();
+      actualizarDebug();
+      // Se refresca un par de veces más -- algunos celulares reportan
+      // videoWidth/label con retraso incluso después de "loadeddata".
+      setTimeout(actualizarDebug, 800);
+      setTimeout(actualizarDebug, 2000);
 
       // Fila de botones, uno por cada lente trasera física que detecte el
       // celular (pedido explícito: el zoom mínimo que reporta la lente que
@@ -325,6 +358,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
                 await iniciarStream(btn.dataset.deviceId);
                 marcarLenteActiva();
                 await esperarPrimerFrame();
+                actualizarDebug();
                 if (esFrameNegro()) {
                   // Esta lente física existe y el navegador la deja abrir,
                   // pero no entrega una imagen real (sensor auxiliar de
@@ -341,6 +375,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
       } catch { /* enumerar dispositivos falló -- se deja sin fila de lentes */ }
 
       modal.querySelector('#ml-shutter').addEventListener('click', () => {
+        actualizarDebug();
         // Último control antes de gastar una llamada de IA en una foto
         // inservible: si el frame actual sigue negro (lente auxiliar que
         // se coló sin que el chequeo de arriba lo detectara a tiempo),
