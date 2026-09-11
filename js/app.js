@@ -710,24 +710,23 @@ export function coinIcon(color, size = 16) {
 export const ORO_NUTRICOINS = '#D4A017';
 export const PLATA_NUTRICOINS = '#9AA5A0';
 
-// Paquetes de NutriCoins -- precios en COP. El `cant` de cada uno es la
-// clave que los conecta con su link de pago real en
-// HOTMART_CHECKOUT_NUTRICOINS (config.js) y con el mapeo de vuelta en el
-// secreto HOTMART_OFERTA_NUTRICOINS del webhook. Vive en app.js (no en
+// Paquetes de NutriCoins -- precios en USD, mismo criterio que el Plan
+// Premium (ver plans.js: "USD 9", "USD 90") -- Hotmart se encarga solo de
+// mostrarle a cada comprador el equivalente en su moneda local al pagar,
+// así nadie tiene que gestionar tasas de cambio por país a mano. El
+// `cant` de cada uno es la clave que los conecta con su link de pago real
+// en HOTMART_CHECKOUT_NUTRICOINS (config.js) y con el mapeo de vuelta en
+// el secreto HOTMART_OFERTA_NUTRICOINS del webhook. Vive en app.js (no en
 // views/settings.js) para que el header (arriba) también pueda abrirla
 // directamente al tocar el ícono 🪙, sin crear un import circular con
 // settings.js (que ya importa varias cosas de aquí).
 const PAQUETES_NUTRICOINS = [
-  { cant: 100, precio: 3900 },
-  { cant: 500, precio: 16900 },
-  { cant: 1000, precio: 29900, popular: true },
-  { cant: 2500, precio: 59900 }
+  { cant: 100, precio: 0.99 },
+  { cant: 500, precio: 3.99 },
+  { cant: 1000, precio: 6.99, popular: true },
+  { cant: 2500, precio: 14.99 }
 ];
 
-// El precio de cada paquete se formatea con 'es-CO' y no 'es' a secas: el
-// locale genérico 'es' no separa miles por debajo de 10.000 (el paquete
-// de 100 mostraba "$3900" sin punto, mientras los demás sí lo tenían).
-//
 // Cobro real: cada paquete abre su checkout de Hotmart en pestaña nueva
 // (HOTMART_CHECKOUT_NUTRICOINS en config.js) -- el webhook hotmart-webhook
 // acredita el saldo apenas Hotmart confirma el pago. Mientras un paquete
@@ -748,7 +747,7 @@ export function abrirComprarNutricoins() {
             <span class="farol-cant">${p.cant.toLocaleString('es')}</span>
             <span class="small muted">NutriCoins</span>
             <span class="farol-emoji">${coinIcon(ORO_NUTRICOINS, 34)}</span>
-            <span class="farol-precio">$${p.precio.toLocaleString('es-CO')}</span>
+            <span class="farol-precio">USD ${p.precio.toFixed(2)}</span>
           </button>`).join('')}
       </div>
       <p class="small muted mt">Después de pagar, tu saldo se actualiza solo en cuanto Hotmart confirma la compra (puede tardar unos segundos).</p>`);
