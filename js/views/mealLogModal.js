@@ -20,14 +20,32 @@ const MAX_DIM_GUARDAR = 1600;
 // bajar por esto).
 const MAX_DIM_IA = 1000;
 
-function reescalar(canvasOrigen, maxDim, calidad) {
+// Devuelve un CANVAS reescalado (no un dataURL) -- separado así porque de
+// ahí se necesitan dos cosas distintas según el llamador: un dataURL para
+// mostrar de una vez en un <img> o mandarle el base64 a la IA, y un Blob
+// real para subir el archivo. Antes esta función devolvía directo el
+// dataURL, y para sacar el Blob se hacía fetch(dataUrl).then(r=>r.blob())
+// -- fetch() sobre un dataURL no es confiable en todos los WebView de
+// Android: cuando fallaba (sin lanzar ningún error visible), la promesa
+// nunca resolvía y la pantalla se quedaba congelada justo después de
+// tomar la foto (bug real reportado: "cámara en negro", pero en realidad
+// la cámara ya había funcionado -- se congelaba DESPUÉS del disparo).
+// canvas.toBlob() es la API nativa del navegador para esto mismo, sin
+// pasar por fetch ni por ningún dataURL intermedio.
+function reescalar(canvasOrigen, maxDim) {
   const scale = Math.min(1, maxDim / Math.max(canvasOrigen.width, canvasOrigen.height));
   const w = Math.round(canvasOrigen.width * scale);
   const h = Math.round(canvasOrigen.height * scale);
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
   canvas.getContext('2d').drawImage(canvasOrigen, 0, 0, w, h);
+  return canvas;
+}
+function canvasADataUrl(canvas, calidad) {
   return canvas.toDataURL('image/jpeg', calidad);
+}
+function canvasABlob(canvas, calidad) {
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', calidad));
 }
 
 // Comprime la foto elegida de galería en el cliente antes de subirla (misma
@@ -37,16 +55,16 @@ function reescalar(canvasOrigen, maxDim, calidad) {
 function toJpegBase64(file, maxDim = MAX_DIM_GUARDAR) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
       const origen = document.createElement('canvas');
       origen.width = img.width; origen.height = img.height;
       origen.getContext('2d').drawImage(img, 0, 0);
-      const dataUrlGuardar = reescalar(origen, maxDim, 0.85);
-      const dataUrlIA = reescalar(origen, MAX_DIM_IA, 0.82);
+      const canvasGuardar = reescalar(origen, maxDim);
+      const dataUrlIA = canvasADataUrl(reescalar(origen, MAX_DIM_IA), 0.82);
+      const previewUrl = canvasADataUrl(canvasGuardar, 0.85);
       URL.revokeObjectURL(img.src);
-      fetch(dataUrlGuardar).then((r) => r.blob()).then((blob) => {
-        resolve({ base64: dataUrlIA.split(',')[1], mediaType: 'image/jpeg', previewUrl: dataUrlGuardar, blob });
-      });
+      const blob = await canvasABlob(canvasGuardar, 0.85);
+      resolve({ base64: dataUrlIA.split(',')[1], mediaType: 'image/jpeg', previewUrl, blob });
     };
     img.onerror = () => reject(new Error(t('Imagen inválida.')));
     img.src = URL.createObjectURL(file);
@@ -374,7 +392,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
         }
       } catch { /* enumerar dispositivos falló -- se deja sin fila de lentes */ }
 
-      modal.querySelector('#ml-shutter').addEventListener('click', () => {
+      modal.querySelector('#ml-shutter').addEventListener('click', async () => {
         actualizarDebug();
         // Último control antes de gastar una llamada de IA en una foto
         // inservible: si el frame actual sigue negro (lente auxiliar que
@@ -398,22 +416,27 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
         const origen = document.createElement('canvas');
         origen.width = cropSide; origen.height = cropSide;
         origen.getContext('2d').drawImage(video, (w - cropSide) / 2, (h - cropSide) / 2, cropSide, cropSide, 0, 0, cropSide, cropSide);
+        // Bug real ya diagnosticado con video de la usuaria: la cámara SÍ
+        // tomaba la foto bien, pero se congelaba justo aquí -- detenía la
+        // cámara y salía de pantalla completa, y la conversión a Blob
+        // (antes con fetch(dataUrl), ver comentario de reescalar()) nunca
+        // resolvía en su celular, dejando la pantalla trabada en un video
+        // negro sin ningún error visible. canvas.toBlob() reemplaza eso.
+        const canvasGuardar = reescalar(origen, MAX_DIM_GUARDAR);
+        const previewUrl = canvasADataUrl(canvasGuardar, 0.85);
+        const base64IA = canvasADataUrl(reescalar(origen, MAX_DIM_IA), 0.82).split(',')[1];
         detenerCamara();
         salirFullscreen();
-        const previewUrl = reescalar(origen, MAX_DIM_GUARDAR, 0.85);
-        const base64IA = reescalar(origen, MAX_DIM_IA, 0.82).split(',')[1];
-        fetch(previewUrl).then((r) => r.blob()).then(async (blob) => {
-          fotoBlob = blob;
+        try {
+          fotoBlob = await canvasABlob(canvasGuardar, 0.85);
           pantallaAnalizando(previewUrl);
-          try {
-            const detectados = await detectarAlimentosFoto(base64IA, 'image/jpeg');
-            fuente = 'foto';
-            pantallaConfirmar(detectados, previewUrl);
-          } catch (err) {
-            toast(err.message || t('No se pudo procesar la foto.'));
-            pantallaElegir();
-          }
-        });
+          const detectados = await detectarAlimentosFoto(base64IA, 'image/jpeg');
+          fuente = 'foto';
+          pantallaConfirmar(detectados, previewUrl);
+        } catch (err) {
+          toast(err.message || t('No se pudo procesar la foto.'));
+          pantallaElegir();
+        }
       });
     }
 
