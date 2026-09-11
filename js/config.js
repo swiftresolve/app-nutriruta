@@ -10,24 +10,21 @@ export const HOTMART_CHECKOUT = {
   anual: 'https://pay.hotmart.com/D106628820F?off=ti1e49b3&checkoutMode=6'
 };
 
-// Checkout de los paquetes de NutriCoins -- cada uno es un producto de
-// compra ÚNICA aparte del Premium, creado en Hotmart. Mientras el valor
-// siga siendo `null`, el botón de ese paquete en la app muestra "Muy
-// pronto" en vez de abrir Hotmart (ver abrirComprarNutricoins en app.js) --
-// así no hace falta tocar código de nuevo, solo pegar aquí el link de pago
-// ("off=...") una vez creado cada producto/oferta en el panel de Hotmart
-// (Productos → Crear producto → Digital → pago único, uno POR paquete, o
-// un mismo producto con 4 ofertas distintas, igual que mensual/anual
-// arriba comparten producto 8074107 con dos códigos "off" distintos).
-// El monto de NutriCoins que se acredita por cada uno lo define
+// Checkout de los paquetes de NutriCoins -- producto "NutriRuta —
+// NutriCoins" (ID 8493109) en Hotmart, un producto de compra ÚNICA
+// aparte del Premium, con 4 ofertas (una por paquete). El monto de
+// NutriCoins que se acredita por cada uno lo define
 // HOTMART_OFERTA_NUTRICOINS en el edge function hotmart-webhook (mapea el
-// código "off" al número de monedas) -- si cambias la cantidad aquí,
-// cambia también ese secreto para que coincida.
+// código "off" al número de monedas) -- si cambias la cantidad de un
+// paquete o le agregas uno nuevo, cambia también ese secreto para que
+// coincida. Si algún valor volviera a quedar en `null`, el botón de ese
+// paquete en la app muestra "Muy pronto" en vez de abrir Hotmart (ver
+// abrirComprarNutricoins en app.js).
 export const HOTMART_CHECKOUT_NUTRICOINS = {
-  100: null,
-  500: null,
-  1000: null,
-  2500: null
+  100: 'https://pay.hotmart.com/A107551732U?off=4vfxe89t&checkoutMode=6',
+  500: 'https://pay.hotmart.com/A107551732U?off=bfe78o3u&checkoutMode=6',
+  1000: 'https://pay.hotmart.com/A107551732U?off=bggsldu9&checkoutMode=6',
+  2500: 'https://pay.hotmart.com/A107551732U?off=mqtiew11&checkoutMode=6'
 };
 
 // Llave pública VAPID para notificaciones push (Web Push estándar).
