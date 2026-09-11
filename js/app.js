@@ -721,8 +721,8 @@ export const PLATA_NUTRICOINS = '#9AA5A0';
 // directamente al tocar el ícono 🪙, sin crear un import circular con
 // settings.js (que ya importa varias cosas de aquí).
 const PAQUETES_NUTRICOINS = [
-  { cant: 100, precio: 1.29 },
-  { cant: 500, precio: 5.49 },
+  { cant: 100, precio: 1.99 },
+  { cant: 500, precio: 5.99 },
   { cant: 1000, precio: 9.99, popular: true },
   { cant: 2500, precio: 19.99 }
 ];
