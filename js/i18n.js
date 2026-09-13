@@ -574,6 +574,16 @@ const EN = {
   '¿Agregar a {nombre} como amiga?': 'Add {nombre} as a friend?',
   'Enviar solicitud': 'Send request',
 
+  // --- Insignias de puntualidad (dashboard.js) ---
+  'Insignias de puntualidad': 'Punctuality badges',
+  'Se ganan comiendo a la hora que configuraste en Ajustes, varios días seguidos. Se reinician cada 1° de enero -- lo ya ganado queda guardado para siempre.':
+    'Earned by eating at the time you set in Settings, several days in a row. They reset every January 1st -- what you already earned stays saved forever.',
+  'Día perfecto': 'Perfect day',
+  '{n}/{meta} días': '{n}/{meta} days',
+  '¡Todos los niveles!': 'All levels!',
+  '{n} días seguidos a tiempo': '{n} days in a row on time',
+  'Historial por año': 'History by year',
+
   // --- settings.js ---
   'Mi cuenta': 'My account', 'Sobre ti': 'About you', 'Salud y alimentación': 'Health and food',
   'Horario de comidas': 'Meal schedule', 'Interfaz y preferencias': 'Interface and preferences',

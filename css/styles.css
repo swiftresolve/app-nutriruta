@@ -1620,6 +1620,16 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .badge.locked { opacity: 0.35; filter: grayscale(1); }
 .badge .small { display: block; margin-top: 4px; }
 
+/* Insignias de puntualidad -- tarjetas propias (no .badge) porque llevan
+   un SVG con bisel real en vez de un emoji, y necesitan más alto para el
+   escudo + dos líneas de texto debajo sin verse apretadas. */
+.insignia-card {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 6px; border-radius: 14px; background: var(--bg);
+  border: 1.5px solid rgba(35,56,51,0.1); font: inherit; color: inherit; cursor: pointer;
+}
+.insignia-card svg { display: block; }
+
 /* ===== SOS ===== */
 .sos-hero { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: #fff; border-radius: var(--radius); padding: 22px 18px; margin-bottom: 14px; }
 .sos-hero p { color: rgba(255,255,255,0.9); }

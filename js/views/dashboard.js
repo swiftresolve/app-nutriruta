@@ -5,8 +5,10 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, today, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, today, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS, misInsigniasPuntualidad, UMBRALES_PUNTUALIDAD, UMBRALES_MAESTRA } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
+import { MEALS } from '../data/recipes.js';
+import { insigniaSVG, NOMBRE_TIER } from '../badges.js';
 import { dailyMenu, swapMeal, trafficLight, trafficLightRecetaPropia, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON, CART_ICON, SHARE_ICON, TRASH_ICON } from '../app.js';
 import { t, getIdioma } from '../i18n.js';
@@ -491,7 +493,67 @@ function abrirModalLogros(state) {
         emoji: ultimoDesbloqueado?.emoji || '🎖️'
       });
     });
+    wrap.appendChild(seccionInsigniasPuntualidad());
     modal.appendChild(wrap);
+  });
+}
+
+// Insignias de puntualidad: una por cada comida activa + la "Día perfecto"
+// (todas las comidas del día, a tiempo, a la vez) -- pedido explícito de
+// la usuaria, ver evaluarPuntualidad()/UMBRALES_PUNTUALIDAD en store.js.
+// Se reinician cada año calendario; lo ya ganado en años anteriores queda
+// para siempre en el historial (para un futuro "rewind" de fin de año).
+const CATEGORIAS_PUNTUALIDAD = () => [...MEALS.map((m) => ({ id: m.id, nombre: t(m.nombre) })), { id: 'maestra', nombre: t('Día perfecto') }];
+const ORDEN_TIERS = ['diamante', 'oro', 'plata', 'bronce'];
+
+function seccionInsigniasPuntualidad() {
+  const p = misInsigniasPuntualidad();
+  const anioActual = String(new Date().getFullYear());
+
+  const sec = document.createElement('div');
+  sec.className = 'mt';
+  sec.innerHTML = `
+    <h2 class="mt">⏰ ${t('Insignias de puntualidad')}</h2>
+    <p class="small muted">${t('Se ganan comiendo a la hora que configuraste en Ajustes, varios días seguidos. Se reinician cada 1° de enero -- lo ya ganado queda guardado para siempre.')}</p>
+    <div class="badges mt" id="badges-puntualidad"></div>`;
+  const grid = sec.querySelector('#badges-puntualidad');
+
+  for (const cat of CATEGORIAS_PUNTUALIDAD()) {
+    const umbrales = cat.id === 'maestra' ? UMBRALES_MAESTRA : UMBRALES_PUNTUALIDAD;
+    const racha = p.racha[cat.id] || 0;
+    const ganadas = p.historial[anioActual]?.[cat.id] || [];
+    const tierActual = ORDEN_TIERS.find((tName) => ganadas.includes(tName)) || null;
+    const proximoTier = Object.entries(umbrales).find(([tName]) => !ganadas.includes(tName));
+
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'insignia-card';
+    card.innerHTML = `
+      ${insigniaSVG({ meal: cat.id, tier: tierActual || 'bronce', racha, bloqueada: !tierActual, size: 72 })}
+      <span class="small" style="text-align:center"><strong>${esc(cat.nombre)}</strong></span>
+      <span class="small muted">${proximoTier ? t('{n}/{meta} días', { n: racha, meta: proximoTier[1] }) : t('¡Todos los niveles!')}</span>`;
+    card.addEventListener('click', () => abrirDetalleInsigniaPuntualidad(cat, p));
+    grid.appendChild(card);
+  }
+  return sec;
+}
+
+function abrirDetalleInsigniaPuntualidad(cat, p) {
+  openModal((modal) => {
+    const umbrales = cat.id === 'maestra' ? UMBRALES_MAESTRA : UMBRALES_PUNTUALIDAD;
+    const racha = p.racha[cat.id] || 0;
+    const anios = Object.keys(p.historial).filter((a) => (p.historial[a]?.[cat.id] || []).length).sort().reverse();
+    modal.insertAdjacentHTML('beforeend', `
+      <h2>${esc(cat.nombre)}</h2>
+      <div class="center mt">${insigniaSVG({ meal: cat.id, tier: 'oro', racha, bloqueada: false, size: 110 })}</div>
+      <p class="center mt"><strong>${t('{n} días seguidos a tiempo', { n: racha })}</strong></p>
+      <div class="mt">${Object.entries(umbrales).map(([tName, n]) => `
+        <div class="habit">
+          <label style="flex:1">${NOMBRE_TIER[tName]}</label>
+          <span class="small ${racha >= n ? '' : 'muted'}">${racha >= n ? '✓' : `${racha}/${n}`}</span>
+        </div>`).join('')}</div>
+      ${anios.length ? `<h3 class="mt">${t('Historial por año')}</h3>${anios.map((a) => `
+        <p class="small">${a}: ${p.historial[a][cat.id].map((tName) => NOMBRE_TIER[tName]).join(', ')}</p>`).join('')}` : ''}`);
   });
 }
 

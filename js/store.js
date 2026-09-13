@@ -2,6 +2,7 @@
 import { fetchProfile, pushProfileState } from './supabase-client.js';
 import { DAILY_STEPS } from './data/dailySteps.js';
 import { SANA_OPENERS } from './data/sanaOpeners.js';
+import { MEALS } from './data/recipes.js';
 
 const KEY = 'nutriruta-state-v1';
 
@@ -79,7 +80,8 @@ const DEFAULT_STATE = {
   comidasRegistradas: {},          // { 'fecha|mealId': { alimentos: [texto], fuente: 'foto'|'voz'|'texto'|'sugerencia', hora, nombre? } } — lo que la usuaria dijo que REALMENTE comió, no la sugerencia del menú. `nombre` solo existe cuando fuente es 'sugerencia' (confirmó una receta tal cual): ahí `alimentos` es su lista de ingredientes, no algo pensado como título.
   favoritas: [],                  // ids de RECIPES marcadas con la estrella en el Recetario (ver planner.js)
   misRecetas: [],                 // recetas creadas a mano por la usuaria (ver agregarRecetaPropia)
-  chatMeta: {}                    // { conversationId: { titulo?, fijado?, archivado? } } -- metadatos del historial de SuSana (menú de los tres puntos, ver assistant.js). Solo vive acá, nunca en el servidor -- son preferencias de organización de la usuaria, no parte de la conversación real.
+  chatMeta: {},                    // { conversationId: { titulo?, fijado?, archivado? } } -- metadatos del historial de SuSana (menú de los tres puntos, ver assistant.js). Solo vive acá, nunca en el servidor -- son preferencias de organización de la usuaria, no parte de la conversación real.
+  puntualidad: { racha: {}, ultimoDia: {}, historial: {} } // insignias de puntualidad por comida -- ver evaluarPuntualidad() más abajo. racha/ultimoDia: progreso EN CURSO (se reinicia cada año calendario). historial: { 'AAAA': { [mealId|"maestra"]: ['bronce','plata',...] } } -- lo ya ganado, PERMANENTE, nunca se borra al pasar de año.
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
@@ -489,7 +491,90 @@ export function guardarComidaRegistrada(mealId, alimentos, fuente, dateStr = tod
   // mostrando todos los ingredientes pegados como si fueran el título.
   if (nombre) registro.nombre = nombre;
   setState({ comidasRegistradas: { ...state.comidasRegistradas, [clave]: registro } });
+  evaluarPuntualidad(mealId, dateStr);
   return registro;
+}
+
+// --- Insignias de puntualidad ---
+// Se ganan por cumplir la hora configurada de cada comida (Ajustes ->
+// Horario de comidas) varios días seguidos, DENTRO DEL MISMO AÑO
+// CALENDARIO -- pedido explícito de la usuaria: que se reinicien cada año
+// para que siempre haya algo nuevo por lo que esforzarse (y para poder
+// armar un "rewind" de fin de año), en vez de un tope que una vez
+// alcanzado ya no genera nada más. Los umbrales de cada comida son más
+// altos que los de la maestra porque la maestra exige acertar TODAS las
+// comidas activas el mismo día, no solo una -- así el diamante de ambas
+// categorías cuesta un esfuerzo comparable.
+export const TOLERANCIA_PUNTUALIDAD_MIN = 30;
+export const UMBRALES_PUNTUALIDAD = { bronce: 30, plata: 90, oro: 180, diamante: 365 };
+export const UMBRALES_MAESTRA = { bronce: 10, plata: 30, oro: 90, diamante: 180 };
+export const MEAL_IDS_PUNTUALIDAD = MEALS.map((m) => m.id);
+
+function idsComidasActivas(user) {
+  const desactivadas = user?.comidasActivas || {};
+  return MEALS.filter((m) => desactivadas[m.id] !== false).map((m) => m.id);
+}
+
+// Compara la hora REAL del registro contra la hora objetivo configurada,
+// con ±30 min de margen -- exigir el minuto exacto lo haría casi
+// imposible de ganar, sin margen deja de sentirse como "a tiempo".
+function estaATiempo(horaISO, horaObjetivo) {
+  const d = new Date(horaISO);
+  const minutosReales = d.getHours() * 60 + d.getMinutes();
+  const minutosObjetivo = horaObjetivo * 60;
+  return Math.abs(minutosReales - minutosObjetivo) <= TOLERANCIA_PUNTUALIDAD_MIN;
+}
+
+function sumarRachaPuntualidad(clave, dateStr) {
+  const p = state.puntualidad;
+  const racha = { ...p.racha };
+  const ultimoDia = { ...p.ultimoDia };
+  if (ultimoDia[clave] === dateStr) return; // ya se contó hoy -- evita duplicar si se re-evalúa
+
+  const anioActual = new Date(dateStr).getUTCFullYear();
+  const anioAnterior = ultimoDia[clave] ? new Date(ultimoDia[clave]).getUTCFullYear() : anioActual;
+  const gap = ultimoDia[clave] ? diffDias(ultimoDia[clave], dateStr) : null;
+  // Consecutivo Y del mismo año calendario -> suma. Cualquier otro caso
+  // (primera vez, se saltó un día, o cruzó el 1° de enero) -> vuelve a 1.
+  racha[clave] = (anioAnterior === anioActual && gap === 1) ? (racha[clave] || 0) + 1 : 1;
+  ultimoDia[clave] = dateStr;
+
+  const historial = { ...p.historial };
+  const anioKey = String(anioActual);
+  const yaGanadas = new Set(historial[anioKey]?.[clave] || []);
+  const umbrales = clave === 'maestra' ? UMBRALES_MAESTRA : UMBRALES_PUNTUALIDAD;
+  for (const [tier, n] of Object.entries(umbrales)) {
+    if (racha[clave] >= n) yaGanadas.add(tier);
+  }
+  historial[anioKey] = { ...(historial[anioKey] || {}), [clave]: [...yaGanadas] };
+
+  setState({ puntualidad: { racha, ultimoDia, historial } });
+}
+
+// Se llama después de cada registro de comida exitoso -- nunca al editar
+// o deshacer uno: una racha ya sumada nunca se resta (mismo criterio que
+// el resto de rachas de la app, ver [[feedback-nutriruta-datos-usuarios-intocables]]).
+function evaluarPuntualidad(mealId, dateStr) {
+  const registro = comidaRegistrada(mealId, dateStr);
+  if (!registro) return;
+  const horaObjetivo = Number.isFinite(state.user.horaComidas?.[mealId]) ? state.user.horaComidas[mealId] : DEFAULT_HORA_COMIDAS[mealId];
+  if (!estaATiempo(registro.hora, horaObjetivo)) return;
+  sumarRachaPuntualidad(mealId, dateStr);
+
+  // Día perfecto: TODAS las comidas activas de la usuaria, registradas Y a tiempo.
+  const activas = idsComidasActivas(state.user);
+  const todasATiempo = activas.length > 0 && activas.every((id) => {
+    const r = comidaRegistrada(id, dateStr);
+    if (!r) return false;
+    const h = Number.isFinite(state.user.horaComidas?.[id]) ? state.user.horaComidas[id] : DEFAULT_HORA_COMIDAS[id];
+    return estaATiempo(r.hora, h);
+  });
+  if (todasATiempo) sumarRachaPuntualidad('maestra', dateStr);
+}
+
+// Para la pantalla de Logros: saldo completo de rachas/historial.
+export function misInsigniasPuntualidad() {
+  return state.puntualidad;
 }
 
 // Para el círculo togglable de "Comí esto" en Tu ruta de hoy -- a
