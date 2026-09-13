@@ -529,23 +529,23 @@ function seccionInsigniasPuntualidad() {
     card.type = 'button';
     card.className = 'insignia-card';
     card.innerHTML = `
-      ${insigniaSVG({ meal: cat.id, tier: tierActual || 'bronce', racha, bloqueada: !tierActual, size: 72 })}
+      ${insigniaSVG({ meal: cat.id, tier: tierActual || 'bronce', bloqueada: !tierActual, size: 72 })}
       <span class="small" style="text-align:center"><strong>${esc(cat.nombre)}</strong></span>
       <span class="small muted">${proximoTier ? t('{n}/{meta} días', { n: racha, meta: proximoTier[1] }) : t('¡Todos los niveles!')}</span>`;
-    card.addEventListener('click', () => abrirDetalleInsigniaPuntualidad(cat, p));
+    card.addEventListener('click', () => abrirDetalleInsigniaPuntualidad(cat, p, tierActual));
     grid.appendChild(card);
   }
   return sec;
 }
 
-function abrirDetalleInsigniaPuntualidad(cat, p) {
+function abrirDetalleInsigniaPuntualidad(cat, p, tierActual) {
   openModal((modal) => {
     const umbrales = cat.id === 'maestra' ? UMBRALES_MAESTRA : UMBRALES_PUNTUALIDAD;
     const racha = p.racha[cat.id] || 0;
     const anios = Object.keys(p.historial).filter((a) => (p.historial[a]?.[cat.id] || []).length).sort().reverse();
     modal.insertAdjacentHTML('beforeend', `
       <h2>${esc(cat.nombre)}</h2>
-      <div class="center mt">${insigniaSVG({ meal: cat.id, tier: 'oro', racha, bloqueada: false, size: 110 })}</div>
+      <div class="center mt">${insigniaSVG({ meal: cat.id, tier: tierActual || 'bronce', bloqueada: !tierActual, size: 110 })}</div>
       <p class="center mt"><strong>${t('{n} días seguidos a tiempo', { n: racha })}</strong></p>
       <div class="mt">${Object.entries(umbrales).map(([tName, n]) => `
         <div class="habit">

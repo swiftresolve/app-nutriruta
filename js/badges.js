@@ -34,10 +34,12 @@ const ICONOS = {
     <rect x="-1.4" y="-13" width="2.8" height="7" rx="1.2"/>
     <path d="M1 -10 C6 -13 9 -9 6 -6 C4 -8 2 -9 1 -10 Z"/>
   </g>`,
-  // Plato: aro exterior + porción de comida.
-  almuerzo: `<g fill="none" stroke="currentColor" stroke-width="2.4">
-    <circle r="15" />
-    <path d="M0,0 L0,-10 A10,10 0 0,1 8.7,5 Z" fill="currentColor" stroke="none"/>
+  // Tenedor y cuchillo cruzados -- más claro que un plato a este tamaño
+  // (un círculo con una cuña adentro se leía como un reloj, no comida).
+  almuerzo: `<g stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="rotate(45)">
+    <line x1="-7" y1="-15" x2="-7" y2="15"/>
+    <path d="M-10,-15 V-6 a3,3 0 0 0 6,0 V-15"/>
+    <path d="M7,-15 C7,-8 10,-8 10,-2 C10,2 7,3 7,6 V15"/>
   </g>`,
   // Taza: cuerpo trapezoidal + asa + vapor.
   media_tarde: `<g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
@@ -56,8 +58,11 @@ const ICONOS = {
 // Escudo con bisel real: gradiente de 3 paradas (claro/medio/oscuro) da la
 // sensación de luz viniendo de arriba-izquierda, más un aro interior más
 // claro que simula el filo pulido. bloqueada = silueta plana gris, sin
-// brillo -- mismo lenguaje que Huawei para lo que aún no se gana.
-export function insigniaSVG({ meal, tier, racha = 0, bloqueada = false, size = 88 }) {
+// brillo -- mismo lenguaje que Huawei para lo que aún no se gana. Sin
+// texto adentro (pedido explícito) -- el ícono + el material/color ya
+// distinguen la comida y el nivel; el número de días va aparte, como
+// etiqueta HTML debajo de la insignia (ver dashboard.js).
+export function insigniaSVG({ meal, tier, bloqueada = false, size = 88 }) {
   const p = bloqueada ? BLOQUEADA : (PALETAS[tier] || PALETAS.bronce);
   const icono = ICONOS[meal] || ICONOS.desayuno;
   const gid = `ins-${meal}-${tier}-${bloqueada ? 'b' : 'a'}-${Math.random().toString(36).slice(2, 7)}`;
@@ -73,10 +78,8 @@ export function insigniaSVG({ meal, tier, racha = 0, bloqueada = false, size = 8
       fill="url(#${gid})" stroke="${p.oscuro}" stroke-width="2"/>
     <path d="M50 9 L86 27 V62 C86 85 70 98 50 105 C30 98 14 85 14 62 V27 Z"
       fill="none" stroke="${p.anillo}" stroke-width="1.4" opacity="0.8"/>
-    <g color="${bloqueada ? '#dfe3e0' : '#fff'}" opacity="${bloqueada ? 0.65 : 0.96}" transform="translate(50,46) scale(1.05)">
+    <g color="${bloqueada ? '#dfe3e0' : '#fff'}" opacity="${bloqueada ? 0.65 : 0.96}" transform="translate(50,58) scale(1.35)">
       ${icono}
     </g>
-    ${!bloqueada ? `<text x="50" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="13" letter-spacing="0.5" fill="${p.texto}">${NOMBRE_TIER[tier].toUpperCase()}</text>` :
-      `<text x="50" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="20" fill="#c9cfca">${racha}</text>`}
   </svg>`;
 }
