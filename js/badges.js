@@ -48,8 +48,10 @@ const ICONOS = {
     <path d="M-4,-10 C-6,-8 -2,-7 -4,-5" />
     <path d="M2,-10 C0,-8 4,-7 2,-5" />
   </g>`,
-  // Luna creciente.
-  cena: `<path fill="currentColor" d="M4,-14 A14,14 0 1 0 4,14 A11,11 0 1 1 4,-14 Z"/>`,
+  // Luna creciente: círculo completo menos otro círculo desplazado
+  // (evenodd) -- más confiable que un solo path con dos arcos, que no
+  // llegaba a formar la figura (bug real: la insignia quedaba sin ícono).
+  cena: `<path fill-rule="evenodd" fill="currentColor" d="M0,-13 A13,13 0 1,0 0,13 A13,13 0 1,0 0,-13 Z M7,-11 A11,11 0 1,0 7,11 A11,11 0 1,0 7,-11 Z"/>`,
   // Maestra: estrella de 5 puntas -- el "todas a la vez" se representa
   // como la insignia más alta/central, no una comida más.
   maestra: `<path fill="currentColor" d="M0,-16 L4.5,-5.5 16,-4.9 7,2.6 9.9,14 0,7.5 -9.9,14 -7,2.6 -16,-4.9 -4.5,-5.5 Z"/>`
