@@ -584,6 +584,10 @@ const EN = {
   '{n} días seguidos a tiempo': '{n} days in a row on time',
   'Historial por año': 'History by year',
 
+  // --- Ruti Tamagotchi (dashboard.js/mascot.js) ---
+  'Hablar con Ruti': 'Talk to Ruti',
+  'Alimentar a Ruti': 'Feed Ruti',
+
   // --- settings.js ---
   'Mi cuenta': 'My account', 'Sobre ti': 'About you', 'Salud y alimentación': 'Health and food',
   'Horario de comidas': 'Meal schedule', 'Interfaz y preferencias': 'Interface and preferences',

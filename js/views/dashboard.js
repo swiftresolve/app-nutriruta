@@ -5,10 +5,11 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, today, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS, misInsigniasPuntualidad, UMBRALES_PUNTUALIDAD, UMBRALES_MAESTRA } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, today, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS, misInsigniasPuntualidad, UMBRALES_PUNTUALIDAD, UMBRALES_MAESTRA, estadoRutiHoy } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
 import { insigniaSVG, NOMBRE_TIER } from '../badges.js';
+import { rutiMascot, fraseRuti } from '../mascot.js';
 import { dailyMenu, swapMeal, trafficLight, trafficLightRecetaPropia, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
 import { navigate, header, openModal, toast, REFRESH_ICON, PENCIL_ICON, CLOCK_ICON, SPARKLE_ICON, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON, CART_ICON, SHARE_ICON, TRASH_ICON } from '../app.js';
 import { t, getIdioma } from '../i18n.js';
@@ -42,7 +43,6 @@ export function renderDashboard(container) {
   const { user } = state;
   const hora = new Date().getHours();
   const saludo = t(hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches');
-  const mood = sanaMood(state);
 
   // --- Saludo + Check-in, a dos columnas cuando ambas existen (si no hay
   // check-in pendiente, el saludo se queda solo, a ancho completo) ---
@@ -103,6 +103,13 @@ export function renderDashboard(container) {
   // coincidían. Ahora muestra la misma racha de siempre, un solo número
   // en toda la app.
   const pasoRachaActual = state.racha.actual;
+  // Ruti como mascota interactiva (Tamagotchi sin castigo, pedido
+  // explícito de la usuaria): reemplaza el emoji fijo 🌿 que había acá
+  // -- ahora es la nutria real, con la expresión y frase que le
+  // correspondan al estado del día (ver estadoRutiHoy en store.js).
+  const estadoRuti = estadoRutiHoy();
+  const fraseDelDia = fraseRuti(estadoRuti);
+  const necesitaComida = estadoRuti.key === 'hambre_activa' || estadoRuti.key === 'hambre_leve';
   const pasoCard = document.createElement('div');
   pasoCard.id = 'tour-paso';
   pasoCard.className = 'card';
@@ -110,9 +117,11 @@ export function renderDashboard(container) {
   pasoCard.style.border = 'none';
   pasoCard.innerHTML = `
     <div class="row" style="gap:12px;align-items:flex-start">
-      <div class="sana-avatar">🌿${mood.badge ? `<span class="mood-badge">${mood.badge}</span>` : ''}</div>
+      <button type="button" id="ruti-avatar-btn" style="background:none;border:none;padding:0;cursor:pointer;flex:none" aria-label="${t('Hablar con Ruti')}">${rutiMascot(estadoRuti.mood, { size: 56 })}</button>
       <div style="flex:1;min-width:0">
-        <div class="spread"><h3>${t('Tu paso de hoy')}</h3>${pasoHecho ? `<span class="tag verde">${t('Hecho ✓')}</span>` : ''}</div>
+        <p class="small" style="font-style:italic">"${esc(fraseDelDia)}"</p>
+        ${necesitaComida ? `<button type="button" class="btn ghost sm mt" id="ruti-alimentar">${t('Alimentar a Ruti')}</button>` : ''}
+        <div class="spread mt"><h3>${t('Tu paso de hoy')}</h3>${pasoHecho ? `<span class="tag verde">${t('Hecho ✓')}</span>` : ''}</div>
         <p class="small mt" style="font-weight:600">${esc(paso.obstaculo)}</p>
         <p class="mt">${esc(paso.accion)}</p>
         <p class="small muted mt">${esc(paso.porque)}</p>
@@ -129,6 +138,18 @@ export function renderDashboard(container) {
     if (nuevaRacha >= 2) celebrateStreak(nuevaRacha);
     else toast('¡Bien hecho! 🌿');
     renderDashboard(clearAndGet(container));
+  });
+  // Alimentar a Ruti: lleva directo a registrar la comida en juego (foto/
+  // voz/texto) -- "Comí otra cosa" ya vive dentro de ese mismo flujo, así
+  // que no hace falta un botón aparte para eso (pedido explícito: el
+  // objetivo es reforzar el hábito de comer a tiempo, no controlar qué).
+  const alimentarBtn = pasoCard.querySelector('#ruti-alimentar');
+  alimentarBtn?.addEventListener('click', () => {
+    openMealLogModal(estadoRuti.comida.id, t(estadoRuti.comida.nombre), () => renderDashboard(clearAndGet(container)));
+  });
+  pasoCard.querySelector('#ruti-avatar-btn').addEventListener('click', () => {
+    if (necesitaComida) alimentarBtn?.click();
+    else toast(`"${fraseDelDia}"`);
   });
   container.appendChild(pasoCard);
 
@@ -555,19 +576,6 @@ function abrirDetalleInsigniaPuntualidad(cat, p, tierActual) {
       ${anios.length ? `<h3 class="mt">${t('Historial por año')}</h3>${anios.map((a) => `
         <p class="small">${a}: ${p.historial[a][cat.id].map((tName) => NOMBRE_TIER[tName]).join(', ')}</p>`).join('')}` : ''}`);
   });
-}
-
-// Estado de ánimo de Sana: se deriva 100% de datos que ya existen (último
-// check-in, racha, hábitos de hoy) — nada nuevo que trackear. Nunca es
-// negativa de más: ante la duda, la lectura queda en calma.
-function sanaMood(state) {
-  const ultimo = state.checkins?.length ? state.checkins[state.checkins.length - 1] : null;
-  const animoDificil = ultimo?.animo === 'dificil';
-  const habitosHoy = Object.values(state.habitos?.checks || {}).filter(Boolean).length;
-  const rachaEnRiesgo = (state.racha?.actual || 0) >= 2 && habitosHoy < 3 && new Date().getHours() >= 18;
-  if (animoDificil || rachaEnRiesgo) return { badge: '🤗' };
-  if ((state.racha?.actual || 0) >= 3) return { badge: '✨' };
-  return { badge: '' };
 }
 
 function clearAndGet(container) {

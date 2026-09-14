@@ -81,7 +81,8 @@ const DEFAULT_STATE = {
   favoritas: [],                  // ids de RECIPES marcadas con la estrella en el Recetario (ver planner.js)
   misRecetas: [],                 // recetas creadas a mano por la usuaria (ver agregarRecetaPropia)
   chatMeta: {},                    // { conversationId: { titulo?, fijado?, archivado? } } -- metadatos del historial de SuSana (menú de los tres puntos, ver assistant.js). Solo vive acá, nunca en el servidor -- son preferencias de organización de la usuaria, no parte de la conversación real.
-  puntualidad: { racha: {}, ultimoDia: {}, historial: {} } // insignias de puntualidad por comida -- ver evaluarPuntualidad() más abajo. racha/ultimoDia: progreso EN CURSO (se reinicia cada año calendario). historial: { 'AAAA': { [mealId|"maestra"]: ['bronce','plata',...] } } -- lo ya ganado, PERMANENTE, nunca se borra al pasar de año.
+  puntualidad: { racha: {}, ultimoDia: {}, historial: {} }, // insignias de puntualidad por comida -- ver evaluarPuntualidad() más abajo. racha/ultimoDia: progreso EN CURSO (se reinicia cada año calendario). historial: { 'AAAA': { [mealId|"maestra"]: ['bronce','plata',...] } } -- lo ya ganado, PERMANENTE, nunca se borra al pasar de año.
+  ultimaAperturaDia: null // fecha ISO de la última vez que se calculó el estado de Ruti -- solo para saber si es la primera apertura del día (mood "despertando"), ver estadoRutiHoy()
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
@@ -575,6 +576,58 @@ function evaluarPuntualidad(mealId, dateStr) {
 // Para la pantalla de Logros: saldo completo de rachas/historial.
 export function misInsigniasPuntualidad() {
   return state.puntualidad;
+}
+
+// --- Ruti: estado emocional del día (mascota interactiva sin castigo) ---
+// Corto plazo, se recalcula en cada render -- nunca se acumula de un día
+// a otro (pedido explícito: nunca "daño acumulado" ni un peor estado que
+// "bajo de energía", jamás "enfermo" o algo punitivo). Separado por
+// completo de broteStage()/evaluarPuntualidad() (evolución de LARGO plazo
+// por racha/insignias, esa nunca se ve afectada por el ánimo del día).
+// Orden de prioridad (de la especificación): dormido > sediento >
+// hambre (comida ya empezada sin registrar) > hambre leve (comida por
+// empezar) > feliz > despertando (primera apertura del día) > bajo de
+// energía (fallback).
+export function estadoRutiHoy() {
+  const t = today();
+  const primeraAperturaHoy = state.ultimaAperturaDia !== t;
+  if (primeraAperturaHoy) setState({ ultimaAperturaDia: t });
+
+  const horaActual = new Date().getHours();
+  const habitosHoy = Object.values(state.habitos?.checks || {}).filter(Boolean).length;
+  if (horaActual >= 21 && habitosHoy >= 3) return { mood: 'celebracion', key: 'dormido' };
+
+  const meta = getWaterGoal();
+  const vasos = state.agua.fecha === t ? state.agua.vasos : 0;
+  if (horaActual >= 12 && meta > 0 && vasos / meta < 0.3) return { mood: 'tranquila', key: 'sediento' };
+
+  const activas = idsComidasActivas(state.user);
+  const horasUsuario = state.user.horaComidas || {};
+  const horaDe = (id) => Number.isFinite(horasUsuario[id]) ? horasUsuario[id] : DEFAULT_HORA_COMIDAS[id];
+  const ordenadas = MEALS.filter((m) => activas.includes(m.id)).sort((a, b) => horaDe(a.id) - horaDe(b.id));
+
+  // Comida "actual": la última cuya hora ya llegó.
+  let comidaActual = null;
+  for (const m of ordenadas) {
+    if (horaDe(m.id) <= horaActual) comidaActual = m;
+  }
+  if (comidaActual && !comidaRegistrada(comidaActual.id, t)) {
+    return { mood: 'hambre', key: 'hambre_activa', comida: comidaActual };
+  }
+
+  // Hambre leve: la siguiente comida empieza en <=45 min y no está registrada.
+  const siguiente = ordenadas.find((m) => horaDe(m.id) > horaActual);
+  if (siguiente && (horaDe(siguiente.id) - horaActual) <= 0.75 && !comidaRegistrada(siguiente.id, t)) {
+    return { mood: 'curiosa', key: 'hambre_leve', comida: siguiente };
+  }
+
+  if ((comidaActual && comidaRegistrada(comidaActual.id, t)) || state.racha.actual > 0) {
+    return { mood: 'feliz', key: 'feliz' };
+  }
+
+  if (primeraAperturaHoy) return { mood: 'saludo', key: 'despertando' };
+
+  return { mood: 'tranquila', key: 'bajo_energia' };
 }
 
 // Para el círculo togglable de "Comí esto" en Tu ruta de hoy -- a
