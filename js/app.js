@@ -1,5 +1,5 @@
 // Router mínimo + arranque con puerta de autenticación.
-import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo, diasDelMes, today, sincronizarNutricoins } from './store.js';
+import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo, diasDelMes, today, sincronizarNutricoins, hayNovedadesNuevas } from './store.js';
 import { t } from './i18n.js';
 import { getSession, supabase, avatarUrlFor, fetchNutricoins, buscarAmigoPorUsername, solicitarAmistad } from './supabase-client.js';
 import { HOTMART_CHECKOUT_NUTRICOINS } from './config.js';
@@ -433,7 +433,7 @@ export function header(container) {
           <button class="header-stat${nutricoins > 0 ? '' : ' sin-saldo'}" id="hs-nutricoins" aria-label="Tus NutriCoins">${coinIcon(nutricoins > 0 ? ORO_NUTRICOINS : PLATA_NUTRICOINS, 15)}<span class="value">${nutricoins}</span></button>
           <button class="header-stat" id="hs-escudos" aria-label="Tus Pausas de Ruta"><span class="icon">🛡️</span>${escudos}</button>
         </div>` : ''}
-      <button class="icon-btn plain" data-go="settings" aria-label="${t('Ajustes')}">${GEAR_ICON}</button>
+      <button class="icon-btn plain" data-go="settings" aria-label="${t('Ajustes')}" style="position:relative">${GEAR_ICON}${hayNovedadesNuevas() ? '<span class="header-gear-badge" aria-hidden="true"></span>' : ''}</button>
     </div>`;
   h.querySelector('[data-go]').addEventListener('click', () => navigate('settings'));
 

@@ -588,6 +588,10 @@ const EN = {
   'Hablar con Ruti': 'Talk to Ruti',
   'Alimentar a Ruti': 'Feed Ruti',
 
+  // --- Novedades (settings.js) ---
+  'Novedades': "What's new",
+  'Así va mejorando NutriRuta, poquito a poquito.': 'This is how NutriRuta keeps improving, little by little.',
+
   // --- settings.js ---
   'Mi cuenta': 'My account', 'Sobre ti': 'About you', 'Salud y alimentación': 'Health and food',
   'Horario de comidas': 'Meal schedule', 'Interfaz y preferencias': 'Interface and preferences',

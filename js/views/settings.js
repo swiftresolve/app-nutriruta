@@ -2,10 +2,11 @@
 // Estructura: un menú (hub) con una fila por sección -- tocar una fila
 // navega a su propia página con su contenido adentro (navigate('settings',
 // { seccion })), en vez de mostrar todas las tarjetas apiladas de una vez.
-import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, calcularIMC, DEFAULT_HORA_COMIDAS, getTema, setTema } from '../store.js';
+import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, calcularIMC, DEFAULT_HORA_COMIDAS, getTema, setTema, hayNovedadesNuevas, marcarNovedadesVistas } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { PAISES_ALIMENTOS } from '../data/regionalismos.js';
 import { MEALS } from '../data/recipes.js';
+import { NOVEDADES } from '../data/novedades.js';
 import { getSession, signIn, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
 import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, susanaName, ORO_NUTRICOINS, GEAR_ICON, SHARE_ICON, CAMERA_SOLID_ICON, TRASH_ICON, PENCIL_ICON } from '../app.js';
 import { iniciarTour } from './tour.js';
@@ -17,13 +18,13 @@ import { t, getIdioma } from '../i18n.js';
 // mostrar todas las opciones expandidas como chips. Reutilizable para
 // cualquier preferencia de valor único (tema, idioma, unidades...) y para
 // las filas del menú principal de Ajustes (sin valor, solo navegan).
-function filaAjuste(icono, etiqueta, valorTexto, onTap) {
+function filaAjuste(icono, etiqueta, valorTexto, onTap, { badge = false } = {}) {
   const row = document.createElement('button');
   row.type = 'button';
   row.className = 'setting-row';
   row.innerHTML = `
     <span class="setting-row-icon">${icono}</span>
-    <span class="setting-row-label">${esc(etiqueta)}</span>
+    <span class="setting-row-label">${esc(etiqueta)}${badge ? '<span class="setting-row-badge" aria-hidden="true"></span>' : ''}</span>
     <span class="setting-row-value">${esc(valorTexto)}</span>
     <span class="setting-row-chevron">›</span>`;
   row.addEventListener('click', onTap);
@@ -56,6 +57,7 @@ function abrirSelector(titulo, opciones, valorActual, onElegir) {
 function settingsSecciones() {
   return [
     { id: 'cuenta', icon: '👤', label: t('Mi cuenta') },
+    { id: 'novedades', icon: '🆕', label: t('Novedades') },
     { id: 'amigos', icon: '👥', label: t('Amigos'), esNavegacionExterna: true },
     { id: 'sobre-ti', icon: '🧍', label: t('Sobre ti') },
     { id: 'salud', icon: '🩺', label: t('Salud y alimentación') },
@@ -71,6 +73,7 @@ function settingsSecciones() {
 
 const SECCION_BUILDERS = {
   'cuenta': pintarCuenta,
+  'novedades': pintarNovedades,
   'sobre-ti': pintarSobreTi,
   'salud': pintarSalud,
   'comidas': pintarComidas,
@@ -145,7 +148,7 @@ export function renderSettings(container, params = {}) {
   for (const s of settingsSecciones()) {
     if (s.condicion && !s.condicion()) continue;
     const ir = s.esNavegacionExterna ? () => navigate(s.id) : () => navigate('settings', { seccion: s.id });
-    menu.appendChild(filaAjuste(s.icon, s.label, '', ir));
+    menu.appendChild(filaAjuste(s.icon, s.label, '', ir, { badge: s.id === 'novedades' && hayNovedadesNuevas() }));
   }
   container.appendChild(menu);
 
@@ -180,6 +183,31 @@ function abrirEditarNombre() {
       navigate('settings', { seccion: 'cuenta' });
     });
   });
+}
+
+// ---------- Novedades ----------
+// Pedido explícito de la usuaria: que se note que la app sigue viva y
+// mejorando, así sean cambios chicos -- una entrada corta por mejora
+// publicada (ver js/data/novedades.js), con captura opcional de cómo
+// quedó la interfaz. El punto rojo del menú (ver settingsSecciones) se
+// apaga solo al entrar acá, nunca hay que cerrarlo a mano.
+function pintarNovedades(container) {
+  marcarNovedadesVistas();
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<h2>🆕 ${t('Novedades')}</h2><p class="small muted">${t('Así va mejorando NutriRuta, poquito a poquito.')}</p>`;
+  NOVEDADES.forEach((n, i) => {
+    const item = document.createElement('div');
+    item.className = 'habit' + (i === NOVEDADES.length - 1 ? ' liga-sin-borde' : '');
+    item.style.cssText = 'flex-direction:column;align-items:flex-start;gap:6px';
+    item.innerHTML = `
+      <span class="small muted">${new Date(n.fecha + 'T00:00:00').toLocaleDateString(getIdioma() === 'en' ? 'en-US' : 'es', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+      <strong>${esc(n.titulo)}</strong>
+      <p class="small" style="margin:0">${esc(n.descripcion)}</p>
+      ${n.imagen ? `<img src="${n.imagen}" alt="" style="width:100%;border-radius:12px;margin-top:4px">` : ''}`;
+    card.appendChild(item);
+  });
+  container.appendChild(card);
 }
 
 // ---------- Mi cuenta ----------

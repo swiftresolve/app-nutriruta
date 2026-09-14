@@ -3,6 +3,7 @@ import { fetchProfile, pushProfileState } from './supabase-client.js';
 import { DAILY_STEPS } from './data/dailySteps.js';
 import { SANA_OPENERS } from './data/sanaOpeners.js';
 import { MEALS } from './data/recipes.js';
+import { NOVEDADES } from './data/novedades.js';
 
 const KEY = 'nutriruta-state-v1';
 
@@ -82,7 +83,8 @@ const DEFAULT_STATE = {
   misRecetas: [],                 // recetas creadas a mano por la usuaria (ver agregarRecetaPropia)
   chatMeta: {},                    // { conversationId: { titulo?, fijado?, archivado? } } -- metadatos del historial de SuSana (menú de los tres puntos, ver assistant.js). Solo vive acá, nunca en el servidor -- son preferencias de organización de la usuaria, no parte de la conversación real.
   puntualidad: { racha: {}, ultimoDia: {}, historial: {} }, // insignias de puntualidad por comida -- ver evaluarPuntualidad() más abajo. racha/ultimoDia: progreso EN CURSO (se reinicia cada año calendario). historial: { 'AAAA': { [mealId|"maestra"]: ['bronce','plata',...] } } -- lo ya ganado, PERMANENTE, nunca se borra al pasar de año.
-  ultimaAperturaDia: null // fecha ISO de la última vez que se calculó el estado de Ruti -- solo para saber si es la primera apertura del día (mood "despertando"), ver estadoRutiHoy()
+  ultimaAperturaDia: null, // fecha ISO de la última vez que se calculó el estado de Ruti -- solo para saber si es la primera apertura del día (mood "despertando"), ver estadoRutiHoy()
+  ultimaNovedadVista: null // id de la última entrada de NOVEDADES que la usuaria ya vio (Ajustes -> Novedades) -- controla el punto rojo del ícono de ajustes, ver hayNovedadesNuevas()
 };
 
 // Cuántos hábitos diarios existen (debe coincidir con DAILY_HABITS en dashboard.js).
@@ -628,6 +630,18 @@ export function estadoRutiHoy() {
   if (primeraAperturaHoy) return { mood: 'saludo', key: 'despertando' };
 
   return { mood: 'tranquila', key: 'bajo_energia' };
+}
+
+// --- Novedades (Ajustes -> Novedades) ---
+// Punto rojo en el ícono de ajustes mientras exista una entrada más
+// reciente que la última que la usuaria abrió -- se apaga sola al entrar
+// a la pantalla (ver marcarNovedadesVistas), nunca hay que cerrarlo a mano.
+export function hayNovedadesNuevas() {
+  return NOVEDADES.length > 0 && state.ultimaNovedadVista !== NOVEDADES[0].id;
+}
+
+export function marcarNovedadesVistas() {
+  if (NOVEDADES.length > 0) setState({ ultimaNovedadVista: NOVEDADES[0].id });
 }
 
 // Para el círculo togglable de "Comí esto" en Tu ruta de hoy -- a
