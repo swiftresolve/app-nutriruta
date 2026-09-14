@@ -324,6 +324,20 @@ export async function fetchMiNivelLiga() {
   return data?.liga_nivel ?? 1;
 }
 
+// Resultado pendiente de la última rotación semanal de Liga (subiste/te
+// quedaste/bajaste + bono de gemas) -- null si no hay nada nuevo por
+// mostrar. Ver migración liga_resultado_semana.
+export async function fetchMiResultadoLiga() {
+  const { data, error } = await supabase.rpc('liga_mi_resultado');
+  if (error) return null;
+  return data ?? null;
+}
+
+export async function marcarResultadoLigaVisto() {
+  const { error } = await supabase.rpc('liga_marcar_resultado_visto');
+  if (error) throw error;
+}
+
 // Saldo real de NutriCoins: vive en profiles.nutricoins (columna propia,
 // no en el state JSONB -- ver migración nutricoins_columna_propia), igual
 // que liga_nivel arriba, y por la misma razón: así una compra acreditada

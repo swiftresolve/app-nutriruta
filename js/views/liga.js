@@ -8,9 +8,11 @@
 // supabase-client.js. Diseño de referencia: carrusel de divisiones +
 // lista de posiciones de Duolingo (la usuaria mandó capturas), adaptado
 // a los 10 niveles propios de NutriRuta (sinónimos de "ruta/camino").
-import { esc } from '../store.js';
+import { esc, getState, setState } from '../store.js';
 import { header, CLOCK_ICON, navigate } from '../app.js';
-import { fetchLigaEstado, fetchMiNivelLiga, misAmigos } from '../supabase-client.js';
+import { fetchLigaEstado, fetchMiNivelLiga, misAmigos, fetchMiResultadoLiga, marcarResultadoLigaVisto } from '../supabase-client.js';
+import { celebrateMilestone } from '../streakAnim.js';
+import { rutiMascot } from '../mascot.js';
 import { t } from '../i18n.js';
 
 const NIVELES = [
@@ -90,11 +92,44 @@ export function renderLiga(container) {
   // misAmigos() aparte, con su propio catch -- si falla (o la usuaria
   // simplemente no tiene amigas agregadas todavía) la Liga se pinta igual,
   // solo sin el resaltado de "es tu amiga".
-  Promise.all([fetchLigaEstado(), fetchMiNivelLiga(), misAmigos().catch(() => [])])
-    .then(([participantes, nivel, amigos]) => pintar(wrap, participantes, nivel, new Set(amigos.map((a) => a.id))))
+  Promise.all([fetchLigaEstado(), fetchMiNivelLiga(), misAmigos().catch(() => []), fetchMiResultadoLiga().catch(() => null)])
+    .then(([participantes, nivel, amigos, resultado]) => {
+      pintar(wrap, participantes, nivel, new Set(amigos.map((a) => a.id)));
+      if (resultado) mostrarResultadoSemanal(resultado);
+    })
     .catch(() => {
       wrap.innerHTML = `<div class="card center"><p class="muted">${t('No pudimos cargar tu liga. Intenta de nuevo más tarde.')}</p></div>`;
     });
+}
+
+// Celebración de la rotación semanal (subiste/te quedaste/bajaste de
+// nivel + bono de gemas), pedido explícito con referencia de Duolingo --
+// pero reutilizando celebrateMilestone() (no un modal con "Continuar"):
+// la usuaria ya estableció antes que estas celebraciones nunca deben
+// bloquear ni pedir un toque para cerrarse (ver streakAnim.js). El bono
+// de gemas se acredita acá mismo, del lado del cliente, justo cuando se
+// muestra -- mismo modelo de confianza que el resto de gemas de la app
+// (nunca se toca state.gemas desde el servidor, ver nota de nutricoins
+// sobre por qué esa columna sí es aparte y esta no hace falta que lo sea).
+function mostrarResultadoSemanal(resultado) {
+  const { nivel_anterior, nivel_nuevo, puesto, bono_gemas } = resultado;
+  const tierNuevo = NIVELES[nivel_nuevo] || NIVELES[1];
+  let titulo;
+  if (nivel_nuevo > nivel_anterior) titulo = t('¡Subiste a {nivel}!', { nivel: tierNuevo.nombre });
+  else if (nivel_nuevo < nivel_anterior) titulo = t('Sigues en tu Ruta -- ahora en {nivel}', { nivel: tierNuevo.nombre });
+  else titulo = t('Te mantuviste en {nivel}', { nivel: tierNuevo.nombre });
+  celebrateMilestone(`${tierNuevo.emoji} ${titulo}`, t('Puesto #{n} la semana pasada', { n: puesto }));
+
+  const terminar = () => {
+    if (bono_gemas > 0) setState({ gemas: (getState().gemas || 0) + bono_gemas });
+    marcarResultadoLigaVisto().catch(() => {});
+  };
+  if (bono_gemas > 0) {
+    setTimeout(() => celebrateMilestone(`💎 +${bono_gemas} ${t('gemas')}`, t('Sigue alcanzando el top para seguir ganando.')), 3200);
+    setTimeout(terminar, 6400);
+  } else {
+    setTimeout(terminar, 3200);
+  }
 }
 
 // Carrusel de las 10 divisiones -- como en Duolingo: se desliza horizontal
@@ -141,11 +176,21 @@ function pintar(wrap, participantes, nivel, amigosIds = new Set()) {
     <p class="small muted">${t('Ganas tu lugar con las gemas 💎 de esta semana. Los primeros 6 suben de nivel, los últimos 8 bajan -- la semana reinicia cada domingo.')}</p>`;
   wrap.appendChild(intro);
 
-  if (!participantes.length) {
+  // Ruti invitando a empezar la semana -- equivalente a Duo pidiendo
+  // "completa una lección para unirte a la competencia", pedido explícito
+  // con referencia de video. Reemplaza la lista (no se le muestra el
+  // ranking todavía) mientras la usuaria no haya ganado ni una gema esta
+  // semana -- en cuanto sume la primera, ya ve a todo su grupo.
+  const miGemas = participantes.find((p) => p.es_yo)?.gemas_semana ?? 0;
+  if (!participantes.length || miGemas === 0) {
     const vacio = document.createElement('div');
     vacio.className = 'card center';
-    vacio.innerHTML = `<p class="muted">${t('Aún no hay nadie en tu grupo esta semana.')}</p>`;
+    vacio.innerHTML = `
+      ${rutiMascot('saludo', { size: 96 })}
+      <p class="mt">${t('Completa tu ruta de hoy para unirte a la competencia de esta semana.')}</p>
+      <button type="button" class="btn accent full mt" id="liga-empezar-ruta">${t('Empezar mi ruta de hoy')}</button>`;
     wrap.appendChild(vacio);
+    vacio.querySelector('#liga-empezar-ruta').addEventListener('click', () => navigate('dashboard'));
   } else {
     // Un único contenedor plano para TODAS las filas -- antes cada zona
     // (sube/se queda/baja) tenía su propia tarjeta, y eso se veía como un

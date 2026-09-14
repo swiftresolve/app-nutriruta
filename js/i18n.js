@@ -592,6 +592,16 @@ const EN = {
   'Novedades': "What's new",
   'Así va mejorando NutriRuta, poquito a poquito.': 'This is how NutriRuta keeps improving, little by little.',
 
+  // --- Resultado semanal de Liga (liga.js) ---
+  'Completa tu ruta de hoy para unirte a la competencia de esta semana.': "Complete today's route to join this week's competition.",
+  'Empezar mi ruta de hoy': "Start today's route",
+  '¡Subiste a {nivel}!': 'You moved up to {nivel}!',
+  'Sigues en tu Ruta -- ahora en {nivel}': "You're still on your Route -- now in {nivel}",
+  'Te mantuviste en {nivel}': 'You stayed in {nivel}',
+  'Puesto #{n} la semana pasada': '#{n} place last week',
+  'gemas': 'gems',
+  'Sigue alcanzando el top para seguir ganando.': 'Keep reaching the top to keep earning.',
+
   // --- settings.js ---
   'Mi cuenta': 'My account', 'Sobre ti': 'About you', 'Salud y alimentación': 'Health and food',
   'Horario de comidas': 'Meal schedule', 'Interfaz y preferencias': 'Interface and preferences',
