@@ -1,7 +1,8 @@
-const CACHE = 'nutriruta-eb6d0f3d16';
+const CACHE = 'nutriruta-8bc92b7a43';
 const ASSETS = [
   './',
   './index.html',
+  './redirect.html',
   './manifest.webmanifest',
   './css/styles.css',
   './js/app.js',

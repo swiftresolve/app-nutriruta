@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NutriRuta</title>
+<style>
+  /* Mismos tokens de marca que css/styles.css -- página aparte porque
+     esto vive en una pestaña nueva del navegador (window.open), NUNCA
+     dentro de la SPA -- antes esa pestaña mostraba negro plano del
+     navegador mientras cargaba Hotmart (pedido explícito de la usuaria:
+     que en su lugar se vea la marca, con el mismo fondo claro/oscuro que
+     ya tiene la app, no una pantalla negra fea). */
+  :root {
+    --primary: #2BB5A0;
+    --bg: #F7FAF9;
+    --card: #FFFFFF;
+    --ink: #233833;
+    --ink-soft: #5C7570;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10201B;
+      --card: #17281F;
+      --ink: #EAF3EF;
+      --ink-soft: #92A9A0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10201B;
+    --card: #17281F;
+    --ink: #EAF3EF;
+    --ink-soft: #92A9A0;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 22px; text-align: center; padding: 24px;
+  }
+  .icono { width: 72px; height: 72px; border-radius: 22px; }
+  .hoja {
+    width: 44px; height: 44px;
+    animation: girar 1.1s linear infinite;
+  }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  p { margin: 0; font-size: 0.95rem; color: var(--ink-soft); max-width: 280px; }
+  @media (prefers-reduced-motion: reduce) { .hoja { animation: none; } }
+</style>
+</head>
+<body>
+  <img class="icono" src="./icons/icon-192.png" alt="NutriRuta">
+  <svg class="hoja" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--primary)" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+  <p id="texto">Te llevamos a un pago seguro…</p>
+
+<script>
+  // Refleja el mismo tema (claro/oscuro/sistema) que ya eligió la usuaria
+  // en Ajustes -- misma llave de localStorage que usa setTema() en store.js.
+  try {
+    var tema = localStorage.getItem('nutriruta-tema');
+    if (tema === 'claro') document.documentElement.setAttribute('data-theme', 'light');
+    else if (tema === 'oscuro') document.documentElement.setAttribute('data-theme', 'dark');
+  } catch (e) { /* localStorage bloqueado, se queda en el tema del sistema */ }
+
+  // Solo redirige a Hotmart -- nunca a cualquier URL que alguien le pase a
+  // este "to=", para no convertir esta página en un open-redirect.
+  var params = new URLSearchParams(window.location.search);
+  var destino = params.get('to') || '';
+  var esHotmart = false;
+  try { esHotmart = /(^|\.)hotmart\.com$/.test(new URL(destino).hostname); } catch (e) { /* URL inválida */ }
+
+  if (esHotmart) {
+    window.location.replace(destino);
+  } else {
+    document.getElementById('texto').textContent = 'No pudimos abrir el pago. Cierra esta pestaña e intenta de nuevo.';
+  }
+</script>
+</body>
+</html>

@@ -727,6 +727,16 @@ const PAQUETES_NUTRICOINS = [
   { cant: 2500, precio: 18.99 }
 ];
 
+// Abre un checkout de Hotmart en pestaña nueva -- SIEMPRE a través de
+// redirect.html (nunca window.open directo a Hotmart) para que la
+// pestaña nueva muestre la marca (ícono + spinner, mismo fondo claro/
+// oscuro que la app) mientras carga, en vez del negro plano por defecto
+// del navegador (pedido explícito de la usuaria, reportado con video).
+// Se usa tanto para NutriCoins como para el Plan Premium (ver plans.js).
+export function abrirCheckoutHotmart(url) {
+  window.open(`./redirect.html?to=${encodeURIComponent(url)}`, '_blank', 'noopener');
+}
+
 // Cobro real: cada paquete abre su checkout de Hotmart en pestaña nueva
 // (HOTMART_CHECKOUT_NUTRICOINS en config.js) -- el webhook hotmart-webhook
 // acredita el saldo apenas Hotmart confirma el pago. Mientras un paquete
@@ -758,7 +768,7 @@ export function abrirComprarNutricoins() {
           toast('Muy pronto vas a poder comprar NutriCoins aquí mismo 🪙');
           return;
         }
-        window.open(link, '_blank', 'noopener');
+        abrirCheckoutHotmart(link);
       });
     });
     // Al volver de pagar en la pestaña de Hotmart (o si la compra se

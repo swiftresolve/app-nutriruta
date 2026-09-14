@@ -2,7 +2,7 @@
 import { getPlan, setPlanCache, isPremium, planExpired, planExpiry } from '../store.js';
 import { downgradeToFree } from '../supabase-client.js';
 import { HOTMART_CHECKOUT } from '../config.js';
-import { header, navigate, toast, CART_ICON } from '../app.js';
+import { header, navigate, toast, CART_ICON, abrirCheckoutHotmart } from '../app.js';
 import { t, getIdioma } from '../i18n.js';
 
 const PLANS = [
@@ -142,7 +142,7 @@ function planBadge(plan) {
 }
 
 function confirmPlan(p) {
-  window.open(HOTMART_CHECKOUT[p.id], '_blank', 'noopener');
+  abrirCheckoutHotmart(HOTMART_CHECKOUT[p.id]);
   toast(t('Completa tu compra en Hotmart; tu plan se activará al confirmarse el pago.'));
 }
 
