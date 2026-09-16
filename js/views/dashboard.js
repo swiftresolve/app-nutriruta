@@ -5,7 +5,7 @@
 // su propia pantalla/pestaña ahora (Progreso y el tab SuSana en el menú
 // inferior) — la usuaria pidió que el dashboard diario no acumule
 // tarjetas grandes de cosas que no se usan todos los días.
-import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, guardarComidaRegistrada, borrarComidaRegistrada, today, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS, misInsigniasPuntualidad, UMBRALES_PUNTUALIDAD, UMBRALES_MAESTRA, estadoRutiHoy } from '../store.js';
+import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, comidasDelDia, guardarComidaRegistrada, borrarComidaRegistrada, today, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS, misInsigniasPuntualidad, UMBRALES_PUNTUALIDAD, UMBRALES_MAESTRA, estadoRutiHoy } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
 import { MEALS } from '../data/recipes.js';
 import { insigniaSVG, NOMBRE_TIER } from '../badges.js';
@@ -710,6 +710,12 @@ function abrirComidaRegistrada(meal, registro, onChange) {
   const { user } = getState();
   const light = trafficLightRecetaPropia({ ingredientes: registro.alimentos, descripcion: '' }, user.perfiles);
   openModal((modal, closeFn) => {
+    // La primera comida registrada (registro, index 0) sigue siendo la
+    // que cuenta para la racha de puntualidad y la que se muestra en
+    // detalle -- agregar un "+" extra ese mismo día nunca cambia eso (ver
+    // comidaRegistrada en store.js). Las demás (si las hay) se muestran
+    // abajo, compactas, con su propio editar/borrar.
+    const extras = comidasDelDia(meal.id).slice(1);
     const horaTexto = new Date(registro.hora).toLocaleTimeString(getIdioma() === 'en' ? 'en-US' : 'es', { hour: 'numeric', minute: '2-digit' });
     const fuente = (FUENTE_LABEL[registro.fuente] || (() => null))();
     const alimentosCap = registro.alimentos.map(capitalizar);
@@ -721,6 +727,18 @@ function abrirComidaRegistrada(meal, registro, onChange) {
     // ilegible, porque esos "alimentos" son la lista de ingredientes de
     // la receta, no una descripción pensada para leerse de corrido.
     const tituloComida = registro.nombre || alimentosCap.join(', ');
+    // Fila compacta para cada comida EXTRA (index 1+) -- solo título,
+    // hora y editar/borrar puntuales, sin repetir semáforo/SuSana (eso
+    // sigue siendo del detalle de arriba, para no saturar la tarjeta).
+    function filaExtraHtml(r, idx) {
+      const tit = r.nombre || r.alimentos.map(capitalizar).join(', ');
+      const hora = new Date(r.hora).toLocaleTimeString(getIdioma() === 'en' ? 'en-US' : 'es', { hour: 'numeric', minute: '2-digit' });
+      return `<div class="habit" data-extra-idx="${idx}">
+        <label style="flex:1">${esc(tit)} <span class="small muted">${hora}</span></label>
+        <button type="button" class="icon-btn plain cr-extra-editar" aria-label="${t('Editar')}">${PENCIL_ICON}</button>
+        <button type="button" class="icon-btn plain cr-extra-borrar" aria-label="${t('Eliminar')}" style="margin-left:2px">${TRASH_ICON}</button>
+      </div>`;
+    }
     modal.insertAdjacentHTML('beforeend', `
       <h2 class="center">${esc(tituloComida)}</h2>
       ${registro.fotoUrl
@@ -732,7 +750,9 @@ function abrirComidaRegistrada(meal, registro, onChange) {
       <h3 class="mt">${t('Ingredientes')}</h3>
       ${alimentosCap.map((a) => `<div class="ingredient">• ${esc(a)}</div>`).join('')}
       <button type="button" class="btn ghost full mt row" id="cr-editar" style="gap:6px;justify-content:center;align-items:center">${PENCIL_ICON}${t('Editar registro')}</button>
-      <button type="button" class="btn danger full mt" id="cr-deshacer">${TRASH_ICON} ${t('Deshacer registro')}</button>`);
+      <button type="button" class="btn danger full mt" id="cr-deshacer">${TRASH_ICON} ${t('Deshacer registro')}</button>
+      ${extras.length ? `<h3 class="mt">${t('También registraste')}</h3>${extras.map((r, i) => filaExtraHtml(r, i + 1)).join('')}` : ''}
+      <button type="button" class="btn ghost full mt row" id="cr-agregar-otra" style="gap:6px;justify-content:center;align-items:center"><span style="font-size:1.1em;line-height:1">+</span>${t('Agregar otra comida')}</button>`);
     modal.querySelector('#cr-analizar-susana').addEventListener('click', () => {
       closeFn();
       // Misma ruta que el branch "sin apto" de openRecipe()/abrirRecetaPropia():
@@ -742,10 +762,10 @@ function abrirComidaRegistrada(meal, registro, onChange) {
     });
     modal.querySelector('#cr-editar').addEventListener('click', () => {
       closeFn();
-      openMealLogModal(meal.id, meal.nombre, onChange);
+      openMealLogModal(meal.id, meal.nombre, onChange, 0);
     });
     modal.querySelector('#cr-deshacer').addEventListener('click', () => {
-      const deshacer = () => { borrarComidaRegistrada(meal.id); closeFn(); onChange?.(); };
+      const deshacer = () => { borrarComidaRegistrada(meal.id, today(), 0); closeFn(); onChange?.(); };
       // Mismo aviso que ya existe en openRecipe() para el círculo "Comí
       // esto" -- nunca perder una foto en silencio (bug real ya ocurrido).
       if (registro.fotoUrl) {
@@ -762,6 +782,22 @@ function abrirComidaRegistrada(meal, registro, onChange) {
         return;
       }
       deshacer();
+    });
+    modal.querySelector('#cr-agregar-otra').addEventListener('click', () => {
+      closeFn();
+      openMealLogModal(meal.id, meal.nombre, onChange);
+    });
+    modal.querySelectorAll('[data-extra-idx]').forEach((fila) => {
+      const idx = Number(fila.dataset.extraIdx);
+      fila.querySelector('.cr-extra-editar').addEventListener('click', () => {
+        closeFn();
+        openMealLogModal(meal.id, meal.nombre, onChange, idx);
+      });
+      fila.querySelector('.cr-extra-borrar').addEventListener('click', () => {
+        borrarComidaRegistrada(meal.id, today(), idx);
+        closeFn();
+        onChange?.();
+      });
     });
   });
 }

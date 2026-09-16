@@ -79,7 +79,10 @@ function speechRecognitionCtor() {
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
-export function openMealLogModal(mealId, mealTitle, onSaved) {
+// editIndex=null (por defecto) AGREGA una comida más a esa franja del día
+// -- pasar el índice de una ya guardada la EDITA en su lugar en vez de
+// sumar una nueva (ver "+ Agregar otra" en abrirComidaRegistrada, dashboard.js).
+export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
   openModal((modal, closeFn) => {
     let alimentos = [];
     let fuente = null;
@@ -313,7 +316,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved) {
               // registrar la comida — si falla la subida, se guarda igual.
             }
           }
-          guardarComidaRegistrada(mealId, alimentos, fuente, today(), fotoUrl);
+          guardarComidaRegistrada(mealId, alimentos, fuente, today(), fotoUrl, null, editIndex);
           toast(t('¡Comida registrada! 🌿'));
           closeFn();
           onSaved?.();

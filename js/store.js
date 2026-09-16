@@ -78,7 +78,7 @@ const DEFAULT_STATE = {
   rutiOculto: false,            // modo minimalista: oculta la ilustración de Ruti donde aparece
   diasCongelados: [],           // fechas ISO cubiertas por una Pausa de Ruta (racha "congelada", no rota)
   reflexionesHabitos: {},        // { fecha: texto } — la frase real que se pide al completar el 3er hábito del día
-  comidasRegistradas: {},          // { 'fecha|mealId': { alimentos: [texto], fuente: 'foto'|'voz'|'texto'|'sugerencia', hora, nombre? } } — lo que la usuaria dijo que REALMENTE comió, no la sugerencia del menú. `nombre` solo existe cuando fuente es 'sugerencia' (confirmó una receta tal cual): ahí `alimentos` es su lista de ingredientes, no algo pensado como título.
+  comidasRegistradas: {},          // { 'fecha|mealId': [{ alimentos: [texto], fuente: 'foto'|'voz'|'texto'|'sugerencia', hora, nombre? }, ...] } — lo que la usuaria dijo que REALMENTE comió, no la sugerencia del menú. `nombre` solo existe cuando fuente es 'sugerencia' (confirmó una receta tal cual): ahí `alimentos` es su lista de ingredientes, no algo pensado como título. Es una LISTA (pedido explícito: poder agregar más de una comida por franja, ej. un snack extra en el almuerzo, estilo Fitia) — cuentas viejas todavía tienen el valor viejo (un objeto suelto, no lista) guardado, así que comidaRegistrada()/comidasDelDia() lo envuelven en un arreglo de 1 al leerlo en vez de migrar todo de una.
   favoritas: [],                  // ids de RECIPES marcadas con la estrella en el Recetario (ver planner.js)
   misRecetas: [],                 // recetas creadas a mano por la usuaria (ver agregarRecetaPropia)
   chatMeta: {},                    // { conversationId: { titulo?, fijado?, archivado? } } -- metadatos del historial de SuSana (menú de los tres puntos, ver assistant.js). Solo vive acá, nunca en el servidor -- son preferencias de organización de la usuaria, no parte de la conversación real.
@@ -479,11 +479,35 @@ export function registrarComidaSeguida(id) {
 // una suposición: guarda lo que confirmó, no lo que el menú sugería.
 function claveComida(mealId, dateStr = today()) { return `${dateStr}|${mealId}`; }
 
-export function comidaRegistrada(mealId, dateStr = today()) {
-  return state.comidasRegistradas[claveComida(mealId, dateStr)] || null;
+// Envuelve lo que haya guardado en esa clave en un arreglo -- cuentas
+// viejas (de antes del "+") todavía tienen ahí el objeto suelto de una
+// sola comida, no una lista; normalizar al leer/escribir evita tener que
+// migrar todo el state de una sola vez.
+function listaComida(clave) {
+  const valor = state.comidasRegistradas[clave];
+  if (!valor) return [];
+  return Array.isArray(valor) ? valor : [valor];
 }
 
-export function guardarComidaRegistrada(mealId, alimentos, fuente, dateStr = today(), fotoUrl = null, nombre = null) {
+// La PRIMERA comida registrada en esa franja ese día -- se sigue usando
+// para todo lo que ya existía (resumen de la fila, nota de horario,
+// racha de puntualidad): agregar un "+" extra en el mismo día nunca debe
+// cambiar cuál cuenta para eso (pedido explícito de la usuaria).
+export function comidaRegistrada(mealId, dateStr = today()) {
+  return listaComida(claveComida(mealId, dateStr))[0] || null;
+}
+
+// Todo lo registrado en esa franja ese día, en orden -- lo que alimenta
+// la lista de "+ Agregar otra" y Mi Diario.
+export function comidasDelDia(mealId, dateStr = today()) {
+  return listaComida(claveComida(mealId, dateStr));
+}
+
+// index=null (por defecto) AGREGA una comida más a esa franja/día, sin
+// tocar las que ya había -- así es como se ve el "+" de Fitia. Pasar un
+// index existente EDITA esa comida puntual en su lugar (usado por
+// "Editar registro" en una entrada ya guardada).
+export function guardarComidaRegistrada(mealId, alimentos, fuente, dateStr = today(), fotoUrl = null, nombre = null, index = null) {
   const clave = claveComida(mealId, dateStr);
   const registro = { alimentos, fuente, hora: new Date().toISOString() };
   if (fotoUrl) registro.fotoUrl = fotoUrl;
@@ -493,7 +517,11 @@ export function guardarComidaRegistrada(mealId, alimentos, fuente, dateStr = tod
   // tarjeta de "lo que registraste" (abrirComidaRegistrada) terminaba
   // mostrando todos los ingredientes pegados como si fueran el título.
   if (nombre) registro.nombre = nombre;
-  setState({ comidasRegistradas: { ...state.comidasRegistradas, [clave]: registro } });
+  const listaActual = listaComida(clave);
+  const nuevaLista = (index != null && listaActual[index])
+    ? listaActual.map((r, i) => (i === index ? registro : r))
+    : [...listaActual, registro];
+  setState({ comidasRegistradas: { ...state.comidasRegistradas, [clave]: nuevaLista } });
   evaluarPuntualidad(mealId, dateStr);
   return registro;
 }
@@ -646,11 +674,18 @@ export function marcarNovedadesVistas() {
 
 // Para el círculo togglable de "Comí esto" en Tu ruta de hoy -- a
 // diferencia de editar (que reemplaza el registro), esto lo quita del
-// todo, dejando la comida sin registrar otra vez.
-export function borrarComidaRegistrada(mealId, dateStr = today()) {
+// todo, dejando la comida sin registrar otra vez. index (por defecto la
+// primera) borra solo ESA comida de la franja/día; si era la última que
+// quedaba, la clave entera desaparece en vez de dejar un arreglo vacío.
+export function borrarComidaRegistrada(mealId, dateStr = today(), index = 0) {
   const clave = claveComida(mealId, dateStr);
-  const { [clave]: _quitado, ...resto } = state.comidasRegistradas;
-  setState({ comidasRegistradas: resto });
+  const nuevaLista = listaComida(clave).filter((_, i) => i !== index);
+  if (nuevaLista.length) {
+    setState({ comidasRegistradas: { ...state.comidasRegistradas, [clave]: nuevaLista } });
+  } else {
+    const { [clave]: _quitado, ...resto } = state.comidasRegistradas;
+    setState({ comidasRegistradas: resto });
+  }
 }
 
 // Registros de los últimos `dias` días con foto, agrupados por fecha y
@@ -666,8 +701,12 @@ export function diasConDiario(dias = 14) {
   return fechas
     .map((fecha) => {
       const registros = Object.entries(state.comidasRegistradas)
-        .filter(([clave, r]) => clave.startsWith(`${fecha}|`) && r.fotoUrl)
-        .map(([clave, r]) => ({ mealId: clave.split('|')[1], ...r }));
+        .filter(([clave]) => clave.startsWith(`${fecha}|`))
+        .flatMap(([clave, valor]) => {
+          const mealId = clave.split('|')[1];
+          const lista = Array.isArray(valor) ? valor : [valor];
+          return lista.filter((r) => r.fotoUrl).map((r) => ({ mealId, ...r }));
+        });
       return { fecha, registros };
     })
     .filter((dia) => dia.registros.length > 0);
