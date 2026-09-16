@@ -631,7 +631,16 @@ function pedirReflexionHabitos(onConfirm) {
 // hoy" el punto solo (sin la palabra "Semáforo" al lado, que sí tenía la
 // versión anterior de esta modal) no se entendía como semáforo. Frases
 // cortas y claras por color, mismo criterio en las 3.
-export const SEMAFORO_TEXTO = { verde: t('Apto para tu perfil'), amarillo: t('Modera esto'), rojo: t('Evita esto') };
+// Objeto {light: texto}, no función, para no tener que tocar cada uso
+// (SEMAFORO_TEXTO[light]) en dashboard.js y planner.js -- pero armado con
+// un getter por color en vez de valores fijos, así t() se evalúa recién
+// al leerlo (cuando se pinta la pantalla) y no una sola vez al cargar el
+// módulo, que dejaba el texto pegado en el idioma de esa primera carga.
+export const SEMAFORO_TEXTO = {
+  get verde() { return t('Apto para tu perfil'); },
+  get amarillo() { return t('Modera esto'); },
+  get rojo() { return t('Evita esto'); }
+};
 
 // "Analizar con SuSana" en una receta del CATÁLOGO no necesita IA -- el
 // semáforo ya salió de perfiles curados a mano (recipe.apto/moderar/
