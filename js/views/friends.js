@@ -226,7 +226,7 @@ function pintarAmigos(card, amigos, onCambio) {
     btn.addEventListener('click', () => {
       openModal((modal, closeFn) => {
         modal.insertAdjacentHTML('beforeend', `
-          <h2>${t('¿Eliminar a {nombre} de tus amigas?', { nombre: a.nombre || a.username })}</h2>
+          <h2>${t('¿Eliminar a {nombre} de tus amigas?', { nombre: esc(a.nombre || a.username) })}</h2>
           <p class="mt small muted">${t('Puedes volver a agregarla más tarde si quieres.')}</p>`);
         const yes = document.createElement('button');
         yes.className = 'btn danger full mt';

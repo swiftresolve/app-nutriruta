@@ -1,5 +1,5 @@
 // Router mínimo + arranque con puerta de autenticación.
-import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo, diasDelMes, today, sincronizarNutricoins, hayNovedadesNuevas } from './store.js';
+import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo, diasDelMes, today, sincronizarNutricoins, hayNovedadesNuevas, esc } from './store.js';
 import { t } from './i18n.js';
 import { getSession, supabase, avatarUrlFor, fetchNutricoins, buscarAmigoPorUsername, solicitarAmistad } from './supabase-client.js';
 import { HOTMART_CHECKOUT_NUTRICOINS } from './config.js';
@@ -895,8 +895,8 @@ if ('serviceWorker' in navigator) {
         if (!encontrado) return;
         openModal((modal, closeFn) => {
           modal.insertAdjacentHTML('beforeend', `
-            <h2>👥 ${t('¿Agregar a {nombre} como amiga?', { nombre: encontrado.nombre || encontrado.username })}</h2>
-            <p class="small muted mt">@${encontrado.username}</p>`);
+            <h2>👥 ${t('¿Agregar a {nombre} como amiga?', { nombre: esc(encontrado.nombre || encontrado.username) })}</h2>
+            <p class="small muted mt">@${esc(encontrado.username)}</p>`);
           const btn = document.createElement('button');
           btn.className = 'btn accent full mt';
           btn.textContent = t('Enviar solicitud');
