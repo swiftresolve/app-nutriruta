@@ -6,6 +6,7 @@ import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICO
 import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace } from '../supabase-client.js';
 import { openRecipe, semaforoIcon, SEMAFORO_TEXTO } from './dashboard.js';
 import { t, getIdioma } from '../i18n.js';
+import { abrirCamaraEnVivo } from '../camera.js';
 
 const ORDENES = [
   { id: 'recomendadas', label: () => `🌿 ${t('Recomendadas')}` },
@@ -557,8 +558,6 @@ export function renderPlanner(container, params = {}) {
       return;
     }
     const comida = mealFilter !== 'todas' ? mealFilter : MEALS[0].id;
-    let stream = null;
-    function detenerCamara() { if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; } }
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -566,10 +565,11 @@ export function renderPlanner(container, params = {}) {
     fileInput.hidden = true;
     document.body.appendChild(fileInput);
 
+    let detenerCamaraCompartida = () => {};
+
     openModal((modal, closeFn) => {
       function cerrarTodo() {
-        detenerCamara();
-        modal.parentElement?.classList.remove('cam-fullscreen');
+        detenerCamaraCompartida();
         fileInput.remove();
         closeFn();
       }
@@ -589,59 +589,26 @@ export function renderPlanner(container, params = {}) {
         }
       });
 
-      modal.innerHTML = `
-        <div class="camera-top"><button type="button" class="camera-cancelar" id="rf-cam-cancelar">${t('Cancelar')}</button></div>
-        <p class="camera-instruccion">${t('Toma una foto de una receta escrita, o del plato ya preparado')}</p>
-        <div class="camera-wrap">
-          <video id="rf-cam-video" autoplay playsinline muted></video>
-          <div class="camera-frame"></div>
-        </div>
-        <div class="camera-controls">
-          <button type="button" class="camera-icon-btn" id="rf-cam-galeria" aria-label="${t('Elegir de la galería')}">🖼️</button>
-          <button type="button" id="rf-cam-shutter" class="camera-shutter" aria-label="${t('Tomar foto')}"></button>
-          <span class="camera-icon-btn" style="visibility:hidden" aria-hidden="true"></span>
-        </div>`;
-      // Fullscreen (fondo negro de borde a borde) recién ahora -- modal aún
-      // no tenía padre cuando este callback empezó a correr (openModal lo
-      // engancha al backdrop justo después de esta llamada).
-      setTimeout(() => modal.parentElement?.classList.add('cam-fullscreen'), 0);
-
-      modal.querySelector('#rf-cam-cancelar').addEventListener('click', cerrarTodo);
-      modal.querySelector('#rf-cam-galeria').addEventListener('click', () => {
-        detenerCamara();
-        modal.parentElement?.classList.remove('cam-fullscreen');
-        fileInput.click();
-      });
-
-      const video = modal.querySelector('#rf-cam-video');
       (async () => {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
-          video.srcObject = stream;
-        } catch {
-          modal.parentElement?.classList.remove('cam-fullscreen');
-          toast(t('No pudimos abrir la cámara. Elige una foto de tu galería.'));
-          fileInput.click();
-        }
+        const { detener } = await abrirCamaraEnVivo({
+          modal,
+          instruccion: t('Toma una foto de una receta escrita, o del plato ya preparado'),
+          onCancelar: cerrarTodo,
+          onGaleria: () => fileInput.click(),
+          onCapturar: (cuadro) => {
+            const dataUrl = cuadro.toDataURL('image/jpeg', 0.82);
+            cerrarTodo();
+            closeSelector();
+            generarUnaConIA(comida, 'foto', () => generarRecetaDesdeFoto(comida, dataUrl.split(',')[1], 'image/jpeg'));
+          }
+        });
+        detenerCamaraCompartida = detener;
       })();
-
-      modal.querySelector('#rf-cam-shutter').addEventListener('click', () => {
-        const w = video.videoWidth, h = video.videoHeight;
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(video, 0, 0, w, h);
-        canvas.toBlob((blob) => {
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          cerrarTodo();
-          closeSelector();
-          generarUnaConIA(comida, 'foto', () => generarRecetaDesdeFoto(comida, dataUrl.split(',')[1], 'image/jpeg'));
-        }, 'image/jpeg', 0.85);
-      });
 
       // Si se cierra por otra vía (tocar fuera del backdrop), apaga la
       // cámara igual -- sin esto la lucecita queda prendida.
       const obs = new MutationObserver(() => {
-        if (!modal.isConnected) { detenerCamara(); fileInput.remove(); obs.disconnect(); }
+        if (!modal.isConnected) { detenerCamaraCompartida(); fileInput.remove(); obs.disconnect(); }
       });
       obs.observe(document.body, { childList: true });
     });
