@@ -6,14 +6,20 @@ import { SYMPTOM_TYPES, SYMPTOM_CAUSES } from '../data/profiles.js';
 import { MISSION } from '../data/mission.js';
 import { EMERGENCY_PLAN } from '../data/emergencyPlan.js';
 import { header, openModal, toast, navigate, susanaName, SHARE_ICON } from '../app.js';
-import { t } from '../i18n.js';
+import { t, getIdioma } from '../i18n.js';
 import { barChart, lineChart } from '../charts.js';
 import { abrirCompartirPlantillas } from '../shareUI.js';
 
-const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-
 let rangoActivo = 'semana';
+
+// Nombres cortos de día/mes vía Intl en vez de arreglos fijos en español --
+// así siguen el idioma de la app sin mantener una traducción propia.
+function diaCorto(fechaYYYYMMDD) {
+  return new Date(fechaYYYYMMDD + 'T00:00:00').toLocaleDateString(getIdioma() === 'en' ? 'en-US' : 'es', { weekday: 'short' });
+}
+function mesCorto(fechaYYYYMM) {
+  return new Date(fechaYYYYMM + '-01T00:00:00').toLocaleDateString(getIdioma() === 'en' ? 'en-US' : 'es', { month: 'short' });
+}
 
 export function renderProgress(container) {
   header(container);
@@ -94,14 +100,14 @@ export function renderProgress(container) {
   const chartsCard = document.createElement('div');
   chartsCard.className = 'card';
   chartsCard.innerHTML = `
-    <div class="spread"><h2>📊 Tu progreso</h2></div>
+    <div class="spread"><h2>${t('📊 Tu progreso')}</h2></div>
     <div class="chips mt" id="rango-tabs"></div>
-    <p class="small mt" style="font-weight:600">Hábitos cumplidos</p>
+    <p class="small mt" style="font-weight:600">${t('Hábitos cumplidos')}</p>
     <div id="chart-habitos" class="mt"></div>
-    <p class="small mt" style="font-weight:600">Meta de agua alcanzada</p>
+    <p class="small mt" style="font-weight:600">${t('Meta de agua alcanzada')}</p>
     <div id="chart-agua" class="mt"></div>`;
   const tabs = chartsCard.querySelector('#rango-tabs');
-  for (const r of [['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes']]) {
+  for (const r of [['dia', t('Día')], ['semana', t('Semana')], ['mes', t('Mes')]]) {
     const b = document.createElement('button');
     b.className = 'chip' + (rangoActivo === r[0] ? ' selected' : '');
     b.textContent = r[1];
@@ -127,31 +133,30 @@ export function renderProgress(container) {
       const primero = pesos[0].kg;
       const ultimo = pesos[pesos.length - 1].kg;
       const diff = ultimo - primero;
-      pesoCard.innerHTML = `<h2>⚖️ Tendencia de peso</h2>
+      pesoCard.innerHTML = `<h2>${t('⚖️ Tendencia de peso')}</h2>
         <div class="mt">${lineChart(items, { color: 'var(--secondary)' })}</div>
-        <p class="small muted mt">Registros: ${pesos.length}. Último: ${ultimo} kg (${pesos[pesos.length - 1].fecha}).
-        Interpreta estos cambios con tu profesional de salud, no solo con la cifra.</p>
-        <button type="button" class="btn ghost full mt" id="peso-compartir">${SHARE_ICON}Compartir mi progreso</button>`;
+        <p class="small muted mt">${t('Registros: {n}. Último: {kg} kg ({fecha}). Interpreta estos cambios con tu profesional de salud, no solo con la cifra.', { n: pesos.length, kg: ultimo, fecha: pesos[pesos.length - 1].fecha })}</p>
+        <button type="button" class="btn ghost full mt" id="peso-compartir">${SHARE_ICON}${t('Compartir mi progreso')}</button>`;
       pesoCard.querySelector('#peso-compartir').addEventListener('click', () => {
         abrirCompartirPlantillas({
           tipo: 'peso',
-          titulo: 'Mi progreso en NutriRuta',
-          subtitulo: `Desde ${pesos[0].fecha}`,
+          titulo: t('Mi progreso en NutriRuta'),
+          subtitulo: t('Desde {fecha}', { fecha: pesos[0].fecha }),
           // Con signo siempre visible (+/-) -- una bajada Y una subida son
           // igual de válidas de compartir (ej. alguien en superávit
           // buscando subir de peso con salud), nunca se asume una sola
           // dirección "buena".
           valorGrande: `${diff > 0 ? '+' : diff < 0 ? '-' : ''}${Math.abs(diff).toFixed(1)} kg`,
-          valorEtiqueta: `${pesos.length} registros`,
+          valorEtiqueta: t('{n} registros', { n: pesos.length }),
           emoji: '⚖️'
         });
       });
     } else if (pesos.length === 1) {
-      pesoCard.innerHTML = `<h2>⚖️ Tendencia de peso</h2>
-        <p class="small mt">Tienes un registro. Cuando agregues otro en Ajustes, verás aquí tu tendencia.</p>`;
+      pesoCard.innerHTML = `<h2>${t('⚖️ Tendencia de peso')}</h2>
+        <p class="small mt">${t('Tienes un registro. Cuando agregues otro en Ajustes, verás aquí tu tendencia.')}</p>`;
     } else {
-      pesoCard.innerHTML = `<h2>⚖️ Tendencia de peso</h2>
-        <p class="small mt">Actívalo en Ajustes y registra tu peso cuando quieras verlo aquí.</p>`;
+      pesoCard.innerHTML = `<h2>${t('⚖️ Tendencia de peso')}</h2>
+        <p class="small mt">${t('Actívalo en Ajustes y registra tu peso cuando quieras verlo aquí.')}</p>`;
     }
     container.appendChild(pesoCard);
   }
@@ -160,9 +165,8 @@ export function renderProgress(container) {
   const impact = document.createElement('div');
   impact.className = 'card';
   impact.innerHTML = `
-    <h2>🌱 Tu impacto</h2>
-    <p class="small">Si mantienes estos hábitos, ayudas a tu glucosa, tu hígado y tu colesterol.
-    Los cambios sostenidos por 12 semanas pueden reflejarse en tus próximos exámenes. Recuerda revisarlos siempre con tu profesional de salud.</p>`;
+    <h2>${t('🌱 Tu impacto')}</h2>
+    <p class="small">${t('Si mantienes estos hábitos, ayudas a tu glucosa, tu hígado y tu colesterol. Los cambios sostenidos por 12 semanas pueden reflejarse en tus próximos exámenes. Recuerda revisarlos siempre con tu profesional de salud.')}</p>`;
   container.appendChild(impact);
 
   // Logros: ya no vive aquí -- tiene su propio modal desde el botón
@@ -175,9 +179,9 @@ export function renderProgress(container) {
   if (compartidos.length) {
     const testi = document.createElement('div');
     testi.className = 'card';
-    testi.innerHTML = `<div class="spread"><h2>🎙️ Tus testimonios</h2></div>
-      <p class="small">${compartidos.length} respuesta${compartidos.length > 1 ? 's' : ''} que autorizaste compartir.</p>
-      <button class="link-btn small mt">Ver tarjetas →</button>`;
+    testi.innerHTML = `<div class="spread"><h2>${t('🎙️ Tus testimonios')}</h2></div>
+      <p class="small">${t('{n} respuesta{s} que autorizaste compartir.', { n: compartidos.length, s: compartidos.length === 1 ? '' : 's' })}</p>
+      <button class="link-btn small mt">${t('Ver tarjetas →')}</button>`;
     testi.querySelector('.link-btn').addEventListener('click', () => navigate('testimonials'));
     container.appendChild(testi);
   }
@@ -186,8 +190,8 @@ export function renderProgress(container) {
   const sos = document.createElement('div');
   sos.className = 'card';
   const superados = antojos.filter((a) => a.resultado === 'alternativa').length;
-  sos.innerHTML = `<h2>💚 Tus antojos</h2>
-    <p class="small">${antojos.length ? `Registrados: ${antojos.length} · Superados con alternativa: <strong>${superados}</strong>` : 'Aún no registras antojos. Cuando llegue uno, usa el botón SOS.'}</p>`;
+  sos.innerHTML = `<h2>${t('💚 Tus antojos')}</h2>
+    <p class="small">${antojos.length ? t('Registrados: {n} · Superados con alternativa: <strong>{sup}</strong>', { n: antojos.length, sup: superados }) : t('Aún no registras antojos. Cuando llegue uno, usa el botón SOS.')}</p>`;
   if (antojos.length) {
     const last = [...antojos].slice(-6).reverse();
     for (const a of last) {
@@ -207,14 +211,14 @@ export function renderProgress(container) {
   let patronHtml = '';
   if (patron) {
     patronHtml = patron.tipo === 'disparador'
-      ? `<p class="small mt" style="border-left:4px solid var(--accent);padding-left:10px">💡 <strong>Hemos notado</strong> que <strong>${esc(patron.valor)}</strong> aparece seguido en tus registros. Puede ser tu disparador.</p>`
-      : `<p class="small mt" style="border-left:4px solid var(--accent);padding-left:10px">💡 <strong>Hemos notado</strong> que tus síntomas suelen aparecer en la <strong>${patron.valor}</strong>.</p>`;
+      ? `<p class="small mt" style="border-left:4px solid var(--accent);padding-left:10px">${t('💡 <strong>Hemos notado</strong> que <strong>{valor}</strong> aparece seguido en tus registros. Puede ser tu disparador.', { valor: esc(patron.valor) })}</p>`
+      : `<p class="small mt" style="border-left:4px solid var(--accent);padding-left:10px">${t('💡 <strong>Hemos notado</strong> que tus síntomas suelen aparecer en la <strong>{valor}</strong>.', { valor: esc(patron.valor) })}</p>`;
   }
   diario.innerHTML = `
-    <div class="spread"><h2>📋 Diario de síntomas</h2></div>
-    <p class="small">${sintomas.length ? `Registrados: ${sintomas.length}` : 'Registra gases, hinchazón, estreñimiento, diarrea o migraña, y con el tiempo te ayudamos a ver qué los dispara.'}</p>
+    <div class="spread"><h2>${t('📋 Diario de síntomas')}</h2></div>
+    <p class="small">${sintomas.length ? t('Registrados: {n}', { n: sintomas.length }) : t('Registra gases, hinchazón, estreñimiento, diarrea o migraña, y con el tiempo te ayudamos a ver qué los dispara.')}</p>
     ${patronHtml}
-    <button class="btn quiet sm mt" id="btn-log-sintoma">+ Registrar síntoma</button>`;
+    <button class="btn quiet sm mt" id="btn-log-sintoma">${t('+ Registrar síntoma')}</button>`;
   diario.querySelector('#btn-log-sintoma').addEventListener('click', () => openSintomaModal(() => {
     renderProgress(clear(container));
   }));
@@ -257,7 +261,7 @@ function pintarGraficasProgreso(chartsCard) {
   const habitosEl = chartsCard.querySelector('#chart-habitos');
   const aguaEl = chartsCard.querySelector('#chart-agua');
   if (!dias.length) {
-    habitosEl.innerHTML = '<p class="small muted">Aún no hay datos suficientes. Vuelve mañana.</p>';
+    habitosEl.innerHTML = `<p class="small muted">${t('Aún no hay datos suficientes. Vuelve mañana.')}</p>`;
     aguaEl.innerHTML = '';
     return;
   }
@@ -266,7 +270,7 @@ function pintarGraficasProgreso(chartsCard) {
   if (rangoActivo === 'dia') {
     const ultimos = dias.slice(-7);
     items = ultimos.map((d) => ({
-      label: DIAS_CORTOS[new Date(d.fecha + 'T00:00:00').getDay()],
+      label: diaCorto(d.fecha),
       habitosPct: (d.habitosCompletados / (d.habitosTotal || 5)) * 100,
       aguaPct: d.metaAgua ? (d.vasosAgua / d.metaAgua) * 100 : 0
     }));
@@ -277,7 +281,7 @@ function pintarGraficasProgreso(chartsCard) {
   }
 
   if (items.length < 2) {
-    habitosEl.innerHTML = '<p class="small muted">Necesitas un par de días más de historial para ver esta vista.</p>';
+    habitosEl.innerHTML = `<p class="small muted">${t('Necesitas un par de días más de historial para ver esta vista.')}</p>`;
     aguaEl.innerHTML = '';
     return;
   }
@@ -308,8 +312,7 @@ function agruparPorMes(dias) {
   const grupos = {};
   for (const d of dias) {
     const key = d.fecha.slice(0, 7);
-    const mes = parseInt(d.fecha.slice(5, 7), 10) - 1;
-    if (!grupos[key]) grupos[key] = { fechas: [], habitosPct: 0, aguaPct: 0, label: MESES_CORTOS[mes] };
+    if (!grupos[key]) grupos[key] = { fechas: [], habitosPct: 0, aguaPct: 0, label: mesCorto(key) };
     const g = grupos[key];
     g.fechas.push(d);
     g.habitosPct += (d.habitosCompletados / (d.habitosTotal || 5)) * 100;
@@ -324,32 +327,31 @@ function agruparPorMes(dias) {
 function buildProjectionHtml() {
   const dias = diasCombinados().slice(-14);
   if (dias.length < 3) {
-    return `<h2>🔭 Si mantienes tu ritmo</h2>
-      <p class="small mt">Registra unos días más de hábitos para que podamos mostrarte una proyección de tu constancia.</p>`;
+    return `<h2>${t('🔭 Si mantienes tu ritmo')}</h2>
+      <p class="small mt">${t('Registra unos días más de hábitos para que podamos mostrarte una proyección de tu constancia.')}</p>`;
   }
   const tasa = dias.reduce((acc, d) => acc + d.habitosCompletados / (d.habitosTotal || 5), 0) / dias.length;
   const semanas = [1, 2, 3, 4].map((n) => ({
-    label: `Sem ${n}`,
+    label: t('Sem {n}', { n }),
     value: Math.round(Math.min(7, tasa * 7) * n)
   }));
-  return `<h2>🔭 Si mantienes tu ritmo</h2>
-    <p class="small mt">En tus últimos ${dias.length} días registrados cumples en promedio el <strong>${Math.round(tasa * 100)}%</strong> de tus hábitos diarios.
-    Así se vería tu constancia acumulada si mantienes ese ritmo:</p>
+  return `<h2>${t('🔭 Si mantienes tu ritmo')}</h2>
+    <p class="small mt">${t('En tus últimos {dias} días registrados cumples en promedio el <strong>{pct}%</strong> de tus hábitos diarios. Así se vería tu constancia acumulada si mantienes ese ritmo:', { dias: dias.length, pct: Math.round(tasa * 100) })}</p>
     <div class="mt">${barChart(semanas, { color: 'var(--primary)', suffix: 'd' })}</div>
-    <p class="small muted mt">Esto es una proyección de tu constancia con la app, no un pronóstico de salud. Tus resultados dependen de muchos factores; revísalos siempre con tu profesional de salud.</p>`;
+    <p class="small muted mt">${t('Esto es una proyección de tu constancia con la app, no un pronóstico de salud. Tus resultados dependen de muchos factores; revísalos siempre con tu profesional de salud.')}</p>`;
 }
 
 function openSintomaModal(onSaved) {
   let tipo = null;
   openModal((modal, close) => {
     modal.insertAdjacentHTML('beforeend', `
-      <h2>📋 Registrar síntoma</h2>
-      <p class="small mt">¿Qué sentiste?</p>
+      <h2>${t('📋 Registrar síntoma')}</h2>
+      <p class="small mt">${t('¿Qué sentiste?')}</p>
       <div class="chips mt" id="sintoma-chips"></div>
       <p class="small mt" id="sintoma-causa" style="border-left:4px solid var(--secondary);padding-left:10px;display:none"></p>
-      <label class="muted small mt" for="sintoma-disparador" style="display:block">¿Sospechas qué lo causó? (opcional)</label>
-      <input id="sintoma-disparador" type="text" maxlength="60" placeholder="Ej: cebolla, lácteos, estrés…" class="auth-input">
-      <button class="btn full mt" id="sintoma-guardar" disabled>Guardar</button>`);
+      <label class="muted small mt" for="sintoma-disparador" style="display:block">${t('¿Sospechas qué lo causó? (opcional)')}</label>
+      <input id="sintoma-disparador" type="text" maxlength="60" placeholder="${t('Ej: cebolla, lácteos, estrés…')}" class="auth-input">
+      <button class="btn full mt" id="sintoma-guardar" disabled>${t('Guardar')}</button>`);
     const chipWrap = modal.querySelector('#sintoma-chips');
     const guardarBtn = modal.querySelector('#sintoma-guardar');
     const causaEl = modal.querySelector('#sintoma-causa');
@@ -372,14 +374,14 @@ function openSintomaModal(onSaved) {
       const disparador = modal.querySelector('#sintoma-disparador').value;
       logSintoma(tipo, disparador);
       close();
-      toast('Registrado. Cada dato te ayuda a entender tu cuerpo 🌱');
+      toast(t('Registrado. Cada dato te ayuda a entender tu cuerpo 🌱'));
       if (onSaved) onSaved();
     });
   });
 }
 
-function labelTipo(t) {
-  return { dulce: 'Antojo de dulce', salado: 'Antojo salado', alcohol: 'Alcohol', picoteo: 'Picoteo nocturno', no_se: 'Ansiedad general' }[t] || t;
+function labelTipo(tipo) {
+  return { dulce: t('Antojo de dulce'), salado: t('Antojo salado'), alcohol: t('Alcohol'), picoteo: t('Picoteo nocturno'), no_se: t('Ansiedad general') }[tipo] || tipo;
 }
 
 function labelTipoSintoma(t) {
