@@ -114,7 +114,8 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
         fuente = 'foto';
         pantallaConfirmar(detectados, previewUrl);
       } catch (err) {
-        toast(err.message || t('No se pudo procesar la foto.'));
+        console.error(err);
+        toast(t('No se pudo procesar la foto.'));
         pantallaElegir();
       }
     });
@@ -162,7 +163,8 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
             fuente = 'foto';
             pantallaConfirmar(detectados, previewUrl);
           } catch (err) {
-            toast(err.message || t('No se pudo procesar la foto.'));
+            console.error(err);
+            toast(t('No se pudo procesar la foto.'));
             pantallaElegir();
           }
         }
@@ -229,7 +231,8 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
           fuente = 'voz';
           pantallaConfirmar(detectados);
         } catch (err) {
-          toast(err.message || t('No se pudo procesar eso.'));
+          console.error(err);
+          toast(t('No se pudo procesar eso.'));
           pantallaElegir();
         }
       };
@@ -256,7 +259,8 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
           fuente = 'texto';
           pantallaConfirmar(detectados);
         } catch (err) {
-          toast(err.message || t('No se pudo procesar eso.'));
+          console.error(err);
+          toast(t('No se pudo procesar eso.'));
           pantallaElegir();
         }
       });
