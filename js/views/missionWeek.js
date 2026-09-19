@@ -74,7 +74,7 @@ function progresoSemanaHtml(weekN) {
   </div>`;
 }
 
-export function renderMissionWeek(container, { week, canComplete = false, done = false } = {}) {
+export async function renderMissionWeek(container, { week, canComplete = false, done = false } = {}) {
   header(container);
 
   if (!week) { navigate('mission'); return; }
@@ -118,7 +118,11 @@ export function renderMissionWeek(container, { week, canComplete = false, done =
   // Receta real del catálogo para el tema de esta semana (nunca inventada,
   // respeta exclusiones y semáforo del usuario como el resto del menú).
   const hint = RECETA_HINTS_MISION[week.n];
-  const receta = hint ? sugerirRecetaPorEtiquetas(hint.comida || null, hint.etiquetas || []) : null;
+  const receta = hint ? await sugerirRecetaPorEtiquetas(hint.comida || null, hint.etiquetas || []) : null;
+  // hero (no container -- container es #app, que nunca se desconecta) se
+  // creó al principio de este render: si ya no está en el DOM, la usuaria
+  // navegó a otra pantalla mientras esto resolvía.
+  if (!hero.isConnected) return;
   if (receta) {
     const recetaCard = document.createElement('div');
     recetaCard.className = 'card';

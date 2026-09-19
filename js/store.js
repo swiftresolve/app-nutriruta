@@ -2,7 +2,7 @@
 import { fetchProfile, pushProfileState } from './supabase-client.js';
 import { DAILY_STEPS } from './data/dailySteps.js';
 import { SANA_OPENERS } from './data/sanaOpeners.js';
-import { MEALS } from './data/recipes.js';
+import { MEALS } from './data/meals.js';
 import { NOVEDADES } from './data/novedades.js';
 
 const KEY = 'nutriruta-state-v1';

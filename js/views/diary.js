@@ -8,7 +8,7 @@
 import { getState } from '../store.js';
 import { diasConDiario } from '../store.js';
 import { header, navigate, openModal, SHARE_ICON } from '../app.js';
-import { MEALS } from '../data/recipes.js';
+import { MEALS } from '../data/meals.js';
 import { broteStage, broteBadge } from '../ruti.js';
 import { abrirCompartirPlantillas } from '../shareUI.js';
 import { t } from '../i18n.js';

@@ -1,9 +1,9 @@
 // Recetario + lista de compras.
 import { getState, setState, isPremium, toggleFavorita, agregarRecetaPropia, eliminarRecetaPropia, sincronizarNutricoins, COSTO_RECETA_IA, esc } from '../store.js';
-import { RECIPES, MEALS } from '../data/recipes.js';
-import { isRecipeAvailable, trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
+import { MEALS } from '../data/meals.js';
+import { trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
 import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, CLOCK_ICON, SPARKLE_ICON, TRASH_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
-import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace } from '../supabase-client.js';
+import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace, fetchRecetasIndex, fetchRecetaDetalle } from '../supabase-client.js';
 import { openRecipe, semaforoIcon, SEMAFORO_TEXTO } from './dashboard.js';
 import { t, getIdioma } from '../i18n.js';
 import { abrirCamaraEnVivo } from '../camera.js';
@@ -15,10 +15,7 @@ const ORDENES = [
   { id: 'mias', label: () => `📝 ${t('Mis recetas')}` }
 ];
 
-// Recetas visibles en el plan gratuito (el resto se muestra bloqueado).
-const FREE_RECIPE_LIMIT = 12;
-
-// Traducción de las etiquetas reales de cada receta (data/recipes.js) a un
+// Traducción de las etiquetas reales de cada receta a un
 // chip corto y amigable — no inventa datos, solo los presenta mejor.
 export const TAG_LABELS = {
   alto_proteina: '💪 Proteína', bajo_azucar: '🚫🍬 Bajo azúcar', alto_fibra: '🌾 Alta fibra',
@@ -281,6 +278,21 @@ export function renderPlanner(container, params = {}) {
   let iaCantidad = 1;
   let iaCompletadas = 0;
   const nuevasIds = new Set();
+
+  // Índice liviano del catálogo (títulos/semáforo/gratis, nunca
+  // ingredientes/pasos -- ver recetas_index en supabase-client.js) --
+  // se pide UNA vez por sesión de exclusiones/perfil, no en cada
+  // filtro/orden/búsqueda, que siguen siendo puramente client-side sobre
+  // esta lista ya obtenida.
+  let recetasIndexCache = null;
+  let recetasIndexKey = null;
+  async function getRecetasIndex(user) {
+    const key = JSON.stringify([user.exclusiones || [], user.exclusionesOtro || []]);
+    if (recetasIndexCache && recetasIndexKey === key) return recetasIndexCache;
+    recetasIndexCache = await fetchRecetasIndex(user.exclusiones || [], user.exclusionesOtro || []);
+    recetasIndexKey = key;
+    return recetasIndexCache;
+  }
 
   // La barra de búsqueda vive SOBREPUESTA encima de las pestañas
   // Recetario/Lista de compras (position:absolute dentro de tabsRow), no
@@ -778,7 +790,7 @@ export function renderPlanner(container, params = {}) {
     generarUna();
   }
 
-  function drawRecipes() {
+  async function drawRecipes() {
     const { user, favoritas } = getState();
 
     // Las dos formas de agregar una receta propia (como en Fitia), sutiles
@@ -837,9 +849,22 @@ export function renderPlanner(container, params = {}) {
     });
     body.appendChild(filters);
 
-    let list = RECIPES
+    // El catálogo completo (ingredientes/pasos) ya NO vive en el cliente --
+    // solo el índice liviano (títulos/semáforo/gratis), pedido/cacheado una
+    // vez por sesión de exclusiones (ver getRecetasIndex arriba). Abrir una
+    // receta puntual sí pide su detalle completo al servidor, ver más abajo.
+    const cargando = document.createElement('p');
+    cargando.className = 'small muted';
+    cargando.textContent = t('Cargando…');
+    body.appendChild(cargando);
+    const tabAlPedir = tab, mealFilterAlPedir = mealFilter, ordenAlPedir = orden, busquedaAlPedir = busqueda, soloFavAlPedir = soloFavoritas;
+    const indice = await getRecetasIndex(user);
+    if (tab !== tabAlPedir || mealFilter !== mealFilterAlPedir || orden !== ordenAlPedir || busqueda !== busquedaAlPedir || soloFavoritas !== soloFavAlPedir || !cargando.isConnected) return;
+    cargando.remove();
+
+    let list = indice
       .filter((r) => mealFilter === 'todas' || r.comida === mealFilter)
-      .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
+      .filter((r) => r.disponible)
       .filter((r) => matchesSearch(r, busqueda))
       .filter((r) => !soloFavoritas || (favoritas || []).includes(r.id));
 
@@ -874,11 +899,28 @@ export function renderPlanner(container, params = {}) {
     // de lo demás -- solo tiene sentido con el orden "Recomendadas"
     // (rankRecipes ya las prioriza); con Nombre o Más rápidas la usuaria
     // eligió ver todo en un único orden propio, así que va en un solo
-    // grupo sin la división. El índice de bloqueo (FREE_RECIPE_LIMIT)
-    // sigue contando de corrido sobre toda la lista combinada.
+    // grupo sin la división. Qué está bloqueada ya no es un conteo
+    // posicional (FREE_RECIPE_LIMIT) -- es la bandera `gratis` real de
+    // cada receta, calculada en el servidor (ver receta_detalle).
     const recomendadas = orden === 'recomendadas' ? list.filter((r) => r.apto.some((p) => user.perfiles.includes(p))) : list;
     const otras = orden === 'recomendadas' ? list.filter((r) => !r.apto.some((p) => user.perfiles.includes(p))) : [];
-    let globalIndex = 0;
+
+    // Abrir una receta del catálogo pide su detalle completo (ingredientes/
+    // pasos) al servidor recién en este momento -- nunca antes vivió en el
+    // cliente. Si el servidor la niega (no gratis y sin Premium vigente,
+    // ej. una condición cambió a mitad de sesión), manda al mismo lugar
+    // que una tarjeta bloqueada en vez de romper.
+    async function abrirReceta(r, btn) {
+      btn.disabled = true;
+      try {
+        const completa = await fetchRecetaDetalle(r.id);
+        openRecipe(completa);
+      } catch {
+        navigate('plans');
+      } finally {
+        btn.disabled = false;
+      }
+    }
 
     // Recetas propias que sí cumplen con el perfil de salud activo (ver
     // trafficLightRecetaPropia en menu.js) se mezclan dentro de
@@ -944,8 +986,7 @@ export function renderPlanner(container, params = {}) {
       const grid = document.createElement('div');
       grid.className = 'recipe-grid';
       for (const r of items) {
-        const i = globalIndex++;
-        const locked = !premium && i >= FREE_RECIPE_LIMIT;
+        const locked = !premium && !r.gratis;
         const light = trafficLight(r, user.perfiles);
         const shown = displayRecipe(r, user.exclusiones);
         const tags = (r.etiquetas || []).slice(0, 2).map((tag) => `<span class="recipe-tag">${t(TAG_LABELS[tag] || tag)}</span>`).join('');
@@ -961,14 +1002,14 @@ export function renderPlanner(container, params = {}) {
             ${locked ? '' : `<span class="semaforo-ring ${light}" title="${t('Semáforo: {v}', { v: light })}"></span>`}
           </div>
           <div class="recipe-title">${shown.nombre}</div>
-          <div class="recipe-desc${locked ? ' lesson-blur' : ''}">${r.descripcion}</div>
+          <div class="recipe-desc">${r.descripcion || ''}</div>
           ${locked ? `<div class="recipe-lock">🔒 Premium</div>` : `<div class="recipe-tags">${tags}</div>`}`;
         item.querySelector('.recipe-fav').addEventListener('click', (e) => {
           e.stopPropagation();
           toggleFavorita(r.id);
           drawBody();
         });
-        item.addEventListener('click', () => locked ? navigate('plans') : openRecipe(r));
+        item.addEventListener('click', () => locked ? navigate('plans') : abrirReceta(r, item));
         grid.appendChild(item);
       }
       for (const r of extraPropias) grid.appendChild(crearTarjetaPropia(r));
@@ -1050,7 +1091,7 @@ export function renderPlanner(container, params = {}) {
     }
   }
 
-  function drawShopping() {
+  async function drawShopping() {
     if (!isPremium()) {
       const upsell = document.createElement('div');
       upsell.className = 'card center';
@@ -1074,22 +1115,34 @@ export function renderPlanner(container, params = {}) {
     }
     body.appendChild(rangos);
 
+    const cargando = document.createElement('p');
+    cargando.className = 'small muted';
+    cargando.textContent = t('Cargando…');
+    body.appendChild(cargando);
+
     const { compras } = getState();
     const card = document.createElement('div');
     card.className = 'card';
 
     let items, tituloCard, sub;
     const esHoy = rango === 'hoy';
+    const tabAlPedir = tab;
+    const rangoAlPedir = rango;
     if (esHoy) {
-      items = shoppingList();
+      items = await shoppingList();
       tituloCard = t('Compras para tu menú de hoy');
       sub = t('Generada automáticamente desde tu menú del día.');
     } else {
       const dias = rango === 'semana' ? 7 : 30;
-      items = rangeShoppingList(dias);
+      items = await rangeShoppingList(dias);
       tituloCard = t('Compras para {periodo}', { periodo: rango === 'semana' ? t('esta semana') : t('este mes') });
       sub = t('Proyectada desde tu menú de los próximos {dias} días, con la cantidad ya sumada cuando la conocemos. Para lo que no tiene una medida exacta (ej. "al gusto") te mostramos en cuántos días aparece, como guía.', { dias });
     }
+    // Si mientras esperaba la usuaria cambió de pestaña o de rango, este
+    // resultado ya no aplica -- drawBody()/drawShopping() ya se encargó de
+    // pintar lo nuevo, no pisarlo con una respuesta vieja.
+    if (tab !== tabAlPedir || rango !== rangoAlPedir || !cargando.isConnected) return;
+    cargando.remove();
     card.innerHTML = `<h2 style="display:flex;align-items:center;gap:8px">${CART_ICON}<span>${tituloCard}</span></h2><p class="small mb">${sub}</p>`;
 
     // Agrupada por categoría (fruta/verdura/proteína/...) en vez de una

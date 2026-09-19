@@ -5,7 +5,7 @@
 // explícito de la usuaria: cada paso es su propia pantalla, y la
 // respiración guiada tiene una pantalla dedicada, sin nada más alrededor.
 import { getState, toggleFavorita, logCraving, checkAchievements } from '../store.js';
-import { MEALS } from '../data/recipes.js';
+import { MEALS } from '../data/meals.js';
 import { sosSnacks, displayRecipe, trafficLight } from '../menu.js';
 import { navigate, toast } from '../app.js';
 import { openRecipe } from './dashboard.js';
@@ -189,16 +189,18 @@ export function renderSOS(container) {
   // semáforo, vapor si aplica, tags, favorito), no una versión reducida
   // aparte. Ya vienen priorizadas por perfil de salud (ver sosSnacks en
   // menu.js, mismo criterio "apto" que candidatesFor).
-  function pintarAlternativas(body, navEl) {
+  async function pintarAlternativas(body, navEl) {
     body.innerHTML = `
       <h2>${t('Elige tu alternativa saludable')}</h2>
       <p>${t('Elegidas para tu perfil de salud y tus exclusiones:')}</p>
-      <div class="recipe-grid mt"></div>`;
+      <div class="recipe-grid mt"><p class="small muted">${t('Cargando…')}</p></div>`;
     const { user, favoritas } = getState();
     const { exclusiones, perfiles } = user;
     const mealById = MEALS.reduce((m, x) => (m[x.id] = x, m), {});
+    const snacks = await sosSnacks();
     const grid = body.querySelector('.recipe-grid');
-    for (const r of sosSnacks().slice(0, 6)) {
+    grid.innerHTML = '';
+    for (const r of snacks.slice(0, 6)) {
       const shown = displayRecipe(r, exclusiones);
       const light = trafficLight(r, perfiles);
       const tags = (r.etiquetas || []).slice(0, 2).map((tag) => `<span class="recipe-tag">${TAG_LABELS[tag] || tag}</span>`).join('');

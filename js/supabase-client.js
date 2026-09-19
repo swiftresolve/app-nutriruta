@@ -187,6 +187,71 @@ export async function fetchMissionIndex() {
   return data || [];
 }
 
+// --- Recetario: el catálogo completo (105 recetas, con ingredientes/pasos)
+// vive solo en Postgres, nunca en el navegador -- antes se descargaba
+// entero en js/data/recipes.js y cualquiera podía leerlo por "Ver código
+// fuente", pagando o no. Mismo patrón que mission_weeks/mission_indice de
+// arriba: un índice liviano sin contenido para pintar la grilla, y el
+// detalle completo solo si la receta es gratis o hay Premium vigente
+// (aplicado en el servidor, no con un blur en CSS).
+// Postgres devuelve columnas snake_case (tiempo_min, titulo_sub); toda la
+// UI (openRecipe, las tarjetas del Recetario, displayRecipe en menu.js)
+// espera el mismo shape camelCase que tenían los objetos de la vieja
+// js/data/recipes.js (tiempoMin, tituloSub) -- se normaliza acá, en un
+// solo lugar, en vez de tocar cada pantalla que muestra una receta.
+function normalizarReceta(r) {
+  if (!r) return r;
+  return { ...r, tiempoMin: r.tiempoMin ?? r.tiempo_min, tituloSub: r.tituloSub ?? r.titulo_sub };
+}
+
+export async function fetchRecetasIndex(exclusiones = [], exclusionesOtro = []) {
+  const { data, error } = await supabase.rpc('recetas_index', { p_exclusiones: exclusiones, p_exclusiones_otro: exclusionesOtro });
+  if (error) throw error;
+  return (data || []).map(normalizarReceta);
+}
+
+export async function fetchRecetaDetalle(id) {
+  const { data, error } = await supabase.rpc('receta_detalle', { p_id: id });
+  if (error) throw error;
+  return normalizarReceta(data);
+}
+
+// "¿Qué tienes en casa?" -- antes buscaba sobre el catálogo completo ya
+// cargado en el cliente, sin ningún límite (una puerta trasera real para
+// ver cualquier receta "bloqueada" del Recetario). Ahora corre en el
+// servidor con el mismo límite gratis/Premium: los matches bloqueados
+// vuelven con `bloqueada: true` y sin ingredientes/pasos.
+export async function buscarPorIngrediente(texto) {
+  const { data, error } = await supabase.rpc('buscar_por_ingrediente', { p_texto: texto });
+  if (error) throw error;
+  return (data || []).map(normalizarReceta);
+}
+
+// Menú del día (o de un rango de fechas) -- resuelto en el servidor contra
+// el catálogo completo (ver supabase/functions/resolve-menu), así el
+// navegador nunca recibe más que las recetas que de verdad va a mostrar.
+// Libre para cualquier cuenta, gratis o Premium -- es la misma lógica
+// determinística que antes vivía en menu.js, no un contenido premium.
+export async function resolverMenu({ fechas, perfiles, exclusiones, exclusionesOtro, comidasActivas, menuOverrides }) {
+  const { data, error } = await supabase.functions.invoke('resolve-menu', {
+    body: { modo: 'menu', fechas, perfiles, exclusiones, exclusionesOtro, comidasActivas, menuOverrides }
+  });
+  if (error) throw error;
+  return (data.dias || []).map((d) => ({ ...d, menu: d.menu.map((m) => ({ ...m, recipe: normalizarReceta(m.recipe) })) }));
+}
+
+// Una receta real del catálogo por etiqueta (Plan de 7 días/Misión) o la
+// lista completa filtrada (SOS) -- mismo criterio y también libre para
+// cualquier cuenta, ver sugerirRecetaPorEtiquetas()/sosSnacks() (antiguo
+// menu.js).
+export async function resolverPorEtiquetas({ comida = null, etiquetas = [], perfiles, exclusiones, exclusionesOtro, primero = false, etiquetaObligatoria = false }) {
+  const { data, error } = await supabase.functions.invoke('resolve-menu', {
+    body: { modo: 'etiquetas', comida, etiquetas, perfiles, exclusiones, exclusionesOtro, primero, etiquetaObligatoria }
+  });
+  if (error) throw error;
+  return (data.recetas || []).map(normalizarReceta);
+}
+
 // --- Pregúntale a tu guía (asistente IA, Premium) ---
 // Todo pasa por la Edge Function: valida Premium vigente y la cuota
 // mensual en el servidor, y es la única vía con permiso de escribir en

@@ -1,7 +1,7 @@
 // Quiz inicial de personalización (onboarding).
 import { getState, setState, esc, today, calcularIMC } from '../store.js';
 import { PROFILES, EXCLUSIONS, GOALS, HARD_HABITS } from '../data/profiles.js';
-import { MEALS } from '../data/recipes.js';
+import { MEALS } from '../data/meals.js';
 import { navigate, openModal, toast, susanaName } from '../app.js';
 import { rutiMascot } from '../mascot.js';
 import { validarCodigoReferido } from '../supabase-client.js';

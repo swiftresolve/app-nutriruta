@@ -4,7 +4,7 @@
 // exponer datos que ya existían (rangeShoppingList ya proyectaba varios
 // días para la lista de compras).
 import { getState } from '../store.js';
-import { dailyMenu, displayRecipe } from '../menu.js';
+import { dailyMenuRange, displayRecipe } from '../menu.js';
 import { header, navigate } from '../app.js';
 import { openRecipe } from './dashboard.js';
 import { t } from '../i18n.js';
@@ -22,7 +22,7 @@ function todayStr() {
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 
-export function renderWeekMenu(container) {
+export async function renderWeekMenu(container) {
   header(container);
   const { user } = getState();
 
@@ -34,14 +34,21 @@ export function renderWeekMenu(container) {
 
   const titulo = document.createElement('div');
   titulo.className = 'card center';
-  titulo.innerHTML = `<h2>📅 ${t('Tu semana')}</h2><p class="small muted mt">${t('Lo que tu Ruta te sugiere para los próximos 7 días.')}</p>`;
+  titulo.innerHTML = `<h2>📅 ${t('Tu semana')}</h2><p class="small muted mt" id="wm-estado">${t('Cargando…')}</p>`;
   container.appendChild(titulo);
 
   const hoy = todayStr();
-  for (let i = 0; i < 7; i++) {
-    const fecha = addDays(hoy, i);
+  const fechas = Array.from({ length: 7 }, (_, i) => addDays(hoy, i));
+  // Una sola llamada al servidor para los 7 días (dailyMenuRange), en vez
+  // de una por día -- el menú de cada día es determinístico por fecha, así
+  // que se puede resolver de una sola vez sin que la usuaria "visite" cada
+  // día primero.
+  const dias = await dailyMenuRange(fechas);
+  if (!titulo.isConnected) return;
+  titulo.querySelector('#wm-estado').textContent = t('Lo que tu Ruta te sugiere para los próximos 7 días.');
+
+  dias.forEach(({ fecha, menu }, i) => {
     const dow = new Date(fecha + 'T00:00:00').getDay();
-    const menu = dailyMenu(fecha);
     const dia = document.createElement('div');
     dia.className = 'card';
     dia.innerHTML = `<h3>${i === 0 ? t('Hoy · ') : ''}${t(DIAS[dow])}</h3>`;
@@ -58,5 +65,5 @@ export function renderWeekMenu(container) {
       dia.appendChild(row);
     }
     container.appendChild(dia);
-  }
+  });
 }

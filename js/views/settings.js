@@ -5,7 +5,7 @@
 import { getState, setState, resetState, getPlan, isPremium, planExpired, planExpiry, esc, logPeso, ultimoPeso, getWaterGoal, calcularIMC, DEFAULT_HORA_COMIDAS, getTema, setTema, hayNovedadesNuevas, marcarNovedadesVistas } from '../store.js';
 import { PROFILES, EXCLUSIONS } from '../data/profiles.js';
 import { PAISES_ALIMENTOS } from '../data/regionalismos.js';
-import { MEALS } from '../data/recipes.js';
+import { MEALS } from '../data/meals.js';
 import { NOVEDADES } from '../data/novedades.js';
 import { getSession, signIn, signOut, pushProfileState, fetchMyResena, submitResena, uploadAvatar, avatarUrlFor, checkIsAdmin, miCodigoReferido, validarCodigoReferido } from '../supabase-client.js';
 import { navigate, header, openModal, toast, abrirComprarNutricoins, coinIcon, susanaName, ORO_NUTRICOINS, GEAR_ICON, SHARE_ICON, CAMERA_SOLID_ICON, TRASH_ICON, PENCIL_ICON } from '../app.js';

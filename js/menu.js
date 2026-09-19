@@ -1,8 +1,25 @@
-// Motor de menús: filtra por exclusiones, prioriza perfiles y genera el menú del día.
-import { RECIPES, MEALS } from './data/recipes.js';
+// Motor de menús: filtra por exclusiones, prioriza perfiles y muestra el
+// menú del día.
+//
+// El catálogo completo de recetas (ingredientes/pasos de las 105 recetas)
+// YA NO vive en el navegador -- antes este archivo importaba RECIPES
+// entero desde data/recipes.js y cualquier visitante podía leerlo por "Ver
+// código fuente", pagando o no. Ahora todo lo que necesita el catálogo
+// completo (menú del día, cambiar receta, sugerencias por etiqueta,
+// búsqueda por ingrediente) pasa por RPCs/una Edge Function en Supabase
+// (ver supabase-client.js: resolverMenu/resolverPorEtiquetas/
+// buscarPorIngrediente/fetchRecetasIndex/fetchRecetaDetalle) -- el
+// servidor filtra/rankea contra el catálogo completo y el cliente solo
+// recibe las pocas recetas que de verdad va a mostrar. El contenido del
+// menú diario/Misión/SOS sigue siendo libre para cualquier cuenta, gratis
+// o Premium, exactamente como antes -- solo el Recetario (saltar a
+// cualquier receta a demanda) y "¿Qué tienes en casa?" ahora sí requieren
+// Premium de verdad para lo que no es gratis (antes era un blur de CSS
+// sobre datos que ya estaban en memoria).
+import { MEALS } from './data/meals.js';
 import { REGIONALISMOS } from './data/regionalismos.js';
-import { categoriasDeIngredientes } from './data/categoriasAlimentos.js';
 import { getState, setState, today } from './store.js';
+import { resolverMenu, resolverPorEtiquetas, buscarPorIngrediente as buscarPorIngredienteAPI } from './supabase-client.js';
 
 // "Idioma de alimentos" (Ajustes) -- cambia solo palabras puntuales que sí
 // varían de país en país, nunca traduce nada más. Reemplazo por límites de
@@ -29,12 +46,12 @@ function regionalizarTexto(texto, pais) {
   return resultado;
 }
 
-// Grupos presentes en una receta considerando sustituciones.
+// Sigue siendo útil client-side: opera sobre UNA receta ya obtenida (del
+// servidor), nunca sobre el catálogo completo.
 function blockingGroups(recipe, exclusiones) {
   const groups = [];
   for (const ing of recipe.ingredientes) {
     if (ing.grupo && exclusiones.includes(ing.grupo)) {
-      // Hay sustituto y el sustituto no está también excluido → no bloquea.
       const subOk = ing.sub && !(ing.subGrupo && exclusiones.includes(ing.subGrupo));
       if (!subOk) groups.push(ing.grupo);
     }
@@ -42,13 +59,8 @@ function blockingGroups(recipe, exclusiones) {
   return groups;
 }
 
-// Sin tildes ni mayúsculas, para que "champiñones" excluya aunque quien
-// escribió el texto libre haya puesto "champinones".
 const normaliza = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-// Exclusiones de texto libre (ej. "cilantro", "champiñones"): a diferencia
-// de los grupos predefinidos, no tienen sustitución — si el nombre del
-// ingrediente contiene el término, la receta queda fuera del menú.
 function tieneExclusionLibre(recipe, exclusionesOtro) {
   if (!exclusionesOtro || !exclusionesOtro.length) return false;
   const terminos = exclusionesOtro.map(normaliza).filter(Boolean);
@@ -59,6 +71,10 @@ function tieneExclusionLibre(recipe, exclusionesOtro) {
   });
 }
 
+// Sigue usándose sobre recetas YA obtenidas (ej. antes de mostrar el
+// detalle, o dentro de displayRecipe/displayIngredient más abajo). Ya no
+// filtra el catálogo completo -- eso ahora lo hace el servidor (ver
+// recetas_index con p_exclusiones en supabase-client.js).
 export function isRecipeAvailable(recipe, exclusiones, exclusionesOtro) {
   return blockingGroups(recipe, exclusiones).length === 0 && !tieneExclusionLibre(recipe, exclusionesOtro);
 }
@@ -122,8 +138,10 @@ export function trafficLightRecetaPropia(receta, perfiles) {
 }
 
 // Puntaje: cuántos perfiles del usuario cubre la receta (para priorizar).
+// Sigue usándose client-side sobre listas ya obtenidas del servidor (ej.
+// el índice liviano del Recetario, o "mis recetas").
 function score(recipe, perfiles) {
-  const aptos = recipe.apto.filter((p) => perfiles.includes(p)).length;
+  const aptos = (recipe.apto || []).filter((p) => perfiles.includes(p)).length;
   const light = trafficLight(recipe, perfiles);
   return aptos + (light === 'verde' ? 2 : light === 'amarillo' ? 0 : -10);
 }
@@ -137,145 +155,43 @@ export function rankRecipes(list, perfiles) {
 }
 
 // Coincidencia de búsqueda por nombre o por ingrediente (sin tildes ni
-// mayúsculas), para encontrar qué se puede preparar con lo que hay en casa.
+// mayúsculas) -- usada sobre el índice liviano del Recetario (solo nombre,
+// nunca ingredientes completos, ver planner.js).
 export function matchesSearch(recipe, query) {
   const q = normaliza(query).trim();
   if (!q) return true;
-  if (normaliza(recipe.nombre).includes(q)) return true;
-  return recipe.ingredientes.some((ing) => normaliza(ing.n).includes(q));
+  return normaliza(recipe.nombre).includes(q);
 }
 
-// "¿Qué tienes en casa?" — busca en el catálogo REAL de recetas (nunca
-// inventa ninguna), aceptando varios ingredientes separados por coma
-// ("huevos, avena, banano"). Ordena primero por cuántos ingredientes de
-// los que escribió realmente coinciden, y entre empates, por la misma
-// afinidad al perfil que ya usa el menú del día.
-export function buscarPorIngredientes(texto) {
-  const { user } = getState();
-  const terminos = String(texto ?? '').split(',').map((t) => normaliza(t.trim())).filter(Boolean);
+// "¿Qué tienes en casa?" -- ahora corre en el servidor (ver
+// buscarPorIngrediente en supabase-client.js), que aplica el mismo límite
+// gratis/Premium que el Recetario. Acepta varios ingredientes separados
+// por coma ("huevos, avena, banano"); el servidor ya ordena por
+// coincidencias y afinidad al perfil.
+export async function buscarPorIngredientes(texto) {
+  const terminos = String(texto ?? '').split(',').map((t) => t.trim()).filter(Boolean);
   if (!terminos.length) return [];
-  return RECIPES
-    .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
-    .filter((r) => trafficLight(r, user.perfiles) !== 'rojo')
-    .map((r) => {
-      const nombreN = normaliza(r.nombre);
-      const ingsN = r.ingredientes.map((i) => normaliza(i.n));
-      const coincidencias = terminos.filter((t) => nombreN.includes(t) || ingsN.some((i) => i.includes(t))).length;
-      return { recipe: r, coincidencias };
-    })
-    .filter((x) => x.coincidencias > 0)
-    .sort((a, b) => b.coincidencias - a.coincidencias || score(b.recipe, user.perfiles) - score(a.recipe, user.perfiles))
+  // El servidor busca un término a la vez (ILIKE); se combinan los
+  // resultados y se cuenta cuántos términos coincidieron por receta, igual
+  // que antes.
+  const porId = new Map();
+  for (const termino of terminos) {
+    const matches = await buscarPorIngredienteAPI(termino);
+    for (const r of matches) {
+      const entry = porId.get(r.id) || { recipe: r, coincidencias: 0 };
+      entry.coincidencias += 1;
+      porId.set(r.id, entry);
+    }
+  }
+  return [...porId.values()]
+    .sort((a, b) => b.coincidencias - a.coincidencias)
     .map((x) => x.recipe);
 }
 
-// Recetas disponibles para una comida, ordenadas por afinidad al usuario.
-// Si tiene perfiles de salud activos, prioriza SOLO las que de verdad
-// ayudan a esa condición (recipe.apto) en vez de cualquiera que no esté
-// en rojo -- antes "no rojo" dejaba pasar recetas neutras (sin etiquetar
-// para su perfil) junto a las realmente indicadas, sin distinguirlas.
-// Si el catálogo no alcanza 4 para esa comida+perfil, se completa con el
-// resto (nunca deja una comida sin sugerencia). Usada también por
-// dailyMenu()/alternativesFor()/swapMeal() -- cambiarla aquí, en la raíz,
-// mantiene el menú del día y el botón de "cambiar comida" consistentes
-// entre sí (ambos rotan sobre el mismo pool).
-export function candidatesFor(mealId) {
-  const { user } = getState();
-  const perfiles = user.perfiles || [];
-  const disponibles = RECIPES
-    .filter((r) => r.comida === mealId && isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
-    .filter((r) => trafficLight(r, perfiles) !== 'rojo');
-
-  if (perfiles.length) {
-    const queAyudan = disponibles.filter((r) => (r.apto || []).some((p) => perfiles.includes(p)));
-    if (queAyudan.length >= 4) return queAyudan.sort((a, b) => score(b, perfiles) - score(a, perfiles));
-  }
-  return disponibles.sort((a, b) => score(b, perfiles) - score(a, perfiles));
-}
-
-// Semilla determinística por fecha para variar el menú día a día.
-function daySeed(dateStr) {
-  let h = 0;
-  for (const c of dateStr) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return h;
-}
-
-const MEALS_PRINCIPALES = ['desayuno', 'almuerzo', 'cena'];
-
-// Asegura que el día cubra proteína y vegetales/fruta -- pedido explícito:
-// el menú se elegía SOLO por perfil (apto/moderar/evitar) y rotación,
-// nunca revisaba si el conjunto del día quedaba nutricionalmente completo
-// (aplica a cualquier persona, tenga o no un perfil de salud). Si falta
-// una categoría entre las comidas principales, busca en el propio pool ya
-// filtrado (perfil-apto, nunca rojo) de almuerzo/cena/desayuno -- en ese
-// orden -- la opción mejor rankeada que sí la cubra, y la intercambia. Si
-// el catálogo no tiene ninguna opción que cubra la categoría para ese
-// perfil+comida, se deja como está (nunca inventa un ingrediente ni
-// fuerza algo que no existe en el catálogo real).
-function asegurarCobertura(menu) {
-  const principales = menu.filter((m) => MEALS_PRINCIPALES.includes(m.meal.id) && m.recipe);
-  if (!principales.length) return;
-
-  const categoriasDelDia = () => {
-    const set = new Set();
-    for (const m of principales) for (const c of categoriasDeIngredientes(m.recipe.ingredientes)) set.add(c);
-    return set;
-  };
-
-  function intentarCubrir(categoria, comidasEnOrden) {
-    if (categoriasDelDia().has(categoria)) return;
-    for (const idComida of comidasEnOrden) {
-      const item = principales.find((m) => m.meal.id === idComida);
-      // Nunca pisa una comida que la usuaria ya cambió a mano (🔄 "cambiar
-      // receta") -- una elección explícita suya siempre gana sobre este
-      // ajuste automático.
-      if (!item?.options || item.manual) continue;
-      const reemplazo = item.options.find((r) => r.id !== item.recipe.id && categoriasDeIngredientes(r.ingredientes).has(categoria));
-      if (reemplazo) { item.recipe = reemplazo; return; }
-    }
-  }
-
-  intentarCubrir('proteina', ['almuerzo', 'cena', 'desayuno']);
-  // Vegetal solo en almuerzo/cena -- el desayuno tradicional no siempre
-  // lleva verdura, forzarla ahí sería menos real que lo que de verdad se
-  // desayuna.
-  intentarCubrir('vegetal', ['almuerzo', 'cena']);
-}
-
-// Menú del día: por comida, elige entre los mejores candidatos rotando por fecha
-// y aplicando el desplazamiento manual ("cambiar receta").
-export function dailyMenu(dateStr = today()) {
-  const { menuOverrides, user } = getState();
-  const seed = daySeed(dateStr);
-  const menu = [];
-  for (const meal of mealsActivas(user)) {
-    const options = candidatesFor(meal.id);
-    if (!options.length) { menu.push({ meal, recipe: null, options }); continue; }
-    const pool = options.slice(0, Math.min(4, options.length)); // rotar entre los 4 mejores
-    const shift = menuOverrides[`${dateStr}|${meal.id}`] || 0;
-    const idx = (seed + MEALS.indexOf(meal) + shift) % pool.length;
-    menu.push({ meal, recipe: pool[idx], options, manual: shift !== 0 });
-  }
-  asegurarCobertura(menu);
-  return menu.map(({ meal, recipe }) => ({ meal, recipe }));
-}
-
-// Sugiere UNA receta real del catálogo para acompañar el tema de un día
-// del Plan de 7 días o una semana de la Misión (ej. la semana "Proteína
-// en el desayuno" sugiere una receta con la etiqueta alto_proteina) --
-// respeta exclusiones y semáforo como el resto del menú, nunca inventa
-// nada. `comida` es opcional (null = cualquier comida); `etiquetas` es
-// un array de etiquetas del catálogo, la mejor coincidencia gana.
-export function sugerirRecetaPorEtiquetas(comida, etiquetas = []) {
-  const { user } = getState();
-  const perfiles = user.perfiles || [];
-  const pool = RECIPES
-    .filter((r) => (!comida || r.comida === comida) && isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
-    .filter((r) => trafficLight(r, perfiles) !== 'rojo');
-  if (!pool.length) return null;
-  const conEtiqueta = pool.filter((r) => (r.etiquetas || []).some((e) => etiquetas.includes(e)));
-  const candidatos = conEtiqueta.length ? conEtiqueta : pool;
-  return rankRecipes(candidatos, perfiles)[0];
-}
+// Semilla determinística por fecha para variar el menú día a día -- ya no
+// se usa acá directamente (vive del lado del servidor, ver
+// supabase/functions/resolve-menu), se deja documentado por si algo local
+// necesita reproducir la misma fecha->índice en el futuro.
 
 // Comidas que la usuaria eligió incluir en su día (quiz "¿Qué comidas
 // quieres incluir?", editable después en Ajustes) -- por defecto las 5,
@@ -289,36 +205,83 @@ export function mealsActivas(user) {
   return MEALS.filter((m) => !activas || activas[m.id] !== false);
 }
 
-// Sin targetIndex: rota a la siguiente opción (comportamiento anterior).
-// Con targetIndex: salta directo a una alternativa específica elegida en
-// el modal de sustitución — se calcula el shift necesario para que la
-// misma fórmula de dailyMenu() aterrice exactamente en ese índice.
-export function swapMeal(mealId, dateStr = today(), targetIndex = null) {
-  const key = `${dateStr}|${mealId}`;
-  const { menuOverrides } = getState();
-  if (targetIndex === null) {
-    setState({ menuOverrides: { ...menuOverrides, [key]: (menuOverrides[key] || 0) + 1 } });
-    return;
-  }
-  const options = candidatesFor(mealId);
-  const pool = options.slice(0, Math.min(4, options.length));
-  if (!pool.length) return;
-  const seed = daySeed(dateStr);
-  const mealIdx = MEALS.findIndex((m) => m.id === mealId);
-  const shift = ((targetIndex - seed - mealIdx) % pool.length + pool.length) % pool.length;
-  setState({ menuOverrides: { ...menuOverrides, [key]: shift } });
+// Menú del día: resuelto en el servidor (mismo algoritmo de antes: rota
+// por fecha entre los 4 mejores candidatos de cada franja, respeta el
+// desplazamiento manual de "cambiar receta", y asegura cobertura de
+// proteína/vegetal). El cliente solo recibe las ≤5 recetas de hoy, nunca
+// el catálogo completo.
+export async function dailyMenu(dateStr = today()) {
+  const { menuOverrides, user } = getState();
+  const [dia] = await resolverMenu({
+    fechas: [dateStr],
+    perfiles: user.perfiles || [],
+    exclusiones: user.exclusiones || [],
+    exclusionesOtro: user.exclusionesOtro || [],
+    comidasActivas: user.comidasActivas || null,
+    menuOverrides
+  });
+  const porId = new Map((dia?.menu || []).map((m) => [m.mealId, m.recipe]));
+  return mealsActivas(user).map((meal) => ({ meal, recipe: porId.get(meal.id) || null }));
 }
 
+// Menú de varios días de una sola vez (usado por weekMenu.js y
+// rangeShoppingList) -- una sola llamada al servidor en vez de una por
+// día.
+export async function dailyMenuRange(fechas) {
+  const { menuOverrides, user } = getState();
+  const dias = await resolverMenu({
+    fechas,
+    perfiles: user.perfiles || [],
+    exclusiones: user.exclusiones || [],
+    exclusionesOtro: user.exclusionesOtro || [],
+    comidasActivas: user.comidasActivas || null,
+    menuOverrides
+  });
+  const activas = mealsActivas(user);
+  return dias.map(({ fecha, menu }) => {
+    const porId = new Map(menu.map((m) => [m.mealId, m.recipe]));
+    return { fecha, menu: activas.map((meal) => ({ meal, recipe: porId.get(meal.id) || null })) };
+  });
+}
+
+// Sugiere UNA receta real del catálogo para acompañar el tema de un día
+// del Plan de 7 días o una semana de la Misión (ej. la semana "Proteína
+// en el desayuno" sugiere una receta con la etiqueta alto_proteina) --
+// respeta exclusiones y semáforo como el resto del menú, nunca inventa
+// nada. `comida` es opcional (null = cualquier comida); `etiquetas` es
+// un array de etiquetas del catálogo, la mejor coincidencia gana.
+export async function sugerirRecetaPorEtiquetas(comida, etiquetas = []) {
+  const { user } = getState();
+  const [receta] = await resolverPorEtiquetas({
+    comida, etiquetas,
+    perfiles: user.perfiles || [], exclusiones: user.exclusiones || [], exclusionesOtro: user.exclusionesOtro || [],
+    primero: true
+  });
+  return receta || null;
+}
+
+// Sin targetIndex: rota a la siguiente opción (comportamiento anterior,
+// no requiere red -- solo guarda un contador local, el propio dailyMenu()
+// lo vuelve a resolver con el servidor en el próximo render).
+// Con targetIndex: reservado para un futuro selector de alternativas
+// específicas (hoy sin usar en la UI, ver dashboard.js) -- no se portó al
+// servidor porque no hay ningún flujo real que lo dispare todavía.
+export function swapMeal(mealId, dateStr = today()) {
+  const key = `${dateStr}|${mealId}`;
+  const { menuOverrides } = getState();
+  setState({ menuOverrides: { ...menuOverrides, [key]: (menuOverrides[key] || 0) + 1 } });
+}
 
 // Nombre y emoji a mostrar para una receta: si el ingrediente que nombra el
 // título está excluido (p. ej. "Tilapia al horno" cuando no se come pescado),
 // se muestra el título alternativo en vez del original, no solo por dentro.
 export function displayRecipe(recipe, exclusiones) {
   const pais = getState().user.paisAlimentos;
-  if (recipe.tituloSub) {
-    for (const grupo of Object.keys(recipe.tituloSub)) {
+  const tituloSub = recipe.tituloSub || recipe.titulo_sub;
+  if (tituloSub) {
+    for (const grupo of Object.keys(tituloSub)) {
       if (exclusiones.includes(grupo)) {
-        const alterno = recipe.tituloSub[grupo];
+        const alterno = tituloSub[grupo];
         return { ...alterno, nombre: regionalizarTexto(alterno.nombre, pais) };
       }
     }
@@ -333,7 +296,7 @@ export function displayIngredient(ing, exclusiones) {
   if (ing.grupo && exclusiones.includes(ing.grupo) && ing.sub) {
     return { texto: regionalizarTexto(ing.sub, pais), sustituido: true, original: ing.n, cantidad: null, resto: null };
   }
-  // cantidad/resto vienen de recipes.js (número + el texto sin ese número,
+  // cantidad/resto vienen de la receta (número + el texto sin ese número,
   // ej. "1 taza de espinaca" -> cantidad:1, resto:"taza de espinaca") --
   // permiten sumar cantidades reales en la lista de compras proyectada en
   // vez de solo contar apariciones. No todos los ingredientes lo tienen
@@ -391,9 +354,8 @@ export function textoConCantidad(cantidad, resto, sistema = 'metrico') {
 // Categoría de compra de un ingrediente — agrupación puramente visual para
 // hacer la lista más fácil de recorrer en el súper (fruta, verdura, etc.),
 // nunca una clasificación nutricional ni médica. Por keyword sobre el
-// nombre real del ingrediente (no hay ese dato en recipes.js todavía);
-// "Otros" es el fallback honesto para lo que no reconoce, no se fuerza
-// una categoría incorrecta.
+// nombre real del ingrediente; "Otros" es el fallback honesto para lo que
+// no reconoce, no se fuerza una categoría incorrecta.
 const CATEGORIAS_COMPRA = [
   ['Frutas', ['banano', 'plátano', 'manzana', 'fresa', 'arándano', 'mora', 'kiwi', 'mandarina', 'naranja', 'pera', 'uva', 'durazno', 'ciruela', 'dátil', 'limón', 'limon', 'coco', 'aguacate']],
   ['Verduras', ['espinaca', 'brócoli', 'brocoli', 'calabacín', 'calabacin', 'zanahoria', 'tomate', 'pepino', 'lechuga', 'apio', 'coliflor', 'cebolla', 'pimentón', 'pimenton', 'ahuyama', 'berenjena', 'champiñon', 'champiñón', 'col morada', 'habichuela', 'ajo', 'jengibre', 'batata', 'papa']],
@@ -434,10 +396,10 @@ export function agruparPorCategoria(items) {
 }
 
 // Lista de compras del menú del día.
-export function shoppingList(dateStr = today()) {
+export async function shoppingList(dateStr = today()) {
   const { user } = getState();
   const items = [];
-  for (const { recipe } of dailyMenu(dateStr)) {
+  for (const { recipe } of await dailyMenu(dateStr)) {
     if (!recipe) continue;
     const rNombre = displayRecipe(recipe, user.exclusiones).nombre;
     for (const ing of recipe.ingredientes) {
@@ -461,23 +423,23 @@ function addDays(dateStr, n) {
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 
-// Lista de compras proyectada a varios días: como el menú es determinístico
-// por fecha (misma semilla + overrides guardados), se puede calcular el menú
-// de cualquier día futuro sin que la usuaria tenga que "visitarlo" primero.
-// Cuando el ingrediente trae cantidad/resto reales (recipes.js), se suman
-// de verdad (ej. "2 huevos" + "1 huevo" -> "3 huevos"); si no los trae (ej.
-// "Canela al gusto"), no se inventa un número — se sigue mostrando en
-// cuántos días/recetas aparece, como antes.
-// Se agrupa por `resto` cuando existe (en vez de por el texto completo)
-// para que variantes con distinta cantidad del mismo ingrediente ("1 huevo"
-// vs "2 huevos") se fusionen en un solo renglón en vez de listarse aparte.
-export function rangeShoppingList(days, startDate = today()) {
+// Lista de compras proyectada a varios días: el menú es determinístico por
+// fecha (misma semilla + overrides guardados) y ahora se resuelve en el
+// servidor en UNA sola llamada para todo el rango (dailyMenuRange), en vez
+// de una petición por día. Cuando el ingrediente trae cantidad/resto reales,
+// se suman de verdad (ej. "2 huevos" + "1 huevo" -> "3 huevos"); si no los
+// trae (ej. "Canela al gusto"), no se inventa un número — se sigue
+// mostrando en cuántos días/recetas aparece, como antes. Se agrupa por
+// `resto` cuando existe para que variantes con distinta cantidad del mismo
+// ingrediente se fusionen en un solo renglón en vez de listarse aparte.
+export async function rangeShoppingList(days, startDate = today()) {
   const { user } = getState();
+  const fechas = Array.from({ length: days }, (_, i) => addDays(startDate, i));
+  const dias = await dailyMenuRange(fechas);
   const map = new Map();
-  for (let i = 0; i < days; i++) {
-    const dateStr = addDays(startDate, i);
-    const weekday = DIAS_CORTOS[new Date(dateStr + 'T00:00:00').getDay()];
-    for (const { recipe } of dailyMenu(dateStr)) {
+  for (const { fecha, menu } of dias) {
+    const weekday = DIAS_CORTOS[new Date(fecha + 'T00:00:00').getDay()];
+    for (const { recipe } of menu) {
       if (!recipe) continue;
       for (const ing of recipe.ingredientes) {
         const d = displayIngredient(ing, user.exclusiones);
@@ -498,22 +460,13 @@ export function formatCantidad(n) {
   return String(Math.round(n * 100) / 100);
 }
 
-// Snacks anti-ansiedad disponibles para el usuario.
-// Mismo criterio que candidatesFor: si hay perfiles de salud activos,
-// prioriza solo los snacks que de verdad ayudan a esa condición (apto),
-// completando con el resto si el catálogo no alcanza -- antes "no rojo"
-// dejaba pasar snacks neutros junto a los realmente indicados.
-export function sosSnacks() {
+// Snacks anti-ansiedad disponibles para el usuario -- mismo criterio que
+// candidatesFor (ahora del lado del servidor): si hay perfiles de salud
+// activos, prioriza solo los snacks que de verdad ayudan a esa condición.
+export async function sosSnacks() {
   const { user } = getState();
-  const perfiles = user.perfiles || [];
-  const disponibles = RECIPES
-    .filter((r) => (r.etiquetas || []).includes('snack_antiansiedad'))
-    .filter((r) => isRecipeAvailable(r, user.exclusiones, user.exclusionesOtro))
-    .filter((r) => trafficLight(r, perfiles) !== 'rojo');
-
-  if (perfiles.length) {
-    const queAyudan = disponibles.filter((r) => (r.apto || []).some((p) => perfiles.includes(p)));
-    if (queAyudan.length >= 4) return queAyudan.sort((a, b) => score(b, perfiles) - score(a, perfiles));
-  }
-  return disponibles.sort((a, b) => score(b, perfiles) - score(a, perfiles));
+  return resolverPorEtiquetas({
+    comida: null, etiquetas: ['snack_antiansiedad'], etiquetaObligatoria: true,
+    perfiles: user.perfiles || [], exclusiones: user.exclusiones || [], exclusionesOtro: user.exclusionesOtro || []
+  });
 }

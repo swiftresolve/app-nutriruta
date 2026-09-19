@@ -130,7 +130,7 @@ function showVuelveManana(dia) {
 }
 
 function openDia(dia, done, onChange) {
-  openModal((modal, close) => {
+  openModal(async (modal, close) => {
     const { emergencia } = getState();
     const reflexionGuardada = (emergencia?.reflexiones || {})[dia.n] || '';
     modal.insertAdjacentHTML('beforeend', `
@@ -148,7 +148,8 @@ function openDia(dia, done, onChange) {
     // Receta real del catálogo que acompaña el tema del día (ej. día 4 =
     // snack de emergencia sugiere un snack saludable de verdad) -- nunca
     // bloquea el día si no hay ninguna disponible para el perfil/exclusiones.
-    const receta = sugerirRecetaPorEtiquetas(dia.recetaComida || null, dia.recetaEtiquetas || []);
+    const receta = await sugerirRecetaPorEtiquetas(dia.recetaComida || null, dia.recetaEtiquetas || []);
+    if (!modal.isConnected) return;
     if (receta) {
       const recetaWrap = modal.querySelector('#dia-receta');
       recetaWrap.innerHTML = `

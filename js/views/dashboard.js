@@ -7,7 +7,7 @@
 // tarjetas grandes de cosas que no se usan todos los días.
 import { getState, getWater, setWater, getHabits, toggleHabit, cravingPattern, checkAchievements, esc, isPremium, pasoDeHoy, pasoHechoHoy, marcarPasoHecho, esTextoReal, guardarReflexionHabitos, registrarComidaSeguida, comidaRegistrada, comidasDelDia, guardarComidaRegistrada, borrarComidaRegistrada, today, DEFAULT_HORA_COMIDAS, ACHIEVEMENTS, misInsigniasPuntualidad, UMBRALES_PUNTUALIDAD, UMBRALES_MAESTRA, estadoRutiHoy } from '../store.js';
 import { PROFILES } from '../data/profiles.js';
-import { MEALS } from '../data/recipes.js';
+import { MEALS } from '../data/meals.js';
 import { insigniaSVG, NOMBRE_TIER } from '../badges.js';
 import { rutiMascot, fraseRuti } from '../mascot.js';
 import { dailyMenu, swapMeal, trafficLight, trafficLightRecetaPropia, displayIngredient, displayRecipe, textoConCantidad, mealsActivas } from '../menu.js';
@@ -37,7 +37,7 @@ const DAILY_HABITS = [
 // una reflexión real al cruzar el umbral de racha (ver pedirReflexionHabitos).
 const AUTO_HABITS = new Set(['agua', 'menu']);
 
-export function renderDashboard(container) {
+export async function renderDashboard(container) {
   header(container);
   const state = getState();
   const { user } = state;
@@ -231,7 +231,7 @@ export function renderDashboard(container) {
   // solo muestra el registro paso a paso, no las 5 comidas de un vistazo)
   // -- esa vista ya existía (weekMenu.js, ícono "Semana" del carrusel de
   // abajo), pero quedaba escondida entre siete íconos chiquitos.
-  menuCard.innerHTML = `<div class="spread"><h2>${t('🍽️ Tu ruta de hoy')}</h2><button type="button" class="link-btn small" id="ver-plan-completo">${t('Ver plan completo →')}</button></div><div id="menu-path"></div>`;
+  menuCard.innerHTML = `<div class="spread"><h2>${t('🍽️ Tu ruta de hoy')}</h2><button type="button" class="link-btn small" id="ver-plan-completo">${t('Ver plan completo →')}</button></div><div id="menu-path"><p class="small muted">${t('Cargando…')}</p></div>`;
   // insertBefore(pasoCard) en vez de appendChild -- pedido explícito de
   // la usuaria: "Tu ruta de hoy" debe quedar ARRIBA de "Tu paso de hoy",
   // aunque su contenido (menú, path map, accesos) se siga armando acá
@@ -253,7 +253,13 @@ export function renderDashboard(container) {
   // calculado en cuanto faltara una comida).
   const HORAS_INICIO_COMIDA = mealsActivas(getState().user).map((m) => Number.isFinite(horasUsuario[m.id]) ? horasUsuario[m.id] : DEFAULT_HORA_COMIDAS[m.id]);
   const horaActual = new Date().getHours();
-  const menuHoy = dailyMenu();
+  const menuHoy = await dailyMenu();
+  // menuCard (no container -- container sigue siendo #app, que nunca se
+  // desconecta) refleja si esta pantalla sigue montada: navigate() vacía
+  // #app.innerHTML en cada cambio de ruta, así que si la usuaria ya se fue
+  // a otra pantalla mientras esto resolvía, menuCard queda huérfana -- no
+  // seguir pintando sobre una vista abandonada.
+  if (!menuCard.isConnected) return;
   const menuItems = menuHoy.map(({ meal, recipe }, i) => {
     const horaInicio = HORAS_INICIO_COMIDA[i] ?? 0;
     const horaSiguiente = HORAS_INICIO_COMIDA[i + 1] ?? 24;
