@@ -417,7 +417,7 @@ function renderProgresoCarrusel(state, container) {
     { icon: '📅', label: t('Semana'), onTap: () => navigate('weekMenu') },
     { icon: CART_ICON, label: t('Lista'), onTap: () => navigate('planner', { tab: 'compras' }) },
     { icon: '📈', label: t('Progreso'), onTap: () => navigate('progress') },
-    { icon: '📔', label: t('Diario'), onTap: () => navigate('diary') },
+    { icon: '📔', label: t('Mi Diario'), onTap: () => navigate('diary') },
     { icon: '🎖️', label: t('Logros'), valor: `${state.logros.length}/${ACHIEVEMENTS.length}`, onTap: () => abrirModalLogros(state) },
     { icon: '🔍', label: t('En casa'), onTap: () => openKitchenSearchModal((recipe) => openRecipe(recipe)) }
   ];
@@ -497,8 +497,8 @@ function abrirModalLogros(state) {
   openModal((modal) => {
     const wrap = document.createElement('div');
     const desbloqueados = state.logros.length;
-    wrap.innerHTML = `<h2>🎖️ Logros</h2><div class="badges mt"></div>
-      ${desbloqueados ? `<button type="button" class="btn ghost full mt" id="logros-compartir">${SHARE_ICON}Compartir mis logros</button>` : ''}`;
+    wrap.innerHTML = `<h2>🎖️ ${t('Logros')}</h2><div class="badges mt"></div>
+      ${desbloqueados ? `<button type="button" class="btn ghost full mt" id="logros-compartir">${SHARE_ICON}${t('Compartir mis logros')}</button>` : ''}`;
     const grid = wrap.querySelector('.badges');
     let ultimoDesbloqueado = null;
     for (const a of ACHIEVEMENTS) {

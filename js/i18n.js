@@ -42,6 +42,15 @@ const EN = {
   'Tus Pausas de Ruta': 'Your Track Pauses',
 
   // --- Dashboard: saludo y tarjetas ---
+  // Carrusel de accesos rápidos (renderProgresoCarrusel) -- 'Agua'/'Lista'/
+  // 'Logros'/'En casa' no tenían traducción (el carrusel se quedaba en
+  // español aunque el resto de la app ya estuviera en inglés). 'Mi Diario'
+  // usa un texto propio, distinto de 'Diario' (que ya significa "Daily" en
+  // el selector de frecuencia de ejercicio del quiz) -- misma palabra en
+  // español, significado distinto, así que compartir la clave hacía que
+  // este botón mostrara "Daily" en vez de "Diary".
+  'Agua': 'Water', 'Lista': 'List', 'Logros': 'Achievements', 'En casa': 'At home', 'Mi Diario': 'My Diary',
+  'Compartir mis logros': 'Share my achievements',
   'Buenos días': 'Good morning',
   'Buenas tardes': 'Good afternoon',
   'Buenas noches': 'Good evening',
