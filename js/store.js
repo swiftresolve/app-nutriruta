@@ -258,6 +258,25 @@ export function today() {
   return localDateStr(new Date());
 }
 
+// Sal aleatoria por cuenta para las rutas de fotos de comida en Storage
+// (ver uploadComidaFoto en supabase-client.js). Antes la ruta era
+// `<uid>/<fecha>-<comida>.jpg` -- totalmente predecible: cualquiera que
+// conociera el UID de otra usuaria (ej. buscándola por username en
+// Amigos, antes de que acepte nada) podía construir la URL de CUALQUIER
+// foto suya, en cualquier fecha, porque el bucket es público. Con esta
+// sal (generada una sola vez, guardada como cualquier otro dato de
+// `user`), la ruta pasa a `<uid>/<sal>-<fecha>-<comida>.jpg` -- conocer
+// el UID ya no alcanza. Se genera perezosamente (lazy) la primera vez
+// que hace falta, no de una para todas las cuentas existentes.
+export function fotoSaltUsuario() {
+  let salt = state.user.fotoSalt;
+  if (!salt) {
+    salt = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+    setState({ user: { ...state.user, fotoSalt: salt } });
+  }
+  return salt;
+}
+
 // Rejilla de un mes completo (empieza en lunes, 6 semanas fijas) para el
 // calendario de "Mis Rachas" -- cada celda trae si ese día se cumplió,
 // si estaba cubierto por una Pausa de Ruta, y qué % de hábitos se

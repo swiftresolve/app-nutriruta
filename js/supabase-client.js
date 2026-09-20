@@ -2,6 +2,7 @@
 // y acceso a datos protegido por Row Level Security.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
+import { fotoSaltUsuario } from './store.js';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
@@ -131,7 +132,10 @@ export function avatarUrlFor(userId) {
 export async function uploadComidaFoto(blob, mealId, dateStr) {
   const session = await getSession();
   if (!session) throw new Error('No autenticado');
-  const path = `${session.user.id}/${dateStr}-${mealId}.jpg`;
+  // Ruta con sal aleatoria por cuenta, no solo uid/fecha/comida -- ver
+  // fotoSaltUsuario() en store.js, el bucket 'comidas' es público y esa
+  // ruta antigua era del todo predecible conociendo el UID de otra usuaria.
+  const path = `${session.user.id}/${fotoSaltUsuario()}-${dateStr}-${mealId}.jpg`;
   const { error } = await supabase.storage.from('comidas').upload(path, blob, {
     contentType: 'image/jpeg', upsert: true
   });
