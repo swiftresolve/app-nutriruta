@@ -708,6 +708,50 @@ export function semaforoIcon(light) {
 // reemplazar esos atributos, no solo envolver. icono+texto van en la MISMA
 // fila flex (mismo patrón que CLOCK_ICON en openRecipe) para que el
 // ícono quede alineado con el texto por align-items, no por vertical-align.
+// Lista de ingredientes/alimentos editable en el momento (lápiz por fila +
+// "+ Agregar" al final) -- MISMO patrón visual y de interacción tanto para
+// la receta sugerida (openRecipe) como para lo que ya registraste
+// (abrirComidaRegistrada). Antes esta última mostraba una lista fija de
+// puntos sin forma de corregir un solo alimento -- pedido explícito:
+// "deberían verse igual". `onCambio(lista)` es opcional -- openRecipe no
+// necesita guardar nada al vuelo (ingredientesTexto se usa recién al
+// tocar "Comí esto"), abrirComidaRegistrada sí persiste cada edición.
+function montarIngredientesEditables(wrap, btnAgregar, lista, onCambio) {
+  function pintar() {
+    wrap.innerHTML = lista.map((texto, i) => `
+      <div class="row ingredient-row" data-idx="${i}" style="gap:8px;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border)">
+        <span class="ing-text" style="flex:1;min-width:0">${esc(texto)}</span>
+        <button type="button" class="icon-btn plain ing-edit" data-idx="${i}" aria-label="${t('Editar ingrediente')}">${PENCIL_ICON}</button>
+      </div>`).join('');
+    wrap.querySelectorAll('.ing-edit').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const i = Number(btn.dataset.idx);
+        const fila = btn.closest('.ingredient-row');
+        const span = fila.querySelector('.ing-text');
+        const input = document.createElement('input');
+        input.type = 'text'; input.className = 'auth-input'; input.value = lista[i];
+        input.style.cssText = 'flex:1;min-width:0;padding:6px 10px;font-size:0.95rem';
+        span.replaceWith(input);
+        input.focus(); input.select();
+        const commit = () => {
+          lista[i] = input.value.trim() || lista[i];
+          pintar();
+          onCambio?.(lista);
+        };
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+      });
+    });
+  }
+  pintar();
+  btnAgregar?.addEventListener('click', () => {
+    lista.push('');
+    pintar();
+    const filas = wrap.querySelectorAll('.ing-edit');
+    filas[filas.length - 1]?.click();
+  });
+}
+
 const iconoChico = (svg) => svg.replace('width="24" height="24"', 'width="14" height="14"');
 const FUENTE_LABEL = {
   foto: () => ({ icono: iconoChico(CAMERA_SOLID_ICON), texto: t('Registrado por NutriCam') }),
@@ -728,7 +772,6 @@ const capitalizar = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 // libre, sin ingredientes estructurados ni semáforo curado.
 function abrirComidaRegistrada(meal, registro, onChange) {
   const { user } = getState();
-  const light = trafficLightRecetaPropia({ ingredientes: registro.alimentos, descripcion: '' }, user.perfiles);
   openModal((modal, closeFn) => {
     // La primera comida registrada (registro, index 0) sigue siendo la
     // que cuenta para la racha de puntualidad y la que se muestra en
@@ -738,6 +781,10 @@ function abrirComidaRegistrada(meal, registro, onChange) {
     const extras = comidasDelDia(meal.id).slice(1);
     const horaTexto = new Date(registro.hora).toLocaleTimeString(getIdioma() === 'en' ? 'en-US' : 'es', { hour: 'numeric', minute: '2-digit' });
     const fuente = (FUENTE_LABEL[registro.fuente] || (() => null))();
+    // Mutable -- a diferencia de la receta sugerida (openRecipe), acá cada
+    // edición de un ingrediente se guarda de inmediato (ver
+    // montarIngredientesEditables/onCambio abajo), porque esto ya ES un
+    // registro real, no un borrador a confirmar.
     const alimentosCap = registro.alimentos.map(capitalizar);
     // El título es lo que de verdad comiste, no el nombre de la estación
     // ("Desayuno") -- eso ya se sabe por la fila desde la que se abrió
@@ -764,15 +811,32 @@ function abrirComidaRegistrada(meal, registro, onChange) {
       ${registro.fotoUrl
         ? `<img src="${registro.fotoUrl}" alt="${esc(tituloComida)}" class="mt" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;display:block">`
         : `<div class="center mt" style="font-size:2.4rem">${meal.emoji}</div>`}
-      <p class="row mt" style="gap:8px;justify-content:center;align-items:center;flex-wrap:wrap">${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span></p>
+      <p class="row mt" style="gap:8px;justify-content:center;align-items:center;flex-wrap:wrap" id="cr-semaforo"></p>
       <p class="row small muted" style="justify-content:center;align-items:center;gap:6px;margin-top:2px">${fuente ? fuente.icono : ''}<span>${fuente ? fuente.texto + ' · ' : ''}${horaTexto}</span></p>
       <button type="button" class="btn-susana mt" id="cr-analizar-susana"><span class="susana-sparkle">${SPARKLE_ICON}</span> ${t('Analizar con SuSana')}</button>
       <h3 class="mt">${t('Ingredientes')}</h3>
-      ${alimentosCap.map((a) => `<div class="ingredient">• ${esc(a)}</div>`).join('')}
-      <button type="button" class="btn ghost full mt row" id="cr-editar" style="gap:6px;justify-content:center;align-items:center">${PENCIL_ICON}${t('Editar registro')}</button>
+      <div id="cr-ingredientes"></div>
+      <button type="button" class="row" id="cr-agregar-ing" style="gap:6px;padding:10px 0;color:var(--primary-dark);font-weight:700;width:100%">+ ${t('Agregar Ingrediente')}</button>
+      <button type="button" class="btn ghost full mt row" id="cr-editar" style="gap:6px;justify-content:center;align-items:center">${PENCIL_ICON}${t('Volver a registrar (foto, voz o texto)')}</button>
       <button type="button" class="btn danger full mt" id="cr-deshacer">${TRASH_ICON} ${t('Deshacer registro')}</button>
       ${extras.length ? `<h3 class="mt">${t('También registraste')}</h3>${extras.map((r, i) => filaExtraHtml(r, i + 1)).join('')}` : ''}
       <button type="button" class="btn ghost full mt row" id="cr-agregar-otra" style="gap:6px;justify-content:center;align-items:center"><span style="font-size:1.1em;line-height:1">+</span>${t('Agregar otra comida')}</button>`);
+
+    // El semáforo se recalcula con la lista actual cada vez que se edita
+    // un ingrediente -- fijo desde la apertura se hubiera quedado
+    // mostrando un color que ya no correspondía a lo que se ve abajo.
+    const semaforoWrap = modal.querySelector('#cr-semaforo');
+    function pintarSemaforo() {
+      const light = trafficLightRecetaPropia({ ingredientes: alimentosCap, descripcion: '' }, user.perfiles);
+      semaforoWrap.innerHTML = `${semaforoIcon(light)}<span class="tag ${light}">${SEMAFORO_TEXTO[light] || light}</span>`;
+    }
+    pintarSemaforo();
+    montarIngredientesEditables(modal.querySelector('#cr-ingredientes'), modal.querySelector('#cr-agregar-ing'), alimentosCap, (lista) => {
+      guardarComidaRegistrada(meal.id, lista.filter(Boolean), registro.fuente, today(), registro.fotoUrl, registro.nombre, 0);
+      pintarSemaforo();
+      onChange?.();
+    });
+
     modal.querySelector('#cr-analizar-susana').addEventListener('click', () => {
       closeFn();
       // Misma ruta que el branch "sin apto" de openRecipe()/abrirRecetaPropia():
@@ -864,33 +928,7 @@ export function openRecipe(recipe, hoy = null) {
         </div>
       </details>`);
 
-    const ingsWrap = modal.querySelector('#rc-ingredientes');
-    function pintarIngredientes() {
-      ingsWrap.innerHTML = ingredientesTexto.map((texto, i) => `
-        <div class="row ingredient-row" data-idx="${i}" style="gap:8px;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--border)">
-          <span class="ing-text" style="flex:1;min-width:0">${esc(texto)}</span>
-          <button type="button" class="icon-btn plain ing-edit" data-idx="${i}" aria-label="${t('Editar ingrediente')}">${PENCIL_ICON}</button>
-        </div>`).join('');
-      ingsWrap.querySelectorAll('.ing-edit').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const i = Number(btn.dataset.idx);
-          const fila = btn.closest('.ingredient-row');
-          const span = fila.querySelector('.ing-text');
-          const input = document.createElement('input');
-          input.type = 'text'; input.className = 'auth-input'; input.value = ingredientesTexto[i];
-          input.style.cssText = 'flex:1;min-width:0;padding:6px 10px;font-size:0.95rem';
-          span.replaceWith(input);
-          input.focus(); input.select();
-          const commit = () => {
-            ingredientesTexto[i] = input.value.trim() || ingredientesTexto[i];
-            pintarIngredientes();
-          };
-          input.addEventListener('blur', commit);
-          input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
-        });
-      });
-    }
-    pintarIngredientes();
+    montarIngredientesEditables(modal.querySelector('#rc-ingredientes'), modal.querySelector('#rc-agregar-ing'), ingredientesTexto);
     modal.querySelector('#rc-analizar-susana').addEventListener('click', () => {
       closeFn();
       // El botón SIEMPRE abre un chat NUEVO con SuSana (nunca continúa
@@ -917,12 +955,6 @@ export function openRecipe(recipe, hoy = null) {
       // SuSana calificara bien algo que el semáforo de la app ya marcó mal.
       const descripcionAnalisis = `${shown.nombre}${recipe.descripcion ? `: ${recipe.descripcion}` : ''}${ingredientesTexto.length ? ` (Ingredientes: ${ingredientesTexto.join(', ')})` : ''}`;
       navigate('assistant', { nuevaConversacion: true, recetaNombre: shown.nombre, descripcionAnalisis });
-    });
-    modal.querySelector('#rc-agregar-ing').addEventListener('click', () => {
-      ingredientesTexto.push('');
-      pintarIngredientes();
-      const filas = ingsWrap.querySelectorAll('.ing-edit');
-      filas[filas.length - 1]?.click();
     });
 
     if (hoy) {

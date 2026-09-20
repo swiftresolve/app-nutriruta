@@ -134,7 +134,13 @@ export async function abrirCamaraEnVivo({ modal, instruccion, onCapturar, onGale
   // real y documentada de video en negro en Chrome para Android reciente.
   async function iniciarStream(deviceId) {
     if (stream) stream.getTracks().forEach((tr) => tr.stop());
-    const videoConstraint = deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: 'environment' } };
+    // "ideal", no "exact" -- con "exact" varios Android (confirmado real,
+    // no solo un celular) tiraban OverconstrainedError al cambiar de lente
+    // apenas se soltaba la anterior, dejando SOLO la lente 1 utilizable
+    // ("los botones de lente no sirven"). "ideal" deja que el navegador
+    // use esa lente igual (casi siempre la respeta) pero sin reventar si
+    // por un instante no puede cumplir el resto de las restricciones.
+    const videoConstraint = deviceId ? { deviceId: { ideal: deviceId } } : { facingMode: { ideal: 'environment' } };
     stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint, audio: false });
     video.srcObject = stream;
     trackActual = stream.getVideoTracks()[0];
@@ -195,14 +201,23 @@ export async function abrirCamaraEnVivo({ modal, instruccion, onCapturar, onGale
           const deviceIdAnterior = trackActual?.getSettings().deviceId;
           try {
             await iniciarStream(btn.dataset.deviceId);
+          } catch {
+            // Algunos Android no sueltan la lente anterior de inmediato
+            // (stop() en JS vuelve antes de que el hardware la libere de
+            // verdad) -- un reintento corto después de una pequeña espera
+            // basta para esos casos, antes de rendirse con el error.
+            try {
+              await new Promise((r) => setTimeout(r, 300));
+              await iniciarStream(btn.dataset.deviceId);
+            } catch { toast(t('No se pudo cambiar de lente.')); return; }
+          }
+          marcarLenteActiva();
+          await esperarPrimerFrame();
+          if (esFrameNegro()) {
+            toast(t('Esa lente no sirve para fotos en este celular -- volviendo a la anterior.'));
+            await iniciarStream(deviceIdAnterior);
             marcarLenteActiva();
-            await esperarPrimerFrame();
-            if (esFrameNegro()) {
-              toast(t('Esa lente no sirve para fotos en este celular -- volviendo a la anterior.'));
-              await iniciarStream(deviceIdAnterior);
-              marcarLenteActiva();
-            }
-          } catch { toast(t('No se pudo cambiar de lente.')); }
+          }
         });
       });
     }

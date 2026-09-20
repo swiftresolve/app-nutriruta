@@ -559,8 +559,11 @@ export async function analyzeFood(descripcion, conversationId) {
 
 // Identifica alimentos en una foto o un texto libre (dictado por voz o
 // escrito) — no cuenta contra la cuota de SuSana ni requiere Premium (ver
-// log-meal). Devuelve la lista cruda de nombres; quien llama la muestra
-// editable antes de guardarla, nunca se guarda sin confirmar.
+// log-meal). Devuelve { nombre, alimentos }: nombre es el nombre del
+// platillo (ej. "Bandeja paisa") SOLO si la IA reconoce un plato típico
+// compuesto, o null si son alimentos sueltos sin un nombre común -- quien
+// llama muestra la lista editable antes de guardar, nunca se guarda sin
+// confirmar.
 async function invokeLogMeal(body) {
   const { data, error } = await supabase.functions.invoke('log-meal', { body });
   if (error) {
@@ -568,7 +571,7 @@ async function invokeLogMeal(body) {
     try { errBody = await error.context.clone().json(); } catch { /* no era JSON */ }
     throw new Error(errBody?.error || 'No pudimos analizar eso. Intenta de nuevo.');
   }
-  return data.alimentos || [];
+  return { nombre: data.nombre || null, alimentos: data.alimentos || [] };
 }
 
 export async function detectarAlimentosFoto(imagenBase64, mediaType = 'image/jpeg') {

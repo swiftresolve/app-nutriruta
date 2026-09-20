@@ -3,7 +3,7 @@
 // sin que la usuaria lo confirme o corrija). No cuenta contra la cuota de
 // SuSana ni requiere Premium (ver supabase-client.js / log-meal).
 import { openModal, toast, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON } from '../app.js';
-import { esc, guardarComidaRegistrada, today } from '../store.js';
+import { esc, guardarComidaRegistrada, comidasDelDia, today } from '../store.js';
 import { detectarAlimentosFoto, detectarAlimentosTexto, uploadComidaFoto } from '../supabase-client.js';
 import { abrirCamaraEnVivo } from '../camera.js';
 import { t, getIdioma } from '../i18n.js';
@@ -87,6 +87,17 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
     let alimentos = [];
     let fuente = null;
     let fotoBlob = null;
+    // Si esta edición no vuelve a tomar/elegir una foto nueva (ej. corrige
+    // por voz o texto), la foto que ya existía en ese registro se conserva
+    // tal cual -- antes, editar por cualquier vía que no fuera foto la
+    // perdía en silencio, sin avisar (bug real: guardarComidaRegistrada
+    // solo escribe fotoUrl cuando llega una nueva, así que editar por
+    // texto/voz guardaba el registro SIN foto, pisando la que ya había).
+    const fotoUrlExistente = editIndex != null ? (comidasDelDia(mealId)[editIndex]?.fotoUrl || null) : null;
+    // Mismo criterio que la foto -- si esta edición no vuelve a detectar un
+    // nombre de platillo (ej. la IA no reconoce uno en el nuevo texto/voz),
+    // se conserva el que ya tenía en vez de borrarlo en silencio.
+    const nombreExistente = editIndex != null ? (comidasDelDia(mealId)[editIndex]?.nombre || null) : null;
     // La cámara en sí (stream/tracks) vive dentro del closure de
     // abrirCamaraEnVivo (camera.js) -- detenerCamaraCompartida() es la
     // única forma real de apagarla desde aquí.
@@ -288,7 +299,14 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
       return texto ? texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase() : texto;
     }
 
-    function pantallaConfirmar(detectados, previewUrl) {
+    // Nombre del platillo (ej. "Bandeja paisa") que la IA reconoce cuando
+    // aplica -- ver invokeLogMeal en supabase-client.js. Sin esto, la
+    // tarjeta de "lo que registraste" (abrirComidaRegistrada, dashboard.js)
+    // usaba la lista de ingredientes pegada como si fuera el título.
+    let nombrePlatillo = null;
+
+    function pantallaConfirmar({ nombre, alimentos: detectados }, previewUrl) {
+      nombrePlatillo = nombre || nombreExistente;
       alimentos = detectados.map(capitalizar);
       render();
 
@@ -296,6 +314,8 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
         modal.innerHTML = `
           <h2>${t('Esto es lo que detecté')}</h2>
           ${previewUrl ? `<img src="${previewUrl}" alt="" style="width:100%;border-radius:12px;margin-top:10px">` : ''}
+          <label class="small muted mt" for="ml-nombre-platillo">${t('Nombre del platillo (opcional)')}</label>
+          <input type="text" id="ml-nombre-platillo" class="auth-input" placeholder="${t('Ej: Bandeja paisa')}" value="${esc(nombrePlatillo || '')}" style="margin-top:4px">
           <div class="mt" id="ml-lista"></div>
           <div class="row mt" style="gap:8px">
             <input type="text" id="ml-agregar" class="auth-input" placeholder="${t('+ Agregar alimento')}" style="margin:0">
@@ -303,6 +323,14 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
           </div>
           ${alimentos.length ? `<button type="button" class="btn accent full mt" id="ml-guardar">${t('Guardar comida')}</button>` : `<p class="small muted mt">${t('Agrega al menos un alimento para guardar.')}</p>`}
           <p class="small muted mt center">${t('No es un dato médico exacto — es solo tu registro personal.')}</p>`;
+
+        // Se sincroniza en cada tecla (no solo al guardar) porque agregar/
+        // quitar un alimento vuelve a llamar render() -- sin esto, lo que
+        // la usuaria ya había escrito acá se perdía en el primer +/✕ que
+        // tocara después.
+        modal.querySelector('#ml-nombre-platillo').addEventListener('input', (e) => {
+          nombrePlatillo = e.target.value.trim() || null;
+        });
 
         const lista = modal.querySelector('#ml-lista');
         alimentos.forEach((a, i) => {
@@ -333,16 +361,17 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
         modal.querySelector('#ml-guardar')?.addEventListener('click', async (e) => {
           const btn = e.currentTarget;
           btn.disabled = true;
-          let fotoUrl = null;
+          let fotoUrl = fotoUrlExistente;
           if (fotoBlob) {
             try {
               fotoUrl = await uploadComidaFoto(fotoBlob, mealId, today());
             } catch {
               // La foto es un plus del diario visual, no un requisito para
-              // registrar la comida — si falla la subida, se guarda igual.
+              // registrar la comida — si falla la subida, se guarda igual
+              // (conservando la que ya había, si esto era una edición).
             }
           }
-          guardarComidaRegistrada(mealId, alimentos, fuente, today(), fotoUrl, null, editIndex);
+          guardarComidaRegistrada(mealId, alimentos, fuente, today(), fotoUrl, nombrePlatillo, editIndex);
           toast(t('¡Comida registrada! 🌿'));
           closeFn();
           onSaved?.();
