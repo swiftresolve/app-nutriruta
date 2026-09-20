@@ -98,12 +98,13 @@ export async function submitResena(calificacion, texto, nombreMostrado) {
 }
 
 // --- Foto de perfil ---
-// Se guarda siempre como "<uid>.jpg" en el bucket público "avatars" — el
-// nombre fijo hace que la política de Storage sea simple (cada quien solo
-// puede escribir su propio archivo) y que la URL pública sea predecible sin
-// necesitar guardar nada más en profiles. El archivo se recorta/comprime en
-// el cliente antes de subir para no depender de límites de tamaño del lado
-// del servidor ni gastar espacio de más.
+// El bucket "avatars" es público (igual que "comidas") -- la ruta usa la
+// misma sal por cuenta que las fotos de comida (fotoSaltUsuario(), ver
+// store.js) en vez de "<uid>.jpg" fijo, porque conocer el UID de otra
+// cuenta (ej. buscar_amigo_por_username antes de aceptar amistad) ya no
+// debe alcanzar para construir la URL de su foto de perfil. El archivo se
+// recorta/comprime en el cliente antes de subir para no depender de
+// límites de tamaño del lado del servidor ni gastar espacio de más.
 const AVATAR_MAX_BYTES = 15 * 1024 * 1024; // 15 MB: una foto de cámara normal, no un archivo cualquiera
 
 export async function uploadAvatar(file) {
@@ -111,7 +112,7 @@ export async function uploadAvatar(file) {
   if (!session) throw new Error('No autenticado');
   if (file.size > AVATAR_MAX_BYTES) throw new Error('La imagen es demasiado grande (máximo 15 MB).');
   const blob = await toSquareJpeg(file, 320);
-  const path = `${session.user.id}.jpg`;
+  const path = `${session.user.id}/${fotoSaltUsuario()}.jpg`;
   const { error } = await supabase.storage.from('avatars').upload(path, blob, {
     contentType: 'image/jpeg', upsert: true
   });
@@ -120,8 +121,11 @@ export async function uploadAvatar(file) {
   return `${data.publicUrl}?v=${Date.now()}`; // cache-buster: la URL base es siempre la misma
 }
 
+// Solo sirve para el avatar de la propia cuenta -- mostrar el de otra
+// cuenta (ej. una futura foto de amigo en Amigos/Liga) necesitaría antes
+// consultar su sal por una RPC propia, no simplemente su UID.
 export function avatarUrlFor(userId) {
-  const { data } = supabase.storage.from('avatars').getPublicUrl(`${userId}.jpg`);
+  const { data } = supabase.storage.from('avatars').getPublicUrl(`${userId}/${fotoSaltUsuario()}.jpg`);
   return data.publicUrl;
 }
 
