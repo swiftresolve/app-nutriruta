@@ -204,25 +204,39 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
       // micrófono sí arranca (onstart llega), pero la transcripción nunca
       // vuelve. Sin este tope, la única salida era cerrar toda la modal.
       let venceTimeout = null;
+      let resuelto = false;
       const limpiarTimeout = () => { clearTimeout(venceTimeout); venceTimeout = null; };
+      const fallo = (mensaje) => {
+        if (resuelto) return;
+        resuelto = true;
+        limpiarTimeout();
+        micBtn.classList.remove('grabando');
+        estado.textContent = mensaje;
+        btnATexto.hidden = false;
+      };
       rec.onstart = () => {
         estado.textContent = t('Escuchando…');
         micBtn.classList.add('grabando');
         limpiarTimeout();
         venceTimeout = setTimeout(() => {
           try { rec.abort(); } catch {}
-          micBtn.classList.remove('grabando');
-          estado.textContent = t('No detectamos audio. Tu navegador puede estar bloqueando el reconocimiento de voz (pasa en Brave) — prueba escribiendo.');
-          btnATexto.hidden = false;
+          fallo(t('No detectamos audio. Tu navegador puede estar bloqueando el reconocimiento de voz (pasa en Brave) — prueba escribiendo.'));
         }, 8000);
       };
       rec.onerror = () => {
-        limpiarTimeout();
-        estado.textContent = t('No se pudo escuchar. Intenta de nuevo o usa texto.');
-        micBtn.classList.remove('grabando');
-        btnATexto.hidden = false;
+        fallo(t('No se pudo escuchar. Intenta de nuevo o usa texto.'));
+      };
+      // Algunos navegadores (ej. Huawei/EMUI sin Google Play Services)
+      // muestran el botón de voz -- la API existe -- pero no tienen ningún
+      // servicio real detrás: nunca llega onresult ni onerror, solo onend
+      // apenas termina de "escuchar" en silencio. Sin este handler, la
+      // pantalla se quedaba en "Escuchando…" para siempre en esos casos --
+      // el timeout de 8s de arriba es el respaldo si ni onend llega.
+      rec.onend = () => {
+        fallo(t('No pudimos escucharte. Este teléfono puede no tener disponible el reconocimiento de voz de Google — prueba escribiendo.'));
       };
       rec.onresult = async (e) => {
+        resuelto = true;
         limpiarTimeout();
         const texto = e.results[0][0].transcript;
         pantallaAnalizando();
