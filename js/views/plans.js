@@ -5,15 +5,20 @@ import { HOTMART_CHECKOUT } from '../config.js';
 import { header, navigate, toast, CART_ICON, abrirCheckoutHotmart } from '../app.js';
 import { t, getIdioma } from '../i18n.js';
 
+// Precios confirmados en vivo contra los links reales de Hotmart
+// (HOTMART_CHECKOUT en config.js) el 2026-09-20 -- $10.99/mes, $85.99/año
+// (subida de precio explícita para igualar a Fitia). Si vuelve a cambiar
+// el precio en Hotmart, actualizar acá también -- esto es solo texto de
+// display, no se lee del checkout real.
 const PLANS = [
   {
     id: 'anual', nombre: 'Premium Anual', emoji: '🌳',
-    precioMes: 'USD 7.50', cobro: 'Se cobra USD 90 una vez al año.',
-    detalle: 'Equivale a 2 meses gratis frente al plan mensual.', destacado: true
+    precioMes: 'USD 7.17', cobro: 'Se cobra USD 85.99 una vez al año.',
+    detalle: 'Ahorras USD 45.89 al año frente al plan mensual (más de 4 meses gratis).', destacado: true
   },
   {
     id: 'mensual', nombre: 'Premium Mensual', emoji: '🌱',
-    precioMes: 'USD 9', cobro: 'Sin compromiso — cancela cuando quieras.',
+    precioMes: 'USD 10.99', cobro: 'Sin compromiso — cancela cuando quieras.',
     detalle: 'Menos de lo que cuestan 2 comidas fuera de casa.'
   }
 ];
