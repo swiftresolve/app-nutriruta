@@ -226,14 +226,14 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
       rec.onerror = () => {
         fallo(t('No se pudo escuchar. Intenta de nuevo o usa texto.'));
       };
-      // Algunos navegadores (ej. Huawei/EMUI sin Google Play Services)
-      // muestran el botón de voz -- la API existe -- pero no tienen ningún
-      // servicio real detrás: nunca llega onresult ni onerror, solo onend
-      // apenas termina de "escuchar" en silencio. Sin este handler, la
-      // pantalla se quedaba en "Escuchando…" para siempre en esos casos --
-      // el timeout de 8s de arriba es el respaldo si ni onend llega.
+      // En algunos Android el botón de voz aparece -- la API existe --
+      // pero no hay ningún servicio real detrás: nunca llega onresult ni
+      // onerror, solo onend apenas termina de "escuchar" en silencio. Sin
+      // este handler, la pantalla se quedaba en "Escuchando…" para siempre
+      // en esos casos -- el timeout de 8s de arriba es el respaldo si ni
+      // onend llega.
       rec.onend = () => {
-        fallo(t('No pudimos escucharte. Este teléfono puede no tener disponible el reconocimiento de voz de Google — prueba escribiendo.'));
+        fallo(t('No pudimos escucharte. Este teléfono puede no tener disponible el reconocimiento de voz — prueba escribiendo.'));
       };
       rec.onresult = async (e) => {
         resuelto = true;

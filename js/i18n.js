@@ -479,7 +479,7 @@ const EN = {
   'Escuchando…': 'Listening…',
   'No detectamos audio. Tu navegador puede estar bloqueando el reconocimiento de voz (pasa en Brave) — prueba escribiendo.': 'We didn\'t detect audio. Your browser may be blocking voice recognition (happens in Brave) — try typing instead.',
   'No se pudo escuchar. Intenta de nuevo o usa texto.': 'Couldn\'t hear you. Try again or use text.',
-  'No pudimos escucharte. Este teléfono puede no tener disponible el reconocimiento de voz de Google — prueba escribiendo.': 'We couldn\'t hear you. This phone may not have Google voice recognition available — try typing instead.',
+  'No pudimos escucharte. Este teléfono puede no tener disponible el reconocimiento de voz — prueba escribiendo.': 'We couldn\'t hear you. Voice recognition may not be available on this phone — try typing instead.',
   'No se pudo procesar eso.': 'Couldn\'t process that.',
   '¿Qué comiste?': 'What did you eat?',
   'Ej: dos huevos, avena y un banano': 'E.g: two eggs, oats and a banana',
