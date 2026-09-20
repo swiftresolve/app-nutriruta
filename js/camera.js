@@ -12,7 +12,7 @@
 // se armó y depuró primero en mealLogModal.js -- ver el historial de esa
 // pantalla para el porqué de cada detalle. Este módulo es esa misma
 // lógica, generalizada.
-import { toast } from './app.js';
+import { toast, INFO_ICON } from './app.js';
 import { t } from './i18n.js';
 
 // Devuelve la instrucción de la pantalla de cámara ya montada. `modal` es
@@ -36,14 +36,17 @@ export async function abrirCamaraEnVivo({ modal, instruccion, onCapturar, onGale
   function salirFullscreen() { backdrop?.classList.remove('cam-fullscreen'); }
 
   modal.innerHTML = `
-    <div class="camera-top"><button type="button" class="camera-cancelar" id="cam-cancelar">${t('Cancelar')}</button></div>
+    <div class="camera-top">
+      <button type="button" class="camera-cancelar" id="cam-cancelar">${t('Cancelar')}</button>
+      <button type="button" class="camera-info-btn" id="cam-info" aria-label="${t('Consejos para la foto')}">${INFO_ICON}</button>
+    </div>
     <p class="camera-instruccion">${instruccion}</p>
     <div class="camera-wrap">
       <video id="cam-video" autoplay playsinline muted></video>
       <div class="camera-frame"></div>
     </div>
     <div class="camera-lentes-row" id="cam-lentes" hidden></div>
-    <div class="camera-zoom-row" id="cam-zoom" hidden></div>
+    <div class="camera-zoom-dial" id="cam-zoom" hidden></div>
     <div class="camera-controls">
       <button type="button" class="camera-icon-btn" id="cam-galeria" aria-label="${t('Elegir de la galería')}">🖼️</button>
       <button type="button" id="cam-shutter" class="camera-shutter" aria-label="${t('Tomar foto')}"></button>
@@ -52,6 +55,7 @@ export async function abrirCamaraEnVivo({ modal, instruccion, onCapturar, onGale
 
   modal.querySelector('#cam-cancelar').addEventListener('click', () => { detenerCamara(); salirFullscreen(); onCancelar(); });
   modal.querySelector('#cam-galeria').addEventListener('click', () => { detenerCamara(); salirFullscreen(); onGaleria(); });
+  modal.querySelector('#cam-info').addEventListener('click', mostrarConsejos);
 
   const video = modal.querySelector('#cam-video');
   const wrap = modal.querySelector('.camera-wrap');
@@ -67,28 +71,79 @@ export async function abrirCamaraEnVivo({ modal, instruccion, onCapturar, onGale
     return `${Number.isInteger(r) ? r : r.toFixed(1)}x`;
   }
 
-  // Fila de botones de zoom CON NÚMEROS REALES (min/medio/máx que reporta
-  // la propia lente activa) -- el nivel de zoom sí es un dato que el
-  // navegador entrega con exactitud, a diferencia de qué lente es cuál.
+  // Actualiza el disco de zoom en pantalla sin volver a pintarlo -- la
+  // usa tanto el arrastre del dedo sobre la propia barra como el gesto de
+  // pellizco (más abajo), para que ambos se vean sincronizados.
+  let pintarZoomUI = null;
+
+  // Barra de zoom CONTINUA (arrastre con el dedo), no botones con 3
+  // paradas fijas -- pedido explícito: "que el zoom sea graduable con la
+  // ruedita que gira, como en los celulares normalmente". El rango real
+  // (min/max) sí lo entrega el navegador con exactitud, a diferencia de
+  // qué lente es cuál -- eso queda en la fila de lentes aparte.
   function renderZoom() {
-    if (!capsActuales?.zoom) { zoomRow.innerHTML = ''; zoomRow.hidden = true; return; }
+    if (!capsActuales?.zoom || capsActuales.zoom.max <= capsActuales.zoom.min) {
+      zoomRow.innerHTML = ''; zoomRow.hidden = true; pintarZoomUI = null; return;
+    }
     const { min, max } = capsActuales.zoom;
-    const crudos = max > min ? [min, min + (max - min) / 2, max] : [min];
-    const valores = [...new Set(crudos.map((v) => Math.round(v * 10) / 10))];
-    zoomRow.innerHTML = valores.map((v) => `<button type="button" class="camera-zoom-btn" data-zoom="${v}">${formatoX(v)}</button>`).join('');
     zoomRow.hidden = false;
-    marcarActivoZoom(trackActual.getSettings().zoom ?? min);
-    zoomRow.querySelectorAll('.camera-zoom-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const v = Number(btn.dataset.zoom);
-        trackActual.applyConstraints({ advanced: [{ zoom: v }] }).then(() => marcarActivoZoom(v)).catch(() => {});
-      });
+    zoomRow.innerHTML = `
+      <span class="camera-zoom-tope">${formatoX(min)}</span>
+      <div class="camera-zoom-track" id="cam-zoom-track">
+        <div class="camera-zoom-fill" id="cam-zoom-fill"></div>
+        <div class="camera-zoom-thumb" id="cam-zoom-thumb">${formatoX(min)}</div>
+      </div>
+      <span class="camera-zoom-tope">${formatoX(max)}</span>`;
+    const track = zoomRow.querySelector('#cam-zoom-track');
+    const fill = zoomRow.querySelector('#cam-zoom-fill');
+    const thumb = zoomRow.querySelector('#cam-zoom-thumb');
+
+    pintarZoomUI = (v) => {
+      const pct = Math.min(1, Math.max(0, (v - min) / (max - min)));
+      thumb.style.left = `${pct * 100}%`;
+      fill.style.width = `${pct * 100}%`;
+      thumb.textContent = formatoX(v);
+    };
+    function aplicarDesdeX(clientX) {
+      const rect = track.getBoundingClientRect();
+      const pct = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+      const v = min + pct * (max - min);
+      pintarZoomUI(v);
+      trackActual.applyConstraints({ advanced: [{ zoom: v }] }).catch(() => {});
+    }
+    let arrastrando = false;
+    track.addEventListener('pointerdown', (e) => {
+      arrastrando = true;
+      track.setPointerCapture(e.pointerId);
+      aplicarDesdeX(e.clientX);
     });
+    track.addEventListener('pointermove', (e) => { if (arrastrando) aplicarDesdeX(e.clientX); });
+    const soltar = () => { arrastrando = false; };
+    track.addEventListener('pointerup', soltar);
+    track.addEventListener('pointercancel', soltar);
+    pintarZoomUI(trackActual.getSettings().zoom ?? min);
   }
-  function marcarActivoZoom(zoomActual) {
-    zoomRow.querySelectorAll('.camera-zoom-btn').forEach((b) => {
-      b.classList.toggle('active', Math.abs(Number(b.dataset.zoom) - zoomActual) < 0.05);
-    });
+
+  // Mini modal de consejos (referencia real: el botón "i" de Fitia al
+  // abrir su cámara) -- se muestra a pedido, no automático, para no
+  // interponerse cada vez que alguien ya sabe cómo tomar la foto.
+  function mostrarConsejos() {
+    const overlay = document.createElement('div');
+    overlay.className = 'camera-consejos-overlay';
+    overlay.innerHTML = `
+      <div class="camera-consejos-card">
+        <h3 class="center">${t('Cómo obtener un resultado más preciso')}</h3>
+        <div class="camera-consejos-grid">
+          <div class="camera-consejo ok"><span class="camera-consejo-check">✓</span>${t('Comida dentro del marco')}</div>
+          <div class="camera-consejo mal"><span class="camera-consejo-check">✕</span>${t('Comida muy cerca o cortada')}</div>
+          <div class="camera-consejo ok"><span class="camera-consejo-check">✓</span>${t('Todos los alimentos visibles')}</div>
+          <div class="camera-consejo mal"><span class="camera-consejo-check">✕</span>${t('Alimentos tapados o amontonados')}</div>
+        </div>
+        <button type="button" class="btn accent full mt" id="cam-consejos-listo">${t('Listo')}</button>
+      </div>`;
+    modal.appendChild(overlay);
+    overlay.querySelector('#cam-consejos-listo').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   }
 
   // Muchos Android exponen sensores auxiliares (macro, profundidad,
@@ -148,7 +203,9 @@ export async function abrirCamaraEnVivo({ modal, instruccion, onCapturar, onGale
     renderZoom();
   }
 
-  // Gesto de pellizco para acercar/alejar, como cualquier cámara nativa.
+  // Gesto de pellizco para acercar/alejar, como cualquier cámara nativa --
+  // sincronizado con la misma barra de zoom (pintarZoomUI), no un cálculo
+  // aparte, para que ambos controles nunca se vean en desacuerdo.
   let zoomInicial = 1, distanciaInicial = 0;
   wrap.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 2 || !capsActuales?.zoom) return;
@@ -161,6 +218,7 @@ export async function abrirCamaraEnVivo({ modal, instruccion, onCapturar, onGale
     const distanciaActual = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
     const factor = distanciaActual / distanciaInicial;
     const nuevoZoom = Math.min(capsActuales.zoom.max, Math.max(capsActuales.zoom.min, zoomInicial * factor));
+    pintarZoomUI?.(nuevoZoom);
     trackActual.applyConstraints({ advanced: [{ zoom: nuevoZoom }] }).catch(() => {});
   }, { passive: false });
   wrap.addEventListener('touchend', () => { distanciaInicial = 0; });

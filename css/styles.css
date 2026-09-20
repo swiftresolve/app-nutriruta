@@ -1408,10 +1408,18 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .foto-lightbox-flecha.der { right: 10px; }
 .foto-lightbox-flecha:disabled { display: none; }
 
-.camera-top { display: flex; justify-content: flex-start; flex: none; }
+.camera-top { display: flex; justify-content: space-between; align-items: center; flex: none; }
 .camera-cancelar {
   background: rgba(255,255,255,0.12); color: #fff; border-radius: 999px;
   padding: 7px 16px; font-size: 0.85rem; font-weight: 600;
+}
+/* Botón de "i" (consejos para la foto, ver mostrarConsejos en camera.js) --
+   mismo lugar/idea que el botón de información de Fitia que mostró la
+   usuaria. */
+.camera-info-btn {
+  width: 32px; height: 32px; border-radius: 50%; flex: none;
+  background: rgba(255,255,255,0.12); color: #fff;
+  display: flex; align-items: center; justify-content: center;
 }
 .camera-instruccion { color: #fff; text-align: center; font-weight: 600; margin: 10px 0; flex: none; }
 /* Vuelve a llenar todo el alto disponible (referencia real: la cámara de
@@ -1436,20 +1444,67 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   border-radius: 20px; pointer-events: none;
   box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.55);
 }
-/* Fila de lentes físicas (una por cámara trasera real del celular) y fila
-   de niveles de zoom (números reales de la lente activa) -- ver
-   comentario de iniciarStream() en mealLogModal.js sobre por qué no se
-   pueden etiquetar como "gran angular/1x/2x": el navegador no expone esa
-   info, solo cuenta con la que el propio celular reporta. */
-.camera-lentes-row, .camera-zoom-row {
+/* Fila de lentes físicas (una por cámara trasera real del celular) -- ver
+   comentario de iniciarStream() en camera.js sobre por qué no se pueden
+   etiquetar como "gran angular/1x/2x": el navegador no expone esa info,
+   solo cuenta con la que el propio celular reporta. */
+.camera-lentes-row {
   flex: none; display: flex; align-items: center; justify-content: center;
   gap: 8px; margin-top: 10px; flex-wrap: wrap;
 }
-.camera-lente-btn, .camera-zoom-btn {
+.camera-lente-btn {
   background: rgba(255,255,255,0.12); color: #fff; border-radius: 999px;
   padding: 6px 14px; font-size: 0.8rem; font-weight: 700;
 }
-.camera-lente-btn.active, .camera-zoom-btn.active { background: #fff; color: #16211d; }
+.camera-lente-btn.active { background: #fff; color: #16211d; }
+
+/* Disco/barra de zoom CONTINUA -- arrastre con el dedo en vez de 3
+   botones con paradas fijas (pedido explícito: "graduable, como la
+   ruedita de los celulares normales"). El pulgar (thumb) muestra el
+   valor real en vivo mientras se arrastra; camera-zoom-fill solo es la
+   guía visual de cuánto se ha recorrido del rango. */
+.camera-zoom-dial {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 0 6px;
+}
+.camera-zoom-tope { color: rgba(255,255,255,0.7); font-size: 0.75rem; font-weight: 700; flex: none; }
+.camera-zoom-track {
+  position: relative; flex: 1 1 auto; height: 34px; border-radius: 999px;
+  background: rgba(255,255,255,0.12); touch-action: none; cursor: pointer;
+}
+.camera-zoom-fill {
+  position: absolute; inset: 0; width: 0; border-radius: 999px;
+  background: rgba(255,255,255,0.18); pointer-events: none;
+}
+.camera-zoom-thumb {
+  position: absolute; top: 50%; left: 0; transform: translate(-50%, -50%);
+  width: 40px; height: 40px; border-radius: 50%; background: #fff; color: #16211d;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  pointer-events: none;
+}
+
+/* Mini modal de consejos para la foto (botón "i", ver mostrarConsejos en
+   camera.js) -- referencia real: el mismo botón de Fitia que mostró la
+   usuaria. Vive encima de la cámara en pantalla completa, no como el
+   componente <dialog> genérico de la app (esa pantalla ya reemplaza todo
+   modal.innerHTML por su cuenta). */
+.camera-consejos-overlay {
+  position: absolute; inset: 0; z-index: 5; background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.camera-consejos-card {
+  background: var(--card-bg, #16211d); color: #fff; border-radius: 20px;
+  padding: 20px; width: 100%; max-width: 340px;
+}
+.camera-consejos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.camera-consejo { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; font-size: 0.82rem; }
+.camera-consejo-check {
+  width: 30px; height: 30px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-weight: 700; color: #fff;
+}
+.camera-consejo.ok .camera-consejo-check { background: #3E9E52; }
+.camera-consejo.mal .camera-consejo-check { background: #d9534f; }
 
 .camera-controls { flex: none; display: flex; align-items: center; justify-content: center; gap: 28px; margin-top: 18px; }
 .camera-shutter {

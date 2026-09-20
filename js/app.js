@@ -360,6 +360,13 @@ export const MIC_ICON = `<svg viewBox="0 0 24 24" width="24" height="24" fill="c
 export const TEXTO_ICON = `<svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor" style="display:block">
   <path d="M160-200q-33 0-56.5-23.5T80-280v-400q0-33 23.5-56.5T160-760h640q33 0 56.5 23.5T880-680v400q0 33-23.5 56.5T800-200H160Zm0-80h640v-400H160v400Zm160-40h320v-80H320v80ZM200-440h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80ZM200-560h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80Zm120 0h80v-80h-80v80ZM160-280v-400 400Z"/>
 </svg>`;
+// Botón de "i" en la cámara (camera.js) -- tips de cómo tomar la foto,
+// mismo lugar/idea que el botón de información de Fitia.
+export const INFO_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+  <circle cx="12" cy="12" r="9"/>
+  <line x1="12" y1="11" x2="12" y2="16"/>
+  <circle cx="12" cy="7.6" r="0.9" fill="currentColor" stroke="none"/>
+</svg>`;
 
 // Reloj (tiempo de preparación de una receta, junto al título en la
 // modal de "Tu ruta de hoy") -- Heroicons outline, mismo criterio que el
