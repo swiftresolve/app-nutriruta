@@ -772,6 +772,20 @@ function pintarComidas(container) {
     media_tarde: [16, 17, 18], cena: [18, 19, 20]
   };
   const labelHora = (h) => h === 0 ? '12 am' : h < 12 ? `${h} am` : h === 12 ? '12 pm' : `${h - 12} pm`;
+  // Decimal (7.5) <-> "HH:MM" para el <input type="time"> -- horaComidas
+  // sigue siendo un número de horas (evaluarPuntualidad ya lo multiplica
+  // por 60 para comparar minutos, ver estaATiempo en store.js), pero ya
+  // no se fuerza a horas en punto: "Otro" ahora deja elegir cualquier
+  // minuto, no solo las 24 horas exactas del día.
+  const horaADecimal = (hhmm) => {
+    const [h, m] = hhmm.split(':').map(Number);
+    return h + m / 60;
+  };
+  const decimalAHora = (dec) => {
+    const h = Math.floor(dec);
+    const m = Math.round((dec - h) * 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  };
   horarios.innerHTML = `
     <h2>⏰ ${t('Horario de comidas')}</h2>
     <p class="small mb">${t('Cuáles quieres en tu día y a qué hora sueles comer, de verdad — así "Tu ruta de hoy" arma el menú correcto y sabe cuál comida es "Ahora".')}</p>
@@ -787,9 +801,7 @@ function pintarComidas(container) {
         <div class="chips" ${estaActiva(m.id) ? '' : 'style="opacity:0.5;pointer-events:none"'}>
           ${sugeridas.map((h) => `<button type="button" class="chip small hora-chip${horaComidas[m.id] === h ? ' selected' : ''}" data-meal="${m.id}" data-hora="${h}">${labelHora(h)}</button>`).join('')}
           <button type="button" class="chip small hora-otro${esOtra ? ' selected' : ''}" data-meal="${m.id}">${t('Otro')}</button>
-          <select class="hora-sel" data-meal="${m.id}" style="${esOtra ? '' : 'display:none;'}padding:8px;border-radius:10px;border:1.5px solid var(--border);font:inherit;font-size:0.85rem;background:var(--card);color:var(--ink);width:auto">
-            ${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${horaComidas[m.id] === h ? 'selected' : ''}>${h === 0 ? '12:00 am' : h < 12 ? `${h}:00 am` : h === 12 ? '12:00 pm' : `${h - 12}:00 pm`}</option>`).join('')}
-          </select>
+          <input type="time" class="hora-sel auth-input" data-meal="${m.id}" value="${decimalAHora(horaComidas[m.id])}" style="${esOtra ? '' : 'display:none;'}padding:8px;width:auto">
         </div>
       </div>`;
     }).join('')}`;
@@ -819,7 +831,7 @@ function pintarComidas(container) {
     });
   });
   horarios.querySelectorAll('.hora-sel').forEach((sel) => {
-    sel.addEventListener('change', () => guardarHora(sel.dataset.meal, Number(sel.value)));
+    sel.addEventListener('change', () => { if (sel.value) guardarHora(sel.dataset.meal, horaADecimal(sel.value)); });
   });
   horarios.querySelectorAll('.comida-activa').forEach((chk) => {
     chk.addEventListener('change', () => {

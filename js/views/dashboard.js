@@ -252,7 +252,12 @@ export async function renderDashboard(container) {
   // fila siga apuntando a la comida correcta (si no, "Ahora" quedaría mal
   // calculado en cuanto faltara una comida).
   const HORAS_INICIO_COMIDA = mealsActivas(getState().user).map((m) => Number.isFinite(horasUsuario[m.id]) ? horasUsuario[m.id] : DEFAULT_HORA_COMIDAS[m.id]);
-  const horaActual = new Date().getHours();
+  // Con minutos, no solo la hora entera -- ahora que un horario puede ser
+  // "7:30" en vez de forzar "7:00", comparar solo new Date().getHours()
+  // dejaría una franja fija a medias sin marcarse "Ahora" hasta la hora
+  // siguiente completa.
+  const ahora = new Date();
+  const horaActual = ahora.getHours() + ahora.getMinutes() / 60;
   const menuHoy = await dailyMenu();
   // menuCard (no container -- container sigue siendo #app, que nunca se
   // desconecta) refleja si esta pantalla sigue montada: navigate() vacía
