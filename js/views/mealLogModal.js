@@ -266,8 +266,16 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
       });
     }
 
+    // Cada alimento con la primera letra en mayúscula y el resto en
+    // minúscula, sin importar cómo lo devolvió la IA (foto/voz/texto) o
+    // cómo lo haya escrito la usuaria a mano -- consistente con el mismo
+    // criterio ya usado para las exclusiones de texto libre del quiz.
+    function capitalizar(texto) {
+      return texto ? texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase() : texto;
+    }
+
     function pantallaConfirmar(detectados, previewUrl) {
-      alimentos = [...detectados];
+      alimentos = detectados.map(capitalizar);
       render();
 
       function render() {
@@ -302,7 +310,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
         modal.querySelector('#ml-agregar').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); agregar(); } });
         function agregar() {
           const input = modal.querySelector('#ml-agregar');
-          const val = input.value.trim();
+          const val = capitalizar(input.value.trim());
           if (!val) return;
           alimentos.push(val);
           render();
