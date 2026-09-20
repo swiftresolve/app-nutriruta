@@ -13,11 +13,16 @@
 // usuario siempre puede editar la lista antes de guardarla.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-// Sonnet, no Haiku -- prueba explícita para mejorar la precisión del
-// reconocimiento de alimentos (confundía platos entre sí). Si el costo
-// por registro sube demasiado al ser gratis/ilimitado para toda cuenta,
-// revisar de vuelta a Haiku o sumar un servicio especializado en comida.
-const MODEL = 'claude-sonnet-5';
+// Haiku -- decisión explícita de la usuaria: este registro es gratis e
+// ilimitado para toda cuenta (no solo Premium), así que el costo por
+// alimentar necesita quedar predecible y bajo. Se evaluó subir a Sonnet
+// para mejorar precisión, pero se descartó por ahora: el costo real por
+// registro con Sonnet no es un número fijo (varía según cuántas cuentas
+// registren y cuántas veces al día), y sin ese número controlado no vale
+// la pena el riesgo. Revisar de nuevo si se decide medir el costo real
+// primero (ver conversación: "necesito tener un control lo más exacto
+// posible de los costos de mi app").
+const MODEL = 'claude-haiku-4-5-20251001';
 const MAX_TEXT_LEN = 400;
 // ~4MB en base64 (jpeg comprimido en el cliente antes de enviar, igual que
 // el avatar) -- suficiente para una foto de comida, sin dejar pasar archivos
