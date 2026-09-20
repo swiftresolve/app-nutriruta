@@ -736,6 +736,8 @@ const EN = {
 
   // --- planner.js ---
   'Recomendadas': 'Recommended', 'Nombre (A-Z)': 'Name (A-Z)', 'Más rápidas': 'Fastest', 'Mis recetas': 'My recipes',
+  'Necesitas conexión para ver el Recetario por primera vez.': 'You need a connection to view the Recipe Book for the first time.',
+  'Necesitas conexión para ver esta receta por primera vez.': 'You need a connection to view this recipe for the first time.',
   'Generada con IA': 'Generated with AI',
   'Reconstruida de una foto': 'Reconstructed from a photo',
   'Desde una foto': 'From a photo',

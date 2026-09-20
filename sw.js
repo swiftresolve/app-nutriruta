@@ -1,4 +1,4 @@
-const CACHE = 'nutriruta-707183e4e1';
+const CACHE = 'nutriruta-9db229c1ee';
 const ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const ASSETS = [
   './js/store.js',
   './js/pathMap.js',
   './js/menu.js',
+  './js/recipesSync.js',
   './js/charts.js',
   './js/streakAnim.js',
   './js/push.js',

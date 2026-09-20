@@ -20,6 +20,7 @@ import { MEALS } from './data/meals.js';
 import { REGIONALISMOS } from './data/regionalismos.js';
 import { getState, setState, today } from './store.js';
 import { resolverMenu, resolverPorEtiquetas, buscarPorIngrediente as buscarPorIngredienteAPI } from './supabase-client.js';
+import { cachearMenuDelDia, leerMenuDelDiaCache, leerRecetaDetalleCache, cachearRecetasSueltas } from './recipesSync.js';
 
 // "Idioma de alimentos" (Ajustes) -- cambia solo palabras puntuales que sí
 // varían de país en país, nunca traduce nada más. Reemplazo por límites de
@@ -212,16 +213,33 @@ export function mealsActivas(user) {
 // el catálogo completo.
 export async function dailyMenu(dateStr = today()) {
   const { menuOverrides, user } = getState();
-  const [dia] = await resolverMenu({
-    fechas: [dateStr],
-    perfiles: user.perfiles || [],
-    exclusiones: user.exclusiones || [],
-    exclusionesOtro: user.exclusionesOtro || [],
-    comidasActivas: user.comidasActivas || null,
-    menuOverrides
-  });
-  const porId = new Map((dia?.menu || []).map((m) => [m.mealId, m.recipe]));
-  return mealsActivas(user).map((meal) => ({ meal, recipe: porId.get(meal.id) || null }));
+  const activas = mealsActivas(user);
+  try {
+    const [dia] = await resolverMenu({
+      fechas: [dateStr],
+      perfiles: user.perfiles || [],
+      exclusiones: user.exclusiones || [],
+      exclusionesOtro: user.exclusionesOtro || [],
+      comidasActivas: user.comidasActivas || null,
+      menuOverrides
+    });
+    const menu = activas.map((meal) => ({ meal, recipe: (dia?.menu || []).find((m) => m.mealId === meal.id)?.recipe || null }));
+    // Se cachea SIEMPRE que se logra resolver online -- así este mismo día
+    // queda disponible offline de ahí en adelante (contenido libre, ver
+    // recipesSync.js).
+    cachearMenuDelDia(dateStr, menu);
+    return menu;
+  } catch (e) {
+    // Sin conexión (o el servidor falló): si ya se vio este día antes,
+    // reconstruirlo desde la caché local en vez de dejar el menú vacío.
+    const cache = await leerMenuDelDiaCache(dateStr);
+    if (!cache) throw e;
+    return Promise.all(activas.map(async (meal) => {
+      const entry = cache.find((m) => m.mealId === meal.id);
+      const recipe = entry?.recipeId ? await leerRecetaDetalleCache(entry.recipeId) : null;
+      return { meal, recipe };
+    }));
+  }
 }
 
 // Menú de varios días de una sola vez (usado por weekMenu.js y
@@ -229,19 +247,38 @@ export async function dailyMenu(dateStr = today()) {
 // día.
 export async function dailyMenuRange(fechas) {
   const { menuOverrides, user } = getState();
-  const dias = await resolverMenu({
-    fechas,
-    perfiles: user.perfiles || [],
-    exclusiones: user.exclusiones || [],
-    exclusionesOtro: user.exclusionesOtro || [],
-    comidasActivas: user.comidasActivas || null,
-    menuOverrides
-  });
   const activas = mealsActivas(user);
-  return dias.map(({ fecha, menu }) => {
-    const porId = new Map(menu.map((m) => [m.mealId, m.recipe]));
-    return { fecha, menu: activas.map((meal) => ({ meal, recipe: porId.get(meal.id) || null })) };
-  });
+  try {
+    const dias = await resolverMenu({
+      fechas,
+      perfiles: user.perfiles || [],
+      exclusiones: user.exclusiones || [],
+      exclusionesOtro: user.exclusionesOtro || [],
+      comidasActivas: user.comidasActivas || null,
+      menuOverrides
+    });
+    return dias.map(({ fecha, menu: menuCrudo }) => {
+      const porId = new Map(menuCrudo.map((m) => [m.mealId, m.recipe]));
+      const menu = activas.map((meal) => ({ meal, recipe: porId.get(meal.id) || null }));
+      cachearMenuDelDia(fecha, menu);
+      return { fecha, menu };
+    });
+  } catch (e) {
+    // Sin conexión: arma lo que se pueda desde días ya vistos antes; los
+    // que nunca se cachearon quedan con recetas en null (weekMenu.js ya
+    // se salta las comidas sin receta, igual que hoy con opciones vacías).
+    const dias = await Promise.all(fechas.map(async (fecha) => {
+      const cache = await leerMenuDelDiaCache(fecha);
+      const menu = await Promise.all(activas.map(async (meal) => {
+        const entry = cache?.find((m) => m.mealId === meal.id);
+        const recipe = entry?.recipeId ? await leerRecetaDetalleCache(entry.recipeId) : null;
+        return { meal, recipe };
+      }));
+      return { fecha, menu };
+    }));
+    if (dias.every((d) => d.menu.every((m) => !m.recipe))) throw e;
+    return dias;
+  }
 }
 
 // Sugiere UNA receta real del catálogo para acompañar el tema de un día
@@ -257,6 +294,11 @@ export async function sugerirRecetaPorEtiquetas(comida, etiquetas = []) {
     perfiles: user.perfiles || [], exclusiones: user.exclusiones || [], exclusionesOtro: user.exclusionesOtro || [],
     primero: true
   });
+  // Se cachea por id (no por día/semana -- a diferencia de dailyMenu, no
+  // hay una clave estable para reproducir esta sugerencia sin conexión;
+  // lo que sí queda offline es poder volver a ABRIR esta receta puntual
+  // una vez que ya se mostró).
+  if (receta) cachearRecetasSueltas([receta]);
   return receta || null;
 }
 
@@ -465,8 +507,10 @@ export function formatCantidad(n) {
 // activos, prioriza solo los snacks que de verdad ayudan a esa condición.
 export async function sosSnacks() {
   const { user } = getState();
-  return resolverPorEtiquetas({
+  const snacks = await resolverPorEtiquetas({
     comida: null, etiquetas: ['snack_antiansiedad'], etiquetaObligatoria: true,
     perfiles: user.perfiles || [], exclusiones: user.exclusiones || [], exclusionesOtro: user.exclusionesOtro || []
   });
+  cachearRecetasSueltas(snacks);
+  return snacks;
 }

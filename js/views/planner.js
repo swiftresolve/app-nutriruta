@@ -4,6 +4,7 @@ import { MEALS } from '../data/meals.js';
 import { trafficLight, trafficLightRecetaPropia, shoppingList, rangeShoppingList, displayRecipe, rankRecipes, matchesSearch, agruparPorCategoria, textoConCantidad } from '../menu.js';
 import { header, navigate, toast, openModal, SEARCH_ICON, CAMERA_ICON, SHARE_ICON, PENCIL_ICON, CART_ICON, CLOCK_ICON, SPARKLE_ICON, TRASH_ICON, abrirComprarNutricoins, coinIcon, ORO_NUTRICOINS, PLATA_NUTRICOINS } from '../app.js';
 import { generarRecetaIA, generarRecetaDesdeFoto, generarRecetaDesdeEnlace, fetchRecetasIndex, fetchRecetaDetalle } from '../supabase-client.js';
+import { leerRecetasIndiceCache, leerRecetaDetalleCache } from '../recipesSync.js';
 import { openRecipe, semaforoIcon, SEMAFORO_TEXTO } from './dashboard.js';
 import { t, getIdioma } from '../i18n.js';
 import { abrirCamaraEnVivo } from '../camera.js';
@@ -289,8 +290,19 @@ export function renderPlanner(container, params = {}) {
   async function getRecetasIndex(user) {
     const key = JSON.stringify([user.exclusiones || [], user.exclusionesOtro || []]);
     if (recetasIndexCache && recetasIndexKey === key) return recetasIndexCache;
-    recetasIndexCache = await fetchRecetasIndex(user.exclusiones || [], user.exclusionesOtro || []);
-    recetasIndexKey = key;
+    try {
+      recetasIndexCache = await fetchRecetasIndex(user.exclusiones || [], user.exclusionesOtro || []);
+      recetasIndexKey = key;
+    } catch (e) {
+      // Sin conexión: cae al índice que ya se sincronizó antes (ver
+      // recipesSync.js) -- puede no reflejar exclusiones cambiadas offline,
+      // aceptable para esta situación. Sin nada cacheado tampoco, no hay
+      // Recetario que mostrar.
+      const cache = await leerRecetasIndiceCache();
+      if (!cache) throw e;
+      recetasIndexCache = cache;
+      recetasIndexKey = key;
+    }
     return recetasIndexCache;
   }
 
@@ -858,7 +870,14 @@ export function renderPlanner(container, params = {}) {
     cargando.textContent = t('Cargando…');
     body.appendChild(cargando);
     const tabAlPedir = tab, mealFilterAlPedir = mealFilter, ordenAlPedir = orden, busquedaAlPedir = busqueda, soloFavAlPedir = soloFavoritas;
-    const indice = await getRecetasIndex(user);
+    let indice;
+    try {
+      indice = await getRecetasIndex(user);
+    } catch {
+      if (!cargando.isConnected) return;
+      cargando.textContent = t('Necesitas conexión para ver el Recetario por primera vez.');
+      return;
+    }
     if (tab !== tabAlPedir || mealFilter !== mealFilterAlPedir || orden !== ordenAlPedir || busqueda !== busquedaAlPedir || soloFavoritas !== soloFavAlPedir || !cargando.isConnected) return;
     cargando.remove();
 
@@ -915,8 +934,16 @@ export function renderPlanner(container, params = {}) {
       try {
         const completa = await fetchRecetaDetalle(r.id);
         openRecipe(completa);
-      } catch {
-        navigate('plans');
+      } catch (e) {
+        // El servidor niega el contenido (no gratis, sin Premium) -- error
+        // esperado, manda al mismo lugar que una tarjeta bloqueada.
+        if (e?.message?.includes('Premium')) { navigate('plans'); return; }
+        // Cualquier otro fallo (sin conexión, típicamente): si ya se
+        // sincronizó esta receta antes, se abre desde la caché local en
+        // vez de dejar la tarjeta sin reacción.
+        const cache = await leerRecetaDetalleCache(r.id);
+        if (cache) openRecipe(cache);
+        else toast(t('Necesitas conexión para ver esta receta por primera vez.'));
       } finally {
         btn.disabled = false;
       }

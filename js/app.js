@@ -2,6 +2,7 @@
 import { getState, setState, initCloud, resetState, isPremium, maxEscudos, COSTO_ESCUDO_GEMAS, GEMAS_POR_DIA, comprarEscudo, diasDelMes, today, sincronizarNutricoins, hayNovedadesNuevas, esc } from './store.js';
 import { t } from './i18n.js';
 import { getSession, supabase, avatarUrlFor, fetchNutricoins, buscarAmigoPorUsername, solicitarAmistad } from './supabase-client.js';
+import { sincronizarCatalogo } from './recipesSync.js';
 import { HOTMART_CHECKOUT_NUTRICOINS } from './config.js';
 import { broteStage, broteBadge } from './ruti.js';
 import { frozenFlameIcon } from './streakAnim.js';
@@ -872,6 +873,10 @@ if ('serviceWorker' in navigator) {
       // configuración, el navegador ya la tiene en caché y no hay el
       // "parpadeo" de la inicial antes de que aparezca la foto real.
       new Image().src = avatarUrlFor(session.user.id);
+      // Sincroniza el catálogo de recetas a IndexedDB para que el
+      // Recetario siga funcionando offline (ver recipesSync.js) -- en
+      // segundo plano, nunca bloquea el arranque ni la navegación.
+      sincronizarCatalogo(getState().user);
     }
     // El quiz ya no vive detrás del login: se responde primero (invitada,
     // sin cuenta) y la cuenta se crea al final para guardarlo. Por eso el
