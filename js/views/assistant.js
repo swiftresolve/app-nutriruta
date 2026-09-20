@@ -5,7 +5,7 @@ import { isPremium, getState, setState, sanaApertura, esc, agregarMemoria, elimi
 import { fetchGuideHistory, askGuide, analyzeFood, listGuideConversations, deleteGuideConversation } from '../supabase-client.js';
 import { header, navigate, toast, susanaName, openModal, GEAR_ICON, PENCIL_ICON, TRASH_ICON, SEARCH_ICON, THUMBS_UP_ICON, THUMBS_DOWN_ICON, THUMBS_UP_SOLID_ICON, THUMBS_DOWN_SOLID_ICON, ARROW_UP_ICON } from '../app.js';
 import { SUSANA_TONOS } from '../data/susanaTonos.js';
-import { t } from '../i18n.js';
+import { t, getIdioma } from '../i18n.js';
 
 // Ícono de menú hamburguesa -- 3 líneas simples, mismo lenguaje visual
 // que el resto de íconos propios de la app (GEAR_ICON, SEARCH_ICON en
@@ -160,12 +160,28 @@ export function renderAssistant(container, params = {}) {
     bubble.appendChild(fila);
   }
 
-  function addBubble(role, text, { scroll = true } = {}) {
+  // Hora de cada mensaje (enviado o recibido) -- pedido explícito. Para
+  // mensajes nuevos es el momento real de "ahora" (ni el servidor de
+  // askGuide ni el de analyzeFood devuelven su propio timestamp, y no
+  // hace falta: es prácticamente el mismo instante); para el historial
+  // ya cargado, viene del created_at real de la fila en Supabase.
+  function crearHoraEl(hora) {
+    const el = document.createElement('div');
+    el.className = 'chat-msg-hora';
+    el.textContent = new Date(hora).toLocaleTimeString(getIdioma() === 'en' ? 'en-US' : 'es', { hour: 'numeric', minute: '2-digit' });
+    return el;
+  }
+
+  function addBubble(role, text, { scroll = true, hora = null } = {}) {
     const b = document.createElement('div');
     b.className = `chat-msg ${role}`;
     const textEl = document.createElement('div');
     textEl.textContent = text;
     b.appendChild(textEl);
+    // Sin hora en mensajes "system" (avisos de error/bienvenida propios de
+    // la app, ej. "No pudimos cargar tu historial") -- no son parte real
+    // de la conversación con SuSana, ponerles hora no aporta nada.
+    if (role !== 'system') b.appendChild(crearHoraEl(hora || Date.now()));
     if (role === 'assistant') agregarFeedback(b);
     log.appendChild(b);
     if (scroll) scrollToView(b);
@@ -198,10 +214,30 @@ export function renderAssistant(container, params = {}) {
       </div>
       ${data.cierre ? `<p class="mt">${esc(data.cierre)}</p>` : ''}`;
   }
-  function addCardBubble(role, html, { scroll = true } = {}) {
+  // Si el content guardado en Supabase es el sobre JSON de una tarjeta de
+  // análisis (ver ANALYSIS_SYSTEM_PROMPT/action 'analyze' en
+  // ai-assistant/index.ts), se reconstruye la MISMA tarjeta visual en vez
+  // de mostrar el JSON crudo o el texto plano -- antes el historial solo
+  // guardaba un resumen en texto ("resumen" en el servidor), así que al
+  // reabrir una conversación vieja el análisis se veía como un párrafo
+  // suelto en vez de la tarjeta con barras que se generó al tocar
+  // "Analizar con SuSana". Los análisis guardados ANTES de este cambio
+  // no tienen el JSON estructurado -- esos se siguen viendo como texto,
+  // no hay forma de reconstruir algo que nunca se guardó.
+  function comoTarjetaAnalisis(content) {
+    if (typeof content !== 'string' || content[0] !== '{') return null;
+    try {
+      const obj = JSON.parse(content);
+      if (obj?.__type === 'analysis_card' && obj.analysis?.nutritivo && obj.analysis?.integracion) return obj;
+    } catch { /* no era una tarjeta guardada -- se muestra como texto normal */ }
+    return null;
+  }
+
+  function addCardBubble(role, html, { scroll = true, hora = null } = {}) {
     const b = document.createElement('div');
     b.className = `chat-msg ${role} chat-msg-card`;
     b.innerHTML = html;
+    b.appendChild(crearHoraEl(hora || Date.now()));
     if (role === 'assistant') agregarFeedback(b);
     log.appendChild(b);
     if (scroll) scrollToView(b);
@@ -232,7 +268,12 @@ export function renderAssistant(container, params = {}) {
     if (!history.length) {
       ultimo = addBubble('system', t('¡Hola! Soy SuSana 🌿 {apertura}', { apertura: sanaApertura() }), { scroll: false });
     } else {
-      for (const m of history) ultimo = addBubble(m.role, m.content, { scroll: false });
+      for (const m of history) {
+        const tarjeta = m.role === 'assistant' ? comoTarjetaAnalisis(m.content) : null;
+        ultimo = tarjeta
+          ? addCardBubble('assistant', renderAnalysisCard(tarjeta.recetaNombre, tarjeta.analysis), { scroll: false, hora: m.created_at })
+          : addBubble(m.role, m.content, { scroll: false, hora: m.created_at });
+      }
     }
     setQuota(usedCount);
     ultimo?.scrollIntoView({ block: 'end' });
@@ -309,7 +350,7 @@ export function renderAssistant(container, params = {}) {
     log.appendChild(typing);
     scrollToView(typing);
     try {
-      const data = await analyzeFood(descripcion, conversationId);
+      const data = await analyzeFood(recetaNombre, descripcion, conversationId);
       conversationId = data.conversationId;
       typing.remove();
       const bubble = addCardBubble('assistant', renderAnalysisCard(recetaNombre, data.analysis));

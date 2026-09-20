@@ -260,12 +260,19 @@ Deno.serve(async (req) => {
     }
 
     // Se guarda en el historial real como cualquier intercambio (pedido
-    // explícito: un análisis también debe quedar ahí) -- con texto
-    // legible, no el JSON crudo, para que se vea bien si se reabre.
-    const resumen = `${analysis.nutritivo.texto ?? ''} ${analysis.integracion.texto ?? ''}`.trim();
+    // explícito: un análisis también debe quedar ahí) -- el objeto
+    // ANALYSIS completo, no un resumen en texto plano, para que al
+    // reabrir la conversación el cliente pueda reconstruir la MISMA
+    // tarjeta visual (barras + etiquetas) en vez de mostrarlo como un
+    // párrafo suelto (ver comoTarjetaAnalisis en assistant.js). Guardar
+    // solo el resumen de texto era justamente lo que perdía la
+    // estructura -- una vez guardado así, ya no había forma de recuperar
+    // la tarjeta original.
+    const recetaNombreA = String(payload.recetaNombre ?? '').trim().slice(0, 120) || descripcion.slice(0, 60);
+    const contenidoTarjeta = JSON.stringify({ __type: 'analysis_card', recetaNombre: recetaNombreA, analysis });
     const { error: insertErrorA } = await admin.from('ai_conversations').insert([
       { user_id: user.id, conversation_id: analyzeConversationId, role: 'user', content: `Analiza: ${descripcion}` },
-      { user_id: user.id, conversation_id: analyzeConversationId, role: 'assistant', content: resumen || 'Análisis completado.' }
+      { user_id: user.id, conversation_id: analyzeConversationId, role: 'assistant', content: contenidoTarjeta }
     ]);
     if (insertErrorA) console.error('No se pudo guardar el análisis:', insertErrorA);
 

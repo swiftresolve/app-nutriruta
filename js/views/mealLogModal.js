@@ -1,9 +1,12 @@
-// Modal de "¿Qué comiste realmente?" — foto, voz o texto, siempre con una
-// lista editable antes de guardar (nunca se guarda algo que la IA detectó
-// sin que la usuaria lo confirme o corrija). No cuenta contra la cuota de
-// SuSana ni requiere Premium (ver supabase-client.js / log-meal).
-import { openModal, toast, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON } from '../app.js';
-import { esc, guardarComidaRegistrada, comidasDelDia, today } from '../store.js';
+// Modal de "¿Qué comiste realmente?" — foto, voz, texto con IA o manual,
+// siempre con una lista editable antes de guardar (nunca se guarda algo
+// que la IA detectó sin que la usuaria lo confirme o corrija). EN
+// EVALUACIÓN (2026-09-20): foto/voz/texto-con-IA pasan a requerir Premium
+// (cada llamada a log-meal tiene costo real) -- "Registrar manualmente"
+// se mantiene gratis para siempre, sin ninguna llamada a IA, para que el
+// hábito de registrar nunca dependa de pagar.
+import { openModal, toast, navigate, CAMERA_SOLID_ICON, MIC_ICON, TEXTO_ICON, PENCIL_ICON } from '../app.js';
+import { esc, guardarComidaRegistrada, comidasDelDia, today, isPremium } from '../store.js';
 import { detectarAlimentosFoto, detectarAlimentosTexto, uploadComidaFoto } from '../supabase-client.js';
 import { abrirCamaraEnVivo } from '../camera.js';
 import { t, getIdioma } from '../i18n.js';
@@ -138,20 +141,50 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
     });
     cierreObs.observe(document.body, { childList: true });
 
+    // PREVIEW / en evaluación con la usuaria (2026-09-20): el reconocimiento
+    // por IA (foto/voz/texto libre) pasa a ser un beneficio Premium -- cada
+    // llamada a log-meal tiene un costo real, y regalarlo sin límite a
+    // cuentas gratis no tiene ningún ingreso detrás que lo cubra. El plan
+    // gratis conserva "Registrar manualmente": arma la lista sin IA, cero
+    // costo, para que el hábito de registrar nunca se corte por no pagar.
+    const premium = isPremium();
+
     function pantallaElegir() {
       detenerCamaraCompartida();
       modal.innerHTML = `
         <h2>${t('¿Qué comiste en {mealTitle}?', { mealTitle: esc(mealTitle) })}</h2>
-        <p class="small muted mt">${t('Regístralo con foto, voz o texto — puedes corregir la lista antes de guardar.')}</p>
+        <p class="small muted mt">${premium
+          ? t('Regístralo con foto, voz o texto — puedes corregir la lista antes de guardar.')
+          : t('Regístralo escribiendo la lista, o hazte Premium para que la IA la arme por ti con foto o voz.')}</p>
         <div class="ml-opciones mt">
-          <button type="button" class="ml-opcion" id="ml-foto" aria-label="${t('Foto')}"><span class="ml-opcion-circle">${CAMERA_SOLID_ICON}</span></button>
-          ${speechRecognitionCtor() ? `<button type="button" class="ml-opcion" id="ml-voz" aria-label="${t('Voz')}"><span class="ml-opcion-circle">${MIC_ICON}</span></button>` : ''}
-          <button type="button" class="ml-opcion" id="ml-texto" aria-label="${t('Texto')}"><span class="ml-opcion-circle">${TEXTO_ICON}</span></button>
+          <button type="button" class="ml-opcion${premium ? '' : ' locked'}" id="ml-foto" aria-label="${t('Foto')}"><span class="ml-opcion-circle">${CAMERA_SOLID_ICON}${premium ? '' : '<span class="ml-opcion-candado">🔒</span>'}</span><span class="ml-opcion-label">${t('Foto')}</span></button>
+          ${speechRecognitionCtor() ? `<button type="button" class="ml-opcion${premium ? '' : ' locked'}" id="ml-voz" aria-label="${t('Voz')}"><span class="ml-opcion-circle">${MIC_ICON}${premium ? '' : '<span class="ml-opcion-candado">🔒</span>'}</span><span class="ml-opcion-label">${t('Voz')}</span></button>` : ''}
+          <button type="button" class="ml-opcion${premium ? '' : ' locked'}" id="ml-texto" aria-label="${t('Texto con IA')}"><span class="ml-opcion-circle">${TEXTO_ICON}${premium ? '' : '<span class="ml-opcion-candado">🔒</span>'}</span><span class="ml-opcion-label">${t('Texto IA')}</span></button>
+          <button type="button" class="ml-opcion" id="ml-manual" aria-label="${t('Escribir manualmente')}"><span class="ml-opcion-circle manual">${PENCIL_ICON}</span><span class="ml-opcion-label">${t('Manual')}</span></button>
         </div>`;
 
-      modal.querySelector('#ml-foto').addEventListener('click', () => pantallaCamara());
-      modal.querySelector('#ml-voz')?.addEventListener('click', () => pantallaVoz());
-      modal.querySelector('#ml-texto').addEventListener('click', () => pantallaTexto());
+      const abrirOMostrarUpsell = (abrir) => premium ? abrir() : mostrarUpsellIA();
+      modal.querySelector('#ml-foto').addEventListener('click', () => abrirOMostrarUpsell(pantallaCamara));
+      modal.querySelector('#ml-voz')?.addEventListener('click', () => abrirOMostrarUpsell(pantallaVoz));
+      modal.querySelector('#ml-texto').addEventListener('click', () => abrirOMostrarUpsell(pantallaTexto));
+      modal.querySelector('#ml-manual').addEventListener('click', () => pantallaManual());
+    }
+
+    // Mismo patrón de upsell que ya usa el Recetario/Lista de compras
+    // (planner.js) -- explica el beneficio, nunca solo "esto es Premium"
+    // a secas, y manda a Planes al confirmar.
+    function mostrarUpsellIA() {
+      openModal((modalUpsell, closeUpsell) => {
+        modalUpsell.insertAdjacentHTML('beforeend', `
+          <h2 class="center">🔒 ${t('Reconocimiento con IA')}</h2>
+          <p class="mt center">${t('Toma una foto o dilo en voz alta y la IA arma la lista de alimentos por ti -- parte del plan Premium.')}</p>
+          <button type="button" class="btn accent full mt" id="ml-upsell-ver">${t('Ver planes Premium')}</button>`);
+        // Cierra ESTE modal de upsell y también el de "¿Qué comiste?" de
+        // atrás -- navigate() solo reemplaza #app, los modales viven en
+        // document.body aparte y se quedarían flotando sobre Planes si no
+        // se cierran explícitamente los dos.
+        modalUpsell.querySelector('#ml-upsell-ver').addEventListener('click', () => { closeUpsell(); closeFn(); navigate('plans'); });
+      });
     }
 
     // Cámara en vivo, módulo compartido con planner.js (ver camera.js) --
@@ -291,6 +324,15 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
       });
     }
 
+    // Registro 100% manual -- sin ninguna llamada a log-meal/IA, cero
+    // costo. Cae directo en la misma lista editable de pantallaConfirmar,
+    // vacía en vez de con detecciones, para reusar exactamente el mismo
+    // editor de alimentos (agregar/quitar) en vez de duplicarlo.
+    function pantallaManual() {
+      fuente = 'manual';
+      pantallaConfirmar({ nombre: null, alimentos: [] });
+    }
+
     // Cada alimento con la primera letra en mayúscula y el resto en
     // minúscula, sin importar cómo lo devolvió la IA (foto/voz/texto) o
     // cómo lo haya escrito la usuaria a mano -- consistente con el mismo
@@ -312,7 +354,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
 
       function render() {
         modal.innerHTML = `
-          <h2>${t('Esto es lo que detecté')}</h2>
+          <h2>${fuente === 'manual' ? t('¿Qué comiste?') : t('Esto es lo que detecté')}</h2>
           ${previewUrl ? `<img src="${previewUrl}" alt="" style="width:100%;border-radius:12px;margin-top:10px">` : ''}
           <label class="small muted mt" for="ml-nombre-platillo">${t('Nombre del platillo (opcional)')}</label>
           <input type="text" id="ml-nombre-platillo" class="auth-input" placeholder="${t('Ej: Bandeja paisa')}" value="${esc(nombrePlatillo || '')}" style="margin-top:4px">

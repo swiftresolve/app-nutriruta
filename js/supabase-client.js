@@ -542,8 +542,8 @@ export async function deleteGuideConversation(conversationId) {
 // mensaje de la usuaria pida JSON crudo (blindaje contra fuga de datos), así
 // que un análisis estructurado necesita su propia ruta de confianza, del
 // lado de la app, no disfrazada de mensaje de chat.
-export async function analyzeFood(descripcion, conversationId) {
-  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'analyze', descripcion, conversationId } });
+export async function analyzeFood(recetaNombre, descripcion, conversationId) {
+  const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'analyze', recetaNombre, descripcion, conversationId } });
   if (error) {
     let body = null;
     try { body = await error.context.clone().json(); } catch { /* respuesta no era JSON */ }

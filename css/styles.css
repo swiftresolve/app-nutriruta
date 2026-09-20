@@ -359,12 +359,17 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .metodo-crear-text strong { font-size: 0.98rem; }
 .crear-receta-btn:active { transform: translateY(2px) scale(0.98); }
 
-/* Selector de "¿Qué comiste?" (foto/voz/texto, ver mealLogModal.js) --
-   círculo de color con ícono real en blanco (nunca emoji, sin etiqueta
-   de texto debajo -- el ícono ya se entiende solo), las 3 opciones
-   repartidas en una sola fila, nunca partidas en dos líneas. */
-.ml-opciones { display: flex; gap: 16px; justify-content: center; flex-wrap: nowrap; }
-.ml-opcion { background: none; border: none; cursor: pointer; padding: 0; }
+/* Selector de "¿Qué comiste?" (foto/voz/texto/manual, ver mealLogModal.js)
+   -- círculo de color con ícono real en blanco (nunca emoji) + una
+   etiqueta corta debajo de CADA círculo (mismo patrón que el menú
+   inferior de la app: ícono + palabra). Antes no había etiqueta -- con
+   solo 3 opciones el ícono se entendía solo, pero al sumar "Manual"
+   (lápiz) junto a "Texto con IA" (teclado) los dos se leían como "escribir
+   algo" sin distinguirse, así que cada uno necesita su propia palabra.
+   Las 4 opciones reparten una sola fila, nunca partidas en dos líneas. */
+.ml-opciones { display: flex; gap: 14px; justify-content: center; flex-wrap: nowrap; }
+.ml-opcion { background: none; border: none; cursor: pointer; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ml-opcion-label { font-size: 0.72rem; font-weight: 600; color: var(--ink-soft); }
 .ml-opcion-circle {
   width: 60px; height: 60px; border-radius: 50%; flex: none; color: #fff;
   display: flex; align-items: center; justify-content: center;
@@ -374,6 +379,21 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .ml-opcion:active .ml-opcion-circle { transform: scale(0.94); }
 .ml-opcion-circle svg { width: 60%; height: 60%; }
+/* Circulo de "Registrar manualmente" (siempre gratis, sin IA) -- gris
+   neutro en vez del degradado de color de las opciones con IA, para que
+   se lea de un vistazo como "la opción base", no como una cuarta opción
+   igual de destacada que las otras tres. */
+.ml-opcion-circle.manual { background: var(--bg); color: var(--ink-soft); box-shadow: inset 0 0 0 2px var(--border); }
+/* Opciones con IA bloqueadas (cuenta gratis, ver mealLogModal.js) --
+   mismo criterio que .recipe-card.locked: se ve apagada pero sigue
+   tocable (abre el upsell explicando el beneficio, no un error mudo). */
+.ml-opcion.locked .ml-opcion-circle { filter: grayscale(1); opacity: 0.55; }
+.ml-opcion-candado {
+  position: absolute; bottom: -2px; right: -2px; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--card-bg, #fff); border: 2px solid var(--bg);
+  display: flex; align-items: center; justify-content: center; font-size: 0.7rem;
+}
+.ml-opcion-circle { position: relative; }
 /* Botón grande de grabar voz (mealLogModal.js, pantalla dedicada, no el
    selector de arriba) -- solo el ícono, sin círculo ni fondo de ningún
    tipo (antes era un .btn.accent naranja con círculo, no lo quería así),
@@ -2098,6 +2118,15 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
 .chat-msg.user { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
 .chat-msg.assistant { align-self: flex-start; background: var(--primary-soft); color: var(--ink); border-bottom-left-radius: 4px; }
 .chat-msg.system { align-self: center; background: #FBF0DA; color: #96690F; font-size: 0.85rem; text-align: center; }
+/* Hora de cada mensaje (pedido explícito) -- discreta, dentro de la misma
+   burbuja, alineada al lado por el que "sale" cada quien: la propia a la
+   derecha, la de SuSana a la izquierda. En la tarjeta de análisis
+   (ancho completo, sin color propio) se deja centrada -- no hay un lado
+   claro del que "salga" cuando ocupa todo el ancho. */
+.chat-msg-hora { font-size: 0.68rem; opacity: 0.65; margin-top: 4px; }
+.chat-msg.user .chat-msg-hora { text-align: right; }
+.chat-msg.assistant .chat-msg-hora { text-align: left; }
+.chat-msg.chat-msg-card .chat-msg-hora { text-align: center; }
 
 /* Tarjeta de análisis de una comida (referencia real: "Fitia Coach"):
    ancha (no la burbuja angosta normal), sin color de fondo propio -- el
@@ -2160,7 +2189,6 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    es coral/rojizo (se usa para CTAs), y una conversación "seleccionada"
    no es una acción destructiva ni de alerta. Mismo patrón que ya usan
    .filtro-select.selected y .plan-option.selected en el resto de la app. */
-.hist-row.selected { background: var(--primary-soft); }
 .hist-row.selected .hist-row-main { color: var(--primary-dark); font-weight: 700; }
 
 /* Menú de los tres puntos de cada conversación (Fijar/Cambiar nombre/
@@ -2178,6 +2206,13 @@ details.glossary p { margin-top: 6px; font-size: 0.92rem; }
    mientras la fila está cerrada, para que no se asome ni un pixel. */
 .hist-row-wrap { position: relative; overflow: hidden; border-radius: 12px; touch-action: pan-y; }
 .hist-row-wrap .hist-row { position: relative; z-index: 1; background: var(--card); touch-action: pan-y; }
+/* Misma especificidad que la regla de arriba (2 clases) -- sin el
+   contexto .hist-row-wrap acá también, esta regla perdía contra la de
+   arriba por venir antes en el archivo, y TODAS las filas terminaban
+   viéndose "seleccionadas" con el mismo fondo de tarjeta (bug real
+   reportado: el recuadro aparecía en cada chat del historial, no solo
+   en el abierto). */
+.hist-row-wrap .hist-row.selected { background: var(--primary-soft); }
 /* Capa roja de ancho completo DEBAJO de la fila -- al deslizar más allá
    de los 76px del ícono, se sigue revelando la MISMA capa (no un botón
    que se estira), por eso se ve como un solo rojo continuo creciendo,
