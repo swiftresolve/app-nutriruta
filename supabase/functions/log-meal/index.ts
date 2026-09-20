@@ -13,7 +13,11 @@
 // usuario siempre puede editar la lista antes de guardarla.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const MODEL = 'claude-haiku-4-5-20251001';
+// Sonnet, no Haiku -- prueba explícita para mejorar la precisión del
+// reconocimiento de alimentos (confundía platos entre sí). Si el costo
+// por registro sube demasiado al ser gratis/ilimitado para toda cuenta,
+// revisar de vuelta a Haiku o sumar un servicio especializado en comida.
+const MODEL = 'claude-sonnet-5';
 const MAX_TEXT_LEN = 400;
 // ~4MB en base64 (jpeg comprimido en el cliente antes de enviar, igual que
 // el avatar) -- suficiente para una foto de comida, sin dejar pasar archivos
@@ -28,6 +32,18 @@ const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
+// Pide TANTO el nombre del platillo (si aplica) COMO la lista de
+// alimentos -- antes solo devolvía la lista, así que un registro por foto
+// nunca tenía un título real ("Bandeja paisa"), la tarjeta de "lo que
+// registraste" terminaba mostrando los ingredientes pegados como título
+// (ej. "Arroz blanco, Huevo frito, Carne molida..."). "nombre" es null a
+// propósito cuando NO hay un plato típico reconocible (ej. una repisa de
+// alimentos sueltos) -- inventar un nombre ahí sería peor que no tener uno.
+const FORMATO_RESPUESTA = `Responde ÚNICAMENTE con un objeto JSON con dos llaves:
+- "nombre": el nombre común del platillo en español (ej. "Bandeja paisa", "Ajiaco", "Sancocho") SOLO si reconoces un plato típico compuesto real -- si son solo alimentos sueltos sin un nombre de plato conocido (ej. "dos huevos, avena y un banano"), usa null. Nunca inventes un nombre que no sea real.
+- "alimentos": un array de strings en español, cada uno un alimento o preparación individual (ejemplo: ["arroz blanco","pollo a la plancha","aguacate"]).
+No incluyas calorías, porciones exactas ni ningún otro texto fuera del objeto JSON. Si no logras identificar ningún alimento real con claridad razonable, responde {"nombre":null,"alimentos":[]}.`;
+
 const PROMPT_FOTO = `Identifica ÚNICAMENTE los alimentos y preparaciones reales que se ven en esta foto de una comida -- comida latinoamericana/colombiana, ten en cuenta preparaciones típicas de la región (arepas, patacones, ajiaco, etc.) al reconocer texturas y formas antes de nombrar algo.
 
 Reglas estrictas:
@@ -36,10 +52,12 @@ Reglas estrictas:
 - Si dudas seriamente entre dos alimentos, elige el más probable según la forma Y la textura juntas, no solo el color.
 - Si un elemento no se ve con claridad razonable, no lo incluyas -- es mejor una lista corta y correcta que una larga con errores.
 
-Responde ÚNICAMENTE con un array JSON de strings en español, cada uno un alimento o preparación (ejemplo: ["arroz blanco","pollo a la plancha","aguacate"]). No incluyas calorías, porciones exactas ni ningún otro texto fuera del array. Si no logras identificar ningún alimento real con claridad razonable, responde [].`;
+${FORMATO_RESPUESTA}`;
 
 function promptTexto(texto: string): string {
-  return `Extrae la lista de alimentos mencionados en este texto (puede venir de una transcripción de voz, con errores menores): "${texto}". Responde ÚNICAMENTE con un array JSON de strings en español, cada uno un alimento o preparación tal como lo describió la persona (ejemplo: ["dos huevos","avena","un banano"]). No incluyas calorías, porciones exactas en gramos ni ningún otro texto fuera del array. Si el texto no describe comida real, responde [].`;
+  return `Extrae la lista de alimentos mencionados en este texto (puede venir de una transcripción de voz, con errores menores): "${texto}".
+
+${FORMATO_RESPUESTA}`;
 }
 
 Deno.serve(async (req) => {
@@ -104,30 +122,31 @@ Deno.serve(async (req) => {
     }
     const data = await res.json();
     const texto = (data.content ?? []).map((b: any) => b.text ?? '').join('').trim();
-    const alimentos = parseAlimentos(texto);
-    return json({ alimentos });
+    const { nombre, alimentos } = parseRespuesta(texto);
+    return json({ nombre, alimentos });
   } catch (e) {
     console.error('Fallo llamando a Anthropic:', e);
     return json({ error: 'No pudimos analizar eso en este momento. Intenta de nuevo.' }, 502);
   }
 });
 
-// El modelo casi siempre responde con el array JSON limpio, pero por si
+// El modelo casi siempre responde con el objeto JSON limpio, pero por si
 // agrega texto alrededor (ej. una frase antes), se extrae el primer bloque
-// entre [ ] en vez de fallar de una.
-function parseAlimentos(texto: string): string[] {
+// entre { } en vez de fallar de una.
+function parseRespuesta(texto: string): { nombre: string | null; alimentos: string[] } {
+  const normalizar = (obj: any) => ({
+    nombre: typeof obj?.nombre === 'string' && obj.nombre.trim() ? obj.nombre.trim() : null,
+    alimentos: Array.isArray(obj?.alimentos) ? obj.alimentos.filter((x: unknown) => typeof x === 'string').slice(0, 20) : []
+  });
   try {
     const directo = JSON.parse(texto);
-    if (Array.isArray(directo)) return directo.filter((x) => typeof x === 'string').slice(0, 20);
+    if (directo && typeof directo === 'object') return normalizar(directo);
   } catch { /* sigue abajo */ }
-  const match = texto.match(/\[[\s\S]*\]/);
+  const match = texto.match(/\{[\s\S]*\}/);
   if (match) {
-    try {
-      const arr = JSON.parse(match[0]);
-      if (Array.isArray(arr)) return arr.filter((x) => typeof x === 'string').slice(0, 20);
-    } catch { /* no se pudo -- responde vacío */ }
+    try { return normalizar(JSON.parse(match[0])); } catch { /* no se pudo -- responde vacío */ }
   }
-  return [];
+  return { nombre: null, alimentos: [] };
 }
 
 function json(body: unknown, status = 200): Response {
