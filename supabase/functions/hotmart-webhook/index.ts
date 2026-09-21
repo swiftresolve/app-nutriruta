@@ -145,9 +145,16 @@ Deno.serve(async (req) => {
   // tuviera nada que ver con su suscripción -- una compra de monedas y
   // una de Premium usan los mismos eventos de Hotmart, así que hay que
   // distinguirlas por el código de oferta ANTES de llegar a esa rama,
-  // igual que ya se hace arriba para el crédito. Nunca deja el saldo en
-  // negativo (revertir_nutricoins usa greatest(0, ...)) -- si ya se
-  // gastaron, se le quita lo que le quede, no una deuda.
+  // igual que ya se hace arriba para el crédito.
+  // SÍ puede dejar el saldo en negativo (segundo hueco real, detectado
+  // por la usuaria): si en vez de eso se topara en 0, cualquiera podría
+  // comprar, gastarlas todas de inmediato y pedir el reembolso dentro de
+  // los 7 días de garantía sin ninguna consecuencia -- y repetir el
+  // ciclo indefinidamente, usando la IA gratis para siempre. Con saldo
+  // negativo permitido, los chequeos de "saldo >= costo" que ya tiene
+  // cada función que cobra NutriCoins (ver generate-recipe) bloquean
+  // cualquier uso nuevo hasta que compre monedas de verdad -- sin
+  // reembolsarlas -- y quede en positivo otra vez.
   if (DESACTIVAR_INMEDIATO.has(event) && cantidadNutricoins) {
     if (!userId) {
       console.warn(`Reembolso/chargeback de ${cantidadNutricoins} NutriCoins de ${email} sin cuenta vinculada -- nada que revertir.`);
