@@ -138,6 +138,41 @@ Deno.serve(async (req) => {
     return json({ ok: true, nutricoins_acreditados: cantidadNutricoins, saldo: saldoNuevo });
   }
 
+  // Reembolso/chargeback de una compra de NutriCoins -- hueco real que
+  // encontramos: sin esta rama, este evento caía de largo hasta
+  // DESACTIVAR_INMEDIATO más abajo y le CANCELABA el plan Premium a la
+  // usuaria (poniendo plan='free'), aunque la compra reembolsada no
+  // tuviera nada que ver con su suscripción -- una compra de monedas y
+  // una de Premium usan los mismos eventos de Hotmart, así que hay que
+  // distinguirlas por el código de oferta ANTES de llegar a esa rama,
+  // igual que ya se hace arriba para el crédito. Nunca deja el saldo en
+  // negativo (revertir_nutricoins usa greatest(0, ...)) -- si ya se
+  // gastaron, se le quita lo que le quede, no una deuda.
+  if (DESACTIVAR_INMEDIATO.has(event) && cantidadNutricoins) {
+    if (!userId) {
+      console.warn(`Reembolso/chargeback de ${cantidadNutricoins} NutriCoins de ${email} sin cuenta vinculada -- nada que revertir.`);
+      return json({ ok: true, ignorado: 'nutricoins_sin_cuenta' });
+    }
+    const { data: saldoNuevo, error: reversoError } = await admin.rpc('revertir_nutricoins', {
+      p_user_id: userId,
+      p_monto: cantidadNutricoins
+    });
+    if (reversoError) {
+      console.error('No se pudo revertir NutriCoins:', reversoError.message);
+      return json({ error: 'No se pudo revertir NutriCoins' }, 500);
+    }
+    // Se registra SIEMPRE (aunque el monto sea 0 en cancelado/expirado, no
+    // solo en reembolso/chargeback real) -- mismo motivo que en la rama de
+    // Premium más abajo: el chequeo de duplicados al inicio de la función
+    // busca en "pagos" por transacción+evento, así que sin esta fila un
+    // reenvío del mismo webhook (Hotmart sí reintenta) volvería a llamar
+    // revertir_nutricoins una segunda vez para el mismo reembolso.
+    const montoReverso = REVERSOS_REALES.has(event) ? -(data?.purchase?.price?.value ?? 0) : 0;
+    await registrarPago(admin, userId, email, event, null, montoReverso, transactionId);
+    console.log(`${cantidadNutricoins} NutriCoins revertidos a ${email} por ${event} (saldo nuevo: ${saldoNuevo}).`);
+    return json({ ok: true, nutricoins_revertidos: cantidadNutricoins, saldo: saldoNuevo });
+  }
+
   if (!userId) {
     if (ACTIVAR.has(event)) {
       const periodo = inferirPeriodo(data);
