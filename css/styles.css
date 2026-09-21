@@ -891,8 +891,20 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   .confeti-pieza { animation: none; display: none; }
 }
 
-/* ===== Header ===== */
-.app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 6px; min-width: 0; }
+/* ===== Header =====
+   Fijo al hacer scroll, mismo criterio que la bottom-nav (pedido
+   explícito) -- position:sticky en vez de fixed a propósito: al ser
+   parte del flujo normal de #app, no hace falta agregarle padding-top
+   compensatorio a NINGUNA pantalla (harían falta tocar 16 vistas
+   distintas) -- sticky ya reserva su propio espacio solo. Se apaga
+   sola en SuSana porque esa pantalla nunca llama a header(), usa su
+   propio .chat-header aparte (ver renderAssistant en assistant.js). */
+.app-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 6px; min-width: 0;
+  position: sticky; top: 0; z-index: 40; margin-left: -16px; margin-right: -16px; padding: 10px 16px;
+  background: var(--nav-bg); backdrop-filter: blur(16px) saturate(1.5); -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  border-bottom: 1px solid var(--nav-border);
+}
 .app-header .brand { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--brand-text); font-size: 1.05rem; flex: none; min-width: 0; }
 .app-header .brand svg { width: 22px; height: 22px; border-radius: 6px; flex: none; }
 /* El engranaje de Ajustes específicamente (no otros .icon-btn de la app,
