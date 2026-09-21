@@ -172,6 +172,13 @@ body {
      ancha que la pantalla, los elementos centrados con left:50% quedaban
      fuera de la parte visible hasta scrollear). */
   overflow-x: hidden;
+  /* Sin esto, el "rebote" elástico del scroll (iOS/Android al pasarse del
+     tope o el final de la página) hacía que el header fijo (position:
+     sticky) se viera despegarse y "rebotar" en vez de quedarse quieto --
+     reportado como bug real. overscroll-behavior-y corta ese rebote de
+     raíz; el precio es que también se pierde el gesto nativo de
+     "pull to refresh", que esta app no usa para nada de todas formas. */
+  overscroll-behavior-y: none;
 }
 
 #app {
@@ -905,8 +912,16 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   background: var(--nav-bg); backdrop-filter: blur(16px) saturate(1.5); -webkit-backdrop-filter: blur(16px) saturate(1.5);
   border-bottom: 1px solid var(--nav-border);
 }
-.app-header .brand { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--brand-text); font-size: 1.05rem; flex: none; min-width: 0; }
+/* "NutriRuta" es lo primero que cede espacio (con "…", nunca se corta a
+   la mitad), NUNCA las cifras de racha/gemas/monedas/escudos -- si
+   cualquiera de esos números crece mucho (ej. 99999 NutriCoins), el
+   nombre se acorta solo antes de que algo se sobreponga. El grupo de la
+   derecha (.row que envuelve header-stats + el engranaje) se queda con
+   flex:none a propósito, para que nunca sea al revés. */
+.app-header .brand { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--brand-text); font-size: 1.05rem; flex: 1 1 auto; min-width: 0; overflow: hidden; }
 .app-header .brand svg { width: 22px; height: 22px; border-radius: 6px; flex: none; }
+.app-header .brand-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.app-header > .row { flex: none; }
 /* El engranaje de Ajustes específicamente (no otros .icon-btn de la app,
    como el de cerrar del check-in) un poco más chico -- entre racha,
    gemas, NutriCoins y escudos ya no sobra espacio en pantallas angostas. */

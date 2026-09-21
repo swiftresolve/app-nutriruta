@@ -9,7 +9,7 @@
 // lista de posiciones de Duolingo (la usuaria mandó capturas), adaptado
 // a los 10 niveles propios de NutriRuta (sinónimos de "ruta/camino").
 import { esc, getState, setState } from '../store.js';
-import { header, CLOCK_ICON, navigate } from '../app.js';
+import { CLOCK_ICON, navigate } from '../app.js';
 import { fetchLigaEstado, fetchMiNivelLiga, misAmigos, fetchMiResultadoLiga, marcarResultadoLigaVisto } from '../supabase-client.js';
 import { celebrateMilestone } from '../streakAnim.js';
 import { rutiMascot } from '../mascot.js';
@@ -83,8 +83,10 @@ function rellenarConDummies(participantes) {
   return [...participantes, ...relleno];
 }
 
+// Sin header() (pedido explícito, igual que SuSana) -- racha/gemas/
+// NutriCoins/escudos no aportan nada mientras se mira el ranking de la
+// Liga, y competían por espacio con el propio carrusel de divisiones.
 export function renderLiga(container) {
-  header(container);
   const wrap = document.createElement('div');
   wrap.innerHTML = `<div class="card center"><p class="muted">${t('Cargando tu liga…')}</p></div>`;
   container.appendChild(wrap);
