@@ -569,7 +569,12 @@ async function invokeLogMeal(body) {
   if (error) {
     let errBody = null;
     try { errBody = await error.context.clone().json(); } catch { /* no era JSON */ }
-    throw new Error(errBody?.error || 'No pudimos analizar eso. Intenta de nuevo.');
+    // .code (no .message) es lo que revisa mealLogModal.js para distinguir
+    // "el plan venció a mitad de sesión" (manda a Planes) de cualquier otro
+    // error real -- mismo patrón que ya usan askGuide/analyzeFood.
+    const e = new Error(errBody?.message || errBody?.error || 'No pudimos analizar eso. Intenta de nuevo.');
+    e.code = errBody?.error;
+    throw e;
   }
   return { nombre: data.nombre || null, alimentos: data.alimentos || [] };
 }

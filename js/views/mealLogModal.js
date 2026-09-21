@@ -97,6 +97,23 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
     // solo escribe fotoUrl cuando llega una nueva, así que editar por
     // texto/voz guardaba el registro SIN foto, pisando la que ya había).
     const fotoUrlExistente = editIndex != null ? (comidasDelDia(mealId)[editIndex]?.fotoUrl || null) : null;
+
+    // Si el plan Premium venció A MITAD de esta sesión (ej. la modal ya
+    // estaba abierta cuando expiró), el servidor rechaza con este código
+    // aunque el candado del cliente no haya alcanzado a bloquear el botón
+    // -- ahí no tiene sentido el toast genérico de "no se pudo procesar",
+    // se manda directo a Planes con el motivo real.
+    function manejarErrorIA(err, mensaje = t('No se pudo procesar eso.')) {
+      console.error(err);
+      if (err?.code === 'premium_requerido') {
+        closeFn();
+        toast(t('Tu plan Premium ya no está activo.'));
+        navigate('plans');
+        return;
+      }
+      toast(mensaje);
+      pantallaElegir();
+    }
     // Mismo criterio que la foto -- si esta edición no vuelve a detectar un
     // nombre de platillo (ej. la IA no reconoce uno en el nuevo texto/voz),
     // se conserva el que ya tenía en vez de borrarlo en silencio.
@@ -128,9 +145,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
         fuente = 'foto';
         pantallaConfirmar(detectados, previewUrl);
       } catch (err) {
-        console.error(err);
-        toast(t('No se pudo procesar la foto.'));
-        pantallaElegir();
+        manejarErrorIA(err, t('No se pudo procesar la foto.'));
       }
     });
 
@@ -207,9 +222,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
             fuente = 'foto';
             pantallaConfirmar(detectados, previewUrl);
           } catch (err) {
-            console.error(err);
-            toast(t('No se pudo procesar la foto.'));
-            pantallaElegir();
+            manejarErrorIA(err, t('No se pudo procesar la foto.'));
           }
         }
       });
@@ -289,9 +302,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
           fuente = 'voz';
           pantallaConfirmar(detectados);
         } catch (err) {
-          console.error(err);
-          toast(t('No se pudo procesar eso.'));
-          pantallaElegir();
+          manejarErrorIA(err);
         }
       };
       // Arranca solo, apenas se entra a esta pantalla -- tocar "Voz" ya
@@ -317,9 +328,7 @@ export function openMealLogModal(mealId, mealTitle, onSaved, editIndex = null) {
           fuente = 'texto';
           pantallaConfirmar(detectados);
         } catch (err) {
-          console.error(err);
-          toast(t('No se pudo procesar eso.'));
-          pantallaElegir();
+          manejarErrorIA(err);
         }
       });
     }

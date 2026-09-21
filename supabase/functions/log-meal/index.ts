@@ -1,17 +1,33 @@
 // Identifica alimentos en una foto o un texto libre para el registro rápido
 // de "qué comí realmente" en cada estación de Tu Ruta de Hoy.
 //
-// A diferencia de SuSana (ai-assistant): esto NO cuenta contra la cuota de
-// 25 mensajes/mes ni requiere Premium — decisión explícita de la usuaria,
-// "reducir fricción para registrar" es un principio del producto, no un
-// beneficio de pago. Solo requiere sesión válida (verify_jwt=true) para que
-// el gasto en la API de Anthropic quede atado a una cuenta real, no a
-// tráfico anónimo.
+// CAMBIO DE DECISIÓN (2026-09-21): foto/voz/texto con IA ahora requieren
+// Premium -- antes era gratis e ilimitado para toda cuenta, pero cada
+// llamada tiene un costo real sin ningún ingreso detrás en cuentas
+// gratis. Mismo criterio que usa Fitia (confirmado: su análisis por foto
+// tampoco es gratis, es beneficio Premium sin límite de monedas -- no se
+// cobra en FitiaCoins ni aquí en NutriCoins). El registro SIGUE gratis
+// para siempre vía "Registrar manualmente" (mealLogModal.js, modo
+// 'manual') -- esa vía nunca llega a esta función, así que el hábito de
+// registrar nunca depende de pagar.
 //
 // Nunca afirma precisión nutricional/médica: solo identifica alimentos por
 // nombre, nunca calorías ni porciones exactas (ver prompts abajo) — el
 // usuario siempre puede editar la lista antes de guardarla.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+
+// Misma vigencia por período que ya usan ai-assistant/hotmart-webhook --
+// no una constante compartida entre Edge Functions (cada una despliega
+// por separado, sin un módulo común real entre ellas todavía).
+const PLAN_DAYS: Record<string, number> = { mensual: 33, anual: 368 };
+
+function isPremiumVigente(profile: { plan: string; plan_periodo: string | null; plan_desde: string | null }): boolean {
+  if (profile.plan !== 'premium' || !profile.plan_desde || !profile.plan_periodo) return false;
+  const dias = PLAN_DAYS[profile.plan_periodo];
+  if (!dias) return false;
+  const vence = new Date(profile.plan_desde).getTime() + dias * 86400000;
+  return Date.now() < vence;
+}
 
 // Haiku -- decisión explícita de la usuaria: este registro es gratis e
 // ilimitado para toda cuenta (no solo Premium), así que el costo por
@@ -75,6 +91,17 @@ Deno.serve(async (req) => {
   });
   const { data: { user }, error: userError } = await authClient.auth.getUser();
   if (userError || !user) return json({ error: 'No autorizado' }, 401);
+
+  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const { data: profile, error: profileError } = await admin
+    .from('profiles')
+    .select('plan, plan_periodo, plan_desde')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (profileError) return json({ error: 'No se pudo verificar tu plan' }, 500);
+  if (!profile || !isPremiumVigente(profile)) {
+    return json({ error: 'premium_requerido', message: 'El registro con IA (foto/voz/texto) es una función Premium. Registra manualmente sin costo, o hazte Premium para que la IA lo haga por ti.' }, 403);
+  }
 
   let payload: Record<string, unknown>;
   try {
