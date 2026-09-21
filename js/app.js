@@ -152,6 +152,18 @@ export function navigate(route, params = {}) {
   // (antes usaba min-height:40vh, un valor fijo que se quedaba corto y
   // dejaba un hueco vacío feo entre la tarjeta y el input).
   app.classList.toggle('chat-active', route === 'assistant');
+  // header() pasó de position:sticky a position:fixed (rebotaba en el
+  // scroll elástico de iOS/Android -- pedido explícito: debe verse fijo
+  // en cualquier celular, sin excepción). Al sacarlo del flujo normal,
+  // #app necesita reservarle su alto arriba (mismo criterio que no-nav
+  // reserva el de la bottom-nav abajo) -- esta lista son las rutas que
+  // NUNCA llaman a header() (ver grep de "header(container)" en
+  // js/views/*.js). 'assistant' no hace falta incluirla: #app.chat-active
+  // ya reserva su propio espacio arriba (64px) independientemente de
+  // esto, tanto para el chat real como para la pantalla de "hazte
+  // Premium" que sí usa header().
+  const sinHeader = ['quiz', 'auth', 'resetPassword', 'sos', 'liga'].includes(route);
+  app.classList.toggle('no-header', sinHeader);
 
   render(app, params);
   // Reinicia la animación de entrada (quitar+forzar reflow+agregar la clase)

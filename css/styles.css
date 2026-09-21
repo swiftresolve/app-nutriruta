@@ -30,6 +30,7 @@
   --shadow: 0 6px 20px rgba(35, 56, 51, 0.1), 0 1.5px 4px rgba(35, 56, 51, 0.07);
   --nav-h: 64px;
   --nav-gap: 14px; /* separación de la nav flotante respecto al borde inferior */
+  --header-h: 58px; /* alto real de .app-header (fixed) -- ver #app padding-top */
   /* Antes 0.94, luego 0.72 -- seguía sin notarse sobre bloques de color
      plano detrás (ej. el banner de "Tengo ansiedad/antojo" en Hoy): sin
      bordes ni texturas que el blur pueda distorsionar, un tinte muy
@@ -184,9 +185,13 @@ body {
 #app {
   max-width: 560px;
   margin: 0 auto;
-  padding: 16px 16px calc(var(--nav-h) + var(--nav-gap) + 28px);
+  /* padding-top reserva el alto de .app-header (fixed, ver más abajo) --
+     sin esto el contenido de arriba quedaría tapado detrás. Se resta en
+     #app.no-header para las pantallas que nunca llaman a header(). */
+  padding: calc(var(--header-h) + 16px) 16px calc(var(--nav-h) + var(--nav-gap) + 28px);
   min-height: 100vh;
 }
+#app.no-header { padding-top: 16px; }
 /* Pantallas sin bottom-nav (quiz, auth, resetPassword) no necesitan ese
    espacio reservado abajo -- sin esto quedaba un hueco vacío grande en
    pantallas cortas como la bienvenida del quiz. Centradas verticalmente
@@ -899,16 +904,21 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 
 /* ===== Header =====
-   Fijo al hacer scroll, mismo criterio que la bottom-nav (pedido
-   explícito) -- position:sticky en vez de fixed a propósito: al ser
-   parte del flujo normal de #app, no hace falta agregarle padding-top
-   compensatorio a NINGUNA pantalla (harían falta tocar 16 vistas
-   distintas) -- sticky ya reserva su propio espacio solo. Se apaga
-   sola en SuSana porque esa pantalla nunca llama a header(), usa su
-   propio .chat-header aparte (ver renderAssistant en assistant.js). */
+   Fijo de verdad al hacer scroll (pedido explícito, en cualquier
+   celular sin excepción) -- position:FIXED, no sticky: sticky rebotaba
+   durante el scroll elástico (bug real reportado). Fixed es EXACTAMENTE
+   la misma técnica que ya usa .bottom-nav en esta app, ya probada sin
+   rebote en cualquier dispositivo. Al sacarlo del flujo, #app reserva su
+   alto con padding-top (var(--header-h), ver #app) en vez de con
+   margin-bottom acá -- #app.no-header (puesto por navigate() en app.js
+   según la ruta) le quita esa reserva a las pantallas que nunca llaman a
+   header(). Centrado igual que #app (max-width:560px, mismo padding
+   horizontal) para que su contenido quede alineado con el resto. */
 .app-header {
-  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 6px; min-width: 0;
-  position: sticky; top: 0; z-index: 40; margin-left: -16px; margin-right: -16px; padding: 10px 16px;
+  display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0;
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 560px; height: var(--header-h); box-sizing: border-box;
+  z-index: 40; padding: 0 16px;
   background: var(--nav-bg); backdrop-filter: blur(16px) saturate(1.5); -webkit-backdrop-filter: blur(16px) saturate(1.5);
   border-bottom: 1px solid var(--nav-border);
 }
