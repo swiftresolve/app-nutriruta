@@ -449,9 +449,26 @@ export function getHabits() {
   return state.habitos.checks;
 }
 
+// 1 gema por cada una de las 5 marcas del día (agua, menú, movimiento,
+// sin azúcar, sueño) -- pedido explícito: antes las 5 gemas del día
+// llegaban de una sola vez recién en la marca #3 junto con la racha, y
+// para la Liga (ranking semanal en vivo) se siente mejor ver el
+// progreso moverse apenas se completa cada cosa real, no todo junto al
+// final. Sigue sumando GEMAS_POR_DIA=5 en total si se marcan las 5,
+// mismo total de siempre -- solo cambia CUÁNDO llegan. Desmarcar
+// revierte la gema (ver otorgarGemas) para que no se pueda inflar el
+// ranking marcando y desmarcando en bucle.
+function otorgarGemaPorHabito(valorAnterior, valorNuevo) {
+  if (valorNuevo === valorAnterior) return;
+  otorgarGemas(valorNuevo ? 1 : -1);
+}
+
 export function toggleHabit(id) {
-  const checks = { ...getHabits(), [id]: !getHabits()[id] };
+  const anterior = getHabits()[id];
+  const nuevo = !anterior;
+  const checks = { ...getHabits(), [id]: nuevo };
   setState({ habitos: { fecha: today(), checks } });
+  otorgarGemaPorHabito(anterior, nuevo);
   const escudoUsado = updateStreak();
   checkAchievements();
   return escudoUsado;
@@ -465,6 +482,7 @@ function setHabitAuto(id, value) {
   if (actual === value) return null; // sin cambio real, no re-evaluar racha
   const checks = { ...getHabits(), [id]: value };
   setState({ habitos: { fecha: today(), checks } });
+  otorgarGemaPorHabito(actual, value);
   const escudoUsado = updateStreak();
   checkAchievements();
   return escudoUsado;
@@ -787,8 +805,15 @@ export function comprarEscudo() {
 
 // Para hitos que no pasan por updateStreak() (día del Plan de 7 días,
 // semana de la Misión) — mismos hitos que ya celebran confeti, ninguno nuevo.
+// Acepta n negativo (ver toggleHabit/setHabitAuto: desmarcar un hábito
+// revierte la gema que dio, para que nadie pueda marcar/desmarcar en
+// bucle para inflar el ranking de la Liga) -- nunca deja el saldo
+// negativo, ni el general ni el de la semana de Liga.
 export function otorgarGemas(n) {
-  setState({ gemas: (state.gemas || 0) + n, ligaGemasSemana: (state.ligaGemasSemana || 0) + n });
+  setState({
+    gemas: Math.max(0, (state.gemas || 0) + n),
+    ligaGemasSemana: Math.max(0, (state.ligaGemasSemana || 0) + n)
+  });
 }
 
 // Recetas marcadas con la estrella en el Recetario (ver planner.js).
@@ -886,9 +911,10 @@ function updateStreak() {
   if (actual > 0 && actual % 7 === 0 && escudos < maxEscudos()) escudos += 1;
 
   const mejor = Math.max(actual, state.racha.mejor);
-  const gemas = (state.gemas || 0) + GEMAS_POR_DIA;
-  const ligaGemasSemana = (state.ligaGemasSemana || 0) + GEMAS_POR_DIA;
-  setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t }, escudos, gemas, ligaGemasSemana, diasCongelados });
+  // Las gemas del día YA se repartieron una por una en otorgarGemaPorHabito
+  // (toggleHabit/setHabitAuto) a medida que se marcó cada cosa -- este
+  // bloque solo sigue siendo dueño de la racha/escudos, nunca de gemas.
+  setState({ diasCumplidos: dias, racha: { actual, mejor, ultimoDia: t }, escudos, diasCongelados });
   return escudoUsado;
 }
 

@@ -462,7 +462,7 @@ export function header(container) {
     h.querySelector('#hs-nutricoins').addEventListener('click', (e) => { e.stopPropagation(); abrirComprarNutricoins(); });
     attachStatTooltip(h.querySelector('#hs-gemas'), `
       <strong>💎 ${gemas} gemas</strong>
-      <p class="small muted mt" style="margin-top:4px">Ganas ${GEMAS_POR_DIA} 💎 cada día que completas, y más al terminar un día del Plan de 7 días o una semana de la Misión.</p>
+      <p class="small muted mt" style="margin-top:4px">Ganas hasta ${GEMAS_POR_DIA} 💎 al día — una por cada cosa que marques (agua, menú, movimiento, sin azúcar, sueño) — y más al terminar un día del Plan de 7 días o una semana de la Misión.</p>
       <p class="small muted" style="margin-top:2px">Se usan para comprar Pausas de Ruta extra — mira el 🛡️.</p>`);
     attachStatTooltip(h.querySelector('#hs-escudos'), () => {
       const st = getState();

@@ -1671,17 +1671,22 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 
 /* ===== Celebración de racha: página completa, no tarjeta sobrepuesta =====
    Dos actos dentro del mismo overlay: el estallido (fuegos artificiales)
-   y luego la racha con la semana. Sigue sin ser un modal — se cierra
-   sola y se puede tocar en cualquier momento para adelantar. */
+   y luego la racha con la semana. CAMBIO DE DECISIÓN (pedido explícito,
+   revierte a propósito el "nunca debe convertirse en un modal que haya
+   que cerrar" de antes): se quitaban solas en unos segundos y un toque
+   accidental en cualquier parte las cerraba de una -- no daba tiempo a
+   verlas bien. Ahora cada acto tiene su propio botón "Continuar" y
+   avanza SOLO con eso, nunca solas ni por tocar la pantalla. */
 .streak-celebrate-full {
   background: linear-gradient(160deg, var(--primary-dark), #16332C);
-  pointer-events: auto; flex-direction: column; overflow: hidden; cursor: pointer;
+  pointer-events: auto; flex-direction: column; overflow: hidden;
 }
-.streak-act { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; }
-.streak-act-1 { opacity: 1; animation: streak-act1-out 0.4s ease 1.5s forwards; }
-.streak-act-2 { opacity: 0; animation: streak-act2-in 0.5s ease 1.7s forwards; }
-@keyframes streak-act1-out { to { opacity: 0; transform: scale(0.94); pointer-events: none; } }
-@keyframes streak-act2-in { to { opacity: 1; } }
+.streak-act {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 24px; text-align: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+}
+.streak-act.visible { opacity: 1; pointer-events: auto; }
+.streak-act .btn { width: 100%; max-width: 260px; margin-top: 10px; }
 .streak-title { color: #fff; font-size: 1.5rem; font-weight: 800; margin-top: 6px; }
 .streak-title-sm { color: #fff; font-size: 1.2rem; font-weight: 800; }
 .streak-tip { color: rgba(255,255,255,0.75); max-width: 280px; margin-top: 4px; }
@@ -1706,9 +1711,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 @keyframes cw-check-pop { to { transform: scale(1); } }
 @keyframes streak-page-fade-out { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .streak-act, .firework, .cw-cell, .cw-check { animation-duration: 0.01s; animation-delay: 0s; }
-  .streak-act-1 { display: none; }
-  .streak-act-2 { opacity: 1; }
+  .streak-act { transition-duration: 0.01s; }
+  .firework, .cw-cell, .cw-check { animation-duration: 0.01s; animation-delay: 0s; }
 }
 
 .milestone-badge {

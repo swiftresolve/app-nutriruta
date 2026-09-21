@@ -88,28 +88,35 @@ export function celebrateStreak(n, stats) {
   }).join('');
 
   el.innerHTML = `
-    <div class="streak-act streak-act-1">
+    <div class="streak-act streak-act-1 visible">
       ${fuegos}
       <div class="flame-big">${broteBadge(etapa, { size: 88, premium: false })}</div>
       <div class="streak-title">¡Un día más en tu Ruta!</div>
       ${resumen}
+      <button type="button" class="btn accent" id="streak-continuar-1">Continuar</button>
     </div>
     <div class="streak-act streak-act-2">
       <div class="streak-title-sm">🔥 ¡Racha de ${n} día${n === 1 ? '' : 's'}!</div>
       ${rutiMascot('celebracion', { size: 110, animated: false })}
       <div class="cw-strip">${celebrateWeekStrip()}</div>
       <p class="small streak-tip">Vuelve mañana para sumar otro día — sin presión, a tu ritmo.</p>
+      <button type="button" class="btn accent" id="streak-continuar-2">Continuar</button>
     </div>`;
   document.body.appendChild(el);
 
+  // Cada acto avanza SOLO con su propio botón -- nunca solas, nunca por
+  // tocar cualquier parte de la pantalla (pedido explícito: antes se
+  // quitaban demasiado rápido y un toque accidental las cerraba antes de
+  // poder verlas bien).
   const cerrar = () => {
     el.style.animation = 'streak-page-fade-out 0.3s ease forwards';
     setTimeout(() => el.remove(), 320);
   };
-  el.addEventListener('click', cerrar, { once: true });
-  const duracion = stats ? 4600 : 3800;
-  const t = setTimeout(cerrar, duracion);
-  el.addEventListener('click', () => clearTimeout(t), { once: true });
+  el.querySelector('#streak-continuar-1').addEventListener('click', () => {
+    el.querySelector('.streak-act-1').classList.remove('visible');
+    el.querySelector('.streak-act-2').classList.add('visible');
+  });
+  el.querySelector('#streak-continuar-2').addEventListener('click', cerrar);
 }
 
 // Checkpoint de la Misión 12 semanas / Plan de 7 días: mismo confeti que
