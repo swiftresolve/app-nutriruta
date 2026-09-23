@@ -246,6 +246,28 @@ export async function abrirCamaraEnVivo({ modal, instruccion, onCapturar, onGale
   try {
     const dispositivos = await navigator.mediaDevices.enumerateDevices();
     const traseras = dispositivos.filter((d) => d.kind === 'videoinput' && !/front|user|selfie|frontal/i.test(d.label));
+
+    // El criterio genérico (facingMode:environment) NO siempre elige la
+    // lente principal -- bug real reportado: en un Huawei abría en la
+    // 3ra lente enumerada, una especie de macro desenfocada y pegada al
+    // objeto, sin que esFrameNegro() lo detectara (da una imagen real,
+    // solo que inservible). Como sí hay control real sobre CUÁL lente
+    // pedir por deviceId, se prueba forzar la primera de la lista apenas
+    // se sabe que existe más de una -- casi siempre es la principal en
+    // Android. Si esa resulta negra, se vuelve a lo que ya estaba
+    // funcionando (el criterio genérico), nunca se deja peor de como
+    // llegó.
+    if (traseras.length > 1 && trackActual?.getSettings().deviceId !== traseras[0].deviceId) {
+      const generica = trackActual?.getSettings().deviceId;
+      try {
+        await iniciarStream(traseras[0].deviceId);
+        await esperarPrimerFrame();
+        if (esFrameNegro()) throw new Error('primera lente negra');
+      } catch {
+        if (generica) { try { await iniciarStream(generica); } catch { /* se queda como esté */ } }
+      }
+    }
+
     if (traseras.length > 1) {
       lentesRow.hidden = false;
       lentesRow.innerHTML = traseras.map((d, i) => `<button type="button" class="camera-lente-btn" data-device-id="${d.deviceId}">${t('Lente')} ${i + 1}</button>`).join('');
