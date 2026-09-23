@@ -187,15 +187,21 @@ export async function abrirCamaraEnVivo({ modal, instruccion, onCapturar, onGale
   // probadas y descartadas: la primera hacía que varios Android
   // recortaran el sensor en vez de solo escalarlo, y la segunda es causa
   // real y documentada de video en negro en Chrome para Android reciente.
-  async function iniciarStream(deviceId) {
+  // exact=true SOLO para el intento automático de forzar la lente 0 al
+  // abrir (ver más abajo): con "ideal" el navegador puede simplemente
+  // IGNORARLO en silencio y quedarse en la lente que ya tenía -- bug
+  // real reportado, "forzar la primera lente" no cambiaba nada porque
+  // "ideal" es apenas una sugerencia, no una orden. "exact" sí garantiza
+  // un cambio real o un error limpio (nunca un "como si nada" silencioso).
+  // Para los botones manuales de lente sigue siendo "ideal" a propósito
+  // (ver comentario original más abajo, en su propio try/catch con
+  // reintento) -- "exact" ahí SÍ rompía al cambiar de lente en varios
+  // Android.
+  async function iniciarStream(deviceId, exact = false) {
     if (stream) stream.getTracks().forEach((tr) => tr.stop());
-    // "ideal", no "exact" -- con "exact" varios Android (confirmado real,
-    // no solo un celular) tiraban OverconstrainedError al cambiar de lente
-    // apenas se soltaba la anterior, dejando SOLO la lente 1 utilizable
-    // ("los botones de lente no sirven"). "ideal" deja que el navegador
-    // use esa lente igual (casi siempre la respeta) pero sin reventar si
-    // por un instante no puede cumplir el resto de las restricciones.
-    const videoConstraint = deviceId ? { deviceId: { ideal: deviceId } } : { facingMode: { ideal: 'environment' } };
+    const videoConstraint = deviceId
+      ? { deviceId: exact ? { exact: deviceId } : { ideal: deviceId } }
+      : { facingMode: { ideal: 'environment' } };
     stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint, audio: false });
     video.srcObject = stream;
     trackActual = stream.getVideoTracks()[0];
@@ -260,7 +266,15 @@ export async function abrirCamaraEnVivo({ modal, instruccion, onCapturar, onGale
     if (traseras.length > 1 && trackActual?.getSettings().deviceId !== traseras[0].deviceId) {
       const generica = trackActual?.getSettings().deviceId;
       try {
-        await iniciarStream(traseras[0].deviceId);
+        try {
+          await iniciarStream(traseras[0].deviceId, true);
+        } catch {
+          // Mismo motivo que en el cambio manual de lente: algunos Android
+          // no sueltan la lente anterior de inmediato -- un reintento
+          // corto basta.
+          await new Promise((r) => setTimeout(r, 300));
+          await iniciarStream(traseras[0].deviceId, true);
+        }
         await esperarPrimerFrame();
         if (esFrameNegro()) throw new Error('primera lente negra');
       } catch {
